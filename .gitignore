@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Logs and runtime outputs
+*.log
+logs/
+tmp/
+temp/
+cache/
+.cache/
+
+# Large experiment assets
+data/
+datasets/
+weights/
+checkpoints/
+models/
+*.ckpt
+*.pth
+*.pt
+*.safetensors
+
+# DriveLM experiment artifacts
+experiments/*/external/
+experiments/*/data/
+experiments/*/outputs/
+experiments/*/logs/
+experiments/*/checkpoints/
+experiments/*/weights/
+
+# Keep lightweight experiment notes tracked
+!experiments/
+!experiments/README.md
+!experiments/*/
+!experiments/*/README.md
+!experiments/*/run_log.md
