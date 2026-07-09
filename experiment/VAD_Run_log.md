@@ -1,4 +1,3 @@
-```markdown
 # VAD Run Log
 
 当前状态：VAD 最小复现实验已完成。
@@ -28,7 +27,7 @@
 
 确认 VAD 作为自动驾驶：
 
-
+```
 
 感知
 +
@@ -36,7 +35,7 @@
 +
 规划
 
-
+```
 
 方向的 baseline。
 
@@ -722,9 +721,4 @@ CARLA controller
 ↓
 
 vehicle control
-```
-
-```
-
-这个版本和你 DriveLM 的日志风格一致，可以直接并入项目实验记录。
 ```
