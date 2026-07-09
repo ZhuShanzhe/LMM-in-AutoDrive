@@ -1,7 +1,7 @@
 # VAD（Vectorized Autonomous Driving）模型研究
 
 负责人：王皓然
-当前状态：基础资料整理完成；环境配置、模型运行、复现实验结果待补充。
+当前状态：基础资料整理完成；环境配置完成；nuScenes-mini 数据转换完成；VAD-Tiny 官方 checkpoint inference 已成功运行。
 
 ---
 
@@ -9,32 +9,30 @@
 
 本调研面向“智能驾驶场景算法基础研究”方向，目标是分析 **VAD（Vectorized Autonomous Driving）** 是否适合作为自动驾驶规划与决策方向的 baseline 或技术参考。
 
-本阶段主要整理 VAD 官方论文、代码仓库和公开文档中已有信息，不填写尚未完成的训练、测试和评测结果。
+本阶段结合 VAD 官方论文、代码仓库以及实际复现实验，重点分析：
 
-重点关注：
-
-* VAD 的整体架构设计
-* 向量化自动驾驶表示方法
-* 感知、预测、规划任务之间的关系
-* 与 CARLA / 仿真驾驶任务结合的可能性
-* 作为项目 baseline 的可行性
+* VAD 的整体架构设计；
+* 向量化自动驾驶场景表示方法；
+* 感知、预测、规划任务之间的关系；
+* 与 CARLA / 仿真驾驶任务结合的可能性；
+* 作为项目 baseline 的可行性。
 
 ---
 
 # 2. 基本信息
 
-| 项目          | 内容                                                                    |
-| ----------- | --------------------------------------------------------------------- |
-| 模型名称        | VAD（Vectorized Autonomous Driving）                                    |
-| 论文标题        | VAD: Vectorized Scene Representation for Efficient Autonomous Driving |
-| 论文链接        | [https://arxiv.org/abs/2303.12077](https://arxiv.org/abs/2303.12077)  |
-| 官方仓库        | [https://github.com/hustvl/VAD](https://github.com/hustvl/VAD)        |
-| 发布机构        | HUST-VL                                                               |
-| 任务类型        | 自动驾驶感知、预测、规划、多任务决策                                                    |
-| 核心思想        | 使用向量化场景表示统一建模车辆、地图、轨迹和规划任务                                            |
-| 数据来源        | nuScenes                                                              |
-| baseline 方向 | BEV-based 自动驾驶规划模型                                                    |
-| 主要应用        | 自动驾驶端到端感知与规划                                                          |
+| 项目         | 内容                                                                    |
+| ---------- | --------------------------------------------------------------------- |
+| 模型名称       | VAD（Vectorized Autonomous Driving）                                    |
+| 论文标题       | VAD: Vectorized Scene Representation for Efficient Autonomous Driving |
+| 论文链接       | [https://arxiv.org/abs/2303.12077](https://arxiv.org/abs/2303.12077)  |
+| 官方仓库       | [https://github.com/hustvl/VAD](https://github.com/hustvl/VAD)        |
+| 发布机构       | HUST-VL                                                               |
+| 任务类型       | 自动驾驶感知、预测、规划、多任务决策                                                    |
+| 核心思想       | 使用向量化场景表示统一建模车辆、地图、轨迹和规划任务                                            |
+| 数据来源       | nuScenes                                                              |
+| baseline方向 | BEV-based 自动驾驶规划模型                                                    |
+| 主要应用       | 自动驾驶端到端感知与规划                                                          |
 
 ---
 
@@ -42,7 +40,7 @@
 
 传统自动驾驶系统通常采用：
 
-```text
+```
 感知
  ↓
 目标检测
@@ -56,97 +54,88 @@
 
 的串联结构。
 
-VAD 的核心思想是：
+该结构存在：
 
-> 使用 Vectorized Scene Representation（向量化场景表示）替代传统 dense BEV feature，让模型直接处理车辆、道路结构和交通参与者的向量信息。
+* 模块之间信息传递损失；
+* 感知结果难以直接用于规划；
+* 预测和规划优化目标不一致。
 
-VAD 不直接依赖：
+VAD 提出：
 
-* 像素级 BEV feature
-* 大量 rasterized map
+> 使用 Vectorized Scene Representation（向量化场景表示）统一描述驾驶环境中的目标、地图元素以及运动轨迹，使模型能够直接完成场景理解、未来预测和规划任务。
 
-而是构建：
+VAD 并不是完全舍弃 BEV 特征，而是在 BEV 感知基础上进一步构建：
 
-* agent vector
-* map vector
-* trajectory vector
+* Agent vector；
+* Map vector；
+* Trajectory vector。
 
-等结构化表示。
-
----
-
-VAD 主要解决：
-
-1. 如何高效表示驾驶场景
-
-2. 如何统一感知和规划任务
-
-3. 如何减少 BEV dense feature 的计算量
-
-4. 如何实现更强的可解释规划能力
+形成更加结构化的驾驶场景表示。
 
 ---
 
 # 4. VAD 与传统自动驾驶模型关系
 
-| 模型        | 表示方式                  | 特点           |
-| --------- | --------------------- | ------------ |
-| BEVFormer | BEV feature           | 从图像生成 BEV 表示 |
-| PETR      | 3D query              | 空间特征学习       |
-| UniAD     | BEV feature + 多任务     | 感知预测规划统一     |
-| VAD       | Vector representation | 显式建模道路和目标关系  |
+| 模型        | 表示方式                  | 特点              |
+| --------- | --------------------- | --------------- |
+| BEVFormer | BEV feature           | 从多视角图像生成 BEV 表示 |
+| PETR      | 3D query              | 学习三维空间关系        |
+| UniAD     | BEV feature + 多任务     | 感知预测规划统一        |
+| VAD       | Vector representation | 显式建模目标与地图关系     |
 
----
+VAD 相比传统 BEV 方法：
 
-VAD 与本项目关系：
+优势：
 
-| 本项目模块 | VAD 可参考内容                      |
-| ----- | ------------------------------ |
-| 环境感知  | 多摄像头输入和 3D 场景理解                |
-| 场景表示  | 向量化道路、车辆、障碍物表示                 |
-| 风险判断  | agent trajectory prediction    |
-| 行为规划  | planning trajectory prediction |
-| 控制执行  | VAD 不直接负责，需要额外控制器              |
+* 场景表示更加紧凑；
+* 保留道路和目标几何关系；
+* 更适合 Transformer 建模；
+* 输出更接近规划需求。
 
 ---
 
 # 5. VAD 输入输出流程
 
-VAD 官方流程可以概括为：
-
 ```mermaid
 flowchart LR
 
 A["Multi Camera Images"] --> B["Image Backbone"]
-B --> C["Vectorized Scene Encoder"]
 
-D["HD Map"] --> C
+B --> C["BEV Feature Extraction"]
 
-C --> E["Agent Vector Representation"]
-C --> F["Map Vector Representation"]
+D["HD Map"] --> E["Vectorized Scene Representation"]
 
-E --> G["Motion Prediction"]
-F --> G
+C --> E
 
-G --> H["Planning Module"]
+E --> F["Agent Vector"]
+E --> G["Map Vector"]
 
-H --> I["Future Ego Trajectory"]
+F --> H["Motion Prediction"]
+
+G --> I["Planning Module"]
+
+H --> I
+
+I --> J["Future Ego Trajectory"]
 ```
 
 ---
 
-具体输入：
+## 输入：
 
-* 多视角 camera images
-* HD Map
-* ego vehicle state
-* 历史轨迹信息
+* 多视角 camera images；
+* HD Map；
+* ego vehicle state；
+* 历史轨迹信息；
+* CAN bus 信息。
 
-输出：
+---
 
-* 周围目标轨迹预测
-* ego future trajectory
-* planning trajectory
+## 输出：
+
+* 周围交通参与者未来轨迹；
+* 道路结构预测；
+* ego vehicle future trajectory。
 
 ---
 
@@ -154,39 +143,38 @@ H --> I["Future Ego Trajectory"]
 
 ## 6.1 Vectorized Scene Representation
 
-VAD 最大特点：
+VAD 将驾驶环境表示为：
 
-将驾驶环境表示为：
-
-```text
+```
 Scene
  |
  |-- Agent vectors
- |      |
- |      └── vehicles / pedestrians
+ |       |
+ |       └── vehicles / pedestrians
  |
  |-- Map vectors
-        |
-        └── lanes / boundaries
+         |
+         └── lanes / boundaries
 ```
 
-相比传统 BEV：
+相比传统 raster BEV：
 
 优势：
 
-* 数据结构更加紧凑
-* 保留几何关系
-* 更适合 Transformer 建模
+* 数据结构更加紧凑；
+* 避免大量无效空间计算；
+* 保留显式几何信息；
+* 更适合轨迹预测和规划。
 
 ---
 
-## 6.2 Motion Prediction
+# 6.2 Motion Prediction
 
-VAD 对周围交通参与者进行未来轨迹预测。
+VAD 对交通参与者未来运动进行预测。
 
 输入：
 
-```text
+```
 agent history
 +
 scene context
@@ -194,66 +182,61 @@ scene context
 
 输出：
 
-```text
+```
 future trajectories
 ```
 
-用于：
+作用：
 
-* 风险判断
-* 规划决策
+* 判断潜在风险；
+* 辅助规划决策；
+* 提高驾驶安全性。
 
 ---
 
-## 6.3 Planning Head
+# 6.3 Planning Head
 
-VAD 最终预测：
-
-ego vehicle future trajectory。
+VAD 最终预测 ego vehicle 未来轨迹：
 
 例如：
 
-```text
+```
 t0
- |
- |
- ↓
 
 (x1,y1)
+
 (x2,y2)
+
 ...
+
 (xN,yN)
 ```
 
-作为车辆未来运动路径。
+输出未来多个时间点的位置，用于后续车辆控制。
 
 ---
 
 # 7. 官方数据与格式
 
-VAD 使用：
+VAD 基于 nuScenes 数据集。
 
-nuScenes 数据集。
+需要：
 
-主要包含：
+* 多摄像头图像；
+* LiDAR；
+* HD Map；
+* CAN bus；
+* ego 状态信息。
 
-* 多摄像头图像
-* LiDAR
-* HD Map
-* 车辆状态
-* 轨迹标注
+VAD 不直接使用 mmdetection3d 默认 annotation，需要生成：
 
-VAD 不直接使用 mmdetection3d 默认 annotation。
-
-官方需要生成：
-
-```text
+```
 vad_nuscenes_infos_temporal_train.pkl
 
 vad_nuscenes_infos_temporal_val.pkl
 ```
 
-生成方式：
+转换命令：
 
 ```bash
 python tools/data_converter/vad_nuscenes_converter.py \
@@ -261,7 +244,7 @@ nuscenes \
 --root-path ./data/nuscenes \
 --out-dir ./data/nuscenes \
 --extra-tag vad_nuscenes \
---version v1.0 \
+--version v1.0-mini \
 --canbus ./data
 ```
 
@@ -269,258 +252,256 @@ nuscenes \
 
 # 8. 官方 baseline 与运行流程
 
-VAD 官方代码流程：
+流程：
 
-```text
-准备环境
+```
+环境配置
  ↓
 准备 nuScenes 数据
  ↓
-准备 CAN bus 数据
+准备 CAN bus
  ↓
 生成 VAD annotation
  ↓
 加载 checkpoint
  ↓
-进行 inference / evaluation
+Inference
  ↓
-计算规划指标
+Evaluation
 ```
-
----
-
-主要评测指标：
-
-| 类别                | 指标             |
-| ----------------- | -------------- |
-| Detection         | mAP            |
-| Tracking          | AMOTA          |
-| Motion Prediction | minADE         |
-| Planning          | L2 error       |
-| Planning          | Collision rate |
 
 ---
 
 # 9. 环境与算力需求
 
-官方环境：
+## 官方环境要求
 
-| 项目        | 要求            |
-| --------- | ------------- |
-| Python    | 3.8           |
-| PyTorch   | 官方配置          |
-| CUDA      | GPU 环境        |
-| 数据集       | nuScenes      |
-| Framework | MMDetection3D |
-
----
-
-根据官方实验：
-
-训练通常需要多 GPU 环境。
-
-当前测试环境：
-
-| 项目         | 信息             |
-| ---------- | -------------- |
-| GPU        | RTX4060 Laptop |
-| 显存         | 8GB            |
-| CUDA       | 13.2           |
-| Python     | 3.7            |
-| 数据         | nuScenes mini  |
-| checkpoint | VAD-Tiny       |
+| 项目            | 要求              |
+| ------------- | --------------- |
+| Python        | 3.7/3.8         |
+| PyTorch       | 1.x             |
+| CUDA          | 11.x            |
+| MMCV          | 1.x             |
+| MMDetection   | 2.x             |
+| MMDetection3D | 0.17.x          |
+| GPU           | NVIDIA CUDA GPU |
 
 ---
 
-当前判断：
+## 本次实验环境
 
-完整训练 VAD：
+| 项目            | 信息                       |
+| ------------- | ------------------------ |
+| 系统            | Windows 11 + WSL2 Ubuntu |
+| GPU           | RTX4060 Laptop           |
+| 显存            | 8GB                      |
+| Python        | 3.7                      |
+| PyTorch       | 1.9.1+cu111              |
+| CUDA Runtime  | 11.1                     |
+| MMCV          | 1.4.0                    |
+| MMDetection   | 2.14.0                   |
+| MMDetection3D | 0.17.1                   |
+| 数据            | nuScenes v1.0-mini       |
+| 模型            | VAD-Tiny                 |
 
-不适合当前设备
+---
 
+## 训练可行性分析
+
+完整训练 VAD 不适合当前设备：
+（之后肯定要在服务器上跑）
 原因：
 
-* 显存不足
-* nuScenes full 数据规模较大
-* 官方训练配置针对多卡环境
-之后目标：
-* 使用官方 checkpoint
-* 使用 mini 数据验证 inference
+* 官方训练采用多 GPU；
+* nuScenes full 数据规模较大；
+* 显存需求较高。
+
+当前设备适合：
+
+* mini 数据 inference；
+* checkpoint 测试；
+* 模型结构分析。
 
 ---
 
-# 10. 指标与实验记录
+# 10. 实验记录
 
-后续实验记录：
+## 数据准备
 
-| 类别   | 内容                   |
-| ---- | -------------------- |
-| 数据集  | nuScenes mini / full |
-| 模型   | VAD-Tiny             |
-| 输入   | 多视角图像 + 地图           |
-| 输出   | ego trajectory       |
-| GPU  | RTX4060              |
-| 推理时间 | 待测试                  |
-| 显存占用 | 待测试                  |
-| 成功案例 | 待补充                  |
-| 失败案例 | 待补充                  |
+成功完成：
+
+* nuScenes-mini 解压；
+* CAN bus 配置；
+* map expansion 配置；
+* annotation 转换。
+
+生成：
+
+```
+vad_nuscenes_infos_temporal_train.pkl
+
+vad_nuscenes_infos_temporal_val.pkl
+```
+
+数据规模：
+
+| 数据          | 数量 |
+| ----------- | -- |
+| train scene | 8  |
+| val scene   | 2  |
+| val sample  | 81 |
 
 ---
 
-# 11. 典型案例记录模板
+# 11. Inference 实验结果
 
-## 成功案例
+运行：
 
-数据来源：
-
-```
-nuScenes mini
-```
-
-输入：
-
-```
-multi-camera scene
-```
-
-模型输出：
-
-```
-future ego trajectory
-```
-
-成功原因：
-
-```
-待补充
-```
-
-对项目启发：
-
-```
-待补充
+```bash
+python tools/test.py \
+projects/configs/VAD/VAD_tiny_stage_2.py \
+ckpts/VAD_tiny.pth \
+--eval bbox
 ```
 
 ---
 
-## 失败案例
+## 推理速度
 
-数据来源：
-
-```
-待补充
-```
-
-问题：
+结果：
 
 ```
-待补充
+81 samples
+
+6.3 task/s
 ```
 
-失败原因：
-
-```
-待补充
-```
+RTX4060 Laptop 可以完成 VAD-Tiny 推理。
 
 ---
 
-# 12. 初步不足与风险
+# 12. Motion Prediction结果
 
-基于官方资料，VAD 存在以下限制：
+## Car
+
+| 指标  | 结果      |
+| --- | ------- |
+| ADE | 0.931 m |
+| FDE | 1.028 m |
+| MR  | 0       |
+
+---
+
+## Pedestrian
+
+| 指标  | 结果      |
+| --- | ------- |
+| ADE | 1.239 m |
+| FDE | 1.627 m |
+| MR  | 0.357   |
+
+---
+
+# 13. Planning结果
+
+| 指标            | 结果      |
+| ------------- | ------- |
+| plan L2 @1s   | 1.417 m |
+| plan L2 @2s   | 2.350 m |
+| plan L2 @3s   | 3.322 m |
+| collision @1s | 0       |
+| collision @2s | 0       |
+| collision @3s | 0.0097  |
+
+实验说明：
+
+* VAD-Tiny 可以完成基本轨迹规划任务；
+* 短时间规划误差较低；
+* 长时间预测误差增加。
+
+---
+
+# 14. 初步不足与风险
 
 ## 1. 不是真正闭环控制系统
 
 VAD 输出：
 
-```text
+```
 future trajectory
 ```
 
-而不是：
+不是：
 
-```text
+```
 steering
 throttle
 brake
 ```
 
-因此需要额外：
+因此仍需要：
 
-* controller
-* vehicle dynamics model
+* vehicle controller；
+* PID；
+* MPC 等控制方法。
 
 ---
 
-## 2. 强依赖数据集
+## 2. 数据迁移成本
 
 VAD 针对：
 
-* nuScenes
-* 真实道路
+* nuScenes；
+* 真实道路。
 
-设计。
+迁移到 CARLA 需要：
 
-迁移到 CARLA：
-
-需要：
-
-* 数据转换
-* sensor adaptation
+* sensor adaptation；
+* 数据格式转换；
+* annotation 构建。
 
 ---
 
 ## 3. 训练成本较高
 
-完整复现论文结果：
+完整复现论文结果需要：
 
-需要：
-
-* 大 GPU
-* full nuScenes
-* 长时间训练
+* 多 GPU；
+* nuScenes full；
+* 长时间训练。
 
 ---
 
-# 13. 对本项目的启发
-
-VAD 对项目主要提供三个方向：
-
----
+# 15. 对本项目的启发
 
 ## （1）向量化场景表示
 
-可以将：
+可用于：
 
-```text
+```
 车辆
 行人
 车道
 障碍物
 ```
 
-表示为：
-
-```text
-vector entities
-```
-
-方便：
-
-* 风险判断
-* 规划
+统一表示。
 
 ---
 
 ## （2）预测辅助决策
 
-借鉴：
+参考：
 
-```text
+```
 预测其他车辆未来轨迹
+
 ↓
-判断风险
+
+风险判断
+
 ↓
+
 规划动作
 ```
 
@@ -530,72 +511,91 @@ vector entities
 
 VAD 可以作为：
 
-```text
-感知
- +
-预测
- +
-轨迹规划
+```
+场景理解
++
+轨迹预测
++
+高层规划
 ```
 
 模块参考。
 
 ---
 
-推荐项目路线：
-
-第一阶段：
-
-```text
-CARLA
-+
-真值感知
-+
-规则风险判断
-+
-BehaviorAgent/PID
-```
-
-第二阶段：
-
-加入：
-
-```text
-VAD 风格 vector scene representation
-+
-trajectory prediction
-+
-learning-based planner
-```
-
----
-
-# 14. 是否继续深入复现
+# 16. 是否继续深入复现
 
 当前判断：
 
-建议继续进行 **最小复现实验**。
+建议继续作为 baseline 参考。
 
-优先级：
+已完成：
 
-1. 完成 VAD 环境配置
-
-2. 使用 nuScenes mini 测试数据读取
-
-3. 加载 VAD-Tiny checkpoint
-
-4. 完成 inference
-
-5. 分析输出 trajectory
+环境配置
+nuScenes-mini 数据准备
+CAN bus 配置
+annotation生成
+checkpoint加载
+inference运行
 
 不建议：
 
-* 在 RTX4060 上重新训练 VAD
-* 下载完整 nuScenes 做训练复现
+* RTX4060重新训练；
+* 下载完整 nuScenes 做训练。
+
+下一步：
+
+1. 分析 VAD 输出轨迹；
+2. 尝试接入 CARLA；
+3. 设计 VAD + LLM/VLM 语义决策模块。
 
 ---
 
-# 15. 参考资料
+# 17. 总结
+
+本实验成功完成 VAD-Tiny 官方 baseline 最小复现。
+
+验证结果：
+
+* RTX4060 Laptop 可以运行 VAD-Tiny；
+* nuScenes-mini inference 正常；
+* 模型能够完成 motion prediction 与 planning。
+
+VAD 更适合作为：
+
+> 自动驾驶感知 + 预测 + 高层规划模型 baseline
+
+而不是：
+
+> CARLA 直接车辆控制 agent。
+
+对于本项目，推荐：
+
+```
+CARLA环境
+
++
+
+VAD风格场景表示
+
++
+
+轨迹预测规划
+
++
+
+车辆控制器
+
++
+
+LLM/VLM解释模块
+```
+
+形成完整智能驾驶系统。
+
+---
+
+# 18. 参考资料
 
 VAD Paper:
 
@@ -613,22 +613,3 @@ MMDetection3D:
 
 [https://github.com/open-mmlab/mmdetection3d](https://github.com/open-mmlab/mmdetection3d)
 
----
-
-**最终定位：**
-
-VAD 更适合作为：
-
-> 自动驾驶感知-预测-规划模型 baseline
-
-而不是：
-
-> CARLA 直接车辆控制 agent。
-
-对于本项目，推荐将 VAD 作为：
-
-```text
-场景理解 + 轨迹预测 + 高层规划参考模块
-```
-
-结合 CARLA 控制器完成闭环驾驶。
