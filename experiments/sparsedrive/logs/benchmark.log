@@ -1,0 +1,41 @@
+Use flash_attn_varlen_kvpacked_func
+{'version': 'v1.0-mini'}
+WARNING!!!!, Only can be used for obtain inference speed!!!!
+load checkpoint from local path: ckpt/sparsedrive_stage2.pth
+total         complexity: FLOPs=192.7233 G / 100.00%, Params= 85.9102 M / 100.00%.
+img_backbone  complexity: FLOPs= 88.7854 G /  46.07%, Params= 23.5080 M /  27.36%.
+img_neck      complexity: FLOPs= 61.2933 G /  31.80%, Params=  3.3444 M /   3.89%.
+head          complexity: FLOPs= 43.5019 G /  22.57%, Params= 59.0570 M /  68.74%.
+{'type': 'NuScenes3DDataset', 'data_root': 'data/nuscenes/', 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'map_classes': ['ped_crossing', 'divider', 'boundary'], 'modality': {'use_lidar': False, 'use_camera': True, 'use_radar': False, 'use_map': False, 'use_external': False}, 'version': 'v1.0-mini', 'ann_file': 'data/infos/mini/nuscenes_infos_val.pkl', 'pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'ResizeCropFlipImage'}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'NuScenesSparse4DAdaptor'}, {'type': 'Collect', 'keys': ['img', 'timestamp', 'projection_mat', 'image_wh', 'ego_status', 'gt_ego_fut_cmd'], 'meta_keys': ['T_global', 'T_global_inv', 'timestamp']}], 'data_aug_conf': {'resize_lim': (0.4, 0.47), 'final_dim': (256, 704), 'bot_pct_lim': (0.0, 0.0), 'rot_lim': (-5.4, 5.4), 'H': 900, 'W': 1600, 'rand_flip': True, 'rot3d_range': [0, 0]}, 'test_mode': True, 'eval_config': {'type': 'NuScenes3DDataset', 'data_root': 'data/nuscenes/', 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'map_classes': ['ped_crossing', 'divider', 'boundary'], 'modality': {'use_lidar': False, 'use_camera': True, 'use_radar': False, 'use_map': False, 'use_external': False}, 'version': 'v1.0-mini', 'ann_file': 'data/infos/mini/nuscenes_infos_val.pkl', 'pipeline': [{'type': 'CircleObjectRangeFilter', 'class_dist_thred': [55, 55, 55, 55, 55, 55, 55, 55, 55, 55]}, {'type': 'InstanceNameFilter', 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']}, {'type': 'VectorizeMap', 'roi_size': (30, 60), 'simplify': True, 'normalize': False}, {'type': 'Collect', 'keys': ['vectors', 'gt_bboxes_3d', 'gt_labels_3d', 'gt_agent_fut_trajs', 'gt_agent_fut_masks', 'gt_ego_fut_trajs', 'gt_ego_fut_masks', 'gt_ego_fut_cmd', 'fut_boxes'], 'meta_keys': ['token', 'timestamp']}], 'test_mode': True}}
+{'version': 'v1.0-mini'}
+WARNING!!!!, Only can be used for obtain inference speed!!!!
+load checkpoint from local path: ckpt/sparsedrive_stage2.pth
+/root/autodl-tmp/envs/sparsedrive/lib/python3.8/site-packages/mmcv/__init__.py:20: UserWarning: On January 1, 2023, MMCV will release v2.0.0, in which it will remove components related to the training process and add a data transformation module. In addition, it will rename the package names mmcv to mmcv-lite and mmcv-full to mmcv. See https://github.com/open-mmlab/mmcv/blob/master/docs/en/compatibility.md for more details.
+  warnings.warn(
+/root/autodl-tmp/envs/sparsedrive/lib/python3.8/site-packages/mmcv/cnn/utils/flops_counter.py:536: UserWarning: variables __flops__ or __params__ are already defined for the moduleReLU ptflops can affect your code!
+  warnings.warn('variables __flops__ or __params__ are already '
+/root/autodl-tmp/envs/sparsedrive/lib/python3.8/site-packages/mmcv/cnn/utils/flops_counter.py:510: UserWarning: No positional inputs found for a module, assuming batch size is 1.
+  warnings.warn('No positional inputs found for a module, '
+/root/autodl-tmp/envs/sparsedrive/lib/python3.8/site-packages/mmcv/cnn/utils/flops_counter.py:536: UserWarning: variables __flops__ or __params__ are already defined for the moduleConv2d ptflops can affect your code!
+  warnings.warn('variables __flops__ or __params__ are already '
+/root/autodl-tmp/envs/sparsedrive/lib/python3.8/site-packages/mmcv/cnn/utils/flops_counter.py:536: UserWarning: variables __flops__ or __params__ are already defined for the moduleBatchNorm2d ptflops can affect your code!
+  warnings.warn('variables __flops__ or __params__ are already '
+/root/autodl-tmp/envs/sparsedrive/lib/python3.8/site-packages/mmcv/cnn/utils/flops_counter.py:536: UserWarning: variables __flops__ or __params__ are already defined for the moduleMaxPool2d ptflops can affect your code!
+  warnings.warn('variables __flops__ or __params__ are already '
+/root/autodl-tmp/envs/sparsedrive/lib/python3.8/site-packages/mmcv/cnn/utils/flops_counter.py:536: UserWarning: variables __flops__ or __params__ are already defined for the moduleLinear ptflops can affect your code!
+  warnings.warn('variables __flops__ or __params__ are already '
+/root/autodl-tmp/envs/sparsedrive/lib/python3.8/site-packages/mmcv/cnn/utils/flops_counter.py:536: UserWarning: variables __flops__ or __params__ are already defined for the moduleLayerNorm ptflops can affect your code!
+  warnings.warn('variables __flops__ or __params__ are already '
+/root/autodl-tmp/envs/sparsedrive/lib/python3.8/site-packages/mmcv/cnn/utils/flops_counter.py:536: UserWarning: variables __flops__ or __params__ are already defined for the moduleAvgPool2d ptflops can affect your code!
+  warnings.warn('variables __flops__ or __params__ are already '
+tools/benchmark.py:36: DeprecationWarning: an integer is required (got type float).  Implicit conversion to integers using __int__ is deprecated, and may be removed in a future version of Python.
+  mem_mb = torch.tensor([mem / (1024 * 1024)],
+Done image [10 / 81], fps: 6.0 img / s, gpu mem: 3942 M
+Done image [20 / 81], fps: 6.0 img / s, gpu mem: 3942 M
+Done image [30 / 81], fps: 6.2 img / s, gpu mem: 3942 M
+Done image [40 / 81], fps: 6.3 img / s, gpu mem: 3942 M
+Done image [50 / 81], fps: 6.2 img / s, gpu mem: 3942 M
+Done image [60 / 81], fps: 6.1 img / s, gpu mem: 3942 M
+Done image [70 / 81], fps: 6.0 img / s, gpu mem: 3942 M
+Done image [80 / 81], fps: 6.0 img / s, gpu mem: 3942 M
+Overall fps: 5.9 img / s
