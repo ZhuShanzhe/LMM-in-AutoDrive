@@ -1,0 +1,121 @@
+load checkpoint from local path: ckpts/VAD_tiny.pth
+[>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] 81/81, 6.3 task/s, elapsed: 13s, ETA:     0s
+
+-------------- Motion Prediction --------------
+EPA_car: 0.017118402282453638
+EPA_pedestrian: -0.3960546282245827
+ADE_car: 0.9311437010765076
+ADE_pedestrian: 1.2387049198150635
+FDE_car: 1.0282976627349854
+FDE_pedestrian: 1.6273767948150635
+MR_car: 0.0
+MR_pedestrian: 0.35714285714285715
+
+
+-------------- Planning --------------
+gt_car:10.159420289855072
+gt_pedestrian:9.55072463768116
+cnt_ade_car:0.21739130434782608
+cnt_ade_pedestrian:0.6086956521739131
+cnt_fde_car:0.2028985507246377
+cnt_fde_pedestrian:0.6086956521739131
+hit_car:0.2028985507246377
+hit_pedestrian:0.391304347826087
+fp_car:0.057971014492753624
+fp_pedestrian:8.057971014492754
+ADE_car:0.19792219996452332
+ADE_pedestrian:0.7539942860603333
+FDE_car:0.20864011347293854
+FDE_pedestrian:0.9905771613121033
+MR_car:0.0
+MR_pedestrian:0.21739130434782608
+plan_L2_1s:1.4170549421206764
+plan_L2_2s:2.349534658850103
+plan_L2_3s:3.3219230278678564
+plan_obj_col_1s:0.0
+plan_obj_col_2s:0.0
+plan_obj_col_3s:0.0
+plan_obj_box_col_1s:0.0
+plan_obj_box_col_2s:0.0
+plan_obj_box_col_3s:0.009661836036737415
+fut_valid_flag:1.0
+
+Formating bboxes of pts_bbox
+Start to convert detection format...
+[>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>] 81/81, 96.0 task/s, elapsed: 1s, ETA:     0s
+data/nuscenes/nuscenes_map_anns_val.json exist, not update
+Results writes to test/VAD_tiny_stage_2/Thu_Jul__9_23_00_47_2026/pts_bbox/results_nusc.pkl
+Evaluating bboxes of pts_bbox
+mAP: 0.0000
+mATE: 1.0084
+mASE: 0.9352
+mAOE: 1.0683
+mAVE: 1.0485
+mAAE: 0.9354
+NDS: 0.0129
+Eval time: 0.3s
+
+Per-class results:
+Object Class    AP      ATE     ASE     AOE     AVE     AAE
+car     0.000   1.000   1.000   1.000   1.000   1.000
+truck   0.000   1.000   1.000   1.000   1.000   1.000
+bus     0.000   1.000   1.000   1.000   1.000   1.000
+trailer 0.000   1.000   1.000   1.000   1.000   1.000
+construction_vehicle    0.000   1.000   1.000   1.000   1.000   1.000
+pedestrian      0.000   1.084   0.352   1.615   1.388   0.483
+motorcycle      0.000   1.000   1.000   1.000   1.000   1.000
+bicycle 0.000   1.000   1.000   1.000   1.000   1.000
+traffic_cone    0.000   1.000   1.000   nan     nan     nan
+barrier 0.000   1.000   1.000   1.000   nan     nan
+Formating results & gts by classes
+results path: /home/neonfox/VAD/test/VAD_tiny_stage_2/Thu_Jul__9_23_00_47_2026/pts_bbox/results_nusc.pkl
+Formatting ...
+Cls data formatting done in 1.555150s!! with /home/neonfox/VAD/test/VAD_tiny_stage_2/Thu_Jul__9_23_00_47_2026/pts_bbox/cls_formatted.pkl
+-*-*-*-*-*-*-*-*-*-*use metric:chamfer-*-*-*-*-*-*-*-*-*-*
+-*-*-*-*-*-*-*-*-*-*threshhold:0.5-*-*-*-*-*-*-*-*-*-*
+cls:divider done in 0.649626s!!
+cls:ped_crossing done in 0.025426s!!
+cls:boundary done in 0.095042s!!
+
++--------------+-----+------+--------+-------+
+| class        | gts | dets | recall | ap    |
++--------------+-----+------+--------+-------+
+| divider      | 465 | 1089 | 0.002  | 0.000 |
+| ped_crossing | 76  | 761  | 0.013  | 0.000 |
+| boundary     | 287 | 2200 | 0.014  | 0.000 |
++--------------+-----+------+--------+-------+
+| mAP          |     |      |        | 0.000 |
++--------------+-----+------+--------+-------+
+-*-*-*-*-*-*-*-*-*-*threshhold:1.0-*-*-*-*-*-*-*-*-*-*
+cls:divider done in 0.660158s!!
+cls:ped_crossing done in 0.032818s!!
+cls:boundary done in 0.111129s!!
+
++--------------+-----+------+--------+-------+
+| class        | gts | dets | recall | ap    |
++--------------+-----+------+--------+-------+
+| divider      | 465 | 1089 | 0.011  | 0.000 |
+| ped_crossing | 76  | 761  | 0.053  | 0.001 |
+| boundary     | 287 | 2200 | 0.038  | 0.000 |
++--------------+-----+------+--------+-------+
+| mAP          |     |      |        | 0.000 |
++--------------+-----+------+--------+-------+
+-*-*-*-*-*-*-*-*-*-*threshhold:1.5-*-*-*-*-*-*-*-*-*-*
+cls:divider done in 0.614102s!!
+cls:ped_crossing done in 0.030822s!!
+cls:boundary done in 0.108717s!!
+
++--------------+-----+------+--------+-------+
+| class        | gts | dets | recall | ap    |
++--------------+-----+------+--------+-------+
+| divider      | 465 | 1089 | 0.030  | 0.000 |
+| ped_crossing | 76  | 761  | 0.066  | 0.001 |
+| boundary     | 287 | 2200 | 0.080  | 0.002 |
++--------------+-----+------+--------+-------+
+| mAP          |     |      |        | 0.001 |
++--------------+-----+------+--------+-------+
+divider: 0.0001509987469034968
+ped_crossing: 0.0004562002844371212
+boundary: 0.0007532515664934181
+map: 0.00045348353261134535
+{'pts_bbox_NuScenes/car_AP_dist_0.5': 0.0, 'pts_bbox_NuScenes/car_AP_dist_1.0': 0.0, 'pts_bbox_NuScenes/car_AP_dist_2.0': 0.0, 'pts_bbox_NuScenes/car_AP_dist_4.0': 0.0, 'pts_bbox_NuScenes/car_trans_err': 1.0, 'pts_bbox_NuScenes/car_scale_err': 1.0, 'pts_bbox_NuScenes/car_orient_err': 1.0, 'pts_bbox_NuScenes/car_vel_err': 1.0, 'pts_bbox_NuScenes/car_attr_err': 1.0, 'pts_bbox_NuScenes/mATE': 1.0084, 'pts_bbox_NuScenes/mASE': 0.9352, 'pts_bbox_NuScenes/mAOE': 1.0683, 'pts_bbox_NuScenes/mAVE': 1.0485, 'pts_bbox_NuScenes/mAAE': 0.9354, 'pts_bbox_NuScenes/truck_AP_dist_0.5': 0.0, 'pts_bbox_NuScenes/truck_AP_dist_1.0': 0.0, 'pts_bbox_NuScenes/truck_AP_dist_2.0': 0.0, 'pts_bbox_NuScenes/truck_AP_dist_4.0': 0.0, 'pts_bbox_NuScenes/truck_trans_err': 1.0, 'pts_bbox_NuScenes/truck_scale_err': 1.0, 'pts_bbox_NuScenes/truck_orient_err': 1.0, 'pts_bbox_NuScenes/truck_vel_err': 1.0, 'pts_bbox_NuScenes/truck_attr_err': 1.0, 'pts_bbox_NuScenes/construction_vehicle_AP_dist_0.5': 0.0, 'pts_bbox_NuScenes/construction_vehicle_AP_dist_1.0': 0.0, 'pts_bbox_NuScenes/construction_vehicle_AP_dist_2.0': 0.0, 'pts_bbox_NuScenes/construction_vehicle_AP_dist_4.0': 0.0, 'pts_bbox_NuScenes/construction_vehicle_trans_err': 1.0, 'pts_bbox_NuScenes/construction_vehicle_scale_err': 1.0, 'pts_bbox_NuScenes/construction_vehicle_orient_err': 1.0, 'pts_bbox_NuScenes/construction_vehicle_vel_err': 1.0, 'pts_bbox_NuScenes/construction_vehicle_attr_err': 1.0, 'pts_bbox_NuScenes/bus_AP_dist_0.5': 0.0, 'pts_bbox_NuScenes/bus_AP_dist_1.0': 0.0, 'pts_bbox_NuScenes/bus_AP_dist_2.0': 0.0, 'pts_bbox_NuScenes/bus_AP_dist_4.0': 0.0, 'pts_bbox_NuScenes/bus_trans_err': 1.0, 'pts_bbox_NuScenes/bus_scale_err': 1.0, 'pts_bbox_NuScenes/bus_orient_err': 1.0, 'pts_bbox_NuScenes/bus_vel_err': 1.0, 'pts_bbox_NuScenes/bus_attr_err': 1.0, 'pts_bbox_NuScenes/trailer_AP_dist_0.5': 0.0, 'pts_bbox_NuScenes/trailer_AP_dist_1.0': 0.0, 'pts_bbox_NuScenes/trailer_AP_dist_2.0': 0.0, 'pts_bbox_NuScenes/trailer_AP_dist_4.0': 0.0, 'pts_bbox_NuScenes/trailer_trans_err': 1.0, 'pts_bbox_NuScenes/trailer_scale_err': 1.0, 'pts_bbox_NuScenes/trailer_orient_err': 1.0, 'pts_bbox_NuScenes/trailer_vel_err': 1.0, 'pts_bbox_NuScenes/trailer_attr_err': 1.0, 'pts_bbox_NuScenes/barrier_AP_dist_0.5': 0.0, 'pts_bbox_NuScenes/barrier_AP_dist_1.0': 0.0, 'pts_bbox_NuScenes/barrier_AP_dist_2.0': 0.0, 'pts_bbox_NuScenes/barrier_AP_dist_4.0': 0.0, 'pts_bbox_NuScenes/barrier_trans_err': 1.0, 'pts_bbox_NuScenes/barrier_scale_err': 1.0, 'pts_bbox_NuScenes/barrier_orient_err': 1.0, 'pts_bbox_NuScenes/barrier_vel_err': nan, 'pts_bbox_NuScenes/barrier_attr_err': nan, 'pts_bbox_NuScenes/motorcycle_AP_dist_0.5': 0.0, 'pts_bbox_NuScenes/motorcycle_AP_dist_1.0': 0.0, 'pts_bbox_NuScenes/motorcycle_AP_dist_2.0': 0.0, 'pts_bbox_NuScenes/motorcycle_AP_dist_4.0': 0.0, 'pts_bbox_NuScenes/motorcycle_trans_err': 1.0, 'pts_bbox_NuScenes/motorcycle_scale_err': 1.0, 'pts_bbox_NuScenes/motorcycle_orient_err': 1.0, 'pts_bbox_NuScenes/motorcycle_vel_err': 1.0, 'pts_bbox_NuScenes/motorcycle_attr_err': 1.0, 'pts_bbox_NuScenes/bicycle_AP_dist_0.5': 0.0, 'pts_bbox_NuScenes/bicycle_AP_dist_1.0': 0.0, 'pts_bbox_NuScenes/bicycle_AP_dist_2.0': 0.0, 'pts_bbox_NuScenes/bicycle_AP_dist_4.0': 0.0, 'pts_bbox_NuScenes/bicycle_trans_err': 1.0, 'pts_bbox_NuScenes/bicycle_scale_err': 1.0, 'pts_bbox_NuScenes/bicycle_orient_err': 1.0, 'pts_bbox_NuScenes/bicycle_vel_err': 1.0, 'pts_bbox_NuScenes/bicycle_attr_err': 1.0, 'pts_bbox_NuScenes/pedestrian_AP_dist_0.5': 0.0, 'pts_bbox_NuScenes/pedestrian_AP_dist_1.0': 0.0, 'pts_bbox_NuScenes/pedestrian_AP_dist_2.0': 0.0, 'pts_bbox_NuScenes/pedestrian_AP_dist_4.0': 0.0002, 'pts_bbox_NuScenes/pedestrian_trans_err': 1.0843, 'pts_bbox_NuScenes/pedestrian_scale_err': 0.3517, 'pts_bbox_NuScenes/pedestrian_orient_err': 1.6149, 'pts_bbox_NuScenes/pedestrian_vel_err': 1.3883, 'pts_bbox_NuScenes/pedestrian_attr_err': 0.4832, 'pts_bbox_NuScenes/traffic_cone_AP_dist_0.5': 0.0, 'pts_bbox_NuScenes/traffic_cone_AP_dist_1.0': 0.0, 'pts_bbox_NuScenes/traffic_cone_AP_dist_2.0': 0.0, 'pts_bbox_NuScenes/traffic_cone_AP_dist_4.0': 0.0, 'pts_bbox_NuScenes/traffic_cone_trans_err': 1.0, 'pts_bbox_NuScenes/traffic_cone_scale_err': 1.0, 'pts_bbox_NuScenes/traffic_cone_orient_err': nan, 'pts_bbox_NuScenes/traffic_cone_vel_err': nan, 'pts_bbox_NuScenes/traffic_cone_attr_err': nan, 'pts_bbox_NuScenes/NDS': 0.012946370344529511, 'pts_bbox_NuScenes/mAP': 6.113102434566743e-06, 'NuscMap_chamfer/divider_AP': 0.0001509987469034968, 'NuscMap_chamfer/ped_crossing_AP': 0.0004562002844371212, 'NuscMap_chamfer/boundary_AP': 0.0007532515664934181, 'NuscMap_chamfer/mAP': 0.00045348353261134535, 'NuscMap_chamfer/divider_AP_thr_0.5': 4.726456609205343e-06, 'NuscMap_chamfer/divider_AP_thr_1.0': 5.1745373639278114e-05, 'NuscMap_chamfer/divider_AP_thr_1.5': 0.0003965244104620069, 'NuscMap_chamfer/ped_crossing_AP_thr_0.5': 2.7700829377863556e-05, 'NuscMap_chamfer/ped_crossing_AP_thr_1.0': 0.0006128664244897664, 'NuscMap_chamfer/ped_crossing_AP_thr_1.5': 0.0007280335994437337, 'NuscMap_chamfer/boundary_AP_thr_0.5': 5.235471326159313e-05, 'NuscMap_chamfer/boundary_AP_thr_1.0': 0.0003687958815135062, 'NuscMap_chamfer/boundary_AP_thr_1.5': 0.001838604104705155}
