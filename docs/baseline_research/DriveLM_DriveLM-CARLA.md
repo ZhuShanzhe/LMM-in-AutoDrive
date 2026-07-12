@@ -1,218 +1,574 @@
-# DriveLM / DriveLM-CARLA Baseline Research
+# DriveLM-CARLA 基线复现实验记录
 
-负责人：朱善哲、黄皓星  
-当前状态：基础资料整理完成；复现实验、环境实测、结果分析待补充。
+## 实验目标
 
-## 1. 调研目标
+负责人：朱善哲
 
-本调研面向“智能驾驶场景的大模型应用”基础赛道，目标是判断 DriveLM / DriveLM-CARLA 是否适合作为本项目的 baseline 或设计参考。
+本阶段目标是在 CARLA 数据上运行 DriveLM 官方 LLaMA-Adapter V2 7B 基线，完成环境配置、数据下载、图文对齐、输入转换、模型推理和结果分析。
 
-本阶段只整理官方文档、论文和代码仓库中已经明确的信息，不填写任何尚未运行的复现实验结果。
-
-## 2. 基本信息
-
-| 项目 | 内容 |
-| --- | --- |
-| 模型 / 基准名称 | DriveLM / DriveLM-CARLA |
-| 论文标题 | Driving with Graph Visual Question Answering |
-| 论文链接 | https://arxiv.org/abs/2312.14150 |
-| 官方仓库 | https://github.com/OpenDriveLab/DriveLM |
-| 官方项目页 | https://opendrivelab.com/DriveLM/ |
-| 任务类型 | 自动驾驶场景理解、视觉问答、驾驶推理、规划决策解释 |
-| 核心思想 | 将自动驾驶场景中的感知、预测、规划、行为决策组织为 Graph Visual Question Answering (GVQA) |
-| 数据来源 | nuScenes、CARLA |
-| baseline 方向 | DriveLM-Agent，基于语言模型的驾驶问答 / 推理 agent |
-
-## 3. DriveLM 核心介绍
-
-DriveLM 将自动驾驶任务拆解为一组与场景对象、状态、风险和行为相关的问题，并通过图结构组织这些问题之间的依赖关系。与只输出轨迹或控制量的端到端规划模型不同，DriveLM 更强调可解释的推理过程：模型需要回答“场景中有什么”“目标对象在哪里”“未来可能发生什么”“自车应该如何行动”等问题。
-
-官方资料中，DriveLM 的主要组成包括：
-
-- DriveLM-Data：面向驾驶场景的图式视觉问答数据。
-- DriveLM-Agent：官方提供的 baseline agent，用于在 DriveLM 数据和评测协议上进行训练、推理和提交。
-- DriveLM Challenge：围绕自动驾驶场景问答与推理的评测流程。
-
-## 4. DriveLM 与 DriveLM-CARLA 的关系
-
-| 项目 | DriveLM-nuScenes | DriveLM-CARLA |
-| --- | --- | --- |
-| 数据来源 | nuScenes 真实道路数据 | CARLA 仿真环境 |
-| 场景特点 | 多传感器真实驾驶场景 | 可控、可生成、可复现场景 |
-| 主要用途 | 真实场景理解与推理评测 | 仿真驾驶场景问答、规划和闭环研究参考 |
-| 对本项目价值 | 借鉴多视角场景理解、语言推理和评测方式 | 更接近本项目 CARLA 基础赛道，可作为仿真数据和任务设计参考 |
-
-对本项目而言，DriveLM-CARLA 更贴近“CARLA + 大模型 + 驾驶决策”的研究方向，但官方 baseline 的重点仍是问答 / 推理评测，并不等同于可以直接控制 CARLA 车辆的完整闭环系统。因此，它更适合作为语义理解、风险解释、决策理由生成和评估设计参考。
-
-## 5. 输入输出流程
-
-DriveLM 的官方任务可以概括为：
-
-```mermaid
-flowchart LR
-    A["Driving scene data"] --> B["Camera / sensor information"]
-    B --> C["Object and scene annotations"]
-    C --> D["Graph Visual Question Answering"]
-    D --> E["Perception questions"]
-    D --> F["Prediction questions"]
-    D --> G["Planning questions"]
-    D --> H["Behavior questions"]
-    E --> I["Language answer / decision explanation"]
-    F --> I
-    G --> I
-    H --> I
-```
-
-与本项目规划中的闭环流程对应关系如下：
-
-| 本项目模块 | DriveLM 可参考内容 |
-| --- | --- |
-| 文本 / 语音指令解析 | 借鉴语言问题设计与结构化问答格式 |
-| CARLA 场景信息获取 | 借鉴 DriveLM-CARLA 的仿真场景组织方式 |
-| 多模态语义对齐 | 借鉴对象、场景、问题之间的图式关联 |
-| 风险判断 | 借鉴问答中对危险对象、未来行为和自车动作的解释 |
-| 决策规划 | 借鉴规划类问题的高层决策表达 |
-| 车辆控制 | DriveLM 不是直接控制模块，需要本项目自行实现 |
-
-## 6. 官方数据与格式要点
-
-官方数据围绕场景、关键帧、对象信息和问答对组织。根据官方文档，数据中通常包含：
-
-- scene token / sample token 等场景索引。
-- 多视角图像路径或传感器信息。
-- key frames 和 key object infos。
-- 问答内容，覆盖 perception、prediction、planning、behavior 等类型。
-- 训练、验证和测试阶段对应的数据划分。
-
-DriveLM 的关键价值不只在数据本身，而在于它把驾驶任务拆成可监督、可解释、可评估的问题链。这一点适合迁移到本项目的“语义对齐 + 风险判断 + 决策规划”模块。
-
-## 7. 官方 baseline 与评测流程
-
-官方 challenge 文档给出的流程包含以下部分：
-
-1. 准备 demo data 或完整数据。
-2. 将原始数据转换成 DriveLM challenge 使用的数据格式。
-3. 将数据进一步转换为 LLaMA / llama-adapter 训练格式。
-4. 训练或加载 baseline。
-5. 执行推理，生成预测结果。
-6. 按官方评测脚本计算指标或提交评测。
-
-官方 baseline 侧重问答结果生成与评测，不是面向 CARLA 的直接油门、刹车、转向控制器。若要接入本项目，需要在 DriveLM 的“高层语义答案 / 决策解释”和 CARLA 控制模块之间增加规则映射、风险约束和车辆控制逻辑。
-
-## 8. 环境与算力需求
-
-根据官方 challenge README，baseline 示例环境包括：
-
-- Python 3.8。
-- PyTorch / CUDA 环境。
-- llama-adapter v2 相关依赖。
-- LLaMA 权重或兼容语言模型权重。
-- DriveLM challenge 数据或 demo data。
-
-官方文档中还提到 baseline 训练和推理会占用较高 GPU 显存。是否能在当前 AutoDL 服务器完整运行，需要后续实际检查显卡型号、CUDA、磁盘空间和权重 / 数据可用性。
-
-待补充：
-
-- AutoDL GPU 型号：
-- CUDA 版本：
-- Python / conda 环境：
-- 可用显存：
-- 可用磁盘：
-- 是否下载完整数据：
-- 是否下载模型权重：
-
-## 9. 指标与实验结果记录项
-
-官方 DriveLM challenge 涉及问答正确性、语言质量和综合得分等评估维度。结合本项目任务，后续记录建议包含：
-
-| 类别 | 记录内容 |
-| --- | --- |
-| 数据集 | demo data / DriveLM-nuScenes / DriveLM-CARLA |
-| 输入 | 场景、图像、多视角信息、问题 |
-| 输出 | 模型回答、规划建议、行为解释 |
-| 官方指标 | 按官方脚本输出记录 |
-| 本项目关注指标 | 是否能转成结构化意图、是否能支持风险判断、是否能辅助 CARLA 决策 |
-| 延时 | 单样本推理时间 |
-| 显存 | 训练 / 推理峰值显存 |
-| 失败案例 | 错误对象、错误风险判断、错误规划建议、幻觉解释 |
-
-当前尚未运行复现实验，因此本节不填写具体数值。
-
-## 10. 典型成功 / 失败案例记录模板
-
-### 成功案例
-
-- 数据来源：
-- 输入场景：
-- 输入问题：
-- 模型输出：
-- 正确答案 / 参考答案：
-- 成功原因分析：
-- 对本项目启发：
-
-### 失败案例
-
-- 数据来源：
-- 输入场景：
-- 输入问题：
-- 模型输出：
-- 正确答案 / 参考答案：
-- 失败类型：
-- 失败原因分析：
-- 后续改进方向：
-
-## 11. 初步不足与风险
-
-基于官方文档和项目目标，DriveLM / DriveLM-CARLA 作为 baseline 存在以下注意点：
-
-- 官方 baseline 偏向图式问答和语言推理，不是完整的 CARLA 闭环驾驶控制系统。
-- 完整复现可能依赖较大的数据、模型权重和 GPU 显存。
-- 输出通常是自然语言答案或问答结果，需要额外设计结构化解析与控制映射。
-- 若本项目比赛重点是基础操控、避障和应急响应，短期更稳妥的主线仍是 CARLA 真值感知 + 规则决策 + BehaviorAgent / PID 控制。
-- DriveLM 更适合作为高层语义理解和决策解释模块参考，而不是第一阶段直接替代控制器。
-
-## 12. 对本项目的启发
-
-后续自研方案可以借鉴 DriveLM 的三个方向：
-
-1. 用问题链组织驾驶推理：先问“场景中有什么”，再问“危险在哪里”，最后问“自车应该怎么做”。
-2. 用图结构连接对象、风险和行为：将前车、行人、车道、路口等对象与可执行动作建立关系。
-3. 用语言解释辅助调试：即使最终控制由规则或 agent 完成，也可以让大模型输出决策原因，方便展示和报告。
-
-建议本项目第一版不要直接复刻 DriveLM-Agent，而是先实现：
+本次实验使用当前已完成图文对齐的子集：
 
 ```text
-CARLA 真值感知 + 规则风险判断 + 行为规划 + 控制器
+Town01 / ControlLoss
 ```
 
-在此基础上，再加入：
+本次运行范围：
 
 ```text
-LLM / VLM 解释模块 + DriveLM 风格问答链 + 结构化决策理由
+关键帧图片：274
+QA 数量：7432
 ```
 
-## 13. 是否继续深入复现
+需要说明：
 
-当前判断：建议继续做最小复现实验，但不建议把 DriveLM 作为唯一主线 baseline。
+- 本次运行的是 `Town01/ControlLoss` 子集的全部数据。
+- 7432 是 QA 数量，不是图片数量。
+- 该子集不是完整的 DriveLM-CARLA 数据集。
+- 官方 DriveLM-CARLA 标注包含 182491 个 VQA JSON。
+- 当前只下载了 `Town01/ControlLoss` 对应的 PDM-Lite CARLA 原始图片，因此其他官方标注暂时无法进行图文推理。
 
-建议复现实验优先级：
+## 服务器与环境
 
-1. 跑通官方 demo data 的数据转换流程。
-2. 跑通官方 baseline 的 inference 或 evaluation 示例。
-3. 记录环境、显存、时间、错误和输出样例。
-4. 判断是否值得下载完整数据和模型权重。
+项目路径：
 
-待实验完成后补充最终结论：
+```text
+/root/autodl-tmp/LMM-in-AutoDrive
+```
 
-- 是否成功跑通：
-- 是否适合作为正式 baseline：
-- 是否继续深入：
-- 对项目代码实现的具体迁移点：
+服务器配置：
 
-## 14. 参考资料
+```text
+CPU：Intel Xeon Platinum 8470Q，25 核
+内存：90 GB
+GPU：NVIDIA GeForce RTX 5090
+驱动版本：580.105.08
+系统 CUDA：13.0
+PyTorch CUDA Runtime：12.8
+GPU 计算能力：sm_120 / (12, 0)
+```
 
-- DriveLM paper: https://arxiv.org/abs/2312.14150
-- DriveLM official repository: https://github.com/OpenDriveLab/DriveLM
-- DriveLM project page: https://opendrivelab.com/DriveLM/
-- DriveLM challenge README: https://github.com/OpenDriveLab/DriveLM/blob/main/challenge/README.md
-- DriveLM GVQA / data details: https://github.com/OpenDriveLab/DriveLM/blob/main/docs/gvqa.md
+Conda 环境位于数据盘：
+
+```text
+/root/autodl-tmp/conda_envs/drivelm_carla
+```
+
+环境激活方式：
+
+```bash
+source /root/miniconda3/etc/profile.d/conda.sh
+conda activate /root/autodl-tmp/conda_envs/drivelm_carla
+```
+
+核心版本：
+
+```text
+Python：3.10.20
+PyTorch：2.11.0+cu128
+torchvision：0.26.0+cu128
+torchaudio：2.11.0+cu128
+NumPy：1.26.4
+OpenCV：4.6.0
+CARLA：0.9.15
+pygame：2.6.0
+```
+
+GPU 验证结果：
+
+```text
+CUDA 可用：是
+GPU：NVIDIA GeForce RTX 5090
+计算能力：(12, 0)
+GPU 矩阵运算：通过
+```
+
+RTX 5090 属于 Blackwell 架构，需要 `sm_120` 支持，因此没有安装官方旧依赖中指定的 PyTorch 2.0.0+cu117，而是保留支持 RTX 5090 的 PyTorch 2.11.0+cu128。
+
+已安装的基线依赖：
+
+```text
+sentencepiece
+fairscale
+tensorboard
+timm
+openai-clip
+tenacity
+```
+
+## 代码仓库
+
+DriveLM：
+
+```text
+experiments/drivelm/external/DriveLM
+提交版本：1de72a7
+```
+
+DriveLM-CARLA：
+
+```text
+experiments/drivelm/external/DriveLM-CARLA
+提交版本：0737c33
+```
+
+DriveLM 官方仓库提供了挑战基线，但没有直接发布完整的 CARLA 推理入口。因此，本实验在官方 LLaMA-Adapter V2 基线基础上增加了 CARLA 单相机输入适配。
+
+## 模型权重
+
+LLaMA 7B 主干权重：
+
+```text
+/root/autodl-tmp/models/llama_model_weights/tokenizer.model
+/root/autodl-tmp/models/llama_model_weights/7B/checklist.chk
+/root/autodl-tmp/models/llama_model_weights/7B/consolidated.00.pth
+/root/autodl-tmp/models/llama_model_weights/7B/params.json
+```
+
+LLaMA-Adapter V2 权重：
+
+```text
+/root/autodl-tmp/models/llama_adapter_v2/BIAS-7B.pth
+```
+
+CLIP ViT-L/14 权重缓存：
+
+```text
+/root/autodl-tmp/model_cache/clip/ViT-L-14.pt
+```
+
+本次使用的是 LLaMA-Adapter V2 `BIAS-7B` 零样本权重，不是专门在 DriveLM-CARLA 上微调后的权重。因此，本次结果反映的是通用多模态模型直接迁移到 CARLA 驾驶问答任务时的零样本性能。
+
+## RTX 5090 与 CARLA 适配
+
+完成了以下适配：
+
+1. 保留 PyTorch 2.11.0+cu128，避免旧版 CUDA 11.7 PyTorch 覆盖当前环境。
+2. 将 CLIP 权重缓存放到数据盘，避免占用系统盘。
+3. 将 CARLA 单张前视图片统一转换为以下张量结构：
+
+```text
+[批量, 视角数, 通道, 高度, 宽度]
+```
+
+单相机的视角数为 1。
+
+4. 官方代码默认按照批量 32 分配 KV Cache，本实验在模型进入推理状态前将缓存批量修改为实际批量大小。
+5. 增加每 25 条预测自动保存功能。
+6. 增加断点续跑功能。
+7. 使用 PIL 以 RGB 模式读取图片，避免 OpenCV 默认 BGR 顺序造成颜色通道错误。
+
+## CARLA 原始数据
+
+当前已下载 PDM-Lite CARLA 子集：
+
+```text
+Town01/data/ControlLoss
+```
+
+数据路径：
+
+```text
+experiments/drivelm/data/PDM_Lite_Carla_LB2
+```
+
+数据大小：
+
+```text
+约 460 MB
+```
+
+原始前视图片：
+
+```text
+分辨率：1024 × 512
+颜色模式：RGB
+```
+
+## 官方 DriveLM-CARLA 标注
+
+官方标注路径：
+
+```text
+experiments/drivelm/data/DriveLM/drivelm_carla_keyframes.txt
+experiments/drivelm/data/DriveLM/drivelm_carla_vqas
+```
+
+标注统计：
+
+```text
+drivelm_carla_keyframes.txt：196313 行
+drivelm_carla_vqas：182491 个 JSON
+解压后大小：约 5.1 GB
+```
+
+单个 VQA JSON 的主要字段：
+
+```text
+key_object_infos
+QA
+image_paths
+```
+
+QA 类别：
+
+```text
+perception：场景与目标感知
+prediction：交通参与者行为预测
+planning：自车规划与驾驶决策
+behavior：高层驾驶行为
+```
+
+QA 图关系字段：
+
+```text
+con_up
+con_down
+cluster
+layer
+object_tags
+```
+
+## 图文对齐子集
+
+基于本地已有图片与官方 DriveLM-CARLA 标注，构建了 `Town01/ControlLoss` 图文对齐子集。
+
+对齐结果：
+
+```text
+官方 VQA JSON：274
+匹配图片：274
+缺失图片：0
+```
+
+Route 分布：
+
+```text
+Route0_Rep0：41
+Route1_Rep0：39
+Route2_Rep0：60
+Route3_Rep0：44
+Route4_Rep0：51
+Route5_Rep0：39
+```
+
+对齐文件：
+
+```text
+experiments/drivelm/outputs/town01_controlloss_official_pairs.jsonl
+experiments/drivelm/outputs/town01_controlloss_official_pairs_summary.json
+```
+
+## 模型输入
+
+274 个关键帧共展开为 7432 条视觉问答记录：
+
+```text
+perception：3502
+prediction：2346
+planning：1584
+behavior：0
+总计：7432
+```
+
+中间 JSONL：
+
+```text
+experiments/drivelm/outputs/town01_controlloss_model_inputs.jsonl
+experiments/drivelm/outputs/town01_controlloss_model_inputs_30q.jsonl
+```
+
+LLaMA-Adapter 输入：
+
+```text
+experiments/drivelm/outputs/town01_controlloss_llama_full.json
+experiments/drivelm/outputs/town01_controlloss_llama_30q.json
+```
+
+30 条输入用于后续快速冒烟测试，完整实验使用 7432 条输入。
+
+## 推理配置
+
+```text
+模型：LLaMA-Adapter V2 BIAS-7B
+输入数量：7432
+批量大小：1
+数据加载进程：2
+最大生成长度：256
+temperature：0.2
+top_p：0.1
+保存间隔：25 条
+断点续跑：开启
+```
+
+批量大小 4 可以正常运行，但由于不同问题的回答长度差异较大，同一批次中的短回答需要等待最长回答生成结束，实际吞吐低于批量大小 1，因此完整实验使用批量大小 1。
+
+## 完整推理结果
+
+```text
+完成预测：7432 / 7432
+唯一 ID：7432
+重复 ID：0
+空预测：0
+覆盖率：100%
+完整生成时间：1 小时 24 分 59 秒
+平均吞吐：约 1.46 条 QA/秒
+峰值 CUDA 显存：14.02 GiB
+```
+
+最终预测：
+
+```text
+experiments/drivelm/outputs/drivelm_llama_adapter_predictions_full.json
+```
+
+最终指标：
+
+```text
+experiments/drivelm/outputs/drivelm_llama_adapter_metrics_full.json
+```
+
+完整日志：
+
+```text
+experiments/drivelm/outputs/llama_full.log
+```
+
+## 本地诊断指标
+
+以下指标用于分析当前 CARLA 子集上的模型表现，不是 DriveLM 官方挑战总分。
+
+原因：
+
+1. CARLA 标注不包含 nuScenes 挑战评测使用的 `tag` 字段。
+2. 官方总分包含 GPT 评分，需要单独配置 OpenAI API。
+3. 本地 BLEU 使用纯 Python 加一平滑实现，不等同于官方 COCO 工具链。
+4. 本次只覆盖 `Town01/ControlLoss`，不能代表完整 DriveLM-CARLA 数据集。
+
+总体指标：
+
+| 指标 | 结果 |
+|---|---:|
+| 样本数 | 7432 |
+| 空预测数 | 0 |
+| 严格完全匹配 | 0.0054 |
+| 归一化完全匹配 | 0.0054 |
+| Token F1 | 0.4761 |
+| ROUGE-L | 0.4416 |
+| BLEU-1 | 0.3258 |
+| BLEU-2 | 0.2586 |
+| BLEU-3 | 0.2054 |
+| BLEU-4 | 0.1590 |
+
+严格完全匹配数量：
+
+```text
+40 / 7432
+```
+
+分类指标：
+
+| 类别 | 数量 | Token F1 | ROUGE-L | BLEU-1 | BLEU-4 |
+|---|---:|---:|---:|---:|---:|
+| perception | 3502 | 0.5491 | 0.5129 | 0.4623 | 0.2628 |
+| prediction | 2346 | 0.4327 | 0.3969 | 0.2278 | 0.0976 |
+| planning | 1584 | 0.3791 | 0.3500 | 0.2766 | 0.1041 |
+
+类别表现排序：
+
+```text
+perception > prediction > planning
+```
+
+Token F1 分布：
+
+```text
+总体平均值：0.4761
+总体中位数：0.5000
+10% 分位数：0.2353
+90% 分位数：0.6667
+```
+
+Token F1 不低于 0.5 的样本数：
+
+```text
+perception：2703 / 3502
+prediction：949 / 2346
+planning：330 / 1584
+```
+
+Token F1 低于 0.25 的样本数：
+
+```text
+perception：132 / 3502
+prediction：408 / 2346
+planning：306 / 1584
+```
+
+planning 类没有样本达到 Token F1 0.75，说明模型在复杂驾驶决策问题上缺少稳定的高质量输出。
+
+## 结果分析
+
+感知类表现最好。模型能够较好识别车辆颜色、车辆相对位置、车道线颜色、交通灯状态和基础道路结构。
+
+较好样例：
+
+```text
+问题：
+自车左侧是什么车道线？
+
+标准答案：
+自车左侧是黄色虚线。
+
+模型回答：
+自车左侧有黄色车道线。
+```
+
+该回答主体、方位和颜色基本正确，但遗漏了“虚线”属性。
+
+prediction 类表现明显低于 perception。模型对交通灯状态等短答案问题偶尔可以完全正确，但对车辆运动方向、车道风险和潜在冲突关系，容易生成通用驾驶描述。
+
+完全正确样例：
+
+```text
+问题：
+交通灯当前是什么状态？
+
+标准答案：
+交通灯是红色。
+
+模型回答：
+交通灯是红色。
+```
+
+prediction 类共有 40 条严格完全匹配，占该类别约 1.71%。全部严格完全匹配样本均来自 prediction 类，主要原因是部分问题答案较短且形式固定。
+
+planning 类表现最弱。此类问题要求模型同时识别道路环境、判断交通参与者是否影响自车路径、推断风险并给出驾驶动作。通用 BIAS-7B 缺少针对 DriveLM 图结构和驾驶规则的训练，容易使用一般交通常识替代当前图片证据。
+
+典型错误：
+
+```text
+问题：
+自车应该如何根据停车标志行动？
+
+标准答案：
+当前没有影响自车的停车标志。
+
+模型回答：
+自车应该在停车标志前完全停车，然后再继续行驶。
+```
+
+模型直接接受问题中的“停车标志”前提，没有先验证图片中是否真的存在影响自车的停车标志。
+
+## Yes/No 肯定偏置
+
+标准答案以 Yes 或 No 开头的问题共有：
+
+```text
+1822 条
+```
+
+模型在这 1822 条问题中全部以 Yes 回答。
+
+混淆统计：
+
+```text
+标准答案 Yes，模型回答 Yes：333
+标准答案 No，模型回答 Yes：1489
+标准答案 No，模型回答 No：0
+```
+
+总体 Yes/No 准确率：
+
+```text
+333 / 1822 = 18.28%
+```
+
+分类准确率：
+
+```text
+perception：66 / 786 = 8.40%
+prediction：0 / 274 = 0%
+planning：267 / 762 = 35.04%
+```
+
+这说明模型没有可靠地依据图片完成二分类判断，而是存在非常强的肯定回答偏置。
+
+## 输出长度问题
+
+平均答案长度：
+
+| 类别 | 模型平均词数 | 标准答案平均词数 | 长度比例 |
+|---|---:|---:|---:|
+| 总体 | 20.87 | 11.37 | 1.84 |
+| perception | 15.90 | 11.28 | 1.41 |
+| prediction | 23.64 | 9.74 | 2.43 |
+| planning | 27.78 | 13.97 | 1.99 |
+
+最长模型回答达到：
+
+```text
+209 个词
+```
+
+模型经常在正确或部分正确的短答案后继续生成泛化描述，导致：
+
+- 引入图片中不存在的目标、天气或道路信息。
+- 降低 BLEU 和 ROUGE 指标。
+- 掩盖原本可能正确的核心答案。
+- 增加推理时间。
+- 增加视觉幻觉风险。
+
+## 幻觉问题
+
+典型感知幻觉：
+
+```text
+问题：
+场景中有哪些重要目标？
+
+标准答案：
+场景中没有重要目标。
+
+模型回答：
+场景中包括一辆汽车、一栋建筑和一棵树，并继续描述这些目标的位置。
+```
+
+模型在标准答案明确表示没有重要目标时，仍主动生成多个物体，说明其容易依赖常见街景模板，而不是严格依据当前图片。
+
+典型预测幻觉：
+
+```text
+标准答案：
+自车需要注意对向车道的来车。
+
+模型回答：
+模型描述了左车道、右车道和中央车道，并生成大量通用驾驶安全建议。
+```
+
+该回答语言流畅，但没有准确回答具体需要关注的车道。
+
+## 总体结论
+
+本实验成功完成了 DriveLM 官方 LLaMA-Adapter V2 7B 基线在 `Town01/ControlLoss` CARLA 图文子集上的端到端零样本推理。
+
+工程层面：
+
+- RTX 5090 的 `sm_120` 环境适配成功。
+- 274 张图片与官方标注全部对齐。
+- 7432 条 QA 全部完成推理。
+- 无重复、无缺失、无空预测。
+- 峰值显存为 14.02 GiB。
+- 断点保存和恢复机制工作正常。
+
+模型性能层面：
+
+- 简单视觉感知能力相对较好。
+- 行为预测能力明显弱于感知。
+- 复杂驾驶规划能力最弱。
+- 模型存在严重的 Yes 肯定偏置。
+- 回答普遍过长。
+- 模型容易生成无关描述。
+- 对不存在的物体、标志和道路条件存在明显幻觉。
+- 通用 BIAS-7B 零样本权重不足以可靠解决 DriveLM-CARLA 驾驶问答任务。
+
+本次结果适合作为零样本基线，不应被解释为经过 DriveLM-CARLA 微调后的模型性能。

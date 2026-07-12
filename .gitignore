@@ -1,55 +1,74 @@
-# Python
+# 本阶段仅提交 docs/baseline_research/ 中的模型调研结果。
+# experiments/ 是本地复现实验工作区，不再提交新增内容。
+/experiments/
+
+# 本地数据、外部仓库与生成结果
+/data/
+/datasets/
+/external/
+/outputs/
+/logs/
+/tmp/
+/temp/
+/cache/
+/.cache/
+
+# 模型、权重与检查点
+/models/
+/weights/
+/checkpoints/
+*.ckpt
+*.pth
+*.pt
+*.bin
+*.safetensors
+
+# 数据压缩包
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# Python 缓存与构建产物
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.so
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.ipynb_checkpoints/
 
-# Virtual environments
+# 虚拟环境
 .venv/
 venv/
 env/
-*.egg-info/
+.conda/
+conda_envs/
 
-# OS / editor
+# 编辑器与系统文件
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
 
-# Logs and runtime outputs
-*.log
-logs/
-tmp/
-temp/
-cache/
-.cache/
+# 密钥与本机配置
+.env
+.env.*
+!.env.example
+*.pem
+*.key
 
-# Large experiment assets
-data/
-datasets/
-weights/
-checkpoints/
-models/
-*.ckpt
-*.pth
-*.pt
-*.safetensors
-
-# DriveLM experiment artifacts
-experiments/*/external/
-experiments/*/data/
-experiments/*/outputs/
-experiments/*/logs/
-experiments/*/checkpoints/
-experiments/*/weights/
-
-# Keep lightweight experiment notes tracked
-!experiments/
-!experiments/README.md
-!experiments/*/
-!experiments/*/README.md
-!experiments/*/run_log.md
+# 训练与实验跟踪目录
+wandb/
+runs/
