@@ -1,0 +1,90 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="DuplicatedCode" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <Languages>
+        <language minSize="203" name="Python" />
+      </Languages>
+    </inspection_tool>
+    <inspection_tool class="PyCompatibilityInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ourVersions">
+        <value>
+          <list size="2">
+            <item index="0" class="java.lang.String" itemvalue="3.13" />
+            <item index="1" class="java.lang.String" itemvalue="3.7" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="cuda-cccl" />
+          <option value="cuda-cccl_win-64" />
+          <option value="cuda-cudart-dev" />
+          <option value="cuda-libraries-dev" />
+          <option value="cuda-nvrtc-dev" />
+          <option value="cuda-profiler-api" />
+          <option value="intel-openmp" />
+          <option value="lcms2" />
+          <option value="lerc" />
+          <option value="libcublas-dev" />
+          <option value="libcufft-dev" />
+          <option value="libcurand-dev" />
+          <option value="libcusolver-dev" />
+          <option value="libcusparse-dev" />
+          <option value="libdeflate" />
+          <option value="libhwloc" />
+          <option value="libnpp-dev" />
+          <option value="libnvjpeg-dev" />
+          <option value="libtiff" />
+          <option value="libuv" />
+          <option value="libwebp" />
+          <option value="libwebp-base" />
+          <option value="libxml2" />
+          <option value="mkl" />
+          <option value="openjpeg" />
+          <option value="pillow" />
+          <option value="pytorch" />
+          <option value="setuptools" />
+          <option value="sympy" />
+          <option value="tbb" />
+          <option value="tbb-devel" />
+          <option value="ucrt" />
+          <option value="vc" />
+          <option value="vc14_runtime" />
+          <option value="vs2015_runtime" />
+          <option value="win_inet_pton" />
+          <option value="torchaudio" />
+          <option value="torchvision" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N802" />
+          <option value="N806" />
+          <option value="N803" />
+          <option value="N812" />
+          <option value="N814" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyStubPackagesAdvertiser" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="pandas" />
+          <option value="scipy" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="bool.*" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
