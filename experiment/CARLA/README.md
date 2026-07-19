@@ -1,8 +1,8 @@
 # CARLA 自动驾驶场景仿真平台
 
 一个基于 CARLA 的模块化自动驾驶仿真场景构建框架。
-CARLA: 0.9.16
-python: Python 3.12.13
+-CARLA: 0.9.16
+-Python 3.12.13
 ## 功能特点
 
 - Ego车辆仿真
