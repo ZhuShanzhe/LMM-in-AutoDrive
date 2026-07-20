@@ -1,5 +1,7 @@
-# 本阶段仅提交 docs/baseline_research/ 中的模型调研结果。
-# experiments/ 是本地复现实验工作区，不再提交新增内容。
+# 当前提交结构化指令解析代码、接口、示例和 baseline 调研文档。
+# 实际数据、模型、环境、缓存和运行结果不提交。
+
+# 已结束的本地复现实验工作区
 /experiments/
 
 # 本地数据、外部仓库与生成结果
@@ -12,6 +14,15 @@
 /temp/
 /cache/
 /.cache/
+
+# 结构化指令解析模块的本地大文件
+/structured_command_parser/data/*
+!/structured_command_parser/data/README.md
+/structured_command_parser/models/
+/structured_command_parser/outputs/
+/structured_command_parser/results/
+/structured_command_parser/logs/
+/structured_command_parser/cache/
 
 # 模型、权重与检查点
 /models/
