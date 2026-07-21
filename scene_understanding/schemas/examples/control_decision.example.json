@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "request_id": "complex-0001",
+  "frame_id": "carla_000123",
+  "decision_status": "READY",
+  "action": "decelerate",
+  "target_speed_kmh": 36.0,
+  "target_lane": null,
+  "target_location": null,
+  "emergency": false,
+  "reason": "driving_intent_adjust_speed",
+  "parse_status": "VALID",
+  "parse_confidence": 0.96,
+  "source_step_id": "step_1",
+  "source_step_action": "ADJUST_SPEED",
+  "source_step_count": 3,
+  "matched_entity_id": "carla_actor_42",
+  "risk_level": "medium",
+  "risk_reason_codes": ["distance_10_to_25m"],
+  "blocked_reason_codes": []
+}
