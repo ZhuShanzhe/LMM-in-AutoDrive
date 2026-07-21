@@ -1,0 +1,453 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xh-202602.local/schemas/driving_intent-1.0.0.json",
+  "title": "XH-202602 Driving Intent",
+  "description": "Natural-language driving intent passed to scene alignment and decision modules.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "input",
+    "intent",
+    "parse_result"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "input": {
+      "$ref": "#/$defs/input"
+    },
+    "intent": {
+      "$ref": "#/$defs/intent"
+    },
+    "parse_result": {
+      "$ref": "#/$defs/parseResult"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "parse_result": {
+            "properties": {
+              "status": {
+                "const": "VALID"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "intent": {
+            "properties": {
+              "steps": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modality",
+        "language",
+        "raw_text",
+        "normalized_text"
+      ],
+      "properties": {
+        "modality": {
+          "enum": [
+            "TEXT",
+            "VOICE"
+          ]
+        },
+        "language": {
+          "type": "string",
+          "minLength": 2
+        },
+        "raw_text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "normalized_text": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "category",
+        "urgency",
+        "steps",
+        "constraints"
+      ],
+      "properties": {
+        "category": {
+          "enum": [
+            "BASIC_CONTROL",
+            "COMPLEX_OBSTACLE_AVOIDANCE",
+            "EMERGENCY_RESPONSE",
+            "NAVIGATION",
+            "META_CONTROL"
+          ]
+        },
+        "urgency": {
+          "enum": [
+            "NORMAL",
+            "URGENT",
+            "EMERGENCY"
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "constraints": {
+          "$ref": "#/$defs/constraints"
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step_id",
+        "action",
+        "parameters",
+        "trigger",
+        "depends_on",
+        "preconditions",
+        "on_blocked"
+      ],
+      "properties": {
+        "step_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+        },
+        "action": {
+          "enum": [
+            "KEEP_LANE",
+            "SET_SPEED",
+            "ADJUST_SPEED",
+            "STOP",
+            "CHANGE_LANE",
+            "TURN",
+            "YIELD",
+            "PULL_OVER",
+            "OVERTAKE",
+            "AVOID",
+            "EMERGENCY_BRAKE",
+            "RESUME",
+            "CANCEL"
+          ]
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "target": {
+          "$ref": "#/$defs/target"
+        },
+        "parameters": {
+          "$ref": "#/$defs/parameters"
+        },
+        "trigger": {
+          "$ref": "#/$defs/trigger"
+        },
+        "completion": {
+          "$ref": "#/$defs/completion"
+        },
+        "depends_on": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "preconditions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "LEFT_LANE_EXISTS",
+              "RIGHT_LANE_EXISTS",
+              "LEFT_LANE_SAFE",
+              "RIGHT_LANE_SAFE",
+              "TARGET_LANE_SAFE",
+              "LANE_CHANGE_LEGAL",
+              "JUNCTION_REACHED",
+              "TARGET_VISIBLE",
+              "PATH_CLEAR"
+            ]
+          }
+        },
+        "on_blocked": {
+          "enum": [
+            "WAIT_FOR_SAFE",
+            "SAFE_STOP",
+            "REQUEST_CLARIFICATION",
+            "ABORT_COMMAND",
+            "SKIP_STEP"
+          ]
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "relation"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "VEHICLE",
+            "SLOW_VEHICLE",
+            "PEDESTRIAN",
+            "CYCLIST",
+            "OBSTACLE",
+            "TRAFFIC_CONE",
+            "CONSTRUCTION_ZONE",
+            "TRAFFIC_LIGHT",
+            "JUNCTION",
+            "LANE",
+            "DESTINATION",
+            "ROAD_HAZARD",
+            "UNKNOWN"
+          ]
+        },
+        "relation": {
+          "enum": [
+            "AHEAD",
+            "BEHIND",
+            "LEFT",
+            "RIGHT",
+            "AHEAD_CROSSING",
+            "ADJACENT",
+            "AT_JUNCTION",
+            "NEAR_DESTINATION",
+            "UNSPECIFIED"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "LEFT",
+            "RIGHT",
+            "STRAIGHT"
+          ]
+        },
+        "change": {
+          "enum": [
+            "INCREASE",
+            "DECREASE",
+            "HOLD"
+          ]
+        },
+        "target_speed_mps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "speed_delta_mps": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "lane_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "source_value": {
+          "type": "number"
+        },
+        "source_unit": {
+          "enum": [
+            "km/h",
+            "m/s",
+            "m",
+            "s"
+          ]
+        }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "IMMEDIATE",
+            "AFTER_STEP",
+            "AT_DISTANCE",
+            "AT_JUNCTION",
+            "OBJECT_PRESENT",
+            "WHEN_SAFE",
+            "CONDITION"
+          ]
+        },
+        "step_id": {
+          "type": "string"
+        },
+        "distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "ACTION_REACHED",
+            "TARGET_CLEARED",
+            "TARGET_SPEED_REACHED",
+            "LANE_CHANGE_COMPLETED",
+            "JUNCTION_EXITED",
+            "VEHICLE_STOPPED"
+          ]
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "safety_first",
+        "obey_traffic_rules",
+        "driving_style"
+      ],
+      "properties": {
+        "safety_first": {
+          "const": true
+        },
+        "obey_traffic_rules": {
+          "const": true
+        },
+        "driving_style": {
+          "enum": [
+            "NORMAL",
+            "CONSERVATIVE"
+          ]
+        },
+        "max_speed_mps": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "parseResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "method",
+        "model",
+        "confidence",
+        "missing_slots",
+        "warnings",
+        "latency_ms"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "VALID",
+            "NEEDS_CLARIFICATION",
+            "UNSUPPORTED",
+            "INVALID"
+          ]
+        },
+        "method": {
+          "enum": [
+            "RULE",
+            "LLM",
+            "HYBRID"
+          ]
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "missing_slots": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "clarification_question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "latency_ms": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
+
