@@ -31,7 +31,7 @@ def summarize(records, scenario, goal_distance_m=None):
         and record["ego"]["speed_kmh"] > record["intent"]["target_speed_kmh"] + 5.0
     )
 
-    goal_reached = True if goal_distance_m is None else distance_m >= float(goal_distance_m)
+    goal_reached = False if goal_distance_m is None else distance_m >= float(goal_distance_m)
     violation_free = collisions == 0 and lane_invasions == 0 and speeding_frames == 0
     task_completed = bool(goal_reached and violation_free)
     return {

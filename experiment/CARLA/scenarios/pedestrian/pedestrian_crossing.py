@@ -59,6 +59,8 @@ class PedestrianCrossingScenario(BaseScenario):
 
         self.walker_goal = None
 
+        self.walker_start = None
+
 
 
         self.frame = 0
@@ -66,6 +68,17 @@ class PedestrianCrossingScenario(BaseScenario):
 
 
         self.timeout = 30.0
+
+        self.walker_goal_tolerance_m = 1.5
+        self.clearance_growth_m = 4.0
+        self.walker_crossing_complete = False
+        self.walker_reached_far_side = False
+        self.success_condition = {
+            "type": "walker_crossed_and_cleared",
+            "walker_goal_tolerance_m": self.walker_goal_tolerance_m,
+            "clearance_growth_m": self.clearance_growth_m,
+        }
+        self.failure_conditions = ["collision", "timeout"]
 
 
 
@@ -317,6 +330,8 @@ class PedestrianCrossingScenario(BaseScenario):
             ego_transform.location.z + 0.5
 
         )
+
+        self.walker_start = walker_start
 
 
 
@@ -624,7 +639,7 @@ class PedestrianCrossingScenario(BaseScenario):
 
         self.metrics["simulation_time"] = (
 
-            self.frame * 0.05
+            self.frame * self.fixed_delta_s
 
         )
 
@@ -690,6 +705,36 @@ class PedestrianCrossingScenario(BaseScenario):
                 control
 
             )
+
+            ego_location = self.ego_vehicle.get_location()
+            walker_location = self.walker.get_location()
+            walker_distance = ego_location.distance(walker_location)
+            walker_goal_distance = walker_location.distance(self.walker_goal)
+            crossed_distance_m = (
+                (walker_location.x - self.walker_start.x) * self.cross_direction.x
+                + (walker_location.y - self.walker_start.y) * self.cross_direction.y
+            )
+            previous_min = self.metrics.get("min_distance")
+            self.metrics["min_distance"] = (
+                walker_distance if previous_min is None else min(previous_min, walker_distance)
+            )
+            self.metrics["walker_distance_m"] = round(walker_distance, 3)
+            self.metrics["walker_goal_distance_m"] = round(walker_goal_distance, 3)
+            self.metrics["walker_crossed_distance_m"] = round(crossed_distance_m, 3)
+
+            if crossed_distance_m >= 10.0 - self.walker_goal_tolerance_m:
+                self.walker_reached_far_side = True
+
+            cleared_after_closest_approach = (
+                walker_distance >= self.metrics["min_distance"] + self.clearance_growth_m
+            )
+            if (
+                self.walker_reached_far_side
+                and cleared_after_closest_approach
+            ):
+                self.walker_crossing_complete = True
+                self.success("walker_crossed_and_cleared")
+                return
 
 
 
@@ -780,6 +825,14 @@ class PedestrianCrossingScenario(BaseScenario):
                 self.collision_actor.id
 
             )
+
+            ,
+
+            "walker_crossing_complete": self.walker_crossing_complete,
+
+            "walker_reached_far_side": self.walker_reached_far_side,
+
+            "metrics": self.metrics
 
         }
 

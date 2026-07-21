@@ -123,21 +123,22 @@ def make_video_overlay(record):
     intent = record.get("intent", {})
     control = record.get("control", {})
     ego = record.get("ego", {})
-    return [
-        "scenario={0} frame={1} sim={2:.2f}s".format(
-            record.get("scenario", ""), record.get("frame", 0), record.get("sim_time_s", 0.0)
-        ),
-        "intent={0} target={1:.1f}km/h emergency={2}".format(
-            intent.get("action", ""), intent.get("target_speed_kmh", 0.0), intent.get("emergency", False)
-        ),
-        "ego={0:.1f}km/h throttle={1:.2f} brake={2:.2f} steer={3:.2f}".format(
-            ego.get("speed_kmh", 0.0), control.get("throttle", 0.0), control.get("brake", 0.0), control.get("steer", 0.0)
-        ),
-        "status={0} reason={1} collisions={2} lane_events={3}".format(
-            status.get("status", ""), status.get("reason", ""),
-            events.get("collision_count", 0), events.get("lane_invasion_count", 0),
-        ),
-    ]
+    return {
+        "scenario": record.get("scenario", ""),
+        "frame": record.get("frame", 0),
+        "sim_time_s": record.get("sim_time_s", 0.0),
+        "action": intent.get("action", ""),
+        "reason": intent.get("reason", "") or status.get("reason", ""),
+        "target_speed_kmh": intent.get("target_speed_kmh", 0.0),
+        "emergency": intent.get("emergency", False),
+        "speed_kmh": ego.get("speed_kmh", 0.0),
+        "throttle": control.get("throttle", 0.0),
+        "brake": control.get("brake", 0.0),
+        "steer": control.get("steer", 0.0),
+        "status": status.get("status", "RUNNING"),
+        "collisions": events.get("collision_count", 0),
+        "lane_events": events.get("lane_invasion_count", 0),
+    }
 
 
 def parse_args():
@@ -176,6 +177,7 @@ def main():
     world.apply_settings(settings)
 
     scenario = SCENARIOS[args.scenario](world, external_control=True)
+    scenario.fixed_delta_s = args.fixed_delta_s
     monitor = None
     camera = None
     logger = None
@@ -226,6 +228,7 @@ def main():
         travelled_distance_m = 0.0
         start_sim_time = world.get_snapshot().timestamp.elapsed_seconds
         max_ticks = int(args.duration_s / args.fixed_delta_s)
+        runner_stop_reason = "duration_limit"
 
         for _ in range(max_ticks):
             scenario.tick()
@@ -269,25 +272,33 @@ def main():
             if camera is not None:
                 camera.save_frame(
                     snapshot.frame,
-                    overlay_lines=make_video_overlay(record) if args.video_overlay else None,
+                    overlay=make_video_overlay(record) if args.video_overlay else None,
                 )
             logger.log_frame(record)
             records.append(record)
             if scenario.finished():
+                runner_stop_reason = "scenario_{0}".format(
+                    call_scenario_method(scenario, "get_status", {}).get("status", "finished").lower()
+                )
                 break
             if args.stop_when_goal_reached and args.goal_distance_m is not None:
                 if travelled_distance_m >= args.goal_distance_m:
+                    runner_stop_reason = "external_goal_distance_reached"
                     break
 
         metrics = summarize(records, args.scenario, args.goal_distance_m)
         final_status = call_scenario_method(scenario, "get_status", {})
         metrics["scenario_status"] = final_status
+        metrics["runner_stop_reason"] = runner_stop_reason
         if final_status.get("status") in ("SUCCESS", "FAILURE"):
             metrics["task_completed"] = (
                 final_status["status"] == "SUCCESS"
                 and metrics.get("violation_free", False)
             )
             metrics["scenario_reason"] = final_status.get("reason", "")
+        else:
+            metrics["task_completed"] = False
+            metrics["scenario_reason"] = runner_stop_reason
         logger.write_summary(metrics)
         print("[Done] Metrics written to {0}".format(output_dir))
         print(metrics)

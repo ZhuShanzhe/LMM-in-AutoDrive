@@ -114,6 +114,19 @@ class EmergencyBrakeScenario(BaseScenario):
 
         self.goal_location = None
 
+        self.safe_stop_speed_kmh = 0.5
+        self.safe_stop_hold_s = 1.0
+        self.min_safe_gap_m = 5.0
+        self.safe_stop_elapsed_s = 0.0
+        self.brake_trigger_time_s = None
+        self.success_condition = {
+            "type": "safe_stop_after_front_brake",
+            "max_ego_speed_kmh": self.safe_stop_speed_kmh,
+            "hold_s": self.safe_stop_hold_s,
+            "min_front_gap_m": self.min_safe_gap_m,
+        }
+        self.failure_conditions = ["collision", "timeout", "unsafe_stop_gap"]
+
 
 
 
@@ -682,7 +695,7 @@ class EmergencyBrakeScenario(BaseScenario):
         # 更新时间
         # =====================
 
-        self.metrics["simulation_time"] += 0.05
+        self.metrics["simulation_time"] += self.fixed_delta_s
 
 
 
@@ -783,6 +796,34 @@ class EmergencyBrakeScenario(BaseScenario):
 
 
             self.brake_triggered = True
+            self.brake_trigger_time_s = self.metrics["simulation_time"]
+            self.metrics["brake_triggered"] = True
+
+        if self.brake_triggered:
+            ego_velocity = self.ego_vehicle.get_velocity()
+            ego_speed_kmh = 3.6 * (
+                ego_velocity.x ** 2 + ego_velocity.y ** 2 + ego_velocity.z ** 2
+            ) ** 0.5
+            front_distance = self.ego_vehicle.get_location().distance(
+                self.front_vehicle.get_location()
+            )
+            previous_min = self.metrics.get("min_distance")
+            self.metrics["min_distance"] = (
+                front_distance if previous_min is None else min(previous_min, front_distance)
+            )
+            self.metrics["front_distance_m"] = round(front_distance, 3)
+            self.metrics["ego_speed_kmh"] = round(ego_speed_kmh, 3)
+
+            if ego_speed_kmh <= self.safe_stop_speed_kmh:
+                self.safe_stop_elapsed_s += self.fixed_delta_s
+                if self.safe_stop_elapsed_s >= self.safe_stop_hold_s:
+                    if front_distance >= self.min_safe_gap_m:
+                        self.success("safe_stop_after_front_brake")
+                    else:
+                        self.failure("unsafe_stop_gap")
+                    return
+            else:
+                self.safe_stop_elapsed_s = 0.0
 
 
 
@@ -870,6 +911,12 @@ class EmergencyBrakeScenario(BaseScenario):
                 self.collision_actor.id
 
             )
+
+            ,
+
+            "brake_triggered": self.brake_triggered,
+
+            "metrics": self.metrics
 
         }
 

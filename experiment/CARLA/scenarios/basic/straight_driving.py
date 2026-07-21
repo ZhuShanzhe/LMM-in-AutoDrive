@@ -58,6 +58,16 @@ class StraightDrivingScenario(BaseScenario):
 
         self.timeout = 30.0
 
+        self.goal_tolerance_m = 3.0
+        self.max_lateral_offset_m = 1.0
+        self.route_forward = None
+        self.success_condition = {
+            "type": "goal_with_lane_centering",
+            "goal_tolerance_m": self.goal_tolerance_m,
+            "max_lateral_offset_m": self.max_lateral_offset_m,
+        }
+        self.failure_conditions = ["collision", "timeout"]
+
 
 
 
@@ -565,6 +575,8 @@ class StraightDrivingScenario(BaseScenario):
 
         )
 
+        self.route_forward = forward
+
 
 
         distance = 0
@@ -655,7 +667,7 @@ class StraightDrivingScenario(BaseScenario):
 
 
 
-        self.metrics["simulation_time"] += 0.05
+        self.metrics["simulation_time"] += self.fixed_delta_s
 
 
 
@@ -710,12 +722,23 @@ class StraightDrivingScenario(BaseScenario):
 
 
 
-            if distance < 3.0:
+            delta_x = ego_location.x - self.goal_location.x
+            delta_y = ego_location.y - self.goal_location.y
+            if self.route_forward is None:
+                lateral_offset = 0.0
+            else:
+                lateral_offset = abs(
+                    delta_x * -self.route_forward.y + delta_y * self.route_forward.x
+                )
+            self.metrics["goal_distance_m"] = round(distance, 3)
+            self.metrics["lateral_offset_m"] = round(lateral_offset, 3)
+
+            if distance < self.goal_tolerance_m and lateral_offset <= self.max_lateral_offset_m:
 
 
                 self.success(
 
-                    "ego_reached_goal"
+                    "ego_reached_goal_centered"
 
                 )
 
@@ -766,6 +789,10 @@ class StraightDrivingScenario(BaseScenario):
                 self.collision_actor.id
 
             )
+
+            ,
+
+            "metrics": self.metrics
 
         }
 

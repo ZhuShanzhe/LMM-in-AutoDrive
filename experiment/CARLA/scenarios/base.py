@@ -21,6 +21,9 @@ class BaseScenario:
 
         self.external_control = external_control
 
+        # Set by the experiment runner to keep scenario clocks and CARLA ticks aligned.
+        self.fixed_delta_s = 0.05
+
 
 
         # =====================
