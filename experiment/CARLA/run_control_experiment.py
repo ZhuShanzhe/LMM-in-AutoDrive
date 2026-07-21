@@ -123,14 +123,39 @@ def make_video_overlay(record):
     intent = record.get("intent", {})
     control = record.get("control", {})
     ego = record.get("ego", {})
+    scenario_name = record.get("scenario", "")
+    action = intent.get("action", "")
+    emergency = bool(intent.get("emergency", False))
+    if scenario_name == "pedestrian_crossing":
+        asr_text = "前方行人横穿，减速避让"
+    elif scenario_name == "emergency_brake":
+        asr_text = "前车紧急制动，立即刹车" if emergency else "保持车距，正常行驶"
+    else:
+        asr_text = "保持当前车道，匀速前进至终点"
+    if emergency:
+        risk_level = "HIGH"
+        policy_state = "EMERGENCY_BRAKING"
+    elif action in ("decelerate", "stop"):
+        risk_level = "MEDIUM"
+        policy_state = "DECELERATING"
+    else:
+        risk_level = "LOW"
+        policy_state = "NORMAL_DRIVING"
+    if status.get("status") == "SUCCESS":
+        policy_state = "COMPLETED"
+    elif status.get("status") == "FAILURE":
+        policy_state = "FAILED"
     return {
-        "scenario": record.get("scenario", ""),
+        "scenario": scenario_name,
         "frame": record.get("frame", 0),
         "sim_time_s": record.get("sim_time_s", 0.0),
-        "action": intent.get("action", ""),
+        "asr_text": asr_text,
+        "action": action,
         "reason": intent.get("reason", "") or status.get("reason", ""),
         "target_speed_kmh": intent.get("target_speed_kmh", 0.0),
-        "emergency": intent.get("emergency", False),
+        "emergency": emergency,
+        "risk_level": risk_level,
+        "policy_state": policy_state,
         "speed_kmh": ego.get("speed_kmh", 0.0),
         "throttle": control.get("throttle", 0.0),
         "brake": control.get("brake", 0.0),
@@ -161,6 +186,7 @@ def parse_args():
     parser.add_argument("--video-fps", type=float, default=30.0)
     parser.add_argument("--ffmpeg", default=None, help="Path to ffmpeg.exe for --video-output")
     parser.add_argument("--video-overlay", action="store_true", help="Overlay per-frame run telemetry on direct video")
+    parser.add_argument("--terminal-hold-s", type=float, default=2.0, help="Seconds to hold SUCCESS/FAILURE video frame")
     return parser.parse_args()
 
 
@@ -288,6 +314,8 @@ def main():
 
         metrics = summarize(records, args.scenario, args.goal_distance_m)
         final_status = call_scenario_method(scenario, "get_status", {})
+        if camera is not None and final_status.get("status") in ("SUCCESS", "FAILURE"):
+            camera.hold_last_video_frame(args.terminal_hold_s)
         metrics["scenario_status"] = final_status
         metrics["runner_stop_reason"] = runner_stop_reason
         if final_status.get("status") in ("SUCCESS", "FAILURE"):

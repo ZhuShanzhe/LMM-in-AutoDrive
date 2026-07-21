@@ -1,6 +1,7 @@
 """Optional front-camera recorder for experiment evidence and demo videos."""
 
 from collections import deque
+import math
 import os
 import queue
 import time
@@ -92,9 +93,12 @@ class ExperimentCamera:
             self.video_writer.write_raw(raw_frame)
         return True
 
-    def _render_overlay(self, raw_frame, overlay):
-        import math
+    def hold_last_video_frame(self, duration_s):
+        if self.video_writer is None:
+            return 0
+        return self.video_writer.append_last_frame(round(max(0.0, float(duration_s)) * self.video_fps))
 
+    def _render_overlay(self, raw_frame, overlay):
         from PIL import Image, ImageDraw, ImageFont
 
         image = Image.frombuffer(
@@ -103,7 +107,7 @@ class ExperimentCamera:
         draw = ImageDraw.Draw(image, "RGBA")
 
         def font(size, bold=False):
-            name = "consolab.ttf" if bold else "consola.ttf"
+            name = "msyhbd.ttc" if bold else "msyh.ttc"
             try:
                 return ImageFont.truetype(os.path.join("C:\\Windows\\Fonts", name), size)
             except OSError:
@@ -118,13 +122,23 @@ class ExperimentCamera:
         }.get(status, (230, 230, 230, 255))
         text_color = (244, 247, 250, 255)
         muted_color = (182, 192, 204, 255)
-
-        panel = (28, 28, min(self.width - 28, 1190), 428)
-        draw.rounded_rectangle(panel, radius=12, fill=(8, 12, 18, 220), outline=(79, 94, 110, 210), width=2)
         speed_kmh = float(overlay.get("speed_kmh", 0.0))
         target_speed_kmh = float(overlay.get("target_speed_kmh", 0.0))
-        gauge_center = (178, 214)
-        gauge_radius = 116
+
+        left_panel = (24, 24, 322, 264)
+        right_panel = (self.width - 720, 24, self.width - 24, 296)
+        for panel in (left_panel, right_panel):
+            draw.rounded_rectangle(panel, radius=10, fill=(62, 68, 78, 170), outline=(183, 190, 200, 140), width=2)
+
+        badge = (57, 40, 290, 99)
+        draw.rounded_rectangle(badge, radius=9, fill=(70, 76, 86, 205), outline=status_color, width=3)
+        badge_font = font(29, bold=True)
+        box = draw.textbbox((0, 0), status, font=badge_font)
+        badge_x = badge[0] + (badge[2] - badge[0] - (box[2] - box[0])) / 2
+        draw.text((badge_x, 54), status, font=badge_font, fill=status_color)
+
+        gauge_center = (173, 180)
+        gauge_radius = 76
         gauge_box = (
             gauge_center[0] - gauge_radius,
             gauge_center[1] - gauge_radius,
@@ -132,115 +146,72 @@ class ExperimentCamera:
             gauge_center[1] + gauge_radius,
         )
         gauge_max = max(40.0, (int(max(speed_kmh, target_speed_kmh, 1.0) / 10.0) + 1) * 10.0)
-        draw.arc(gauge_box, 135, 405, fill=(58, 69, 82, 255), width=18)
-        for tick in range(7):
-            angle = math.radians(135 + 270 * tick / 6.0)
-            outer = (
-                gauge_center[0] + math.cos(angle) * (gauge_radius - 2),
-                gauge_center[1] + math.sin(angle) * (gauge_radius - 2),
-            )
-            inner = (
-                gauge_center[0] + math.cos(angle) * (gauge_radius - 20),
-                gauge_center[1] + math.sin(angle) * (gauge_radius - 20),
-            )
-            draw.line((outer, inner), fill=muted_color, width=3)
+        draw.arc(gauge_box, 135, 405, fill=(58, 69, 82, 255), width=13)
+        for tick in range(6):
+            angle = math.radians(135 + 270 * tick / 5.0)
+            outer = (gauge_center[0] + math.cos(angle) * (gauge_radius - 1), gauge_center[1] + math.sin(angle) * (gauge_radius - 1))
+            inner = (gauge_center[0] + math.cos(angle) * (gauge_radius - 14), gauge_center[1] + math.sin(angle) * (gauge_radius - 14))
+            draw.line((outer, inner), fill=muted_color, width=2)
         needle_angle = math.radians(135 + 270 * min(speed_kmh, gauge_max) / gauge_max)
-        needle_end = (
-            gauge_center[0] + math.cos(needle_angle) * (gauge_radius - 32),
-            gauge_center[1] + math.sin(needle_angle) * (gauge_radius - 32),
-        )
-        draw.line((gauge_center, needle_end), fill=(91, 211, 255, 255), width=8)
-        draw.ellipse((gauge_center[0] - 11, gauge_center[1] - 11, gauge_center[0] + 11, gauge_center[1] + 11), fill=(91, 211, 255, 255))
-        draw.text((111, 167), "{0:.0f}".format(speed_kmh), font=font(47, bold=True), fill=text_color)
-        draw.text((123, 222), "km/h", font=font(22), fill=muted_color)
+        needle_end = (gauge_center[0] + math.cos(needle_angle) * (gauge_radius - 20), gauge_center[1] + math.sin(needle_angle) * (gauge_radius - 20))
+        draw.line((gauge_center, needle_end), fill=(91, 211, 255, 255), width=6)
+        draw.ellipse((gauge_center[0] - 8, gauge_center[1] - 8, gauge_center[0] + 8, gauge_center[1] + 8), fill=(91, 211, 255, 255))
+        draw.text((125, 142), "{0:.0f}".format(speed_kmh), font=font(38, bold=True), fill=text_color)
+        draw.text((128, 190), "km/h", font=font(19), fill=muted_color)
 
-        draw.text((338, 52), "CARLA RUN TELEMETRY", font=font(34, bold=True), fill=text_color)
-        draw.text(
-            (338, 105),
-            "scenario={0}".format(overlay.get("scenario", "")),
-            font=font(27),
-            fill=muted_color,
-        )
-        draw.text(
-            (338, 143),
-            "frame={0}   sim={1:.2f}s".format(
-                overlay.get("frame", 0), overlay.get("sim_time_s", 0.0)
-            ),
-            font=font(25),
-            fill=muted_color,
-        )
-        draw.text(
-            (338, 184),
-            "{0}  ->  target {1:.1f} km/h".format(
-                str(overlay.get("action", "")).upper(), overlay.get("target_speed_kmh", 0.0)
-            ),
-            font=font(31, bold=True),
-            fill=status_color if overlay.get("emergency", False) else text_color,
-        )
-        draw.text(
-            (338, 229),
-            "reason={0}  collisions={1}  lane_events={2}".format(
-                str(overlay.get("reason", ""))[:42], overlay.get("collisions", 0), overlay.get("lane_events", 0)
-            ),
-            font=font(24),
-            fill=muted_color,
-        )
+        rx = right_panel[0] + 20
+        draw.text((rx, 42), "ASR TEXT (DEMO BASELINE)", font=font(16, bold=True), fill=muted_color)
+        draw.text((rx, 62), str(overlay.get("asr_text", ""))[:42], font=font(21, bold=True), fill=text_color)
+        draw.text((rx, 95), "STRUCTURED INTENT (RULE)", font=font(16, bold=True), fill=muted_color)
+        draw.text((rx, 115), "action={0}  target={1:.0f} km/h  emergency={2}".format(
+            str(overlay.get("action", "")).upper(), target_speed_kmh, overlay.get("emergency", False)
+        ), font=font(20), fill=status_color if overlay.get("emergency", False) else text_color)
 
-        def draw_bar(label, value, y, color, centered=False):
-            x = 338
-            width = 570
-            height = 26
-            draw.text((x, y - 4), label, font=font(23, bold=True), fill=text_color)
-            left = x + 70
-            right = left + width
-            draw.rounded_rectangle((left, y, right, y + height), radius=8, fill=(45, 55, 67, 245))
+        def chip(label, value, x, y, color):
+            draw.text((x, y), label, font=font(15, bold=True), fill=muted_color)
+            box = (x, y + 20, x + 170, y + 50)
+            width = 210 if label == "POLICY STATE" else 170
+            box = (x, y + 20, x + width, y + 50)
+            draw.rounded_rectangle(box, radius=6, fill=(70, 76, 86, 205), outline=color, width=2)
+            draw.text((x + 10, y + 24), value, font=font(17, bold=True), fill=color)
+
+        risk_level = str(overlay.get("risk_level", "LOW"))
+        risk_color = {"HIGH": (244, 80, 80, 255), "MEDIUM": (255, 153, 51, 255), "LOW": (72, 208, 113, 255)}.get(risk_level, muted_color)
+        chip("RISK", risk_level, rx, 150, risk_color)
+        chip("POLICY STATE", str(overlay.get("policy_state", "")), rx + 188, 150, status_color)
+
+        def bar(label, value, y, color, centered=False):
+            left = rx + 48
+            right = rx + 250
+            draw.text((rx, y - 2), label, font=font(18, bold=True), fill=text_color)
+            draw.rounded_rectangle((left, y, right, y + 18), radius=5, fill=(45, 55, 67, 245))
             if centered:
-                center = (left + right) / 2.0
-                draw.line((center, y - 4, center, y + height + 4), fill=muted_color, width=2)
-                end = center + max(-1.0, min(1.0, value)) * width / 2.0
-                draw.rectangle((min(center, end), y + 4, max(center, end), y + height - 4), fill=color)
+                middle = (left + right) / 2.0
+                draw.line((middle, y - 3, middle, y + 21), fill=muted_color, width=1)
+                end = middle + max(-1.0, min(1.0, value)) * (right - left) / 2.0
+                draw.rectangle((min(middle, end), y + 3, max(middle, end), y + 15), fill=color)
             else:
-                end = left + max(0.0, min(1.0, value)) * width
-                draw.rounded_rectangle((left, y, end, y + height), radius=8, fill=color)
+                end = left + max(0.0, min(1.0, value)) * (right - left)
+                draw.rounded_rectangle((left, y, end, y + 18), radius=5, fill=color)
 
-        draw_bar("THR", float(overlay.get("throttle", 0.0)), 276, (72, 208, 113, 255))
-        draw_bar("BRK", float(overlay.get("brake", 0.0)), 320, (244, 80, 80, 255))
-        draw_bar("STR", float(overlay.get("steer", 0.0)), 364, (255, 211, 54, 255), centered=True)
-
-        badge = (panel[2] - 275, 55, panel[2] - 30, 122)
-        draw.rounded_rectangle(badge, radius=10, fill=(20, 25, 32, 245), outline=status_color, width=4)
-        badge_font = font(31, bold=True)
-        box = draw.textbbox((0, 0), status, font=badge_font)
-        text_x = badge[0] + (badge[2] - badge[0] - (box[2] - box[0])) / 2
-        draw.text((text_x, 70), status, font=badge_font, fill=status_color)
-
-        self._draw_speed_chart(draw, overlay, font, text_color, muted_color)
+        bar("T", float(overlay.get("throttle", 0.0)), 224, (72, 208, 113, 255))
+        bar("B", float(overlay.get("brake", 0.0)), 248, (244, 80, 80, 255))
+        bar("S", float(overlay.get("steer", 0.0)), 272, (255, 211, 54, 255), centered=True)
+        self._draw_speed_chart(draw, overlay, font, muted_color, (right_panel[0] + 420, 160, right_panel[2] - 18, 242))
         return image.tobytes("raw", "BGRA")
 
-    def _draw_speed_chart(self, draw, overlay, font, text_color, muted_color):
+    def _draw_speed_chart(self, draw, overlay, font, muted_color, plot):
         sim_time = float(overlay.get("sim_time_s", 0.0))
         self._speed_history.append((sim_time, float(overlay.get("speed_kmh", 0.0)), float(overlay.get("target_speed_kmh", 0.0))))
         while self._speed_history and self._speed_history[0][0] < sim_time - 12.0:
             self._speed_history.popleft()
-
-        chart = (28, self.height - 262, min(self.width - 28, 1190), self.height - 28)
-        draw.rounded_rectangle(chart, radius=12, fill=(8, 12, 18, 220), outline=(79, 94, 110, 210), width=2)
-        draw.text((54, chart[1] + 20), "SPEED HISTORY (last 12s)", font=font(25, bold=True), fill=text_color)
-        draw.text((chart[2] - 284, chart[1] + 24), "actual", font=font(21), fill=(91, 211, 255, 255))
-        draw.line((chart[2] - 354, chart[1] + 39, chart[2] - 298, chart[1] + 39), fill=(91, 211, 255, 255), width=4)
-        draw.text((chart[2] - 120, chart[1] + 24), "target", font=font(21), fill=(255, 211, 54, 255))
-        draw.line((chart[2] - 190, chart[1] + 39, chart[2] - 134, chart[1] + 39), fill=(255, 211, 54, 255), width=4)
-
-        plot = (86, chart[1] + 74, chart[2] - 32, chart[3] - 34)
+        draw.text((plot[0], plot[1] - 28), "SPD", font=font(18, bold=True), fill=muted_color)
         values = [max(speed, target) for _, speed, target in self._speed_history]
         max_speed = max(30.0, max(values) if values else 30.0)
         max_speed = max(10.0, (int(max_speed / 10.0) + 1) * 10.0)
-        for level in range(5):
-            y = plot[3] - (plot[3] - plot[1]) * level / 4.0
-            value = max_speed * level / 4.0
+        for level in range(3):
+            y = plot[3] - (plot[3] - plot[1]) * level / 2.0
             draw.line((plot[0], y, plot[2], y), fill=(70, 80, 92, 150), width=1)
-            draw.text((34, y - 12), "{0:.0f}".format(value), font=font(18), fill=muted_color)
-
         if len(self._speed_history) < 2:
             return
         first_time = self._speed_history[0][0]
@@ -255,8 +226,8 @@ class ExperimentCamera:
                 result.append((x, y))
             return result
 
-        draw.line(points(1), fill=(91, 211, 255, 255), width=5, joint="curve")
-        draw.line(points(2), fill=(255, 211, 54, 255), width=4, joint="curve")
+        draw.line(points(1), fill=(91, 211, 255, 255), width=3, joint="curve")
+        draw.line(points(2), fill=(255, 211, 54, 255), width=3, joint="curve")
 
     def destroy(self):
         if self.sensor is not None and self.sensor.is_alive:

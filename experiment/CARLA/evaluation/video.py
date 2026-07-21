@@ -19,6 +19,7 @@ class FfmpegVideoWriter:
         self.dropped_frames = 0
         self._frames = queue.Queue(maxsize=64)
         self._worker = None
+        self._last_frame = None
 
     def start(self):
         output_dir = os.path.dirname(os.path.abspath(self.output_path))
@@ -53,10 +54,20 @@ class FfmpegVideoWriter:
     def write_raw(self, raw_frame):
         if self.process is None:
             return
+        self._last_frame = bytes(raw_frame)
         try:
-            self._frames.put_nowait(raw_frame)
+            self._frames.put_nowait(self._last_frame)
         except queue.Full:
             self.dropped_frames += 1
+
+    def append_last_frame(self, frame_count):
+        """Extend a terminal frame without changing simulation metrics."""
+        if self.process is None or self._last_frame is None:
+            return 0
+        appended = max(0, int(frame_count))
+        for _ in range(appended):
+            self._frames.put(self._last_frame)
+        return appended
 
     def _write_frames(self):
         while True:
