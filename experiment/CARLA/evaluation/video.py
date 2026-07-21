@@ -48,10 +48,13 @@ class FfmpegVideoWriter:
         self._worker.start()
 
     def write(self, image):
+        self.write_raw(bytes(image.raw_data))
+
+    def write_raw(self, raw_frame):
         if self.process is None:
             return
         try:
-            self._frames.put_nowait(bytes(image.raw_data))
+            self._frames.put_nowait(raw_frame)
         except queue.Full:
             self.dropped_frames += 1
 

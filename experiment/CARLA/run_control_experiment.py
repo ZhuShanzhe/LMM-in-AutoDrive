@@ -117,6 +117,29 @@ def call_scenario_method(scenario, method_name, default=None):
         return {"error": "{0}: {1}".format(type(exc).__name__, exc)}
 
 
+def make_video_overlay(record):
+    status = record.get("scenario_status", {})
+    events = record.get("events", {})
+    intent = record.get("intent", {})
+    control = record.get("control", {})
+    ego = record.get("ego", {})
+    return [
+        "scenario={0} frame={1} sim={2:.2f}s".format(
+            record.get("scenario", ""), record.get("frame", 0), record.get("sim_time_s", 0.0)
+        ),
+        "intent={0} target={1:.1f}km/h emergency={2}".format(
+            intent.get("action", ""), intent.get("target_speed_kmh", 0.0), intent.get("emergency", False)
+        ),
+        "ego={0:.1f}km/h throttle={1:.2f} brake={2:.2f} steer={3:.2f}".format(
+            ego.get("speed_kmh", 0.0), control.get("throttle", 0.0), control.get("brake", 0.0), control.get("steer", 0.0)
+        ),
+        "status={0} reason={1} collisions={2} lane_events={3}".format(
+            status.get("status", ""), status.get("reason", ""),
+            events.get("collision_count", 0), events.get("lane_invasion_count", 0),
+        ),
+    ]
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="CARLA control and evaluation runner")
     parser.add_argument("scenario", choices=sorted(SCENARIOS))
@@ -136,6 +159,7 @@ def parse_args():
     parser.add_argument("--video-output", default=None, help="Optional direct H.264 output path")
     parser.add_argument("--video-fps", type=float, default=30.0)
     parser.add_argument("--ffmpeg", default=None, help="Path to ffmpeg.exe for --video-output")
+    parser.add_argument("--video-overlay", action="store_true", help="Overlay per-frame run telemetry on direct video")
     return parser.parse_args()
 
 
@@ -174,6 +198,7 @@ def main():
                 args.video_output,
                 args.video_fps,
                 args.ffmpeg,
+                args.video_overlay,
             )
             camera.start()
         controller = build_controller(args.controller, ego, world.get_map(), args.target_speed_kmh)
@@ -193,6 +218,7 @@ def main():
                 "every_n_frames": args.record_every_n if args.record_images else None,
                 "direct_video": args.video_output,
                 "video_fps": args.video_fps if args.video_output else None,
+                "video_overlay": bool(args.video_overlay and args.video_output),
             },
         })
         start_location = ego.get_location()
@@ -213,8 +239,6 @@ def main():
             ego.apply_control(control)
             world.tick()
             snapshot = world.get_snapshot()
-            if camera is not None:
-                camera.save_frame(snapshot.frame)
             sim_time = snapshot.timestamp.elapsed_seconds - start_sim_time
             location = ego.get_location()
             travelled_distance_m += previous_location.distance(location)
@@ -242,6 +266,11 @@ def main():
                     "end_to_end": round(decision_latency_ms + control_latency_ms, 4),
                 },
             }
+            if camera is not None:
+                camera.save_frame(
+                    snapshot.frame,
+                    overlay_lines=make_video_overlay(record) if args.video_overlay else None,
+                )
             logger.log_frame(record)
             records.append(record)
             if scenario.finished():

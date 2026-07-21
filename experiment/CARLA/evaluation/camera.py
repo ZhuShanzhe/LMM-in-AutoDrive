@@ -9,7 +9,8 @@ from evaluation.video import FfmpegVideoWriter
 
 class ExperimentCamera:
     def __init__(self, world, ego_vehicle, output_dir, every_n_frames=1, width=1920, height=1080,
-                 save_images=True, video_output=None, video_fps=30.0, ffmpeg_path=None):
+                 save_images=True, video_output=None, video_fps=30.0, ffmpeg_path=None,
+                 video_overlay=False):
         self.world = world
         self.ego_vehicle = ego_vehicle
         self.output_dir = output_dir
@@ -20,6 +21,7 @@ class ExperimentCamera:
         self.video_output = video_output
         self.video_fps = float(video_fps)
         self.ffmpeg_path = ffmpeg_path
+        self.video_overlay = bool(video_overlay)
         self.sensor = None
         self.video_writer = None
         self.saved_frames = 0
@@ -51,14 +53,12 @@ class ExperimentCamera:
         self.sensor.listen(self._on_image)
 
     def _on_image(self, image):
-        if self.video_writer is not None:
-            self.video_writer.write(image)
-        if self.save_images:
+        if self.save_images or self.video_writer is not None:
             self._images.put(image)
 
-    def save_frame(self, frame, timeout_s=1.0):
-        """Save the camera image belonging to a just-completed world tick."""
-        if not self.save_images:
+    def save_frame(self, frame, overlay_lines=None, timeout_s=1.0):
+        """Persist the camera image belonging to a just-completed world tick."""
+        if not self.save_images and self.video_writer is None:
             return False
         frame = int(frame)
         if frame % self.every_n_frames != 0:
@@ -79,10 +79,30 @@ class ExperimentCamera:
             image = candidate
         if image is None:
             return False
-        path = os.path.join(self.output_dir, "{0:08d}.png".format(frame))
-        image.save_to_disk(path)
-        self.saved_frames += 1
+        if self.save_images:
+            path = os.path.join(self.output_dir, "{0:08d}.png".format(frame))
+            image.save_to_disk(path)
+            self.saved_frames += 1
+        if self.video_writer is not None:
+            raw_frame = bytes(image.raw_data)
+            if self.video_overlay and overlay_lines:
+                raw_frame = self._render_overlay(raw_frame, overlay_lines)
+            self.video_writer.write_raw(raw_frame)
         return True
+
+    def _render_overlay(self, raw_frame, overlay_lines):
+        from PIL import Image, ImageDraw
+
+        image = Image.frombuffer(
+            "RGBA", (self.width, self.height), raw_frame, "raw", "BGRA", 0, 1
+        ).copy()
+        draw = ImageDraw.Draw(image, "RGBA")
+        line_height = 28
+        panel_height = 24 + line_height * len(overlay_lines)
+        draw.rectangle((16, 16, 980, 16 + panel_height), fill=(0, 0, 0, 180))
+        for index, line in enumerate(overlay_lines):
+            draw.text((30, 28 + line_height * index), str(line), fill=(255, 255, 255, 255))
+        return image.tobytes("raw", "BGRA")
 
     def destroy(self):
         if self.sensor is not None and self.sensor.is_alive:
