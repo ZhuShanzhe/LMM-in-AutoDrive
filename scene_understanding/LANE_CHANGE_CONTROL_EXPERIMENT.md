@@ -1,34 +1,26 @@
-# Lane-Change Control Experiment
+# 变道控制实验
 
-`run_lane_change_control_experiment` resumes an `ACTIVE step_2` plan after the
-pedestrian-yield experiment. It uses a CARLA map spawn point with a legal,
-same-direction left adjacent lane, creates one slower vehicle ahead, and sends
-the safety-gated JSON decision to the team PID controller.
+`run_lane_change_control_experiment` 从行人避让实验生成的 `ACTIVE step_2` 计划状态继续执行。实验选择一个具有合法、同向左侧相邻车道的 CARLA 地图出生点，在主车前方生成一辆速度较慢的车辆，并将经过安全门控的 JSON 决策发送给团队 PID 控制器。
 
-The experiment does not claim that seeing a lane marking or issuing a steering
-command completes the maneuver. `step_2` receives `COMPLETED` feedback only
-after all of these CARLA measurements agree:
+实验不会因为检测到车道线或已经发出转向命令，就直接认定变道完成。只有以下 CARLA 测量条件全部满足时，`step_2` 才会收到 `COMPLETED` 反馈：
 
-1. semantic alignment has grounded the intended slow vehicle;
-2. the slow vehicle remains in the current `WorldState`;
-3. ego `lane_id` equals the selected left-lane ID;
-4. ego is within 0.9 m of the target lane centre;
-5. ego heading has at least 0.95 alignment with the target lane;
-6. those geometric conditions remain true for five consecutive frames;
-7. no collision has occurred.
+1. 语义对齐已经关联到驾驶意图中的慢车；
+2. 同一辆慢车仍然存在于当前 `WorldState` 中；
+3. 主车的 `lane_id` 等于所选择的左侧目标车道 ID；
+4. 主车距离目标车道中心线不超过 0.9 米；
+5. 主车航向与目标车道方向的对齐度不低于 0.95；
+6. 上述几何条件连续五帧保持成立；
+7. 实验过程中未发生碰撞。
 
-Crossing a lane marking is expected in a legal lane change, so lane-invasion
-events are retained as evidence but are not by themselves treated as failure.
-CARLA/OpenDRIVE may assign a new `road_id` at a connected road segment during
-the maneuver, so `road_id` is retained as evidence but is not pinned to the
-pre-scan value. Lane ID, lane-centre offset and heading must still agree.
-After the map reports the target lane, the experiment supplies the controller
-with an explicit point ahead in that lane while measurements stabilize. This
-prevents a repeated `lane_change_left` action from requesting another lane.
+合法变道过程中必然可能跨越车道线，因此压线事件会作为实验依据保留，但不会单独被判定为失败。
 
-## Run
+在车辆驶入相连道路区段时，CARLA/OpenDRIVE 可能为车辆分配新的 `road_id`，因此实验会记录 `road_id` 作为证据，但不会要求它始终等于预扫描值；车道 ID、车道中心偏移和航向对齐仍必须满足要求。
 
-CARLA must already be running with no stale vehicles, walkers, or sensors.
+地图确认车辆已进入目标车道后，实验会向控制器提供该车道前方的显式目标点，并在测量条件稳定期间持续保持该目标，防止重复的 `lane_change_left` 动作再次请求向左变道。
+
+## 运行方法
+
+运行实验前必须启动 CARLA，并确认世界中没有上次实验遗留的车辆、行人或传感器。
 
 ```bash
 python -m scene_understanding.scripts.run_lane_change_control_experiment \
@@ -40,10 +32,6 @@ python -m scene_understanding.scripts.run_lane_change_control_experiment \
   --output-dir outputs/lane_change_control_experiment
 ```
 
-The output directory is intentionally required to be new. It contains a
-per-frame `timeline.jsonl`, measured `step_feedback.json`, the resulting plan
-state and decision, final alignment and risk contracts, and `summary.json`.
+指定的输出目录必须是一个尚不存在的新目录。目录中包含逐帧 `timeline.jsonl`、基于测量生成的 `step_feedback.json`、更新后的计划状态和决策、最终语义对齐与风险数据，以及 `summary.json`。
 
-A successful run completes only `step_2` and activates `step_3`. Overtaking is
-a separate physical maneuver and must receive its own measured feedback; this
-experiment never marks it complete automatically.
+一次成功运行只会完成 `step_2` 并激活 `step_3`。超车属于另一个独立的物理驾驶动作，必须根据自身测量结果生成反馈；本实验不会自动将超车步骤标记为完成。
