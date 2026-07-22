@@ -162,7 +162,9 @@ class ExperimentCamera:
         rx = right_panel[0] + 20
         draw.text((rx, 42), "ASR TEXT (DEMO BASELINE)", font=font(16, bold=True), fill=muted_color)
         draw.text((rx, 62), str(overlay.get("asr_text", ""))[:42], font=font(21, bold=True), fill=text_color)
-        draw.text((rx, 95), "STRUCTURED INTENT (RULE)", font=font(16, bold=True), fill=muted_color)
+        source = str(overlay.get("decision_source", "rule")).upper()
+        intent_label = "EXTERNAL DECISION (PLACEHOLDER)" if source == "JSON_FILE" else "STRUCTURED INTENT (RULE)"
+        draw.text((rx, 95), intent_label, font=font(16, bold=True), fill=muted_color)
         draw.text((rx, 115), "action={0}  target={1:.0f} km/h  emergency={2}".format(
             str(overlay.get("action", "")).upper(), target_speed_kmh, overlay.get("emergency", False)
         ), font=font(20), fill=status_color if overlay.get("emergency", False) else text_color)

@@ -48,6 +48,30 @@ The default `pid` controller supports longitudinal control, lane keeping, and
 basic lane-change steering. For junction turns, use `--controller behavior`
 or `--controller basic` and provide `target_location` from the planner.
 
+## External decision JSON boundary
+
+`run_control_experiment.py` can read an external decision document on every
+simulation tick. This is a Python-version-independent boundary for the later
+parser, scene-understanding, risk, or FSM process: it can atomically replace a
+JSON file without importing CARLA into that process.
+
+The document may be either a `DrivingIntent` or a flattened
+`control_decision.json`. The latter should use one of the nine control actions
+listed above and may include `frame_id`, `risk_level`, and other diagnostic
+fields; unsupported extra fields are preserved by the producer but ignored by
+the CARLA controller.
+
+```powershell
+python run_control_experiment.py emergency_brake --duration-s 20 `
+  --decision-source json_file `
+  --decision-json examples\decisions\emergency_brake.json
+```
+
+The included JSON file is only a temporary emergency-braking placeholder. A
+missing, malformed, or unsupported external document always becomes a safe
+`stop` command rather than allowing the ego vehicle to continue a stale action.
+The default `--decision-source rule` remains available for baseline tests.
+
 ## Run an experiment
 
 CARLA `0.9.15` on this Windows machine ships a Python 3.7 API package. Start

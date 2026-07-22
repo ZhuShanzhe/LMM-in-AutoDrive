@@ -27,7 +27,7 @@ def summarize(records, scenario, goal_distance_m=None):
     speeding_frames = sum(
         1
         for record in records
-        if record["intent"]["action"] not in ("stop", "emergency_brake")
+        if record["intent"]["action"] not in ("stop", "decelerate", "emergency_brake")
         and record["ego"]["speed_kmh"] > record["intent"]["target_speed_kmh"] + 5.0
     )
 

@@ -5,8 +5,10 @@ Run from this directory after CARLA is started:
 """
 
 import argparse
+import json
 import math
 import os
+import tempfile
 import time
 
 from carla_bootstrap import setup_carla_api
@@ -16,6 +18,7 @@ setup_carla_api()
 import carla
 
 from control.agents import CarlaAgentController
+from control.decision_provider import JsonFileDecisionPolicy
 from control.pid_controller import EgoPIDController
 from evaluation.events import EventMonitor
 from evaluation.camera import ExperimentCamera
@@ -117,6 +120,29 @@ def call_scenario_method(scenario, method_name, default=None):
         return {"error": "{0}: {1}".format(type(exc).__name__, exc)}
 
 
+def write_json_atomically(path, document):
+    directory = os.path.dirname(os.path.abspath(path))
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+    descriptor, temporary_path = tempfile.mkstemp(prefix=".world-state-", suffix=".json", dir=directory)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            json.dump(document, handle, ensure_ascii=False)
+        for attempt in range(20):
+            try:
+                os.replace(temporary_path, path)
+                temporary_path = None
+                break
+            except PermissionError:
+                if attempt == 19:
+                    raise
+                time.sleep(0.005)
+    except Exception:
+        if temporary_path and os.path.exists(temporary_path):
+            os.remove(temporary_path)
+        raise
+
+
 def make_video_overlay(record):
     status = record.get("scenario_status", {})
     events = record.get("events", {})
@@ -124,9 +150,12 @@ def make_video_overlay(record):
     control = record.get("control", {})
     ego = record.get("ego", {})
     scenario_name = record.get("scenario", "")
+    decision_source = record.get("decision_source", "rule")
     action = intent.get("action", "")
     emergency = bool(intent.get("emergency", False))
-    if scenario_name == "pedestrian_crossing":
+    if decision_source == "json_file":
+        asr_text = "保持安全车距行驶"
+    elif scenario_name == "pedestrian_crossing":
         asr_text = "前方行人横穿，减速避让"
     elif scenario_name == "emergency_brake":
         asr_text = "前车紧急制动，立即刹车" if emergency else "保持车距，正常行驶"
@@ -150,6 +179,7 @@ def make_video_overlay(record):
         "frame": record.get("frame", 0),
         "sim_time_s": record.get("sim_time_s", 0.0),
         "asr_text": asr_text,
+        "decision_source": decision_source,
         "action": action,
         "reason": intent.get("reason", "") or status.get("reason", ""),
         "target_speed_kmh": intent.get("target_speed_kmh", 0.0),
@@ -175,6 +205,22 @@ def parse_args():
     parser.add_argument("--fixed-delta-s", type=float, default=0.05)
     parser.add_argument("--target-speed-kmh", type=float, default=25.0)
     parser.add_argument("--controller", choices=["pid", "basic", "behavior"], default="pid")
+    parser.add_argument(
+        "--decision-source",
+        choices=["rule", "json_file"],
+        default="rule",
+        help="Use built-in rules or a per-tick external decision JSON file",
+    )
+    parser.add_argument(
+        "--decision-json",
+        default=None,
+        help="DrivingIntent or ControlDecision JSON path for --decision-source json_file",
+    )
+    parser.add_argument(
+        "--world-state-output",
+        default=None,
+        help="Optional per-tick world-state JSON path for an external decision process",
+    )
     parser.add_argument("--goal-distance-m", type=float, default=None)
     parser.add_argument("--stop-when-goal-reached", action="store_true")
     parser.add_argument("--output-dir", default=None)
@@ -187,7 +233,10 @@ def parse_args():
     parser.add_argument("--ffmpeg", default=None, help="Path to ffmpeg.exe for --video-output")
     parser.add_argument("--video-overlay", action="store_true", help="Overlay per-frame run telemetry on direct video")
     parser.add_argument("--terminal-hold-s", type=float, default=2.0, help="Seconds to hold SUCCESS/FAILURE video frame")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.decision_source == "json_file" and not args.decision_json:
+        parser.error("--decision-json is required when --decision-source json_file")
+    return args
 
 
 def main():
@@ -230,12 +279,18 @@ def main():
             )
             camera.start()
         controller = build_controller(args.controller, ego, world.get_map(), args.target_speed_kmh)
-        policy = RuleDecisionPolicy(args.scenario, args.target_speed_kmh)
+        if args.decision_source == "json_file":
+            policy = JsonFileDecisionPolicy(args.decision_json, args.target_speed_kmh)
+        else:
+            policy = RuleDecisionPolicy(args.scenario, args.target_speed_kmh)
         scenario_info = call_scenario_method(scenario, "get_scenario_info", {})
         logger = ExperimentLogger(output_dir, {
             "scenario": args.scenario,
             "scenario_info": scenario_info,
             "controller": args.controller,
+            "decision_source": args.decision_source,
+            "decision_json": args.decision_json,
+            "world_state_output": args.world_state_output,
             "target_speed_kmh": args.target_speed_kmh,
             "fixed_delta_s": args.fixed_delta_s,
             "carla_server": "{0}:{1}".format(args.host, args.port),
@@ -259,6 +314,12 @@ def main():
         for _ in range(max_ticks):
             scenario.tick()
             state = WorldState(world, ego).get_state()
+            if args.world_state_output:
+                snapshot = world.get_snapshot()
+                write_json_atomically(args.world_state_output, {
+                    "frame_id": "carla_{0}".format(int(snapshot.frame)),
+                    "world_state": json_safe(state),
+                })
             decision_start = time.perf_counter()
             intent = policy.decide(state)
             decision_latency_ms = (time.perf_counter() - decision_start) * 1000.0
@@ -276,6 +337,7 @@ def main():
                 "frame": int(snapshot.frame),
                 "sim_time_s": round(sim_time, 4),
                 "scenario": args.scenario,
+                "decision_source": args.decision_source,
                 "scenario_status": call_scenario_method(scenario, "get_status", {}),
                 "intent": normalized_intent,
                 "control": {

@@ -27,6 +27,17 @@ class MetricsResultSemanticsTest(unittest.TestCase):
         self.assertFalse(metrics["goal_reached"])
         self.assertFalse(metrics["task_completed"])
 
+    def test_deceleration_tracking_is_not_a_speeding_violation(self):
+        records = [
+            make_record(1, 0.0, speed_kmh=25.0),
+            make_record(2, 1.0, speed_kmh=20.0),
+        ]
+        for record in records:
+            record["intent"] = {"action": "decelerate", "target_speed_kmh": 10.0}
+        metrics = summarize(records, "emergency_brake", goal_distance_m=1.0)
+        self.assertEqual(metrics["speeding_frames"], 0)
+        self.assertTrue(metrics["violation_free"])
+
 
 if __name__ == "__main__":
     unittest.main()
