@@ -1,290 +1,407 @@
-# 中文驾驶指令翻译与结构化解析模块
+# ModernBERT 英文驾驶指令结构化解析模块
 
-本模块接收语音识别模块输出的中文文本，完成约束翻译和英文指令解析，最终输出符合 `DrivingIntent` Schema 的 JSON。ASR、CARLA 控制器和车辆规划器不在本模块内部。
-
-## 架构位置
+本模块是 XH-202602 项目中的英文指令解析基线。它接收上游翻译模块输出的英文驾驶指令，使用微调后的 ModernBERT-base 生成符合 `DrivingIntent 1.1.0` Schema 的 JSON，再交给规划与控制模块。
 
 ```text
-麦克风/语音流
-  -> ASR 模块
-  -> {request_id, text, modality}
-  -> DrivingCommandService（本模块）
-       -> 中文规范化
-       -> Qwen2.5-3B 中文到英文约束翻译
-       -> Qwen2.5-3B 英文指令解析
-       -> 语义归一化、安全约束、Schema 校验
-  -> result["driving_intent"]
-  -> 决策规划/CARLA 执行模块
+中文语音 -> ASR -> 中文到规范英文翻译（上游模块）
+                    -> ModernBertCommandService（本模块）
+                    -> DrivingIntent JSON
+                    -> 安全校验/决策规划/CARLA 控制（下游模块）
 ```
 
-翻译和解析默认共享同一个模型实例。应用进程应只创建一个 `DrivingCommandService`，不要为每条 ASR 消息重新加载模型。
+本模块只负责语言指令的结构化表达，不直接产生油门、制动或方向盘控制量。下游必须再次检查道路条件、交通法规、目标可见性与轨迹安全。
 
-## 当前进展
+## 当前基线
 
-截至 2026-07-20，本模块已经完成：
+- Backbone：`ModernBERT-base`
+- Python：`3.12.13`
+- PyTorch：`2.11.0+cu130`
+- Transformers：`4.57.6`
+- 训练/测试 GPU：RTX 5090，计算能力 `SM120`
+- 最终模型路径：`/root/autodl-tmp/models/modernbert-drive-command-base`
+- 输入：翻译完成的英文文本
+- 输出：`DrivingIntent 1.1.0` JSON
+- 动作空间：25 类
+- 默认推理设备：CUDA，BF16
 
-1. 固定 Python `3.12.13`、PyTorch `2.11.0+cu130` 和 RTX 5090（SM120）运行环境。
-2. 下载并验证 `Qwen2.5-3B-Instruct`，保留 `Qwen2.5-1.5B-Instruct` 作为轻量对照。
-3. 实现中文规范化、专业术语点对点映射、中文到英文约束翻译和英文到 DrivingIntent JSON 解析。
-4. 增加歧义保护、危险/违法指令拒绝、动作顺序恢复、单位换算、空模型输出重试和 Schema 安全兜底。
-5. 增加 `DrivingCommandService` 常驻接口，可直接接收 ASR 文本或 JSON 风格消息，并复用同一个模型实例。
-6. 建立中文开发/冻结数据、SimLingo 英文扩展集和 Talk2Car 中文人工审核队列。
-7. 完成 62 项单元与回归测试、真实权重端到端测试和中间文件清理。
+常见且边界明确的中文指令可以在系统编排层继续走规则短路；未命中规则时再翻译为英文并进入本模块。ModernBERT 是英文解析的唯一默认模型。
 
-当前数据规模：
+## 许可边界
 
-| 数据 | 数量 | 状态与用途 |
-|---|---:|---|
-| 原中文回归集 | 30 | 参与过早期开发，只用于防止能力回退 |
-| 中文多样性开发集 | 80 | 用于提示词、术语和归一化规则调试 |
-| 中文多样性冻结集 | 40 | 未用于后续调参，用于一次性泛化检查 |
-| SimLingo 英文扩展集 | 327 | 外部工程验证，标签由 source mode 映射 |
-| Talk2Car 中文候选 | 300 | Qwen2.5-3B 机器翻译，必须人工审核 |
-| SimLingo 中文候选 | 327 | Qwen2.5-3B 机器翻译，必须人工审核 |
+基础 ModernBERT 使用 Apache-2.0；Talk2Car 数据使用 CC BY-NC-SA 4.0；SimLingo 使用 Wayve 自定义非商业许可。由于最终权重使用了后两者的文本数据，Hugging Face 模型仓库必须标记为 `license: other`，只允许免费的非商业学术、科研、教学和个人实验，并附带完整上游许可与署名。
 
-### 已确认结果
+SimLingo 条款禁止将其数据或训练模型用于车辆/机器人运行及高风险用途，且没有明确给 CARLA 仿真闭环豁免。因此在取得 Wayve 书面许可前，本权重仅用于离线语言解析与接口联调，不进入 CARLA 闭环车辆控制。另一条可行路线是使用许可允许闭环仿真的数据重新训练模型。
 
-“契约匹配率”表示预期状态、动作、方向和速度等字段子集匹配，不是完整 JSON 字符串逐字段相等。
-
-| 测试 | 样本 | JSON 合法率 | 契约匹配率 | 术语约束通过率 | 平均时延 | P95 时延 |
-|---|---:|---:|---:|---:|---:|---:|
-| 原中文回归集 | 30 | 100.00% | 100.00% | 100.00% | 1530.402 ms | 3355.416 ms |
-| 中文多样性开发集 | 80 | 100.00% | 98.75% | 100.00% | 1350.450 ms | 1882.555 ms |
-| 中文多样性冻结集 | 40 | 100.00% | 67.50% | 95.00% | 1453.486 ms | 1941.080 ms |
-| SimLingo 英文扩展集 | 327 | 100.00% | 96.64% | 不适用 | 1117.193 ms | 1637.402 ms |
-
-冻结集 `67.50%` 是当前更可信的泛化信号。主要薄弱项是口语化减速、模糊指代、三动作组合、动作顺序和违法语义在翻译中的保留。冻结集结果产生后没有继续用它调参；若要针对这些错误改进，必须建立新的独立测试集。
-
-原 30 条与 80 条开发集的高分不能解释为真实道路场景准确率。327 条 SimLingo 数据经过筛选并使用 source mode 构造标签，也不是官方完整基准。627 条外部中文候选虽然通过结构校验，但抽样发现车道序号误译、少量繁体字和不自然表达，人工确认前不能作为训练金标准或正式测试集。
-
-真实模型集成测试已经确认以下链路可运行：
-
-```text
-“前方路口右转”
-  -> “turn right at the upcoming junction”
-  -> status=VALID
-  -> action=TURN, direction=RIGHT
-```
-
-模型首次冷启动约 6 秒；表中时延为批量评测时模型常驻后的结果。
-
-## 核心文件
+## 仓库结构
 
 ```text
 structured_command_parser/
 ├── configs/
-│   ├── translation_glossary.json  # 中文驾驶术语点对点映射
-│   ├── translator_prompt.txt      # 中文到英文提示词
-│   └── english_parser_prompt.txt  # 英文到 JSON 提示词
+│   ├── english_terminology.json       # 已审核英文术语
+│   └── english_parsing_rules.json     # 已审核解析规则
+├── examples/                          # 可直接校验的输出示例
 ├── schemas/
-│   └── driving_intent.schema.json # 下游接口 Schema
-├── src/
-│   ├── service.py                 # 推荐的系统集成入口
-│   ├── pipeline.py                # 翻译与解析编排
-│   ├── translator.py              # 约束翻译
-│   ├── english_parser.py          # 英文意图解析及安全归一化
-│   ├── qwen_runtime.py            # 共享 Qwen 推理运行时
-│   ├── factory.py                 # DrivingIntent JSON 构造
-│   ├── schema_tools.py            # Schema 与语义校验
-│   ├── normalizer.py              # 文本与单位规范化
-│   └── llm_parser.py              # 动作到步骤的展开逻辑
+│   └── driving_intent.schema.json     # 输出接口 Schema
 ├── scripts/
-│   ├── parse_pipeline.py          # 单条命令调试入口
-│   ├── evaluate_pipeline.py       # 中文端到端批量评测
-│   ├── evaluate_english_parser.py # 英文解析批量评测
-│   └── ...                        # 数据构建、翻译、审核与环境检查
-├── tests/                         # 单元与回归测试
-├── DRIVING_INTENT_REFERENCE.md    # 字段、枚举和下游解释
-└── EXPERIMENT_REPORT.md           # 当前实验结果与限制
+│   ├── parse_english.py               # ModernBERT 单条推理入口
+│   ├── build_full_english_pseudolabels.py
+│   ├── train_modernbert_parser.py
+│   ├── calibrate_modernbert_thresholds.py
+│   ├── evaluate_modernbert_classifier.py
+│   ├── evaluate_modernbert_service.py
+│   ├── validate_examples.py
+│   └── validate_curated_english_knowledge.py
+├── src/
+│   ├── modernbert_service.py          # 推荐的系统集成入口
+│   ├── modernbert_parser.py           # 推理、阈值和 JSON 构造
+│   ├── modernbert_model.py            # Backbone 与六个任务头
+│   ├── modernbert_labels.py           # 标签顺序
+│   └── schema_tools.py                # Schema 与语义校验
+├── tests/                             # 单元与回归测试
+├── DRIVING_INTENT_REFERENCE.md        # 字段和下游解释
+├── ENGLISH_KNOWLEDGE_MINING.md        # 数据与规则归纳过程
+└── requirements-modernbert.txt        # 可复现环境依赖
 ```
 
-`scripts/` 中的数据和评测代码不是运行时依赖，但为后续换模型、微调、扩充术语和重新评测所必需，因此保留。
+数据构建、训练和审核脚本不是运行时依赖，但后续扩充动作、重做伪标签或微调模型时仍需要，因此保留在仓库中。
 
-## 环境
+## 配置运行环境
 
-- Python：`3.12.13`
-- PyTorch：`2.11.0+cu130`
-- GPU：RTX 5090（SM120）
-- 当前模型：`Qwen2.5-3B-Instruct`
-- 当前模型路径：`/root/autodl-tmp/models/Qwen2.5-3B-Instruct`
-- Conda 环境：`/root/autodl-tmp/conda_envs/command_parser`
+以下步骤在 AutoDL RTX 5090 容器中验证通过。Conda 环境必须放在数据盘，避免占用系统盘。
+
+```bash
+source /root/miniconda3/etc/profile.d/conda.sh
+source /etc/network_turbo
+
+conda create -p /root/autodl-tmp/conda_envs/command_parser \
+  python=3.12.13 -y
+conda activate /root/autodl-tmp/conda_envs/command_parser
+
+cd /root/autodl-tmp/LMM-in-AutoDrive
+python -m pip install --upgrade pip
+pip install -r structured_command_parser/requirements-modernbert.txt
+```
+
+验证 CUDA 与 SM120：
+
+```bash
+python -c "import torch, transformers; print('torch:', torch.__version__); print('cuda:', torch.version.cuda); print('gpu:', torch.cuda.get_device_name(0)); print('capability:', torch.cuda.get_device_capability(0)); print('transformers:', transformers.__version__)"
+```
+
+预期关键输出：
+
+```text
+torch: 2.11.0+cu130
+cuda: 13.0
+gpu: NVIDIA GeForce RTX 5090
+capability: (12, 0)
+transformers: 4.57.6
+```
+
+## 准备模型权重
+
+GitHub 不上传模型权重。最终权重发布在 Hugging Face：
+
+- 模型页面：<https://huggingface.co/UNIC0RN-Zhu/modernbert-drive-command-base>
+- 仓库 ID：`UNIC0RN-Zhu/modernbert-drive-command-base`
+- License：`research-only-non-commercial`（Hugging Face 类型为 `other`）
+
+AutoDL 上启用网络加速并下载完整模型：
+
+```bash
+source /etc/network_turbo
+source /root/miniconda3/etc/profile.d/conda.sh
+conda activate /root/autodl-tmp/conda_envs/command_parser
+
+hf download \
+  UNIC0RN-Zhu/modernbert-drive-command-base \
+  --repo-type model \
+  --local-dir /root/autodl-tmp/models/modernbert-drive-command-base
+```
+
+公开仓库不要求登录；如果仓库后续改为私有，组员需要先运行 `hf auth login` 并获得读取权限。下载后的目录结构应为：
+
+```text
+/root/autodl-tmp/models/modernbert-drive-command-base/
+├── config.json
+├── model.safetensors
+├── multitask_heads.pt
+├── tokenizer.json
+├── tokenizer_config.json
+├── special_tokens_map.json
+├── label_schema.json
+├── inference_config.json
+├── training_summary.json
+├── test_metrics_calibrated.json
+├── LICENSE
+├── NOTICE
+├── SHA256SUMS
+├── LICENSE_CHECKSUMS
+├── README.md
+└── licenses/
+```
+
+其中 `model.safetensors` 和 `multitask_heads.pt` 必须来自本项目微调结果，不能只下载未经微调的 ModernBERT-base 代替。
+
+验证下载完整性：
+
+```bash
+cd /root/autodl-tmp/models/modernbert-drive-command-base
+sha256sum -c SHA256SUMS
+sha256sum -c LICENSE_CHECKSUMS
+export MODERNBERT_MODEL_PATH=$PWD
+```
+
+```bash
+export MODERNBERT_MODEL_PATH=/root/autodl-tmp/models/modernbert-drive-command-base
+
+test -s "$MODERNBERT_MODEL_PATH/model.safetensors"
+test -s "$MODERNBERT_MODEL_PATH/multitask_heads.pt"
+test -s "$MODERNBERT_MODEL_PATH/inference_config.json"
+```
+
+只有重新训练时才需要下载原始 Backbone：
+
+```bash
+hf download answerdotai/ModernBERT-base \
+  --local-dir /root/autodl-tmp/models/ModernBERT-base
+```
+
+## 命令行运行
+
+命令行用于单条调试，会先预热模型，再统计实际解析时延：
 
 ```bash
 cd /root/autodl-tmp/LMM-in-AutoDrive
 conda activate /root/autodl-tmp/conda_envs/command_parser
-pip install -r structured_command_parser/requirements.txt
-pip install -r structured_command_parser/requirements-model.txt
+export MODERNBERT_MODEL_PATH=/root/autodl-tmp/models/modernbert-drive-command-base
+
+python -m structured_command_parser.scripts.parse_english \
+  "Slow down and stop before the red truck." \
+  --request-id demo-0001 \
+  --modality TEXT
 ```
 
-## 推荐集成方式
+CPU 调试可以增加 `--device cpu`，但正式时延测试使用 CUDA。
 
-在 ASR 消费进程或独立推理服务启动时创建一次服务：
+## Python 集成
+
+服务应在进程启动时创建一次并预热。不要为每条请求重新加载权重。
+
+RTX 5090 上一次性预热约需 `3.05s`；预热完成后，50 条分层长尾样本平均解析时延为 `13.33ms`、P95 为 `19.01ms`。启动预热不计入在线请求时延。
 
 ```python
-from structured_command_parser import DrivingCommandService
+from structured_command_parser import ModernBertCommandService
 
-MODEL_PATH = "/root/autodl-tmp/models/Qwen2.5-3B-Instruct"
-
-command_service = DrivingCommandService.from_shared_model(
-    MODEL_PATH,
-    default_modality="VOICE",
+command_parser = ModernBertCommandService(
+    "/root/autodl-tmp/models/modernbert-drive-command-base",
+    device="cuda",
     max_input_chars=512,
 )
-
-# 可选：服务启动阶段预加载权重，避免首条指令承担冷启动时间。
-command_service.warmup()
+command_parser.warmup()
 ```
 
-收到 ASR 中文文本后：
+直接解析英文文本：
 
 ```python
-result = command_service.parse_asr_text(
-    "看到前方行人，减速避让后向左变道",
-    request_id="asr-000001",
+result = command_parser.parse_text(
+    "Slow down and stop before the red truck.",
+    request_id="translator-0001",
+    modality="TEXT",
 )
-
-driving_intent = result["driving_intent"]
-status = driving_intent["parse_result"]["status"]
 ```
 
-也可以直接接收 JSON 风格消息：
+接收上游翻译模块的 JSON 风格消息：
 
 ```python
-result = command_service.handle_message(
+result = command_parser.handle_message(
     {
-        "request_id": "asr-000002",
-        "text": "前方路口右转",
+        "request_id": "translator-0002",
+        "text": "Change to the left lane after the blue car passes.",
+        "language": "en-US",
         "modality": "VOICE",
     }
 )
 ```
 
-输入消息最小契约：
+`modality` 表示原始输入来自语音还是文本；传给本模块的 `text` 始终必须是英文。
+
+## 输入接口
 
 ```json
 {
-  "request_id": "asr-000002",
-  "text": "前方路口右转",
+  "request_id": "translator-0002",
+  "text": "Change to the left lane after the blue car passes.",
+  "language": "en-US",
   "modality": "VOICE"
 }
 ```
 
-- `text` 必须是非空中文字符串。
-- `request_id` 可省略；省略时模块自动生成。
-- `modality` 只能是 `VOICE` 或 `TEXT`，默认 `VOICE`。
-- 默认最多 512 个字符，可通过 `max_input_chars` 调整。
+| 字段 | 必需 | 约束 |
+|---|---|---|
+| `text` | 是 | 非空英文字符串，默认不超过 512 字符 |
+| `request_id` | 否 | 字符串；建议沿用 ASR 请求 ID |
+| `language` | 否 | `en`、`en-US` 或 `en-GB`，默认 `en-US` |
+| `modality` | 否 | `VOICE` 或 `TEXT`，默认 `TEXT` |
 
-## 下游状态处理
+无效类型、空文本、非英文语言标记和过长输入会在模型推理前抛出异常。
 
-下游只消费 `result["driving_intent"]`，并首先检查：
+## 输出接口
 
-```python
-status = result["driving_intent"]["parse_result"]["status"]
+服务直接返回 `DrivingIntent 1.1.0` 文档，不增加额外包装层：
+
+```json
+{
+  "schema_version": "1.1.0",
+  "request_id": "translator-0001",
+  "input": {
+    "modality": "TEXT",
+    "language": "en-US",
+    "raw_text": "Slow down and stop before the red truck.",
+    "normalized_text": "Slow down and stop before the red truck."
+  },
+  "intent": {
+    "category": "BASIC_CONTROL",
+    "urgency": "NORMAL",
+    "steps": [
+      {
+        "step_id": "step_1",
+        "action": "ADJUST_SPEED",
+        "parameters": {"change": "DECREASE"},
+        "trigger": {"type": "IMMEDIATE"},
+        "depends_on": [],
+        "preconditions": [],
+        "on_blocked": "SAFE_STOP"
+      },
+      {
+        "step_id": "step_2",
+        "action": "STOP",
+        "parameters": {},
+        "trigger": {"type": "AFTER_STEP", "step_id": "step_1"},
+        "depends_on": ["step_1"],
+        "preconditions": [],
+        "on_blocked": "SAFE_STOP",
+        "completion": {"type": "VEHICLE_STOPPED"}
+      }
+    ],
+    "constraints": {
+      "safety_first": true,
+      "obey_traffic_rules": true,
+      "driving_style": "NORMAL"
+    }
+  },
+  "parse_result": {
+    "status": "VALID",
+    "method": "HYBRID",
+    "model": "modernbert-drive-command-base",
+    "confidence": 0.9238,
+    "missing_slots": [],
+    "warnings": [],
+    "latency_ms": 15.448
+  }
+}
 ```
+
+该示例来自 RTX 5090 上的实际验证运行；置信度和时延会随输入及硬件变化。完整字段约束见 `schemas/driving_intent.schema.json` 和 `DRIVING_INTENT_REFERENCE.md`。
+
+下游首先检查 `parse_result.status`：
 
 | 状态 | 下游处理 |
 |---|---|
-| `VALID` | 将 `intent.steps` 交给规划/控制模块执行 |
-| `NEEDS_CLARIFICATION` | 不执行动作，将 `clarification_question` 返回交互模块 |
+| `VALID` | 校验场景安全后执行 `intent.steps` |
+| `NEEDS_CLARIFICATION` | 不执行动作，向交互模块请求补充信息 |
 | `UNSUPPORTED` | 拒绝危险、违法或系统不支持的指令 |
-| `INVALID` | 进入安全兜底，不执行模型输出 |
+| `INVALID` | 进入安全兜底，不执行输出 |
 
-执行模块仍必须独立检查道路条件、交通规则、目标是否存在以及轨迹是否安全。语言模型输出不能直接转换成油门、制动或转向控制量。
+## 训练与校准复现
 
-## 命令行测试
+全量语料生成 662,700 条伪标签，规范化文本按 SHA1 分组后再切分，确保相同文本不会跨训练、验证和测试集。
+
+```bash
+python -m structured_command_parser.scripts.build_full_english_pseudolabels
+
+# 第一阶段
+python -m structured_command_parser.scripts.train_modernbert_parser \
+  --base-model /root/autodl-tmp/models/ModernBERT-base \
+  --output /root/autodl-tmp/models/modernbert-drive-command-stage1 \
+  --epochs 1 \
+  --batch-size 128 \
+  --learning-rate 3e-5
+
+# 第二阶段
+python -m structured_command_parser.scripts.train_modernbert_parser \
+  --base-model /root/autodl-tmp/models/modernbert-drive-command-stage1 \
+  --output /root/autodl-tmp/models/modernbert-drive-command-base \
+  --epochs 1 \
+  --batch-size 128 \
+  --learning-rate 1e-5
+
+python -m structured_command_parser.scripts.calibrate_modernbert_thresholds \
+  --model /root/autodl-tmp/models/modernbert-drive-command-base
+
+python -m structured_command_parser.scripts.evaluate_modernbert_classifier \
+  --model /root/autodl-tmp/models/modernbert-drive-command-base \
+  --report /root/autodl-tmp/models/modernbert-drive-command-base/test_metrics_calibrated.json
+```
+
+基础切分为 `463,890 / 132,540 / 66,270`；训练时额外加入 108 条稀有动作定向样本，实际训练行数为 `463,998`。
+
+## 已完成实验
+
+| 路线 | 数据/范围 | 主要结果 | 结论 |
+|---|---|---|---|
+| 纯中文规则 | 40 条旧冻结集 | 契约匹配率 40.00%，P95 1.71ms | 很快，但自然表达覆盖不足 |
+| 规则 + BGE-small 语义回退 | 同一旧冻结集 | 契约匹配率 70.00%，P95 9.98ms | 覆盖提高，但仍不够稳定 |
+| 双生成模型翻译与解析 | 40 条中文冻结集 | 契约匹配率 67.50%，P95 1,941.08ms | 时延不满足实时预算 |
+| Qwen3-0.6B 英文解析对照 | 50 条分层长尾样本 | 动作 exact match 90.00%，micro-F1 97.51%，P95 5,707.26ms | 长尾推理较强，但不能进入实时链路 |
+| ModernBERT 第一阶段 | 66,270 条测试集 | 动作 exact match 98.59%，micro-F1 97.57% | 轻量模型已具备较好教师一致率 |
+| ModernBERT 第二阶段 + 校准 | 66,270 条测试集 | 动作 exact match 98.70%，micro-F1 97.78% | 作为最终英文解析基线 |
+| ModernBERT 端到端解析 | 测试集前 1,000 条 | 动作 exact match 99.30%，P95 12.97ms | 模型常驻后满足 50ms 解析预算 |
+| ModernBERT 分层长尾检查 | 50 条 | 动作 exact match 70.00%，micro-F1 88.32%，P95 19.01ms | 复杂多动作仍是主要短板，但时延满足预算 |
+
+最终完整测试集还包括：状态准确率 `99.39%`、类别准确率 `99.15%`、紧急度准确率 `99.91%`、方向 exact match `99.75%`、速度变化准确率 `99.82%`。
+
+这些准确率是模型与伪标签教师的一致率，不等同于人工金标准准确率或真实道路准确率。长尾错误主要来自 Talk2Car 复杂多动作、少量 `PARK` 过预测和教师标签偏保守；没有使用测试集继续调阈值。下一阶段仍需建立 300-500 条双人复核且完全隔离的英文金标准。
+
+## 测试
 
 ```bash
 cd /root/autodl-tmp/LMM-in-AutoDrive
 conda activate /root/autodl-tmp/conda_envs/command_parser
 
-python -m structured_command_parser.scripts.parse_pipeline \
-  "看到前方行人，减速避让后向左变道" \
-  --model /root/autodl-tmp/models/Qwen2.5-3B-Instruct \
-  --modality VOICE
-```
-
-若翻译和解析要使用不同模型：
-
-```bash
-python -m structured_command_parser.scripts.parse_pipeline \
-  "前方路口右转" \
-  --translator-model /path/to/translator \
-  --parser-model /path/to/parser
-```
-
-## 测试
-
-```bash
 python -m unittest discover -s structured_command_parser/tests -v
+python -m structured_command_parser.scripts.validate_examples
+python -m structured_command_parser.scripts.validate_curated_english_knowledge
+git diff --check
 ```
 
-当前共 62 项测试，覆盖 Schema、单位换算、歧义、危险指令、术语映射、复杂动作、空模型输出和服务输入契约。
+当前测试覆盖输入消息契约、Schema、动作边界、歧义与危险指令、ModernBERT 默认后端、伪标签防泄漏切分、稀有动作增强、规则短路、模型服务预热和线程安全入口。
 
-## 后续更换或改进模型
+## Git 上传边界
 
-### 只更换本地权重
+应上传：
 
-不需要修改业务代码，只替换服务启动参数：
+- `src/` 运行时代码
+- `configs/` 术语和规则
+- `schemas/` 输出契约
+- `examples/` 接口示例
+- `scripts/` 训练、校准、评测和命令行入口
+- `tests/` 测试
+- `requirements-modernbert.txt`
+- README 与接口参考文档
 
-```python
-command_service = DrivingCommandService.from_shared_model("/path/to/new-model")
-```
+不上传：
 
-新模型必须兼容 Hugging Face Transformers 的 `AutoTokenizer` 和 `AutoModelForCausalLM` 接口。
+- 原始数据和伪标签 JSONL
+- ModernBERT 权重与检查点
+- 训练日志、缓存和评测输出目录
+- Conda 环境
 
-### 分别使用翻译模型和解析模型
-
-```python
-from structured_command_parser import CommandParserConfig, DrivingCommandService
-
-config = CommandParserConfig(
-    translator_model_path="/path/to/translation-model",
-    parser_model_path="/path/to/parser-model",
-)
-command_service = DrivingCommandService(config)
-```
-
-路径不同会加载两个模型，需要重新评估显存占用。
-
-### 修改术语或提示词
-
-- 中文术语点对点映射：`configs/translation_glossary.json`
-- 中文翻译提示词：`configs/translator_prompt.txt`
-- 英文解析提示词：`configs/english_parser_prompt.txt`
-
-每次修改后至少运行 62 项单元测试、原 30 条回归集、中文开发集和新的独立冻结集。不要使用现有 40 条冻结集继续调参。
-
-### 数据与评测代码
-
-- `build_diverse_chinese_commands.py`：生成中文开发/冻结样本。
-- `prepare_external_commands.py`：筛选 SimLingo 和 Talk2Car。
-- `translate_external_commands.py`：生成中文人工审核候选。
-- `validate_external_commands.py`：校验候选并生成审核表。
-- `evaluate_pipeline.py`：端到端评测并按语义切片统计。
-- `evaluate_english_parser.py`：英文解析评测。
-
-训练或微调前，应先完成人工审核，并重新划分 `train/dev/test`。机器翻译候选不能直接当作金标准。
-
-## 当前结果
-
-- 最终/对照结果仅保留以下文件：
-
-```text
-structured_command_parser/results/qwen_1_5b_verified.jsonl
-structured_command_parser/results/zh_en_pipeline_30_expanded_final.jsonl
-structured_command_parser/results/zh_diverse_dev_final.jsonl
-structured_command_parser/results/zh_diverse_holdout_final.jsonl
-structured_command_parser/results/simlingo_english_327_final.jsonl
-```
-
-上述 `results/`、模型权重、原始数据和处理数据均由 `.gitignore` 排除，不会上传 GitHub。用于后续换模型、扩数据和重新评测的源代码、提示词、术语表、Schema 与测试均已保留。
-
-详细实验条件、逐项分析和复现命令见 `EXPERIMENT_REPORT.md`。
+`.gitignore` 已按以上边界配置。模型权重通过 Hugging Face 分发，代码通过 GitHub 协作。
 
 ## 下一步
 
-1. 人工审核 627 条中文候选，优先修正方向、车道序号、动作顺序、繁体字和危险语义。
-2. 建立 300-500 条双人复核的原生中文独立测试集，冻结后禁止用于调参。
-3. 接入真实 ASR，增加至少 200 条同音词、错字、漏字、口音和噪声样本。
-4. 将当前冻结集失败模式转入下一版开发集，同时另建新的测试集。
-5. 将 `DrivingCommandService` 封装为主控需要的 HTTP、消息队列或 ROS 接口，并进行 CARLA 联调。
+1. 建立 300-500 条双人复核英文金标准，正式验证 `95%` 准确率目标。
+2. 由上游翻译模块建立中文术语点对点映射和 ASR 噪声测试集。
+3. 测量“ASR 输出文本 -> 翻译 -> ModernBERT -> JSON”的完整 P95/P99，而不是只报告解析时延。
+4. 接入 CARLA 闭环前取得上游许可，或使用允许闭环仿真的数据重新训练，并增加规划侧 Schema 校验、安全拒绝和超时兜底。

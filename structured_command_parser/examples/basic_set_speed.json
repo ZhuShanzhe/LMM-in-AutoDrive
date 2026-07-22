@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "request_id": "basic-0001",
   "input": {
     "modality": "TEXT",
@@ -59,4 +59,3 @@
     "latency_ms": 0.8
   }
 }
-

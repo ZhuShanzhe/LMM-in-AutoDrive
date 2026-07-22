@@ -46,6 +46,29 @@ class DrivingCommandServiceTests(unittest.TestCase):
                 self.service.parse_asr_text(text)
         self.assertEqual(self.pipeline.calls, [])
 
+    def test_realtime_factory_does_not_enable_llm_fallback(self) -> None:
+        service = DrivingCommandService.realtime()
+        self.assertFalse(service.config.allow_llm_fallback)
+        result = service.parse_asr_text("向左变道", request_id="fast-service")
+        self.assertEqual(result["execution_path"], "REALTIME_RULE")
+        self.assertLess(result["total_latency_ms"], 50.0)
+
+    def test_realtime_factory_accepts_semantic_model(self) -> None:
+        service = DrivingCommandService.realtime(semantic_model_path="semantic-model")
+        self.assertEqual(service.config.semantic_model_path, "semantic-model")
+        self.assertFalse(service.config.allow_llm_fallback)
+
+    def test_production_factory_uses_modernbert(self) -> None:
+        service = DrivingCommandService.production("translator", "modernbert")
+        self.assertTrue(service.config.allow_llm_fallback)
+        self.assertEqual(service.config.parser_backend, "modernbert")
+        self.assertEqual(service.config.parser_model_path, "modernbert")
+
+    def test_qwen_comparison_is_explicit(self) -> None:
+        service = DrivingCommandService.qwen_comparison("qwen")
+        self.assertTrue(service.config.allow_llm_fallback)
+        self.assertEqual(service.config.parser_backend, "qwen")
+
 
 if __name__ == "__main__":
     unittest.main()

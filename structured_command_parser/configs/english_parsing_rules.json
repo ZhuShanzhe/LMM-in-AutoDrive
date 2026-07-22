@@ -1,0 +1,699 @@
+{
+  "version": "1.1.0",
+  "status": "REVIEWED_APPROVED_WITH_CORRECTIONS",
+  "language": "en",
+  "scope": "ENGLISH_DRIVING_COMMAND_PARSER",
+  "priority_convention": "Lower numbers run first. Safety and negation rules precede action extraction.",
+  "rules": [
+    {
+      "rule_id": "R010_COMMENTARY_NOT_COMMAND_GOLD",
+      "rule_type": "DATA_BOUNDARY",
+      "priority": 10,
+      "description": "Use SimLingo Commentary for context terminology and semantic distinctions only; do not convert every described action into a passenger-command label.",
+      "positive_patterns": [
+        "Follow the route",
+        "Pay attention to",
+        "because the other vehicles"
+      ],
+      "negative_patterns": [],
+      "output_constraints": {
+        "training_use": "CONTEXT_TERMINOLOGY_ONLY"
+      },
+      "source_sample_ids": [
+        "simlingo-commentary-aa56bdfb34f8d20c",
+        "simlingo-commentary-68177e4e0fae2efd",
+        "simlingo-commentary-dc4f86bf14fb17a0"
+      ]
+    },
+    {
+      "rule_id": "R020_DELIBERATE_COLLISION_UNSUPPORTED",
+      "rule_type": "UNSUPPORTED",
+      "priority": 20,
+      "description": "An explicit imperative to collide with a target is unsupported and produces no executable action.",
+      "positive_patterns": [
+        "crash into TARGET",
+        "collide with TARGET",
+        "smash into TARGET",
+        "run into TARGET",
+        "ram TARGET",
+        "bump into TARGET"
+      ],
+      "negative_patterns": [
+        "avoid a collision",
+        "an accident ahead",
+        "a target vehicle crashed"
+      ],
+      "output_constraints": {
+        "status": "UNSUPPORTED",
+        "commands": []
+      },
+      "source_sample_ids": [
+        "simlingo-dreamer-6ad044814aaa410c",
+        "simlingo-dreamer-6e035fbb031bb6f6",
+        "simlingo-dreamer-ea564e1a20a5f583",
+        "simlingo-commentary-5cae0a6220e55b90"
+      ]
+    },
+    {
+      "rule_id": "R025_TRAFFIC_RULE_VIOLATION_UNSUPPORTED",
+      "rule_type": "UNSUPPORTED",
+      "priority": 25,
+      "description": "Reject explicit requests to violate traffic signals or speed limits, drive against traffic, enter an opposite lane as a destination, or drive on a sidewalk. Scene mentions and safety-avoidance clauses are not violation requests.",
+      "positive_patterns": [
+        "run the red light",
+        "ignore the traffic light",
+        "drive against traffic",
+        "drive onto the sidewalk",
+        "enter the opposite lane",
+        "ignore the speed limit",
+        "drive as fast as possible"
+      ],
+      "negative_patterns": [
+        "the red light is ahead is scene context",
+        "move away from the sidewalk",
+        "avoid entering the opposite lane",
+        "slow down to prevent a collision"
+      ],
+      "output_constraints": {
+        "status": "UNSUPPORTED",
+        "commands": []
+      },
+      "source_sample_ids": [
+        "simlingo-dreamer-978581428f5d9fd8",
+        "simlingo-dreamer-9edcdc0bb0436401",
+        "simlingo-dreamer-e8be9fc4c7f7135e",
+        "simlingo-dreamer-0596a4faece75b30"
+      ]
+    },
+    {
+      "rule_id": "R030_NEGATION_SCOPE_FIRST",
+      "rule_type": "NEGATION",
+      "priority": 30,
+      "description": "Resolve the scope of do not, don't, never, and without before creating positive action candidates. A negated action must not appear as an executable command.",
+      "positive_patterns": [
+        "do not pass",
+        "do not change lanes",
+        "never ACTION",
+        "without ACTION"
+      ],
+      "negative_patterns": [
+        "avoid TARGET is an AVOID command, not generic negation",
+        "I do not think in a subordinate comment may not negate the ego command"
+      ],
+      "output_constraints": {
+        "negated_action_emitted": false
+      },
+      "source_sample_ids": [
+        "talk2car-train-413a684af28397df9c840b15dadbbb03",
+        "talk2car-train-e956797adcc7965437a672521ef207b2",
+        "talk2car-val-27a40bb4e3985bc8c90e08f07c9095ff"
+      ]
+    },
+    {
+      "rule_id": "R040_TARGET_RELATION_NOT_EGO_DIRECTION",
+      "rule_type": "SLOT",
+      "priority": 40,
+      "description": "Attach left, right, ahead, behind, front-left, and front-right to the target when they occur inside a target noun phrase. Do not automatically use them as ego maneuver direction.",
+      "positive_patterns": [
+        "cars on the right",
+        "people on the left side",
+        "vehicle to the front left",
+        "car behind us"
+      ],
+      "negative_patterns": [
+        "change lane to the right",
+        "turn left",
+        "merge into the leftmost lane"
+      ],
+      "output_constraints": {
+        "slot": "target_relation",
+        "do_not_infer": "direction"
+      },
+      "source_sample_ids": [
+        "talk2car-train-572055833dca081a2a30164868281fe6",
+        "talk2car-train-e317cf3eebd05420fd16fad59b05d862",
+        "simlingo-commentary-aa56bdfb34f8d20c"
+      ]
+    },
+    {
+      "rule_id": "R050_TURN_VS_LANE_CHANGE",
+      "rule_type": "ACTION",
+      "priority": 50,
+      "description": "Map a junction turn to TURN, ordinary lateral lane movement to CHANGE_LANE, joining a lane or traffic stream to MERGE, and direction reversal to U_TURN. Do not decide from left or right alone.",
+      "positive_patterns": [
+        "turn left",
+        "turn right",
+        "make a left",
+        "change lane to the left",
+        "merge into the right lane"
+      ],
+      "negative_patterns": [
+        "car turning left describes a target",
+        "turn to the left lane may require disambiguation",
+        "turn around is U_TURN"
+      ],
+      "output_constraints": {
+        "TURN_requires": [
+          "direction"
+        ],
+        "CHANGE_LANE_requires": [
+          "direction_or_target_lane"
+        ],
+        "MERGE_requires": [
+          "direction_or_target_lane"
+        ]
+      },
+      "source_sample_ids": [
+        "talk2car-test-210f867976ea0dae85ad5f62f7fe2f8f",
+        "simlingo-dreamer-556df16306cceac1",
+        "talk2car-train-1109f46f5b13ef6c5872a92e4e67825d",
+        "talk2car-train-a2ce6da69cd50f5116aa803272f247de"
+      ]
+    },
+    {
+      "rule_id": "R060_CHANGE_LANE_REQUIRED_SLOT",
+      "rule_type": "AMBIGUITY",
+      "priority": 60,
+      "description": "CHANGE_LANE requires either a relative direction or an explicit target lane. If neither is present, request clarification rather than guessing.",
+      "positive_patterns": [
+        "change lanes",
+        "prepare to do a lane change"
+      ],
+      "negative_patterns": [
+        "change one lane to the right",
+        "merge into the leftmost lane",
+        "move to the third lane from the right"
+      ],
+      "output_constraints": {
+        "missing_slots": [
+          "direction_or_target_lane"
+        ],
+        "status_when_missing": "NEEDS_CLARIFICATION"
+      },
+      "source_sample_ids": [
+        "simlingo-commentary-68177e4e0fae2efd",
+        "simlingo-dreamer-4a89981a98830002",
+        "simlingo-dreamer-d0cc9ba72f2d8cba"
+      ]
+    },
+    {
+      "rule_id": "R070_TARGET_LANE_ORDINAL_VALIDATION",
+      "rule_type": "NORMALIZATION",
+      "priority": 70,
+      "description": "Normalize valid lane ordinals and lane counts, but quarantine malformed synthetic ordinals such as 0th or -1th instead of treating them as gold labels.",
+      "positive_patterns": [
+        "third lane from the right",
+        "leftmost lane",
+        "change two lanes"
+      ],
+      "negative_patterns": [
+        "0th lane",
+        "-1th lane"
+      ],
+      "output_constraints": {
+        "valid_lane_count_range": [
+          1,
+          8
+        ],
+        "valid_lane_index_range": [
+          1,
+          16
+        ],
+        "malformed_status": "DATA_QUALITY_REVIEW"
+      },
+      "source_sample_ids": [
+        "simlingo-dreamer-948f8bb4cb231467",
+        "simlingo-dreamer-d0cc9ba72f2d8cba",
+        "simlingo-dreamer-4d097dcbd74d77d1",
+        "simlingo-dreamer-a42a7b8c7c72c1bb"
+      ]
+    },
+    {
+      "rule_id": "R080_SET_SPEED_REQUIRES_VALUE",
+      "rule_type": "ACTION",
+      "priority": 80,
+      "description": "Use SET_SPEED only when the phrase expresses an explicit non-negative speed value with a supported unit to set or maintain. Qualitative faster or slower commands use ADJUST_SPEED.",
+      "positive_patterns": [
+        "set your speed to NUMBER UNIT",
+        "maintain a speed of NUMBER UNIT",
+        "hold a speed of NUMBER UNIT"
+      ],
+      "negative_patterns": [
+        "accelerate to follow TARGET",
+        "slow down",
+        "go faster"
+      ],
+      "output_constraints": {
+        "action": "SET_SPEED",
+        "required_slots": [
+          "target_speed_mps"
+        ],
+        "supported_source_units": [
+          "km/h",
+          "m/s"
+        ],
+        "missing_or_unsupported_unit_status": "NEEDS_CLARIFICATION"
+      },
+      "source_sample_ids": [
+        "simlingo-dreamer-6edb1acfa4eb2b5d",
+        "simlingo-dreamer-de95bc256e9d0f2f",
+        "simlingo-dreamer-9c5f00c701358b6e"
+      ]
+    },
+    {
+      "rule_id": "R090_SPEED_INCREASE_DECREASE",
+      "rule_type": "ACTION",
+      "priority": 90,
+      "description": "Map qualitative acceleration language to ADJUST_SPEED(INCREASE) and qualitative deceleration language to ADJUST_SPEED(DECREASE).",
+      "positive_patterns": [
+        "pick up the pace",
+        "step on the gas",
+        "speed up",
+        "slow down",
+        "cut down on speed",
+        "ease off the accelerator"
+      ],
+      "negative_patterns": [
+        "pick up a passenger is not acceleration",
+        "stop requires zero speed",
+        "brake if necessary is a condition in Commentary"
+      ],
+      "output_constraints": {
+        "action": "ADJUST_SPEED",
+        "required_slots": [
+          "change"
+        ]
+      },
+      "source_sample_ids": [
+        "simlingo-dreamer-160738758f86adac",
+        "simlingo-dreamer-669cb49016ee94ba",
+        "simlingo-dreamer-4380334c6443420f",
+        "simlingo-dreamer-038109748d5aa83a"
+      ]
+    },
+    {
+      "rule_id": "R100_SPEED_UNIT_NORMALIZATION",
+      "rule_type": "NORMALIZATION",
+      "priority": 100,
+      "description": "Convert km/h to m/s by dividing by 3.6, preserve m/s, and retain the source value and unit. Normalize negative zero to zero; reject negative nonzero target speeds under the current schema.",
+      "positive_patterns": [
+        "NUMBER km/h",
+        "NUMBER m/s",
+        "-0.0 km/h",
+        "-0.0 m/s"
+      ],
+      "negative_patterns": [
+        "NUMBER meters is distance",
+        "coordinates are not speed values"
+      ],
+      "output_constraints": {
+        "runtime_unit": "m/s",
+        "negative_zero": 0.0,
+        "negative_nonzero_status": "INVALID"
+      },
+      "source_sample_ids": [
+        "simlingo-dreamer-1b2e02739eb362ec",
+        "simlingo-dreamer-9c5f00c701358b6e",
+        "simlingo-dreamer-de95bc256e9d0f2f"
+      ]
+    },
+    {
+      "rule_id": "R110_STOP_VS_SLOW_DOWN",
+      "rule_type": "ACTION",
+      "priority": 110,
+      "description": "A complete standstill is STOP. Urgent timing without danger changes urgency to URGENT but does not change STOP into EMERGENCY_BRAKE. Slow down, decelerate, brake gently, hit the brakes, and reduce speed remain ADJUST_SPEED unless a complete stop is explicit.",
+      "positive_patterns": [
+        "come to a full stop",
+        "come to a standstill",
+        "stop the vehicle",
+        "stop immediately",
+        "cease all movement"
+      ],
+      "negative_patterns": [
+        "slow down",
+        "decelerate",
+        "hit the brakes",
+        "gently press the brakes",
+        "a target vehicle is stopping"
+      ],
+      "output_constraints": {
+        "ordinary_complete_stop": {
+          "action": "STOP",
+          "urgency": "NORMAL"
+        },
+        "urgent_stop_without_danger": {
+          "action": "STOP",
+          "urgency": "URGENT"
+        },
+        "ordinary_speed_reduction": {
+          "action": "ADJUST_SPEED",
+          "change": "DECREASE",
+          "urgency": "NORMAL"
+        },
+        "urgent_brake_without_stop": {
+          "action": "ADJUST_SPEED",
+          "change": "DECREASE",
+          "urgency": "URGENT"
+        }
+      },
+      "source_sample_ids": [
+        "simlingo-dreamer-7fc8c832495075ce",
+        "simlingo-dreamer-d5ee7c3759bfe6c6",
+        "simlingo-dreamer-b6c8047b53e538fd",
+        "simlingo-dreamer-4e9b17a97358280e"
+      ]
+    },
+    {
+      "rule_id": "R120_EMERGENCY_BRAKE_EXPLICIT_ONLY",
+      "rule_type": "ACTION",
+      "priority": 120,
+      "description": "Emit EMERGENCY_BRAKE only for explicit emergency or forceful-braking language, or when an urgent stop or brake is paired with explicit danger context. Timing words alone do not promote STOP or ADJUST_SPEED to EMERGENCY_BRAKE.",
+      "positive_patterns": [
+        "emergency brake",
+        "slam on the brakes",
+        "hard braking",
+        "brake hard",
+        "DANGER_CONTEXT plus stop immediately"
+      ],
+      "negative_patterns": [
+        "stop immediately without danger is STOP plus URGENT",
+        "stop now without danger is STOP plus URGENT",
+        "brake immediately without stop or danger is ADJUST_SPEED plus URGENT",
+        "hit the brakes is ADJUST_SPEED",
+        "brake if necessary is not an executable emergency command",
+        "gently press the brakes is ADJUST_SPEED"
+      ],
+      "output_constraints": {
+        "explicit_emergency_or_forceful_braking": {
+          "action": "EMERGENCY_BRAKE",
+          "urgency": "EMERGENCY",
+          "category": "EMERGENCY_RESPONSE"
+        },
+        "danger_plus_urgent_stop_or_brake": {
+          "action": "EMERGENCY_BRAKE",
+          "urgency": "EMERGENCY",
+          "category": "EMERGENCY_RESPONSE"
+        },
+        "timing_word_alone_can_trigger_emergency": false,
+        "evidence_status": "NO_EXPLICIT_EMERGENCY_POSITIVE_IN_FULL_CORPUS"
+      },
+      "source_sample_ids": [
+        "simlingo-dreamer-d5ee7c3759bfe6c6",
+        "simlingo-dreamer-b6c8047b53e538fd",
+        "simlingo-commentary-aa56bdfb34f8d20c"
+      ]
+    },
+    {
+      "rule_id": "R130_PULL_OVER_PARK_VS_STOP",
+      "rule_type": "ACTION",
+      "priority": 130,
+      "description": "Use PULL_OVER for moving to the roadside, PARK for occupying a parking space or designated parking location, and STOP for a complete stop without either placement intent. Preserve both PULL_OVER and PARK when both are explicitly requested as distinct sequential actions.",
+      "positive_patterns": [
+        "pull over",
+        "pull up next to TARGET",
+        "park near TARGET",
+        "find a place to park"
+      ],
+      "negative_patterns": [
+        "stop now",
+        "stop and let TARGET pass",
+        "TARGET is parked"
+      ],
+      "output_constraints": {
+        "roadside_action": "PULL_OVER",
+        "parking_action": "PARK",
+        "plain_complete_stop_action": "STOP",
+        "preserve_explicit_pull_over_then_park": true
+      },
+      "source_sample_ids": [
+        "talk2car-train-3c5e5a934bd36fba0431de96d6da4f03",
+        "talk2car-train-572055833dca081a2a30164868281fe6",
+        "talk2car-train-aafb0264659b270caa8ac128b17360b6",
+        "simlingo-dreamer-dc150888feac0b69"
+      ]
+    },
+    {
+      "rule_id": "R140_YIELD_VS_EGO_OVERTAKE",
+      "rule_type": "ACTION",
+      "priority": 140,
+      "description": "Yield means another road user proceeds first. Overtake means the ego vehicle passes a moving road user to get ahead. Pass-by means the ego vehicle moves past a target without an overtaking goal. Determine agent and goal before selecting the action.",
+      "positive_patterns": [
+        "yield to TARGET",
+        "give way to TARGET",
+        "let TARGET pass",
+        "overtake TARGET",
+        "pass that truck"
+      ],
+      "negative_patterns": [
+        "let the car overtake you must not emit ego OVERTAKE",
+        "pass a pedestrian may describe ordinary traversal"
+      ],
+      "output_constraints": {
+        "other_agent_first": "YIELD",
+        "ego_gets_ahead_of_road_user": "OVERTAKE",
+        "ego_moves_past_target": "PASS_BY"
+      },
+      "source_sample_ids": [
+        "talk2car-test-6cca8a46af0d2bf95931919da8eeb8bb",
+        "talk2car-test-5ada6cfa62e92992c59e311844fd6424",
+        "talk2car-train-4cc621d4d63f7a1e03816093331bc9a0"
+      ]
+    },
+    {
+      "rule_id": "R150_AVOID_VS_OVERTAKE",
+      "rule_type": "ACTION",
+      "priority": 150,
+      "description": "Use AVOID for conflict prevention or obstacle bypass. Use OVERTAKE when passing a road user is explicit. Preserve uncertainty when go around could mean either.",
+      "positive_patterns": [
+        "avoid the obstacle",
+        "go around the construction site",
+        "overtake the slow vehicle",
+        "pass that truck"
+      ],
+      "negative_patterns": [
+        "avoid a collision is AVOID, not unsupported collision",
+        "go around an unspecified car may require semantic review"
+      ],
+      "output_constraints": {
+        "obstacle_bypass": "AVOID",
+        "explicit_ego_passing": "OVERTAKE",
+        "unresolved_go_around_status": "NEEDS_CLARIFICATION"
+      },
+      "source_sample_ids": [
+        "talk2car-train-aef67a325e95a2b0065b5690e418a7b1",
+        "simlingo-commentary-dc4f86bf14fb17a0",
+        "talk2car-train-7b1d0dedb6c3147cf192806f141df9d9"
+      ]
+    },
+    {
+      "rule_id": "R160_ACTION_ORDER",
+      "rule_type": "ORDER",
+      "priority": 160,
+      "description": "Preserve every explicit action and derive semantic execution order from then, after, before, once, until, and clause structure. Surface order is only the default; explicit temporal markers override it. Do not reorder actions into a preferred driving plan.",
+      "positive_patterns": [
+        "ACTION then ACTION",
+        "after ACTION, ACTION",
+        "ACTION before LANDMARK",
+        "once CONDITION, ACTION"
+      ],
+      "negative_patterns": [
+        "before a landmark is a trigger, not necessarily a preceding action",
+        "after TARGET crosses is a condition"
+      ],
+      "output_constraints": {
+        "preserve_all_actions": true,
+        "preserve_semantic_execution_order": true,
+        "surface_order_is_default": true,
+        "temporal_markers_override_surface_order": true
+      },
+      "source_sample_ids": [
+        "talk2car-train-e7e0666ba6ecdab5164f859371e6dc18",
+        "talk2car-train-495dee4b530bedad1aaacd9c489f4037",
+        "talk2car-train-df0467244eda0a40ebec9512e73c957f"
+      ]
+    },
+    {
+      "rule_id": "R170_CONDITION_NOT_DECISION",
+      "rule_type": "CONDITION",
+      "priority": 170,
+      "description": "Extract explicit if, when, once, until, and when-clear clauses as language conditions. Do not evaluate whether the condition is currently true inside the parser.",
+      "positive_patterns": [
+        "if available",
+        "when it is clear",
+        "once we get closer",
+        "until TARGET passes"
+      ],
+      "negative_patterns": [
+        "because clauses in Commentary may explain scene context rather than command conditions"
+      ],
+      "output_constraints": {
+        "extract_condition_text": true,
+        "evaluate_condition": false
+      },
+      "source_sample_ids": [
+        "talk2car-test-34f720d37c74502d92b8983a9757b9f8",
+        "talk2car-test-4b346b1d0db0416d0ff47e1b4d9089fd",
+        "talk2car-test-ff736c0128e47069f30eca690d73296d"
+      ]
+    },
+    {
+      "rule_id": "R180_DISTANCE_NOT_COORDINATE",
+      "rule_type": "SLOT",
+      "priority": 180,
+      "description": "Extract scalar metric distance and attach it by syntactic scope to action distance, following distance, lane-change start or transition distance, or a distance trigger. Preserve x/y only when the user explicitly states a target coordinate under target.coordinates; never infer coordinates or expose a trajectory.",
+      "positive_patterns": [
+        "in NUMBER meters",
+        "after NUMBER meters",
+        "at NUMBER metres"
+      ],
+      "negative_patterns": [
+        "coordinates inferred from perception",
+        "trajectory waypoints",
+        "synthetic zero-meter transition metadata without a real maneuver"
+      ],
+      "output_constraints": {
+        "scalar_slots": [
+          "parameters.distance_m",
+          "parameters.following_distance_m",
+          "parameters.start_distance_m",
+          "parameters.transition_distance_m",
+          "trigger.distance_m"
+        ],
+        "attachment_rule": "SYNTACTIC_SCOPE",
+        "explicit_target_coordinate_slot": "target.coordinates",
+        "inferred_coordinates_allowed": false
+      },
+      "source_sample_ids": [
+        "simlingo-commentary-27ddfb8404242074",
+        "simlingo-commentary-0af4001e2d3f844c",
+        "simlingo-dreamer-df354fe8c903feb4",
+        "simlingo-dreamer-bb5107e34fb09b24"
+      ]
+    },
+    {
+      "rule_id": "R190_RESUME_REQUIRES_CONTEXT",
+      "rule_type": "AMBIGUITY",
+      "priority": 190,
+      "description": "Use RESUME only when restoring a prior route, lane, or driving state after a temporary action. Use PROCEED for starting or continuing forward, NAVIGATE_TO for destination motion, and FOLLOW for target tracking.",
+      "positive_patterns": [
+        "return to the original lane",
+        "resume normal driving",
+        "resume the original route"
+      ],
+      "negative_patterns": [
+        "continue straight is PROCEED",
+        "proceed towards TARGET is NAVIGATE_TO",
+        "continue to follow TARGET is FOLLOW"
+      ],
+      "output_constraints": {
+        "action": "RESUME",
+        "required_context": "preceding_or_suspended_action"
+      },
+      "source_sample_ids": [
+        "talk2car-val-634cd0933c5a167a48f516bf105394ef",
+        "talk2car-train-d62a424b396fe8237945cc293eda3c58",
+        "talk2car-val-1e89da1700a415d1de7d98ea3afc85da"
+      ]
+    },
+    {
+      "rule_id": "R200_EXTENDED_ACTION_DISTINCTION",
+      "rule_type": "ACTION",
+      "priority": 200,
+      "description": "Map sustained or requested dynamic-target tracking to FOLLOW, generic distance reduction to APPROACH, destination motion to NAVIGATE_TO, direction reversal to U_TURN, conditional holding to WAIT, and independent backward motion to REVERSE. Reverse parking remains PARK with parking_maneuver=REVERSE.",
+      "positive_patterns": [
+        "follow MOVING_TARGET",
+        "catch up to MOVING_TARGET",
+        "approach TARGET",
+        "go to TARGET",
+        "turn around",
+        "wait until CONDITION",
+        "back up NUMBER meters"
+      ],
+      "negative_patterns": [
+        "follow the route without a dynamic target is PROCEED",
+        "back into a parking space is PARK with parking_maneuver=REVERSE",
+        "wait without a duration or condition requires clarification",
+        "catch up to a stationary landmark is APPROACH"
+      ],
+      "output_constraints": {
+        "dynamic_target_tracking": "FOLLOW",
+        "generic_distance_reduction": "APPROACH",
+        "destination_motion": "NAVIGATE_TO",
+        "turn_around": "U_TURN",
+        "conditional_hold": "WAIT",
+        "independent_backward_motion": "REVERSE",
+        "reverse_parking": "PARK"
+      },
+      "source_sample_ids": [
+        "talk2car-train-851be47fb6c55bdeca3188782e14a332",
+        "talk2car-train-4ad50095c338fde37637a396a8bee3fe",
+        "talk2car-test-e5ed13cdfbca092feefe6653a1184e5b",
+        "talk2car-test-ce9b8e0f2cf270caccdb16e6c5feaaa0",
+        "talk2car-test-d706731a7a1d79e1911f5ba5da37c235",
+        "talk2car-test-34f720d37c74502d92b8983a9757b9f8"
+      ]
+    },
+    {
+      "rule_id": "R210_PICKUP_DROPOFF_AS_PURPOSE",
+      "rule_type": "SLOT",
+      "priority": 210,
+      "description": "Treat passenger pickup or drop-off as purpose, not as a low-level vehicle action. Attach it to an explicitly requested navigation, approach, roadside, stop, or parking action. If a purpose-only imperative has a resolvable target, use NAVIGATE_TO as its semantic action; if the target is missing, request clarification.",
+      "positive_patterns": [
+        "stop to pick up TARGET",
+        "pull up to pick up TARGET",
+        "park and pick up TARGET",
+        "drop off TARGET"
+      ],
+      "negative_patterns": [
+        "pick up the pace means increase speed",
+        "pickup truck is a vehicle type"
+      ],
+      "output_constraints": {
+        "purpose_values": [
+          "PICK_UP",
+          "DROP_OFF"
+        ],
+        "allowed_actions": [
+          "NAVIGATE_TO",
+          "APPROACH",
+          "PULL_OVER",
+          "STOP",
+          "PARK"
+        ],
+        "purpose_only_with_resolvable_target": "NAVIGATE_TO",
+        "purpose_only_missing_target_status": "NEEDS_CLARIFICATION",
+        "invent_unrequested_maneuver_sequence": false
+      },
+      "source_sample_ids": [
+        "talk2car-train-af12b7921100b95b9c7e29e289381a83",
+        "talk2car-train-e317cf3eebd05420fd16fad59b05d862",
+        "simlingo-dreamer-160738758f86adac",
+        "talk2car-test-4b346b1d0db0416d0ff47e1b4d9089fd"
+      ]
+    }
+  ],
+  "review": {
+    "reviewed_at": "2026-07-21",
+    "reviewer": "Codex",
+    "owner": "Zhu Shanzhe",
+    "review_type": "AI_ASSISTED_SOURCE_EVIDENCE_AND_SCHEMA_REVIEW",
+    "decision": "APPROVED_WITH_CORRECTIONS",
+    "owner_signoff_required_for_human_gold": true,
+    "reviewed_items": 22,
+    "corrections": [
+      "Added an explicit traffic-rule-violation rejection rule.",
+      "Changed action ordering from textual order to semantic execution order.",
+      "Made temporal markers override default surface order.",
+      "Disambiguated scalar distance attachment by syntactic scope.",
+      "Resolved reverse-parking and FOLLOW/APPROACH contradictions.",
+      "Specified NEEDS_CLARIFICATION for unresolved AVOID/OVERTAKE ambiguity.",
+      "Defined the braking boundary: explicit emergency or forceful braking -> EMERGENCY_BRAKE; urgent stop without danger -> STOP+URGENT; ordinary stop -> STOP+NORMAL; ordinary braking or deceleration -> ADJUST_SPEED."
+    ],
+    "limitations": [
+      "A full 662,700-row scan found no explicit emergency or forceful-braking positive; 11 command-format urgent-stop candidates require policy-aware labeling.",
+      "CANCEL appears only twice in the full corpus and needs targeted examples.",
+      "Lexical full-corpus match counts are overlapping evidence, not labels.",
+      "SimLingo Commentary remains context evidence and is not command gold."
+    ]
+  }
+}

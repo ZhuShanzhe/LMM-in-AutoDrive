@@ -14,12 +14,18 @@ def expected(
     actions: list[str],
     *,
     status: str = "VALID",
+    urgency: str | None = None,
+    category: str | None = None,
     directions: list[str] | None = None,
     target_speed_mps: list[float] | None = None,
     unordered: bool = False,
 ) -> dict[str, Any]:
     result: dict[str, Any] = {"status": status}
     result["actions_unordered" if unordered else "actions"] = actions
+    if urgency is not None:
+        result["urgency"] = urgency
+    if category is not None:
+        result["category"] = category
     if directions is not None:
         result["directions"] = directions
     if target_speed_mps is not None:
@@ -67,8 +73,9 @@ def make_cases() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     add(dev, "road_user", ["超过前面的慢车", "从左侧超越前车", "安全超过那辆低速车"], expected(["OVERTAKE"]))
     add(dev, "road_user", ["先让公交车驶出站台", "给左侧来车让行", "让救护车先走"], expected(["YIELD"]))
 
-    add(dev, "stop_meta", ["在安全位置停车", "把车停下来", "前面停车"], expected(["STOP"]))
-    add(dev, "stop_meta", ["马上刹停", "立即停止车辆", "紧急情况立刻停车"], expected(["EMERGENCY_BRAKE"]))
+    add(dev, "stop_meta", ["在安全位置停车", "把车停下来", "前面停车"], expected(["STOP"], urgency="NORMAL"))
+    add(dev, "stop_meta", ["马上刹停", "立即停止车辆"], expected(["STOP"], urgency="URGENT"))
+    add(dev, "stop_meta", ["紧急情况立刻停车"], expected(["EMERGENCY_BRAKE"], urgency="EMERGENCY", category="EMERGENCY_RESPONSE"))
     add(dev, "stop_meta", ["撤销上一条命令", "别执行刚才那条指令"], expected(["CANCEL"]))
     add(dev, "stop_meta", ["继续按正常状态行驶", "恢复之前的行驶状态"], expected(["RESUME"]))
 
@@ -123,7 +130,7 @@ def make_cases() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     add_one(holdout, "complex", "左转以后靠边停车", expected(["TURN", "PULL_OVER"], directions=["LEFT"]))
     add_one(holdout, "complex", "看到骑行者后减速并向左变道", expected(["ADJUST_SPEED", "CHANGE_LANE"], directions=["LEFT"]))
     add_one(holdout, "complex", "先靠边，等乘客下车后继续开", expected(["PULL_OVER", "RESUME"]))
-    add_one(holdout, "complex", "紧急避开前车并马上刹停", expected(["AVOID", "EMERGENCY_BRAKE"]))
+    add_one(holdout, "complex", "紧急避开前车并马上刹停", expected(["AVOID", "EMERGENCY_BRAKE"], urgency="EMERGENCY", category="EMERGENCY_RESPONSE"))
     add_one(holdout, "complex", "保持车道同时把速度设到60km/h", expected(["KEEP_LANE", "SET_SPEED"], target_speed_mps=[16.667]))
 
     add(holdout, "ambiguity", ["往那头开", "在合适的地方转过去", "换过去", "停在它附近", "从旁边超过去"], expected([], status="NEEDS_CLARIFICATION"))

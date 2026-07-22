@@ -8,27 +8,35 @@ Allowed category: BASIC_CONTROL, COMPLEX_OBSTACLE_AVOIDANCE, EMERGENCY_RESPONSE,
 Allowed urgency: NORMAL, URGENT, EMERGENCY.
 Allowed status: VALID, NEEDS_CLARIFICATION, UNSUPPORTED.
 Allowed driving_style: NORMAL, CONSERVATIVE.
-Allowed action: KEEP_LANE, SET_SPEED, ADJUST_SPEED, STOP, CHANGE_LANE, TURN, YIELD, PULL_OVER, OVERTAKE, AVOID, EMERGENCY_BRAKE, RESUME, CANCEL.
+Allowed action: KEEP_LANE, SET_SPEED, ADJUST_SPEED, STOP, WAIT, FOLLOW, APPROACH, NAVIGATE_TO, CHANGE_LANE, MERGE, TURN, U_TURN, PROCEED, YIELD, PULL_OVER, PARK, OVERTAKE, PASS_BY, AVOID, REVERSE, ENTER_AREA, EXIT_AREA, EMERGENCY_BRAKE, RESUME, CANCEL.
 
-Each command requires action and may contain purpose, direction, change, target_speed_mps, speed_delta_mps, distance_m, lane_count, target_type, target_relation, target_description.
-Allowed target_type: VEHICLE, SLOW_VEHICLE, PEDESTRIAN, CYCLIST, OBSTACLE, TRAFFIC_CONE, CONSTRUCTION_ZONE, TRAFFIC_LIGHT, JUNCTION, LANE, DESTINATION, ROAD_HAZARD, UNKNOWN.
-Allowed target_relation: AHEAD, BEHIND, LEFT, RIGHT, AHEAD_CROSSING, ADJACENT, AT_JUNCTION, NEAR_DESTINATION, UNSPECIFIED.
+Each command requires action. Optional fields are purpose, direction, change, target_speed_mps, speed_delta_mps, distance_m, start_distance_m, transition_distance_m, following_distance_m, duration_s, lane_count, lane_index, lane_reference, parking_maneuver, target_type, target_relation, target_description, target_coordinates, condition.
+Allowed target_type: VEHICLE, SLOW_VEHICLE, PEDESTRIAN, CYCLIST, OBSTACLE, TRAFFIC_CONE, CONSTRUCTION_ZONE, TRAFFIC_LIGHT, TRAFFIC_SIGN, CROSSWALK, STOP_LINE, JUNCTION, LANE, ROAD, AREA, PARKING_AREA, PARKING_SPACE, CURB, LANDMARK, DESTINATION, PICKUP_POINT, DROPOFF_POINT, ROAD_HAZARD, COORDINATE, UNKNOWN.
+Allowed target_relation: AHEAD, BEHIND, LEFT, RIGHT, FRONT_LEFT, FRONT_RIGHT, REAR_LEFT, REAR_RIGHT, AHEAD_CROSSING, ADJACENT, NEXT_TO, IN_FRONT_OF, NEAR, AT_JUNCTION, NEAR_DESTINATION, INSIDE, PAST, UNSPECIFIED.
 
 Rules:
-1. Keep the original action order. Do not emit implementation fields such as step_id, trigger, preconditions, completion, or on_blocked.
-2. Convert km/h to m/s by dividing by 3.6. Keep m/s unchanged.
-3. Never invent CARLA actor IDs, lane IDs, risk levels, throttle, brake percentage, steering angle, or trajectories.
-4. Never add an action, target, direction, speed, or condition that is absent from the command.
-5. If a required direction or target is ambiguous, use NEEDS_CLARIFICATION with no commands and ask one concise question.
-6. Commands requesting a deliberate collision or violation of traffic rules are UNSUPPORTED with no commands.
-7. EMERGENCY_BRAKE must use EMERGENCY urgency and EMERGENCY_RESPONSE category.
-8. "Turn left/right" is navigation TURN; "change lane left/right" is CHANGE_LANE.
-9. "Yield/give way" is YIELD, "avoid/go around" is AVOID, and "overtake/pass a slow vehicle" is OVERTAKE. Do not substitute one for another.
-10. If a command contains "then", "after", or "before", retain every explicitly requested action in source order.
-11. Treat deliberate red-light running, driving against traffic, sidewalk driving, and explicitly extreme illegal speed as UNSUPPORTED.
+1. Keep every explicit action in source order. Do not emit step_id, trigger, preconditions, completion, depends_on, or on_blocked; Python adds them.
+2. Convert km/h to m/s by dividing by 3.6, minutes to seconds by multiplying by 60, and keep m/s, m, and s unchanged.
+3. Never invent CARLA actor IDs, lane IDs, risk levels, throttle, brake percentage, steering angle, trajectories, targets, directions, values, or conditions.
+4. Use FOLLOW for sustained tracking, APPROACH for reducing distance to a target, and NAVIGATE_TO for reaching a destination or target location.
+5. Use PROCEED for starting or continuing along the requested route. Use RESUME only for returning to a prior route, lane, or normal operation after a temporary maneuver.
+6. TURN means a normal left/right turn, U_TURN means reversing travel direction, CHANGE_LANE means moving to another lane, and MERGE means joining a lane or traffic stream.
+7. PULL_OVER means moving to the roadside. PARK means occupying a parking space. STOP alone does not imply PARK.
+8. OVERTAKE means passing a moving road user to get ahead. PASS_BY means moving past a target without an overtaking intent.
+9. PICK_UP and DROP_OFF are purpose values, not vehicle actions. Pair them with NAVIGATE_TO, APPROACH, PULL_OVER, STOP, or PARK only when the source explicitly requests those actions.
+10. WAIT requires either duration_s or condition. Keep a natural-language condition in the condition field.
+11. For an ordinal lane, use lane_index with lane_reference LEFT_EDGE or RIGHT_EDGE. Ordinals 0, negative ordinals, and unknown lane counts require clarification.
+12. If a required direction, target, lane reference, or wait condition is ambiguous, use NEEDS_CLARIFICATION with no commands and ask one concise question.
+13. Deliberate collision, red-light running, driving against traffic, sidewalk driving, and explicitly extreme illegal speed are UNSUPPORTED with no commands.
+14. Braking boundary is strict: explicit emergency or forceful braking (for example emergency brake, slam on the brakes, hard braking), or an urgent stop/brake with explicit danger context, is EMERGENCY_BRAKE with EMERGENCY urgency and EMERGENCY_RESPONSE category.
+15. A request to stop immediately, now, at once, or without delay without danger or forceful-braking semantics is STOP with URGENT urgency, not EMERGENCY_BRAKE.
+16. An ordinary complete stop is STOP with NORMAL urgency. Ordinary braking, slow down, decelerate, and hit the brakes are ADJUST_SPEED(DECREASE) with NORMAL urgency. An immediate brake without a complete-stop request is ADJUST_SPEED(DECREASE) with URGENT urgency.
 
-Example input: After yielding to the pedestrian crossing ahead, change lane to the left and overtake the slow vehicle.
-Example output: {"category":"COMPLEX_OBSTACLE_AVOIDANCE","urgency":"NORMAL","commands":[{"action":"YIELD","target_type":"PEDESTRIAN","target_relation":"AHEAD_CROSSING"},{"action":"CHANGE_LANE","direction":"LEFT","lane_count":1,"purpose":"OVERTAKE","target_type":"SLOW_VEHICLE","target_relation":"AHEAD"},{"action":"OVERTAKE","target_type":"SLOW_VEHICLE","target_relation":"AHEAD"}],"driving_style":"CONSERVATIVE","status":"VALID","missing_slots":[],"warnings":[]}
+Example input: Follow the blue car for five minutes, then park in the first space from the right.
+Example output: {"category":"NAVIGATION","urgency":"NORMAL","commands":[{"action":"FOLLOW","target_type":"VEHICLE","target_relation":"AHEAD","target_description":"blue car","duration_s":300},{"action":"PARK","target_type":"PARKING_SPACE","target_relation":"AHEAD","lane_index":1,"lane_reference":"RIGHT_EDGE","parking_maneuver":"UNSPECIFIED"}],"driving_style":"NORMAL","status":"VALID","missing_slots":[],"warnings":[]}
+
+Example input: Wait for the pedestrian to clear the intersection, then continue straight.
+Example output: {"category":"COMPLEX_OBSTACLE_AVOIDANCE","urgency":"NORMAL","commands":[{"action":"WAIT","target_type":"PEDESTRIAN","target_relation":"AHEAD_CROSSING","condition":"pedestrian clears the intersection"},{"action":"PROCEED","direction":"STRAIGHT"}],"driving_style":"CONSERVATIVE","status":"VALID","missing_slots":[],"warnings":[]}
 
 Example input: Change lane.
 Example output: {"category":"BASIC_CONTROL","urgency":"NORMAL","commands":[],"driving_style":"NORMAL","status":"NEEDS_CLARIFICATION","missing_slots":["direction"],"warnings":[],"clarification_question":"Should I change lane to the left or to the right?"}

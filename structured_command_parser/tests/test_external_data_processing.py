@@ -59,14 +59,35 @@ class ExternalDataProcessingTest(unittest.TestCase):
         expected = expected_for_simlingo(candidate)
         self.assertEqual(expected["target_speed_mps"], [16.194])
 
-    def test_immediate_stop_maps_to_emergency_brake(self) -> None:
+    def test_immediate_stop_maps_to_urgent_stop(self) -> None:
         candidate = {
             "mode": "stop",
             "instruction": "Stop the car immediately.",
         }
         expected = expected_for_simlingo(candidate)
+        self.assertEqual(expected["category"], "BASIC_CONTROL")
+        self.assertEqual(expected["urgency"], "URGENT")
+        self.assertEqual(expected["actions"], ["STOP"])
+
+    def test_explicit_emergency_brake_remains_emergency(self) -> None:
+        candidate = {
+            "mode": "slower",
+            "instruction": "Slam on the brakes.",
+        }
+        expected = expected_for_simlingo(candidate)
         self.assertEqual(expected["category"], "EMERGENCY_RESPONSE")
+        self.assertEqual(expected["urgency"], "EMERGENCY")
         self.assertEqual(expected["actions"], ["EMERGENCY_BRAKE"])
+
+    def test_immediate_brake_without_stop_is_urgent_speed_reduction(self) -> None:
+        candidate = {
+            "mode": "slower",
+            "instruction": "Brake immediately.",
+        }
+        expected = expected_for_simlingo(candidate)
+        self.assertEqual(expected["category"], "BASIC_CONTROL")
+        self.assertEqual(expected["urgency"], "URGENT")
+        self.assertEqual(expected["actions"], ["ADJUST_SPEED"])
 
 
 if __name__ == "__main__":

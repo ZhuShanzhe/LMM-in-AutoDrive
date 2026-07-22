@@ -1,5 +1,5 @@
-# 当前提交结构化指令解析代码、接口、示例和 baseline 调研文档。
-# 实际数据、模型、环境、缓存和运行结果不提交。
+# 提交结构化解析源代码、配置、Schema、示例、测试和依赖清单。
+# 数据集、模型权重、检查点、缓存和本地运行结果不提交。
 
 # 已结束的本地复现实验工作区
 /experiments/
@@ -19,6 +19,8 @@
 /structured_command_parser/data/*
 !/structured_command_parser/data/README.md
 /structured_command_parser/models/
+/structured_command_parser/artifacts/
+/structured_command_parser/checkpoints/
 /structured_command_parser/outputs/
 /structured_command_parser/results/
 /structured_command_parser/logs/
@@ -33,6 +35,7 @@
 *.pt
 *.bin
 *.safetensors
+*.onnx
 
 # 数据压缩包
 *.zip

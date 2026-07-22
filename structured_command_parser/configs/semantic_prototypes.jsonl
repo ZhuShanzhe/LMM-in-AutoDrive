@@ -1,0 +1,328 @@
+{"prototype_id":"rule-001","text":"保持当前车道","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["KEEP_LANE"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-002","text":"提速至60公里每小时","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[16.667]},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-003","text":"减速至40km/h","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[11.111]},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-004","text":"向左变道","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-005","text":"向右侧变道","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-006","text":"前方三百米路口右转","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-007","text":"前方路口左转","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-008","text":"路口直行","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["STRAIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-009","text":"停车","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"NORMAL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-010","text":"加速","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-011","text":"慢一点","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"],"urgency":"NORMAL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-012","text":"保持当前车道，车速控制到50km/h","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["KEEP_LANE","SET_SPEED"],"target_speed_mps":[13.889]},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-013","text":"立即紧急刹车","expected":{"status":"VALID","category":"EMERGENCY_RESPONSE","actions":["EMERGENCY_BRAKE"],"urgency":"EMERGENCY"},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-014","text":"取消刚才的指令","expected":{"status":"VALID","category":"META_CONTROL","actions":["CANCEL"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"rule-015","text":"恢复正常行驶","expected":{"status":"VALID","category":"META_CONTROL","actions":["RESUME"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-001","text":"看到前方横穿马路的行人，减速避让后向左变道超越慢车","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["ADJUST_SPEED","CHANGE_LANE","OVERTAKE"],"directions":["LEFT"],"urgency":"NORMAL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-002","text":"前方公交站有行人上下车，靠边减速至30km/h，确认安全后继续行驶","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["PULL_OVER","SET_SPEED","RESUME"],"target_speed_mps":[8.333]},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-003","text":"避让前方施工锥桶并回归原车道","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["AVOID","RESUME"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-004","text":"绕开前方慢车后提速","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["OVERTAKE","ADJUST_SPEED"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-005","text":"突发车辆加塞，紧急避让","expected":{"status":"VALID","category":"EMERGENCY_RESPONSE","actions":["AVOID"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-006","text":"前方路况危险，保持安全车速","expected":{"status":"VALID","category":"EMERGENCY_RESPONSE","actions":["ADJUST_SPEED"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-007","text":"施工路段，减速并道至左侧车道","expected":{"status":"VALID","category":"EMERGENCY_RESPONSE","actions":["ADJUST_SPEED","CHANGE_LANE"],"directions":["LEFT"],"urgency":"NORMAL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-008","text":"雨天绕开前方施工区域并减速","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions_unordered":["AVOID","ADJUST_SPEED"],"urgency":"NORMAL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-009","text":"夜间前方突然出现行人，立即停车","expected":{"status":"VALID","category":"EMERGENCY_RESPONSE","actions":["EMERGENCY_BRAKE"],"urgency":"EMERGENCY"},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-010","text":"绕开前方行人后恢复正常行驶","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["AVOID","RESUME"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-011","text":"从那边绕过去","expected":{"status":"NEEDS_CLARIFICATION","category":"NAVIGATION","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-012","text":"到那里转弯","expected":{"status":"NEEDS_CLARIFICATION","category":"NAVIGATION","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-013","text":"换个道","expected":{"status":"NEEDS_CLARIFICATION","category":"BASIC_CONTROL","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-014","text":"停在那辆车旁边","expected":{"status":"NEEDS_CLARIFICATION","category":"NAVIGATION","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"llm-015","text":"不管限速开到最快","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-001","text":"加快一点","expected":{"status":"VALID","actions":["ADJUST_SPEED"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-002","text":"把速度提上去","expected":{"status":"VALID","actions":["ADJUST_SPEED"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-003","text":"稍微加点速","expected":{"status":"VALID","actions":["ADJUST_SPEED"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-004","text":"慢一些","expected":{"status":"VALID","actions":["ADJUST_SPEED"],"urgency":"NORMAL","category":"BASIC_CONTROL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-005","text":"把车速降下来","expected":{"status":"VALID","actions":["ADJUST_SPEED"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-006","text":"轻踩刹车减速","expected":{"status":"VALID","actions":["ADJUST_SPEED"],"urgency":"NORMAL","category":"BASIC_CONTROL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-007","text":"车速设为36km/h","expected":{"status":"VALID","actions":["SET_SPEED"],"target_speed_mps":[10.0]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-008","text":"保持每小时72公里","expected":{"status":"VALID","actions":["SET_SPEED"],"target_speed_mps":[20.0]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-009","text":"按54公里每小时行驶","expected":{"status":"VALID","actions":["SET_SPEED"],"target_speed_mps":[15.0]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-010","text":"速度控制在8m/s","expected":{"status":"VALID","actions":["SET_SPEED"],"target_speed_mps":[8.0]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-011","text":"保持十二米每秒","expected":{"status":"VALID","actions":["SET_SPEED"],"target_speed_mps":[12.0]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-012","text":"以15m/s行驶","expected":{"status":"VALID","actions":["SET_SPEED"],"target_speed_mps":[15.0]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-013","text":"并到左边车道","expected":{"status":"VALID","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-014","text":"往左侧车道并线","expected":{"status":"VALID","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-015","text":"驶入左侧相邻车道","expected":{"status":"VALID","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-016","text":"向左横移一个车道","expected":{"status":"VALID","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-017","text":"并到右边车道","expected":{"status":"VALID","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-018","text":"往右侧车道并线","expected":{"status":"VALID","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-019","text":"驶入右侧相邻车道","expected":{"status":"VALID","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-020","text":"向右横移一个车道","expected":{"status":"VALID","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-021","text":"下个十字路口左转","expected":{"status":"VALID","actions":["TURN"],"directions":["LEFT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-022","text":"到前面的路口向左拐","expected":{"status":"VALID","actions":["TURN"],"directions":["LEFT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-023","text":"两百米后左转","expected":{"status":"VALID","actions":["TURN"],"directions":["LEFT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-024","text":"下个路口右拐","expected":{"status":"VALID","actions":["TURN"],"directions":["RIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-025","text":"前方交叉口向右转","expected":{"status":"VALID","actions":["TURN"],"directions":["RIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-026","text":"一百米后右转","expected":{"status":"VALID","actions":["TURN"],"directions":["RIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-027","text":"经过路口继续直行","expected":{"status":"VALID","actions":["TURN"],"directions":["STRAIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-028","text":"前方交叉口直走","expected":{"status":"VALID","actions":["TURN"],"directions":["STRAIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-029","text":"让前方行人先通过","expected":{"status":"VALID","actions":["YIELD"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-030","text":"礼让正在过街的行人","expected":{"status":"VALID","actions":["YIELD"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-031","text":"给斑马线上的行人让行","expected":{"status":"VALID","actions":["YIELD"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-032","text":"避开右侧的骑行者","expected":{"status":"VALID","actions":["AVOID"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-033","text":"绕过前面的障碍物","expected":{"status":"VALID","actions":["AVOID"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-034","text":"躲开道路中央的锥桶","expected":{"status":"VALID","actions":["AVOID"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-035","text":"超过前面的慢车","expected":{"status":"VALID","actions":["OVERTAKE"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-036","text":"从左侧超越前车","expected":{"status":"VALID","actions":["OVERTAKE"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-037","text":"安全超过那辆低速车","expected":{"status":"VALID","actions":["OVERTAKE"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-038","text":"先让公交车驶出站台","expected":{"status":"VALID","actions":["YIELD"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-039","text":"给左侧来车让行","expected":{"status":"VALID","actions":["YIELD"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-040","text":"让救护车先走","expected":{"status":"VALID","actions":["YIELD"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-041","text":"在安全位置停车","expected":{"status":"VALID","actions":["STOP"],"urgency":"NORMAL","category":"BASIC_CONTROL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-042","text":"把车停下来","expected":{"status":"VALID","actions":["STOP"],"urgency":"NORMAL","category":"BASIC_CONTROL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-043","text":"前面停车","expected":{"status":"VALID","actions":["STOP"],"urgency":"NORMAL","category":"BASIC_CONTROL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-044","text":"马上刹停","expected":{"status":"VALID","actions":["STOP"],"urgency":"URGENT","category":"BASIC_CONTROL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-045","text":"立即停止车辆","expected":{"status":"VALID","actions":["STOP"],"urgency":"URGENT","category":"BASIC_CONTROL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-046","text":"紧急情况立刻停车","expected":{"status":"VALID","actions":["EMERGENCY_BRAKE"],"urgency":"EMERGENCY","category":"EMERGENCY_RESPONSE"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-047","text":"撤销上一条命令","expected":{"status":"VALID","actions":["CANCEL"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-048","text":"别执行刚才那条指令","expected":{"status":"VALID","actions":["CANCEL"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-049","text":"继续按正常状态行驶","expected":{"status":"VALID","actions":["RESUME"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-050","text":"恢复之前的行驶状态","expected":{"status":"VALID","actions":["RESUME"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-051","text":"先减速，再向左变道","expected":{"status":"VALID","actions":["ADJUST_SPEED","CHANGE_LANE"],"directions":["LEFT"],"urgency":"NORMAL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-052","text":"降低车速后并入右侧车道","expected":{"status":"VALID","actions":["ADJUST_SPEED","CHANGE_LANE"],"directions":["RIGHT"],"urgency":"NORMAL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-053","text":"让行人通过以后继续前进","expected":{"status":"VALID","actions":["YIELD","RESUME"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-054","text":"礼让骑行者后恢复行驶","expected":{"status":"VALID","actions":["YIELD","RESUME"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-055","text":"绕开锥桶以后回到原车道","expected":{"status":"VALID","actions":["AVOID","RESUME"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-056","text":"避开施工区域后恢复正常行驶","expected":{"status":"VALID","actions":["AVOID","RESUME"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-057","text":"减速到30km/h后靠边停车","expected":{"status":"VALID","actions":["SET_SPEED","PULL_OVER"],"target_speed_mps":[8.333]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-058","text":"先把速度降到20公里每小时，再停到路边","expected":{"status":"VALID","actions":["SET_SPEED","PULL_OVER"],"target_speed_mps":[5.556]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-059","text":"向左变道并超过慢车","expected":{"status":"VALID","actions":["CHANGE_LANE","OVERTAKE"],"directions":["LEFT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-060","text":"并入右侧车道后超越前车","expected":{"status":"VALID","actions":["CHANGE_LANE","OVERTAKE"],"directions":["RIGHT"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-061","text":"先停车，等行人通过后继续行驶","expected":{"status":"VALID","actions":["STOP","RESUME"],"urgency":"NORMAL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-062","text":"遇到红灯先停下，之后继续前进","expected":{"status":"VALID","actions":["STOP","RESUME"],"urgency":"NORMAL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-063","text":"雨天减速并保持当前车道","expected":{"status":"VALID","actions_unordered":["ADJUST_SPEED","KEEP_LANE"],"urgency":"NORMAL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-064","text":"施工路段保持车道并降低速度","expected":{"status":"VALID","actions_unordered":["ADJUST_SPEED","KEEP_LANE"],"urgency":"NORMAL"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-065","text":"立即避开加塞车辆，然后减速","expected":{"status":"VALID","actions_unordered":["AVOID","ADJUST_SPEED"],"urgency":"URGENT"},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-066","text":"紧急绕开障碍物后靠边停车","expected":{"status":"VALID","actions":["AVOID","PULL_OVER"]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-067","text":"往旁边并线","expected":{"status":"NEEDS_CLARIFICATION","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-068","text":"换到另一条车道","expected":{"status":"NEEDS_CLARIFICATION","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-069","text":"并过去","expected":{"status":"NEEDS_CLARIFICATION","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-070","text":"到前面拐弯","expected":{"status":"NEEDS_CLARIFICATION","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-071","text":"在那个路口转","expected":{"status":"NEEDS_CLARIFICATION","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-072","text":"前面转一下","expected":{"status":"NEEDS_CLARIFICATION","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-073","text":"停到那边","expected":{"status":"NEEDS_CLARIFICATION","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-074","text":"绕过那个东西","expected":{"status":"NEEDS_CLARIFICATION","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-075","text":"撞开前面的车辆","expected":{"status":"UNSUPPORTED","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-076","text":"直接撞上那个锥桶","expected":{"status":"UNSUPPORTED","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-077","text":"超速到每小时180公里","expected":{"status":"UNSUPPORTED","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-078","text":"无视红灯继续开","expected":{"status":"UNSUPPORTED","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-079","text":"逆行绕过堵车路段","expected":{"status":"UNSUPPORTED","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"zh-diverse-dev-080","text":"从人行道上超过前车","expected":{"status":"UNSUPPORTED","actions":[]},"source":"reviewed","weight":1.0}
+{"prototype_id":"talk2car-0003","text":"请在那名女士旁边停车，我要问她那件裙子哪里买的。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"NORMAL"},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0014","text":"右转前行，在摩托车那里。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0019","text":"像我们前面的车一样，这里我们需要左转。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0023","text":"在我们经过自行车后左转。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0026","text":"向右转进入那辆叉车右边的车库。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0029","text":"向左转，在自行车那里。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0050","text":"左转，在红车前面。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0072","text":"向右转进入前面那辆蓝色汽车所在的车道","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0086","text":"右转这个接驳车一过就转。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0089","text":"右转，在那辆灰色车后方","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0098","text":"右转，在那辆灰色的车旁边","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0099","text":"左转经过那个光秃秃的交通锥后。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0112","text":"在第一个右边车辆后右转。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0131","text":"在人行道上的路障那边的交叉口右转。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0134","text":"我觉得我朋友在一辆银色车朝我们过来，如果可能，请做右转跟随那辆车。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0141","text":"左转，经过那辆蓝色卡车","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0146","text":"左转，就在这辆摩托车前面","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0149","text":"左转刚经过那辆黑色的SUV","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0150","text":"请在左边那辆车旁边停车。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"NORMAL"},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0155","text":"过了右边的最后一辆车，我们应该右转","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0183","text":"更改目的地，向右转，像我们前面那辆车一样","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0252","text":"跟着那辆右转的卡车。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0255","text":"左转经过那辆自行车后","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0259","text":"跟随黑色车辆而不是右转。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0266","text":"一个人大概在搬箱子。停下帮忙搬箱子。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"NORMAL"},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0271","text":"经过左边那辆白色汽车后，应该有一条侧街。左转并进入它。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0281","text":"左转跟着那辆卡车","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["LEFT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"talk2car-0298","text":"右转，在那个男人那里刚转完弯。","expected":{"status":"VALID","category":"NAVIGATION","actions":["TURN"],"directions":["RIGHT"]},"source":"Talk2Car","weight":0.7}
+{"prototype_id":"simlingo-0001","text":"撞向x: 8.999m，y: -0.032m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0002","text":"撞上位于x: 9.001m，y: -0.034m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0003","text":"撞上位于x: 9.003m，y: -0.012m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0005","text":"撞向车辆audi tt直行。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0006","text":"撞上前方的雪佛兰 Impala 直接。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0007","text":"撞上直向车辆dodge charger 2020。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0009","text":"撞上 Lincoln MKZ 2020 车辆直线。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0010","text":"撞上前方的2021年日产巡逻车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0011","text":"撞上那辆警车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0012","text":"撞上一辆雪佛兰Impala的车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0013","text":"撞上车辆 dodge charger 2020 那辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0014","text":"撞上车辆lincoln mkz 2020。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0015","text":"撞上一辆2021款Mini Cooper S的车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0016","text":"撞上车辆audi tt。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0017","text":"撞上福特Mustang车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0018","text":"撞上一辆2017款林肯MKZ车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0019","text":"撞上一辆2020款林肯MKZ车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0020","text":"撞上那辆2021款Mini Cooper S。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0021","text":"直接撞向位于x: 8.999m，y: 0.001m的位置的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0022","text":"直接撞向车辆audi tt。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0023","text":"直接撞向车辆2020款 Dodge Charger","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0024","text":"直接撞向林肯MKZ 2020车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0025","text":"直接撞向那辆2021款Mini Cooper S。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0026","text":"猛烈地撞向位于x: 28.873m，y: 1.198m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0027","text":"猛烈地撞向坐标x: 3.139m, y: -6.247m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0028","text":"猛烈地撞向坐标x: 4.296m，y: -6.243m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0029","text":"猛烈地撞向坐标x: 8.999m，y: 0.001m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0030","text":"猛烈撞击雪佛兰 Impala 车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0031","text":"猛烈地撞向车辆2020年的 Dodge 充电桩。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0032","text":"猛烈撞击2020款林肯MKZ车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0033","text":"猛烈撞击一辆2021款Mini Cooper S。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0034","text":"迎面撞向位于x: 8.999m, y: -0.032m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0035","text":"迎面撞向位于x: 9.003m, y: -0.012m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0036","text":"正面撞向警察车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0037","text":"迎面撞上雪佛兰 Impala 车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0038","text":"正面撞上车辆2020年款 Charger。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0039","text":"正面撞上林肯MKZ 2020车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0040","text":"撞击位于x: 8.998m，y: -0.013m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0041","text":"撞向目标对象在x: 8.999m，y: 0.001m。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0042","text":"撞击位于x: 9.001m，y: -0.033m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0043","text":"撞击位于x: 9.003m，y: -0.012m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0044","text":"撞击雪佛兰 Impala 车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0045","text":"撞向车辆2020年的 Dodge 充电车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0046","text":"撞向车辆2017款林肯MKZ。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0047","text":"撞上那辆2021款Mini Cooper S车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0048","text":"撞车到那个对象，坐标x: 27.739m，y: 0.126m。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0049","text":"撞车到目标对象在x: 8.999m，y: 0.0m。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0050","text":"撞车到警车里。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0051","text":"撞车到车辆audi tt。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0052","text":"撞车到那辆2020款 dodge 勾 Charger 车上。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0053","text":"撞车到2017款林肯MKZ车辆上。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0054","text":"撞车到林肯MKZ 2020车辆上。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0055","text":"撞车到那辆2021年日产巡逻车中。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0056","text":"撞上位于x: 6.685m，y: -5.871m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0057","text":"撞向那辆警车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0060","text":"撞向那辆2021款尼桑巡逻车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0061","text":"撞击位于x: 12.908m, y: -6.246m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0062","text":"撞击位于x: 8.999m，y: -0.011m的目标物体。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0063","text":"撞击目标物体于x: 20.915m，y: 0.128m的位置。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0064","text":"撞击目标物体于x: 23.717m，y: 0.179m的位置。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0065","text":"撞上你的车去撞击那辆警车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0066","text":"撞上你的车，让车辆雪佛兰 Impala 受伤。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0067","text":"撞击车辆躲避2020年 Charger。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0068","text":"撞击那辆福特Mustang车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0069","text":"用你的车撞击2017款林肯MKZ车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0071","text":"撞上一辆2021款Mini Cooper S轿车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0072","text":"用你的车撞击2021款尼桑巡逻车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0073","text":"撞向目标对象在x: 4.136m，y: 5.284m。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0074","text":"撞向目标对象在x: 7.668m，y: -3.092m。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0075","text":"撞向目标对象在x: 8.999m，y: 0.0m。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0076","text":"撞向车辆audi tt。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0077","text":"撞向雪佛兰 Impala 车辆。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0080","text":"撞向那辆2021年日产巡逻车。","expected":{"status":"UNSUPPORTED","category":"BASIC_CONTROL","actions":[]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0081","text":"加速你的驾驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0082","text":"加速。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0084","text":"立即加速。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0085","text":"加速车。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0087","text":"加速行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0091","text":"加速车辆。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0095","text":"在1米后，向左变道9米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0096","text":"在前行5米后，向左变道行驶8米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0097","text":"行驶8米后，向右变道两车道，转位11米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0102","text":"在0米处向右变道，变换阶段9米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0103","text":"向左变道，起始距离2米，过渡距离4米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0104","text":"向右变道，在6米处开始，过渡到9米处。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0105","text":"向右变道，起始距离7米，过渡距离9米，总共两车道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0106","text":"向右变道两车道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0107","text":"向右变道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0113","text":"在0米处，向右变道，跨越15米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0114","text":"在1米处，向左变道，过渡11米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0115","text":"在1米处，向右变道到第二车道，变换距离为17米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0118","text":"在4米处，向左变道，过渡10米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0119","text":"在6米处，向右变道，跨越5米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0124","text":"向相反方向，从右变道进入第二车道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0131","text":"向右变道到行车道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0138","text":"向右变道一车道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0145","text":"向左变道，在3米处，过渡到6米后完成变道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0147","text":"向右变道3米，在7米处完成过渡。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0148","text":"向右变道，初始位置0米，变换范围8米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0156","text":"向右变道6米后，再过渡5米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0166","text":"向右变道，靠右行驶一车道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0175","text":"向左变道一车道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0179","text":"在5米处向右变道，总共过渡13米。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0186","text":"在6米处转向6米，向左变道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0188","text":"在0米处行驶7米后，向左变道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0190","text":"向右变道，驶入一条车道。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0191","text":"向左变道，你的车辆。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["LEFT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0192","text":"向右变道，你的车辆。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["CHANGE_LANE"],"directions":["RIGHT"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0194","text":"减速到慢一些。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0195","text":"减速行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0197","text":"轻踩刹车。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0198","text":"减速车速。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0199","text":"减速。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0200","text":"踩刹车。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0202","text":"减速车。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0203","text":"减速车辆。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0204","text":"松开加速踏板。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0207","text":"减速驾驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["ADJUST_SPEED"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0208","text":"立即踩刹车现在就停车。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"URGENT"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0209","text":"立即停车。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"URGENT"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0210","text":"将车辆完全停下。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0214","text":"停车。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0216","text":"停车，不得继续前行。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0217","text":"立刻停车。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"URGENT"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0220","text":"立即停车并保持位置。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"URGENT"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0222","text":"停车并保持位置。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0226","text":"完全停车。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0227","text":"停车并原地待命。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["STOP"],"urgency":"NORMAL"},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0228","text":"调整你的速度到12.6公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[3.5]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0229","text":"将车速调整到14.2米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[14.2]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0230","text":"调整你的速度到4.9米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[4.9]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0231","text":"调整你的速度到58.3 km/h。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[16.194]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0232","text":"调整你的速度到73.4公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[20.389]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0233","text":"调整你的速度到8.5米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[8.5]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0234","text":"保持时速108.7公里。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[30.194]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0237","text":"保持车速在26.6公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[7.389]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0239","text":"保持时速44.6公里。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[12.389]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0240","text":"保持速度在7.9公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[2.194]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0241","text":"加速到7.2米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[7.2]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0242","text":"将车速调整至83.5公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[23.194]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0243","text":"减速至9.4公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[2.611]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0244","text":"加速至26.0米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[26.0]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0245","text":"保持车速在70.2公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[19.5]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0247","text":"以11.8米/秒的速度行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[11.8]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0249","text":"以40.3公里/小时的速度行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[11.194]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0250","text":"驾驶速度为5.4公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[1.5]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0252","text":"加速至10.2米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[10.2]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0253","text":"加速至23.9米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[23.9]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0254","text":"加速至24.2米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[24.2]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0255","text":"加速至32.2米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[32.2]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0256","text":"加速至44.6公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[12.389]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0257","text":"加速至99.0公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[27.5]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0260","text":"以11.8米/秒的恒定速度行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[11.8]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0261","text":"以12.5米/秒的恒定速度行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[12.5]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0262","text":"以18.7公里/小时的恒定速度行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[5.194]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0263","text":"以31.0米/秒的速度匀速行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[31.0]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0264","text":"保持52.9公里/小时的速度行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[14.694]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0265","text":"以1.7米/秒的速度平稳驾驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[1.7]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0266","text":"以12.9米/秒的速度平稳驾驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[12.9]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0267","text":"以23.2米/秒的速度平稳驾驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[23.2]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0268","text":"以26.9米/秒的速度平稳驾驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[26.9]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0269","text":"以每小时9.0公里的速度平稳驾驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[2.5]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0270","text":"以每小时95.0公里的稳定速度行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[26.389]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0272","text":"保持1.8公里/小时的速度。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[0.5]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0275","text":"保持车速在27.7公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[7.694]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0276","text":"保持车速在33.1公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[9.194]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0277","text":"保持车速在46.8公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[13.0]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0278","text":"保持车速在55.1公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[15.306]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0283","text":"保持时速65.2公里。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[18.111]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0284","text":"继续以14.1米/秒的速度行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[14.1]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0285","text":"继续以16.9米/秒的速度驾驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[16.9]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0286","text":"继续以17.2米/秒的速度行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[17.2]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0287","text":"继续以29.0米/秒的速度行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[29.0]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0288","text":"继续以43.9公里/小时的速度驾驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[12.194]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0289","text":"继续以46.4公里/小时的速度驾驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[12.889]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0290","text":"继续以76.0公里/小时行驶。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[21.111]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0292","text":"保持速度为19.3米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[19.3]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0293","text":"保持速度在4.5米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[4.5]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0294","text":"保持速度在6.3米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[6.3]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0295","text":"保持车速在72.4公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[20.111]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0296","text":"保持速度在8.1米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[8.1]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0297","text":"保持11.6米/秒的速度。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[11.6]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0302","text":"设置你的速度为21.3米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[21.3]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0303","text":"设置你的速度为98.6公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[27.389]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0304","text":"减速至12.2米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[12.2]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0305","text":"减速至19.0米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[19.0]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0306","text":"减速至27.0米/秒。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[27.0]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0307","text":"减速至37.1公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[10.306]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0308","text":"减速至43.9公里/小时。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[12.194]},"source":"SimLingo-Dreamer","weight":0.7}
+{"prototype_id":"simlingo-0313","text":"保持时速52.9公里。","expected":{"status":"VALID","category":"BASIC_CONTROL","actions":["SET_SPEED"],"target_speed_mps":[14.694]},"source":"SimLingo-Dreamer","weight":0.7}
