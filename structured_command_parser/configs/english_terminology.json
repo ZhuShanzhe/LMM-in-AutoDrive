@@ -1,0 +1,1068 @@
+{
+  "version": "1.1.0",
+  "status": "REVIEWED_APPROVED_WITH_CORRECTIONS",
+  "language": "en",
+  "scope": "ENGLISH_DRIVING_COMMAND_PARSER",
+  "source": {
+    "dataset": "english-knowledge-mining-selection-v1",
+    "representative_samples": 1000,
+    "talk2car_samples": 500,
+    "simlingo_dreamer_samples": 300,
+    "simlingo_commentary_samples": 200,
+    "full_corpus_rows": 662700,
+    "full_corpus_action_inventory": true
+  },
+  "principles": [
+    "Commentary supports context vocabulary but is not a passenger-command label source.",
+    "Source metadata and proposed labels are weak hints, not ground truth.",
+    "Target location words must not be mistaken for ego maneuver direction.",
+    "Safe action concepts found in the full corpus are represented directly; unsafe requests remain unsupported."
+  ],
+  "terms": [
+    {
+      "term_id": "keep_lane",
+      "canonical_concept": "maintain the current lane",
+      "canonical_action": "KEEP_LANE",
+      "expressions_en": [
+        "stay on your current lane",
+        "continue driving on your current lane",
+        "remain in the current lane",
+        "maintain the lane"
+      ],
+      "required_slots": [],
+      "optional_slots": [],
+      "exclusions": [
+        "go straight through a gate is navigation, not necessarily KEEP_LANE",
+        "stay behind a target describes following distance"
+      ],
+      "evidence_count": 18,
+      "source_sample_ids": [
+        "simlingo-dreamer-149e5602342ffe35",
+        "simlingo-commentary-dc4f86bf14fb17a0",
+        "simlingo-commentary-0ecb6dda60c735f2"
+      ]
+    },
+    {
+      "term_id": "set_speed",
+      "canonical_concept": "set or maintain an explicit target speed",
+      "canonical_action": "SET_SPEED",
+      "expressions_en": [
+        "set your speed to",
+        "maintain a speed of",
+        "hold a speed of",
+        "drive with a steady speed of",
+        "aim to maintain a speed of"
+      ],
+      "required_slots": [
+        "target_speed_mps"
+      ],
+      "optional_slots": [
+        "source_value",
+        "source_unit"
+      ],
+      "exclusions": [
+        "accelerate to follow a vehicle has no target speed",
+        "slow down without a value is ADJUST_SPEED",
+        "a numeric speed with no resolvable unit requires clarification"
+      ],
+      "evidence_count": 40,
+      "source_sample_ids": [
+        "simlingo-dreamer-6edb1acfa4eb2b5d",
+        "simlingo-dreamer-de95bc256e9d0f2f",
+        "simlingo-dreamer-9c5f00c701358b6e",
+        "simlingo-dreamer-ca14f3b7f528a804"
+      ]
+    },
+    {
+      "term_id": "increase_speed",
+      "canonical_concept": "increase speed without an explicit target value",
+      "canonical_action": "ADJUST_SPEED",
+      "expressions_en": [
+        "accelerate",
+        "speed up",
+        "go faster",
+        "pick up the pace",
+        "step on the gas",
+        "push the accelerator"
+      ],
+      "required_slots": [
+        "change=INCREASE"
+      ],
+      "optional_slots": [
+        "speed_delta_mps"
+      ],
+      "exclusions": [
+        "accelerate to a numeric speed is SET_SPEED",
+        "accelerate into a collision is an unsupported compound request"
+      ],
+      "evidence_count": 69,
+      "source_sample_ids": [
+        "simlingo-dreamer-160738758f86adac",
+        "simlingo-dreamer-669cb49016ee94ba",
+        "simlingo-dreamer-bd192ff9c75ae2ab",
+        "simlingo-dreamer-f0e62eb8f10c5d87"
+      ]
+    },
+    {
+      "term_id": "decrease_speed",
+      "canonical_concept": "decrease speed without requiring a complete stop",
+      "canonical_action": "ADJUST_SPEED",
+      "expressions_en": [
+        "slow down",
+        "decelerate",
+        "reduce speed",
+        "cut down on speed",
+        "ease off the accelerator",
+        "brake gently",
+        "hit the brakes"
+      ],
+      "required_slots": [
+        "change=DECREASE"
+      ],
+      "optional_slots": [
+        "speed_delta_mps",
+        "target_type",
+        "target_relation",
+        "urgency"
+      ],
+      "exclusions": [
+        "stop means reach zero speed",
+        "explicit emergency or forceful braking is EMERGENCY_BRAKE",
+        "an immediate brake without complete-stop or danger semantics is ADJUST_SPEED with URGENT urgency"
+      ],
+      "evidence_count": 97,
+      "source_sample_ids": [
+        "simlingo-dreamer-4380334c6443420f",
+        "simlingo-dreamer-1e795435cedcba63",
+        "simlingo-dreamer-038109748d5aa83a",
+        "talk2car-train-1d82530e3e4867aeda46341ea3b0eca6"
+      ]
+    },
+    {
+      "term_id": "stop",
+      "canonical_concept": "bring the ego vehicle to a complete stop",
+      "canonical_action": "STOP",
+      "expressions_en": [
+        "stop",
+        "stop immediately",
+        "stop now",
+        "come to a full stop",
+        "come to a standstill",
+        "halt the vehicle",
+        "cease all movement"
+      ],
+      "required_slots": [],
+      "optional_slots": [
+        "target_type",
+        "target_relation",
+        "distance_m",
+        "condition",
+        "urgency"
+      ],
+      "exclusions": [
+        "slow down does not imply STOP",
+        "a target vehicle is stopping does not command the ego vehicle to stop",
+        "hold position with a duration or condition is WAIT",
+        "stop immediately without danger or forceful-braking semantics is STOP with URGENT urgency"
+      ],
+      "evidence_count": 148,
+      "source_sample_ids": [
+        "simlingo-dreamer-d5ee7c3759bfe6c6",
+        "simlingo-dreamer-7fc8c832495075ce",
+        "simlingo-dreamer-8464933a4a419820",
+        "talk2car-train-af12b7921100b95b9c7e29e289381a83"
+      ]
+    },
+    {
+      "term_id": "change_lane",
+      "canonical_concept": "move the ego vehicle into another lane",
+      "canonical_action": "CHANGE_LANE",
+      "expressions_en": [
+        "change lanes",
+        "change one lane",
+        "switch to the lane",
+        "shift into the lane",
+        "move one lane",
+        "transition to the lane"
+      ],
+      "required_slots": [
+        "direction_or_target_lane"
+      ],
+      "optional_slots": [
+        "lane_count",
+        "distance_m",
+        "condition"
+      ],
+      "exclusions": [
+        "turn left at a junction is TURN",
+        "joining a lane or traffic stream expressed with merge is MERGE",
+        "a target car switching lanes is not an ego CHANGE_LANE command"
+      ],
+      "evidence_count": 84,
+      "source_sample_ids": [
+        "simlingo-dreamer-556df16306cceac1",
+        "simlingo-dreamer-d0cc9ba72f2d8cba",
+        "simlingo-dreamer-4d097dcbd74d77d1",
+        "talk2car-train-495dee4b530bedad1aaacd9c489f4037"
+      ]
+    },
+    {
+      "term_id": "turn",
+      "canonical_concept": "turn at a road junction or navigation point",
+      "canonical_action": "TURN",
+      "expressions_en": [
+        "turn left",
+        "turn right",
+        "make a left",
+        "make a right",
+        "take the left",
+        "take the right"
+      ],
+      "required_slots": [
+        "direction"
+      ],
+      "optional_slots": [
+        "distance_m",
+        "target_type=JUNCTION",
+        "condition"
+      ],
+      "exclusions": [
+        "turn to the left lane may describe CHANGE_LANE",
+        "a target vehicle turning left is not an ego TURN command",
+        "turn around is U_TURN"
+      ],
+      "evidence_count": 251,
+      "source_sample_ids": [
+        "talk2car-test-210f867976ea0dae85ad5f62f7fe2f8f",
+        "talk2car-train-df0467244eda0a40ebec9512e73c957f",
+        "talk2car-val-c81cedbc368f1313d1106e8528dec9e1"
+      ]
+    },
+    {
+      "term_id": "yield",
+      "canonical_concept": "allow another road user to proceed first",
+      "canonical_action": "YIELD",
+      "expressions_en": [
+        "yield to",
+        "give way to",
+        "let the person pass",
+        "let the vehicle pass",
+        "allow the vehicle to pass"
+      ],
+      "required_slots": [
+        "target_type"
+      ],
+      "optional_slots": [
+        "target_relation",
+        "condition"
+      ],
+      "exclusions": [
+        "let the other car overtake you is YIELD, not ego OVERTAKE",
+        "stop may be a separate preceding action"
+      ],
+      "evidence_count": 32,
+      "source_sample_ids": [
+        "talk2car-train-16b4033cf724f888fdd489996b8db6a2",
+        "talk2car-test-6cca8a46af0d2bf95931919da8eeb8bb",
+        "talk2car-train-d2fb685b3b0f8d523fe068987c1a5cba"
+      ]
+    },
+    {
+      "term_id": "pull_over",
+      "canonical_concept": "move to the roadside or curb",
+      "canonical_action": "PULL_OVER",
+      "expressions_en": [
+        "pull over",
+        "pull up by",
+        "pull up alongside",
+        "move to the roadside"
+      ],
+      "required_slots": [],
+      "optional_slots": [
+        "target_type",
+        "target_relation",
+        "target_description",
+        "direction"
+      ],
+      "exclusions": [
+        "stop in the current lane is STOP",
+        "occupying a parking space is PARK",
+        "the side of a landmark is target relation, not always ego maneuver direction"
+      ],
+      "evidence_count": 106,
+      "source_sample_ids": [
+        "talk2car-train-572055833dca081a2a30164868281fe6",
+        "talk2car-train-3c5e5a934bd36fba0431de96d6da4f03",
+        "talk2car-train-aafb0264659b270caa8ac128b17360b6",
+        "talk2car-train-e317cf3eebd05420fd16fad59b05d862"
+      ]
+    },
+    {
+      "term_id": "overtake",
+      "canonical_concept": "pass a target road user using ego motion",
+      "canonical_action": "OVERTAKE",
+      "expressions_en": [
+        "overtake the vehicle",
+        "pass that truck",
+        "pass that car",
+        "get past the vehicle"
+      ],
+      "required_slots": [
+        "target_type"
+      ],
+      "optional_slots": [
+        "target_relation",
+        "direction",
+        "condition"
+      ],
+      "exclusions": [
+        "let a car overtake you is YIELD",
+        "pass a pedestrian may mean proceed by, not OVERTAKE"
+      ],
+      "evidence_count": 7,
+      "source_sample_ids": [
+        "talk2car-train-4e01041e9bba6d78eb3531b698e914dd",
+        "talk2car-train-4cc621d4d63f7a1e03816093331bc9a0",
+        "talk2car-train-7b1d0dedb6c3147cf192806f141df9d9"
+      ]
+    },
+    {
+      "term_id": "avoid",
+      "canonical_concept": "maneuver to prevent conflict with a target or obstacle",
+      "canonical_action": "AVOID",
+      "expressions_en": [
+        "avoid",
+        "go around",
+        "drive around",
+        "steer clear of",
+        "maneuver around"
+      ],
+      "required_slots": [
+        "target_type_or_description"
+      ],
+      "optional_slots": [
+        "target_relation",
+        "direction",
+        "condition"
+      ],
+      "exclusions": [
+        "avoid a collision is preventive AVOID, not a collision request",
+        "go around a slow vehicle may be OVERTAKE when passing is explicit"
+      ],
+      "evidence_count": 129,
+      "source_sample_ids": [
+        "talk2car-train-aef67a325e95a2b0065b5690e418a7b1",
+        "simlingo-commentary-58cc6db2ceab3ab6",
+        "simlingo-commentary-5cae0a6220e55b90"
+      ]
+    },
+    {
+      "term_id": "resume",
+      "canonical_concept": "restore a prior route, lane, or driving state after a temporary action",
+      "canonical_action": "RESUME",
+      "expressions_en": [
+        "resume driving",
+        "resume normal driving",
+        "return to the original route",
+        "return to the original lane"
+      ],
+      "required_slots": [
+        "preceding_or_suspended_action_context"
+      ],
+      "optional_slots": [
+        "condition"
+      ],
+      "exclusions": [
+        "continue straight is PROCEED",
+        "proceed towards a destination is NAVIGATE_TO",
+        "continue following a target is FOLLOW"
+      ],
+      "evidence_count": 13,
+      "source_sample_ids": [
+        "talk2car-val-634cd0933c5a167a48f516bf105394ef",
+        "talk2car-train-d62a424b396fe8237945cc293eda3c58",
+        "talk2car-test-ce2bb88f8a038eb1f91f7a1bd39b7598"
+      ]
+    },
+    {
+      "term_id": "wait",
+      "canonical_concept": "hold position until a duration ends or an explicit condition is met",
+      "canonical_action": "WAIT",
+      "expressions_en": [
+        "wait until",
+        "hold position until",
+        "remain in place for",
+        "stay put until"
+      ],
+      "required_slots": [
+        "duration_s_or_condition"
+      ],
+      "optional_slots": [
+        "target_type",
+        "target_relation"
+      ],
+      "exclusions": [
+        "a complete stop without a wait condition is STOP"
+      ],
+      "evidence_count": 16,
+      "full_corpus_pattern_matches": 408,
+      "source_sample_ids": [
+        "talk2car-test-d706731a7a1d79e1911f5ba5da37c235",
+        "talk2car-train-a402ba8d4e04ef29107f10890a00d269",
+        "simlingo-commentary-c6ee8de9f5d6f1ca"
+      ]
+    },
+    {
+      "term_id": "follow",
+      "canonical_concept": "reach and maintain a tracking relationship with a moving target",
+      "canonical_action": "FOLLOW",
+      "expressions_en": [
+        "follow the car",
+        "trail the vehicle",
+        "stay behind",
+        "catch up to",
+        "get right behind"
+      ],
+      "required_slots": [
+        "target_type_or_description"
+      ],
+      "optional_slots": [
+        "duration_s",
+        "following_distance_m",
+        "target_relation"
+      ],
+      "exclusions": [
+        "follow the route without a dynamic target is PROCEED",
+        "continue following is FOLLOW, not RESUME",
+        "catch up to a stationary landmark is APPROACH"
+      ],
+      "evidence_count": 176,
+      "full_corpus_pattern_matches": 63756,
+      "source_sample_ids": [
+        "talk2car-val-1e89da1700a415d1de7d98ea3afc85da",
+        "talk2car-train-851be47fb6c55bdeca3188782e14a332",
+        "talk2car-val-c81cedbc368f1313d1106e8528dec9e1"
+      ]
+    },
+    {
+      "term_id": "approach",
+      "canonical_concept": "reduce distance to a target without requiring a stop",
+      "canonical_action": "APPROACH",
+      "expressions_en": [
+        "approach",
+        "drive closer to",
+        "move closer to",
+        "get closer to",
+        "catch up to a stationary target"
+      ],
+      "required_slots": [
+        "target_type_or_description"
+      ],
+      "optional_slots": [
+        "distance_m",
+        "target_relation"
+      ],
+      "exclusions": [
+        "driving all the way to a destination is NAVIGATE_TO",
+        "catching and then tracking a moving road user is FOLLOW"
+      ],
+      "evidence_count": 14,
+      "full_corpus_pattern_matches": 54616,
+      "source_sample_ids": [
+        "talk2car-train-4ad50095c338fde37637a396a8bee3fe",
+        "simlingo-dreamer-2f50b79218ba25e6",
+        "simlingo-commentary-44eb821bb54e7984"
+      ]
+    },
+    {
+      "term_id": "navigate_to",
+      "canonical_concept": "reach a destination, location, or target location",
+      "canonical_action": "NAVIGATE_TO",
+      "expressions_en": [
+        "go to",
+        "drive to",
+        "head to",
+        "navigate to",
+        "take me to"
+      ],
+      "required_slots": [
+        "target_type_or_description"
+      ],
+      "optional_slots": [
+        "target_relation",
+        "target.coordinates"
+      ],
+      "exclusions": [
+        "approach may stop short of the target",
+        "head to a lane is CHANGE_LANE or MERGE"
+      ],
+      "evidence_count": 54,
+      "full_corpus_pattern_matches": 1554,
+      "source_sample_ids": [
+        "talk2car-test-e5ed13cdfbca092feefe6653a1184e5b",
+        "talk2car-test-4b346b1d0db0416d0ff47e1b4d9089fd",
+        "talk2car-train-ae00a5b69d34eccf83e1c8cf9ea6ac8d"
+      ]
+    },
+    {
+      "term_id": "merge",
+      "canonical_concept": "join a target lane or traffic stream",
+      "canonical_action": "MERGE",
+      "expressions_en": [
+        "merge left",
+        "merge right",
+        "merge into the lane",
+        "merge into traffic"
+      ],
+      "required_slots": [
+        "direction_or_target_lane"
+      ],
+      "optional_slots": [
+        "lane_index",
+        "lane_reference",
+        "condition"
+      ],
+      "exclusions": [
+        "a target vehicle merging is scene context",
+        "ordinary lateral movement is CHANGE_LANE"
+      ],
+      "evidence_count": 21,
+      "full_corpus_pattern_matches": 213,
+      "source_sample_ids": [
+        "talk2car-train-495dee4b530bedad1aaacd9c489f4037",
+        "simlingo-dreamer-160ff75f64714ed7",
+        "simlingo-dreamer-d0cc9ba72f2d8cba"
+      ]
+    },
+    {
+      "term_id": "u_turn",
+      "canonical_concept": "reverse the ego vehicle travel direction using a legal turning maneuver",
+      "canonical_action": "U_TURN",
+      "expressions_en": [
+        "turn around",
+        "make a U-turn",
+        "do a U-turn"
+      ],
+      "required_slots": [],
+      "optional_slots": [
+        "distance_m",
+        "condition"
+      ],
+      "exclusions": [
+        "turn left or right is TURN",
+        "reverse is backward motion without a U-turn"
+      ],
+      "evidence_count": 15,
+      "full_corpus_pattern_matches": 182,
+      "source_sample_ids": [
+        "talk2car-test-ce9b8e0f2cf270caccdb16e6c5feaaa0",
+        "talk2car-train-56407a2a5594e4590698d1e753078f57",
+        "talk2car-train-b35c9089da850c6d8d4632d9589c9eab"
+      ]
+    },
+    {
+      "term_id": "proceed",
+      "canonical_concept": "start or continue forward along the requested route",
+      "canonical_action": "PROCEED",
+      "expressions_en": [
+        "proceed",
+        "go forward",
+        "go ahead",
+        "continue straight",
+        "drive through the junction"
+      ],
+      "required_slots": [],
+      "optional_slots": [
+        "direction",
+        "condition",
+        "target_type"
+      ],
+      "exclusions": [
+        "restoring a prior route after a temporary action is RESUME",
+        "following a vehicle is FOLLOW"
+      ],
+      "evidence_count": 14,
+      "full_corpus_pattern_matches": 27302,
+      "source_sample_ids": [
+        "talk2car-train-d62a424b396fe8237945cc293eda3c58",
+        "simlingo-dreamer-2e9d9a52be0729c8",
+        "simlingo-commentary-68177e4e0fae2efd"
+      ]
+    },
+    {
+      "term_id": "park",
+      "canonical_concept": "occupy a parking space or designated parking location",
+      "canonical_action": "PARK",
+      "expressions_en": [
+        "park",
+        "find a place to park",
+        "park near",
+        "park in front of",
+        "back into a parking space"
+      ],
+      "required_slots": [],
+      "optional_slots": [
+        "target_type",
+        "target_relation",
+        "parking_maneuver",
+        "purpose"
+      ],
+      "exclusions": [
+        "pull over only moves to the roadside",
+        "a target vehicle described as parked is not an ego PARK command"
+      ],
+      "evidence_count": 90,
+      "full_corpus_pattern_matches": 2940,
+      "source_sample_ids": [
+        "talk2car-train-572055833dca081a2a30164868281fe6",
+        "talk2car-test-b1f9c87e5e37f989a3bc8211c6ca41fd",
+        "talk2car-test-34f720d37c74502d92b8983a9757b9f8"
+      ]
+    },
+    {
+      "term_id": "pass_by",
+      "canonical_concept": "move past a target without expressing an overtaking goal",
+      "canonical_action": "PASS_BY",
+      "expressions_en": [
+        "drive past",
+        "go past",
+        "pass by"
+      ],
+      "required_slots": [
+        "target_type_or_description"
+      ],
+      "optional_slots": [
+        "target_relation",
+        "distance_m"
+      ],
+      "exclusions": [
+        "passing a moving vehicle to get ahead is OVERTAKE",
+        "letting another target pass is YIELD",
+        "passing or running a red traffic signal is an unsupported traffic violation"
+      ],
+      "evidence_count": 1,
+      "full_corpus_pattern_matches": 44,
+      "source_sample_ids": [
+        "talk2car-train-1d82530e3e4867aeda46341ea3b0eca6"
+      ]
+    },
+    {
+      "term_id": "reverse",
+      "canonical_concept": "move the ego vehicle backward",
+      "canonical_action": "REVERSE",
+      "expressions_en": [
+        "reverse",
+        "back up",
+        "reverse back"
+      ],
+      "required_slots": [],
+      "optional_slots": [
+        "distance_m",
+        "target_type",
+        "target_relation"
+      ],
+      "exclusions": [
+        "back into a parking space is PARK with parking_maneuver=REVERSE when no independent reverse step is requested"
+      ],
+      "evidence_count": 1,
+      "full_corpus_pattern_matches": 16,
+      "source_sample_ids": [
+        "talk2car-test-34f720d37c74502d92b8983a9757b9f8"
+      ]
+    },
+    {
+      "term_id": "enter_area",
+      "canonical_concept": "cross into a named road or area",
+      "canonical_action": "ENTER_AREA",
+      "expressions_en": [
+        "enter the parking lot",
+        "enter the street",
+        "drive into the area"
+      ],
+      "required_slots": [
+        "target_type_or_description"
+      ],
+      "optional_slots": [
+        "direction",
+        "condition"
+      ],
+      "exclusions": [
+        "a target road user entering the lane is scene context"
+      ],
+      "evidence_count": 4,
+      "source_sample_ids": [
+        "talk2car-train-ef9d2112667d96f24562d02954751b49",
+        "talk2car-train-7507b5a49d65befc5f963b7e307d70ac",
+        "talk2car-train-e8e8e067bd3f2f7c67983fc8d664fc70"
+      ]
+    },
+    {
+      "term_id": "exit_area",
+      "canonical_concept": "leave a named road or area",
+      "canonical_action": "EXIT_AREA",
+      "expressions_en": [
+        "exit the parking lot",
+        "leave the area",
+        "drive out of the parking area"
+      ],
+      "required_slots": [
+        "target_type_or_description"
+      ],
+      "optional_slots": [
+        "direction",
+        "condition"
+      ],
+      "exclusions": [
+        "Commentary examples provide vocabulary evidence only and still require command-context confirmation"
+      ],
+      "evidence_count": 2,
+      "source_sample_ids": [
+        "simlingo-commentary-d3a51e59c0abf897",
+        "simlingo-commentary-2c3c538f4a2dbd6c"
+      ]
+    },
+    {
+      "term_id": "deliberate_collision",
+      "canonical_concept": "explicit request to collide with a target",
+      "canonical_action": null,
+      "expressions_en": [
+        "crash into",
+        "collide with",
+        "smash into",
+        "run into",
+        "ram",
+        "bump into"
+      ],
+      "required_slots": [],
+      "optional_slots": [
+        "target_type",
+        "target_description"
+      ],
+      "exclusions": [
+        "avoid a collision is preventive and must not be rejected",
+        "an observed accident is context, not a collision command"
+      ],
+      "parser_status": "UNSUPPORTED",
+      "evidence_count": 61,
+      "source_sample_ids": [
+        "simlingo-dreamer-6ad044814aaa410c",
+        "simlingo-dreamer-6e035fbb031bb6f6",
+        "simlingo-dreamer-ea564e1a20a5f583",
+        "simlingo-dreamer-88f5b6074adb8bb1"
+      ]
+    },
+    {
+      "term_id": "traffic_rule_violation",
+      "canonical_concept": "explicit request to violate a traffic rule or leave the legal driving surface",
+      "canonical_action": null,
+      "expressions_en": [
+        "run the red light",
+        "ignore the traffic light",
+        "drive against traffic",
+        "drive onto the sidewalk",
+        "enter the opposite lane",
+        "ignore the speed limit",
+        "drive as fast as possible"
+      ],
+      "required_slots": [],
+      "optional_slots": [
+        "target_type",
+        "target_description"
+      ],
+      "exclusions": [
+        "a red light mentioned as scene context is not itself a violation request",
+        "moving away from a sidewalk or opposite lane is safety-compliant",
+        "slowing down to avoid a collision is a safe command"
+      ],
+      "parser_status": "UNSUPPORTED",
+      "evidence_count": 15,
+      "source_sample_ids": [
+        "simlingo-dreamer-978581428f5d9fd8",
+        "simlingo-dreamer-9edcdc0bb0436401",
+        "simlingo-dreamer-e8be9fc4c7f7135e",
+        "simlingo-dreamer-0596a4faece75b30"
+      ]
+    },
+    {
+      "term_id": "action_order_markers",
+      "canonical_concept": "linguistic markers that constrain action order",
+      "canonical_action": null,
+      "expressions_en": [
+        "then",
+        "after",
+        "before",
+        "once",
+        "until",
+        "followed by",
+        "subsequently"
+      ],
+      "required_slots": [
+        "action_order"
+      ],
+      "optional_slots": [
+        "condition"
+      ],
+      "exclusions": [
+        "after a landmark may be a spatial trigger rather than a completed action dependency"
+      ],
+      "evidence_count": 125,
+      "source_sample_ids": [
+        "talk2car-test-210f867976ea0dae85ad5f62f7fe2f8f",
+        "talk2car-train-495dee4b530bedad1aaacd9c489f4037",
+        "talk2car-train-e7e0666ba6ecdab5164f859371e6dc18"
+      ]
+    },
+    {
+      "term_id": "negation_markers",
+      "canonical_concept": "linguistic negation that suppresses or reverses an action candidate",
+      "canonical_action": null,
+      "expressions_en": [
+        "do not",
+        "don't",
+        "never",
+        "without"
+      ],
+      "required_slots": [
+        "negation_scope"
+      ],
+      "optional_slots": [],
+      "exclusions": [
+        "avoid is an AVOID action verb, not a general negation marker"
+      ],
+      "evidence_count": 4,
+      "source_sample_ids": [
+        "talk2car-train-413a684af28397df9c840b15dadbbb03",
+        "talk2car-train-e956797adcc7965437a672521ef207b2",
+        "talk2car-val-27a40bb4e3985bc8c90e08f07c9095ff"
+      ]
+    },
+    {
+      "term_id": "spatial_relation",
+      "canonical_concept": "target location relative to the ego vehicle or another reference",
+      "canonical_action": null,
+      "expressions_en": [
+        "ahead",
+        "behind",
+        "in front of",
+        "to the left",
+        "to the right",
+        "front left",
+        "front right",
+        "crossing the road",
+        "next to"
+      ],
+      "required_slots": [
+        "target_relation"
+      ],
+      "optional_slots": [
+        "target_description"
+      ],
+      "exclusions": [
+        "left or right attached to a target is not automatically maneuver direction"
+      ],
+      "evidence_count": 440,
+      "source_sample_ids": [
+        "talk2car-train-572055833dca081a2a30164868281fe6",
+        "simlingo-commentary-aa56bdfb34f8d20c",
+        "simlingo-commentary-006daf70ca4bb7f4"
+      ]
+    },
+    {
+      "term_id": "distance_value",
+      "canonical_concept": "metric distance used as a trigger or target relation",
+      "canonical_action": null,
+      "expressions_en": [
+        "meters",
+        "metres",
+        "m"
+      ],
+      "required_slots": [
+        "distance_m"
+      ],
+      "optional_slots": [
+        "condition",
+        "target_relation"
+      ],
+      "exclusions": [
+        "x and y coordinates are not distance slots for the public intent schema",
+        "zero-meter transition metadata may be synthetic"
+      ],
+      "evidence_count": 136,
+      "source_sample_ids": [
+        "simlingo-commentary-27ddfb8404242074",
+        "simlingo-commentary-0af4001e2d3f844c",
+        "simlingo-dreamer-bb5107e34fb09b24"
+      ]
+    },
+    {
+      "term_id": "speed_unit",
+      "canonical_concept": "unit attached to a speed value",
+      "canonical_action": null,
+      "expressions_en": [
+        "km/h",
+        "kph",
+        "m/s"
+      ],
+      "required_slots": [
+        "source_unit",
+        "source_value"
+      ],
+      "optional_slots": [],
+      "exclusions": [
+        "meters without a time denominator are distance",
+        "negative nonzero target speed is invalid for the current schema",
+        "mph is not supported by DrivingIntent 1.1.0 and requires clarification or a later schema extension"
+      ],
+      "evidence_count": 40,
+      "source_sample_ids": [
+        "simlingo-dreamer-1b2e02739eb362ec",
+        "simlingo-dreamer-9c5f00c701358b6e",
+        "simlingo-dreamer-de95bc256e9d0f2f"
+      ]
+    }
+  ],
+  "resolved_ontology_expansions": [
+    {
+      "concept_id": "FOLLOW_TARGET",
+      "expressions_en": [
+        "follow the car",
+        "trail the vehicle",
+        "stay behind the target"
+      ],
+      "recommended_action": "FOLLOW",
+      "evidence_count": 176,
+      "source_sample_ids": [
+        "talk2car-val-1e89da1700a415d1de7d98ea3afc85da",
+        "talk2car-train-851be47fb6c55bdeca3188782e14a332",
+        "talk2car-val-c81cedbc368f1313d1106e8528dec9e1"
+      ]
+    },
+    {
+      "concept_id": "APPROACH_TARGET",
+      "expressions_en": [
+        "approach the target",
+        "drive closer to",
+        "move closer to"
+      ],
+      "recommended_action": "APPROACH",
+      "evidence_count": 14,
+      "source_sample_ids": [
+        "talk2car-train-4ad50095c338fde37637a396a8bee3fe",
+        "simlingo-dreamer-2f50b79218ba25e6",
+        "simlingo-commentary-44eb821bb54e7984"
+      ]
+    },
+    {
+      "concept_id": "GO_TO_TARGET",
+      "expressions_en": [
+        "go to",
+        "drive to",
+        "head toward",
+        "take me to"
+      ],
+      "recommended_action": "NAVIGATE_TO",
+      "evidence_count": 54,
+      "source_sample_ids": [
+        "talk2car-test-e5ed13cdfbca092feefe6653a1184e5b",
+        "talk2car-test-4b346b1d0db0416d0ff47e1b4d9089fd",
+        "talk2car-train-ae00a5b69d34eccf83e1c8cf9ea6ac8d"
+      ]
+    },
+    {
+      "concept_id": "U_TURN",
+      "expressions_en": [
+        "turn around",
+        "make a U-turn"
+      ],
+      "recommended_action": "U_TURN",
+      "evidence_count": 15,
+      "source_sample_ids": [
+        "talk2car-test-ce9b8e0f2cf270caccdb16e6c5feaaa0",
+        "talk2car-train-56407a2a5594e4590698d1e753078f57",
+        "talk2car-train-b35c9089da850c6d8d4632d9589c9eab"
+      ]
+    },
+    {
+      "concept_id": "WAIT",
+      "expressions_en": [
+        "wait",
+        "hold position",
+        "remain in place"
+      ],
+      "recommended_action": "WAIT",
+      "evidence_count": 16,
+      "source_sample_ids": [
+        "talk2car-test-d706731a7a1d79e1911f5ba5da37c235",
+        "talk2car-train-a402ba8d4e04ef29107f10890a00d269",
+        "simlingo-commentary-c6ee8de9f5d6f1ca"
+      ]
+    },
+    {
+      "concept_id": "REVERSE",
+      "expressions_en": [
+        "reverse",
+        "back up",
+        "reverse back"
+      ],
+      "recommended_action": "REVERSE_FOR_INDEPENDENT_BACKWARD_MOTION",
+      "evidence_count": 1,
+      "source_sample_ids": [
+        "talk2car-test-34f720d37c74502d92b8983a9757b9f8"
+      ],
+      "review_note": "Reverse or back into a parking space is PARK with parking_maneuver=REVERSE unless an independent backward step is explicit."
+    },
+    {
+      "concept_id": "PICKUP_DROPOFF_PURPOSE",
+      "expressions_en": [
+        "pick up a passenger",
+        "drop off a passenger"
+      ],
+      "recommended_action": "MODEL_AS_PURPOSE_ATTACHED_TO_NAVIGATION_OR_STOPPING_ACTION",
+      "evidence_count": 13,
+      "source_sample_ids": [
+        "talk2car-train-af12b7921100b95b9c7e29e289381a83",
+        "talk2car-train-a07ebea7d047e0a471792fcf57420dcc",
+        "talk2car-test-d3ab32d5c72f28ffbf3b9f06c71f62d8"
+      ]
+    }
+  ],
+  "ontology_gaps": [],
+  "uncovered_canonical_actions": [
+    {
+      "action": "EMERGENCY_BRAKE",
+      "reason": "Round-1 representative commands contain ordinary stop and braking language but no unambiguous emergency-brake command.",
+      "recommended_action": "ADD_TARGETED_POSITIVE_AND_HARD_NEGATIVE_SAMPLES"
+    },
+    {
+      "action": "CANCEL",
+      "reason": "No cancellation command was found in the round-1 representative set.",
+      "recommended_action": "ADD_TARGETED_POSITIVE_AND_HARD_NEGATIVE_SAMPLES"
+    }
+  ],
+  "review": {
+    "reviewed_at": "2026-07-21",
+    "reviewer": "Codex",
+    "owner": "Zhu Shanzhe",
+    "review_type": "AI_ASSISTED_SOURCE_EVIDENCE_AND_SCHEMA_REVIEW",
+    "decision": "APPROVED_WITH_CORRECTIONS",
+    "owner_signoff_required_for_human_gold": true,
+    "reviewed_items": 31,
+    "corrections": [
+      "Separated CHANGE_LANE from MERGE expressions.",
+      "Separated STOP from conditional or timed WAIT.",
+      "Clarified FOLLOW versus APPROACH for dynamic targets.",
+      "Removed red-light violation evidence from PASS_BY positives.",
+      "Aligned speed and distance slot names with DrivingIntent 1.1.0.",
+      "Restricted supported speed terminology to km/h and m/s.",
+      "Classified reverse parking as PARK with parking_maneuver=REVERSE.",
+      "Added explicit unsupported traffic-rule-violation terminology.",
+      "Defined the braking boundary: explicit emergency or forceful braking -> EMERGENCY_BRAKE; urgent stop without danger -> STOP+URGENT; ordinary stop -> STOP+NORMAL; ordinary braking or deceleration -> ADJUST_SPEED."
+    ],
+    "limitations": [
+      "A full 662,700-row scan found no explicit emergency or forceful-braking positive; 11 command-format urgent-stop candidates require policy-aware labeling.",
+      "CANCEL appears only twice in the full corpus and needs targeted examples.",
+      "Lexical full-corpus match counts are overlapping evidence, not labels.",
+      "SimLingo Commentary remains context evidence and is not command gold."
+    ]
+  }
+}

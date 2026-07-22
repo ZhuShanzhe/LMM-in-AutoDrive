@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.1.0",
+  "request_id": "ambiguous-0001",
+  "input": {
+    "modality": "TEXT",
+    "language": "zh-CN",
+    "raw_text": "从那边绕过去",
+    "normalized_text": "从那边绕过去"
+  },
+  "intent": {
+    "category": "NAVIGATION",
+    "urgency": "NORMAL",
+    "steps": [],
+    "constraints": {
+      "safety_first": true,
+      "obey_traffic_rules": true,
+      "driving_style": "NORMAL"
+    }
+  },
+  "parse_result": {
+    "status": "NEEDS_CLARIFICATION",
+    "method": "LLM",
+    "model": "Qwen2.5-1.5B-Instruct",
+    "confidence": 0.41,
+    "missing_slots": [
+      "intent.steps[0].target",
+      "intent.steps[0].parameters.direction"
+    ],
+    "warnings": [
+      "目标和绕行方向均不明确"
+    ],
+    "clarification_question": "请说明需要绕开什么目标，以及希望从左侧还是右侧绕行。",
+    "latency_ms": 0.0
+  }
+}

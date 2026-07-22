@@ -1,0 +1,88 @@
+# 提交结构化解析源代码、配置、Schema、示例、测试和依赖清单。
+# 数据集、模型权重、检查点、缓存和本地运行结果不提交。
+
+# 已结束的本地复现实验工作区
+/experiments/
+
+# 本地数据、外部仓库与生成结果
+/data/
+/datasets/
+/external/
+/outputs/
+/logs/
+/tmp/
+/temp/
+/cache/
+/.cache/
+
+# 结构化指令解析模块的本地大文件
+/structured_command_parser/data/*
+!/structured_command_parser/data/README.md
+/structured_command_parser/models/
+/structured_command_parser/artifacts/
+/structured_command_parser/checkpoints/
+/structured_command_parser/outputs/
+/structured_command_parser/results/
+/structured_command_parser/logs/
+/structured_command_parser/cache/
+
+# 模型、权重与检查点
+/models/
+/weights/
+/checkpoints/
+*.ckpt
+*.pth
+*.pt
+*.bin
+*.safetensors
+*.onnx
+
+# 数据压缩包
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# Python 缓存与构建产物
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.ipynb_checkpoints/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+.conda/
+conda_envs/
+
+# 编辑器与系统文件
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 密钥与本机配置
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# 训练与实验跟踪目录
+wandb/
+runs/
