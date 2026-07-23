@@ -1,0 +1,36 @@
+{
+    "map": "Town10HD_Opt",
+
+    "route": {
+        "length": 8000,
+        "step": 5
+    },
+
+
+    "events": [
+
+        {
+            "distance": 1000,
+            "scenario": "static_obstacle"
+        },
+
+
+        {
+            "distance": 2500,
+            "scenario": "pedestrian_crossing"
+        },
+
+
+        {
+            "distance": 4500,
+            "scenario": "cut_in_vehicle"
+        },
+
+
+        {
+            "distance": 6500,
+            "scenario": "static_obstacle"
+        }
+
+    ]
+}
