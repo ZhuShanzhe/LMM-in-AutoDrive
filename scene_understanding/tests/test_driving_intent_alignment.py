@@ -378,5 +378,166 @@ class DrivingIntentAlignmentTests(unittest.TestCase):
         )
 
 
+    def test_aligns_adjacent_lane_targets_in_batch(self):
+        cases = (
+            (
+                "LEFT",
+                True,
+                "COMPLETE",
+                "matched_adjacent_lane",
+                "lane:12:-2",
+            ),
+            (
+                "RIGHT",
+                False,
+                "FAILED",
+                "right_lane_unavailable",
+                None,
+            ),
+        )
+
+        for (
+            direction,
+            expected_success,
+            expected_status,
+            expected_reason,
+            expected_entity_id,
+        ) in cases:
+            with self.subTest(direction=direction):
+                intent = complex_intent()
+                intent["intent"]["steps"] = [
+                    {
+                        "step_id": "lane_step",
+                        "action": "CHANGE_LANE",
+                        "target": {
+                            "type": "LANE",
+                            "relation": "UNSPECIFIED",
+                        },
+                        "parameters": {
+                            "direction": direction,
+                            "lane_count": 1,
+                        },
+                    }
+                ]
+
+                result = align_driving_intent(
+                    intent,
+                    self.world_state,
+                )
+                alignment = result["step_alignments"][0]
+
+                self.assertEqual(
+                    result["alignment_status"],
+                    expected_status,
+                )
+                self.assertEqual(
+                    alignment["alignment_success"],
+                    expected_success,
+                )
+                self.assertEqual(
+                    alignment["reason_code"],
+                    expected_reason,
+                )
+
+                if expected_entity_id is None:
+                    self.assertIsNone(
+                        alignment["matched_entity"]
+                    )
+                else:
+                    self.assertEqual(
+                        alignment["matched_entity"][
+                            "entity_type"
+                        ],
+                        "lane",
+                    )
+                    self.assertEqual(
+                        alignment["matched_entity"][
+                            "entity_id"
+                        ],
+                        expected_entity_id,
+                    )
+
+    def test_aligns_current_junction_target_in_batch(self):
+        intent = complex_intent()
+        intent["intent"]["steps"] = [
+            {
+                "step_id": "junction_step",
+                "action": "TURN",
+                "target": {
+                    "type": "JUNCTION",
+                    "relation": "AT_JUNCTION",
+                },
+                "parameters": {
+                    "direction": "LEFT",
+                },
+            }
+        ]
+
+        unavailable = align_driving_intent(
+            intent,
+            self.world_state,
+        )
+        unavailable_alignment = unavailable[
+            "step_alignments"
+        ][0]
+
+        self.assertEqual(
+            unavailable["alignment_status"],
+            "FAILED",
+        )
+        self.assertFalse(
+            unavailable_alignment[
+                "alignment_success"
+            ]
+        )
+        self.assertIsNone(
+            unavailable_alignment["matched_entity"]
+        )
+        self.assertEqual(
+            unavailable_alignment["reason_code"],
+            "junction_not_currently_available",
+        )
+
+        junction_world = copy.deepcopy(
+            self.world_state
+        )
+        junction_world["ego"]["is_junction"] = True
+        junction_world["environment"][
+            "is_intersection"
+        ] = True
+
+        available = align_driving_intent(
+            intent,
+            junction_world,
+        )
+        available_alignment = available[
+            "step_alignments"
+        ][0]
+
+        self.assertEqual(
+            available["alignment_status"],
+            "COMPLETE",
+        )
+        self.assertTrue(
+            available_alignment["alignment_success"]
+        )
+        self.assertEqual(
+            available_alignment["reason_code"],
+            "matched_current_junction",
+        )
+        self.assertEqual(
+            available_alignment["matched_entity"][
+                "entity_type"
+            ],
+            "junction",
+        )
+        self.assertEqual(
+            available_alignment["matched_entity"][
+                "category"
+            ],
+            "junction",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
