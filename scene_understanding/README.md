@@ -87,6 +87,58 @@ python -m pip install --index-url https://pypi.org/simple \
   -r scene_understanding/requirements-realtime.txt
 ```
 
+### 下载自训练 YOLO11s 权重
+
+当前默认目标检测权重托管于 Hugging Face：
+
+```text
+https://huggingface.co/UNIC0RN-Zhu/yolo11s-drive-scene-carla-v1
+```
+
+安装 Hugging Face CLI，并把权重下载到模块约定的位置：
+
+```bash
+conda activate /root/autodl-tmp/conda_envs/command_parser
+python -m pip install --index-url https://pypi.org/simple -U huggingface_hub
+
+# AutoDL 可选网络加速；其他 Linux 环境会自动跳过。
+if [ -f /etc/network_turbo ]; then
+  source /etc/network_turbo
+fi
+
+MODEL_DIR=/root/autodl-tmp/models/scene_understanding/yolo11s_specialized_carla_v1
+mkdir -p "$MODEL_DIR/weights"
+
+hf download UNIC0RN-Zhu/yolo11s-drive-scene-carla-v1 \
+  best.pt \
+  --local-dir "$MODEL_DIR/weights"
+```
+
+若仓库设置为私有或受限访问，先执行 `hf auth login`，再运行上述下载命令。
+训练参数和验证结果不是推理必需文件，可按需下载：
+
+```bash
+hf download UNIC0RN-Zhu/yolo11s-drive-scene-carla-v1 \
+  args.yaml validation_metrics.json results.csv \
+  --local-dir "$MODEL_DIR"
+```
+
+校验本次评测所用权重：
+
+```bash
+echo "a96c29ef518990f410f54ec2c4a4ef617b2b184996c2b980eb44072243070c44  $MODEL_DIR/weights/best.pt" \
+  | sha256sum -c -
+```
+
+预期输出为 `best.pt: OK`。随后执行加载冒烟测试：
+
+```bash
+python -c "from ultralytics import YOLO; YOLO('$MODEL_DIR/weights/best.pt'); print('model load: OK')"
+```
+
+模型基于 Ultralytics YOLO11s，按 AGPL-3.0 发布；使用者还需遵守 BDD100K、
+nuScenes 和 CARLA 数据集各自的许可与使用条款。权重不提交 Git。
+
 CARLA 实时默认后端为 YOLOP 640 + CARLA 域适配 YOLO11s 640 + ByteTrack。
 YOLOP 输出车道线和可行驶区域，YOLO11s 补充车辆、行人、骑行者、摩托车、交通灯、
 交通标志、锥桶和护栏。权重不提交 Git，训练与复现见 `training/README.md`：
