@@ -15,15 +15,23 @@ from scene_understanding.core.risk_assessment import assess_world_state, distanc
 from scene_understanding.core.world_state import validate_world_state
 
 
-DRIVING_INTENT_SCHEMA_VERSION = "1.0.0"
+DRIVING_INTENT_SCHEMA_VERSION = "1.1.0"
+SUPPORTED_DRIVING_INTENT_SCHEMA_VERSIONS = {
+    "1.0.0",
+    DRIVING_INTENT_SCHEMA_VERSION,
+}
 ALIGNMENT_SCHEMA_VERSION = "1.0.0"
 PARSE_STATUSES = {"VALID", "NEEDS_CLARIFICATION", "UNSUPPORTED", "INVALID"}
 ALIGNMENT_STATUSES = {"COMPLETE", "PARTIAL", "FAILED", "NOT_REQUIRED", "SKIPPED"}
 
 TARGET_TYPE_MAP = {
     "PEDESTRIAN": "pedestrian",
+    "CYCLIST": "cyclist",
     "SLOW_VEHICLE": "slow_vehicle",
     "VEHICLE": "vehicle",
+    "OBSTACLE": "obstacle",
+    "TRAFFIC_CONE": "traffic_cone",
+    "ROAD_HAZARD": "road_hazard",
     "TRAFFIC_LIGHT": "traffic_light",
     "TRAFFIC_SIGN": "traffic_sign",
     "JUNCTION": "junction",
@@ -34,10 +42,19 @@ RELATION_HINTS = {
     "BEHIND": ("rear", "unknown"),
     "LEFT": ("left", "unknown"),
     "RIGHT": ("right", "unknown"),
+    "FRONT_LEFT": ("front_left", "unknown"),
+    "FRONT_RIGHT": ("front_right", "unknown"),
+    "REAR_LEFT": ("rear_left", "unknown"),
+    "REAR_RIGHT": ("rear_right", "unknown"),
     "AHEAD_CROSSING": ("front", "crossing_ego_path"),
     "ADJACENT": ("unknown", "unknown"),
+    "NEXT_TO": ("unknown", "unknown"),
+    "IN_FRONT_OF": ("front", "unknown"),
+    "NEAR": ("unknown", "unknown"),
     "AT_JUNCTION": ("front", "ego_lane"),
     "NEAR_DESTINATION": ("front", "unknown"),
+    "INSIDE": ("unknown", "unknown"),
+    "PAST": ("rear", "unknown"),
     "UNSPECIFIED": ("unknown", "unknown"),
 }
 
@@ -47,8 +64,15 @@ def validate_driving_intent(document: Any) -> None:
 
     if not isinstance(document, dict):
         raise ValueError("DrivingIntent must be a JSON object")
-    if document.get("schema_version") != DRIVING_INTENT_SCHEMA_VERSION:
-        raise ValueError("DrivingIntent schema_version must be '1.0.0'")
+    schema_version = document.get("schema_version")
+    if schema_version not in SUPPORTED_DRIVING_INTENT_SCHEMA_VERSIONS:
+        supported = ", ".join(
+            sorted(SUPPORTED_DRIVING_INTENT_SCHEMA_VERSIONS)
+        )
+        raise ValueError(
+            "DrivingIntent schema_version must be one of: "
+            + supported
+        )
     request_id = document.get("request_id")
     if not isinstance(request_id, str) or not request_id:
         raise ValueError("DrivingIntent request_id must be a non-empty string")

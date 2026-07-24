@@ -58,6 +58,59 @@ class ObjectMatcherTests(unittest.TestCase):
         self.assertEqual(count, 1)
         self.assertEqual(selected["object_id"], "carla_actor_42")
 
+    def test_selects_extended_actor_categories(self):
+        cases = {
+            "cyclist": "cyclist",
+            "traffic_cone": "traffic_cone",
+            "obstacle": "road_barrier",
+            "road_hazard": "other",
+        }
+
+        for index, (target_type, category) in enumerate(
+            cases.items(),
+            start=100,
+        ):
+            with self.subTest(target_type=target_type):
+                state = copy.deepcopy(self.world_state)
+                actor = copy.deepcopy(state["objects"][0])
+
+                actor["object_id"] = f"carla_actor_{index}"
+                actor["source_object_id"] = str(index)
+                actor["category"] = category
+                actor["subtype"] = f"test.{category}"
+                actor["speed_mps"] = 0.0
+                actor["distance_m"] = 15.0
+                actor["relative_position_ego_m"][
+                    "longitudinal"
+                ] = 15.0
+                actor["relative_position_ego_m"][
+                    "lateral"
+                ] = 0.0
+                actor["lane_relation"] = "ego_lane"
+                actor["semantic_matches"] = []
+
+                state["objects"] = [actor]
+
+                reference = {
+                    "raw_text": target_type,
+                    "target_type": target_type,
+                    "position_hint": "front",
+                    "lane_hint": "ego_lane",
+                }
+
+                selected, count = select_world_object(
+                    reference,
+                    state,
+                )
+
+                self.assertEqual(count, 1)
+                self.assertIsNotNone(selected)
+                self.assertEqual(
+                    selected["object_id"],
+                    f"carla_actor_{index}",
+                )
+
+
 
 if __name__ == "__main__":
     unittest.main()

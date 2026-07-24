@@ -12,9 +12,13 @@ from typing import Any, Mapping
 
 TARGET_TYPES = {
     "pedestrian",
+    "cyclist",
     "front_vehicle",
     "slow_vehicle",
     "vehicle",
+    "obstacle",
+    "traffic_cone",
+    "road_hazard",
     "left_lane",
     "right_lane",
     "junction",
@@ -160,7 +164,14 @@ def _candidate_score(
     position_hint = reference["position_hint"]
     if lane_hint != "unknown" and relation == lane_hint:
         score -= 100.0
-    if position_hint == "front" and direction.startswith("front"):
+    if position_hint in {
+        "front_left",
+        "front_right",
+        "rear_left",
+        "rear_right",
+    } and direction == position_hint:
+        score -= 50.0
+    elif position_hint == "front" and direction.startswith("front"):
         score -= 50.0
     elif position_hint == "rear" and direction.startswith("rear"):
         score -= 50.0
@@ -180,21 +191,36 @@ def candidate_world_objects(
     """Return compatible actor candidates in deterministic best-first order."""
 
     target_type = reference["target_type"]
-    category = {
-        "pedestrian": "pedestrian",
-        "traffic_light": "traffic_light",
-        "traffic_sign": "traffic_sign",
-        "front_vehicle": "vehicle",
-        "slow_vehicle": "vehicle",
-        "vehicle": "vehicle",
+    categories = {
+        "pedestrian": {"pedestrian"},
+        "cyclist": {"cyclist"},
+        "traffic_light": {"traffic_light"},
+        "traffic_sign": {"traffic_sign"},
+        "traffic_cone": {"traffic_cone"},
+        "obstacle": {
+            "road_barrier",
+            "traffic_cone",
+            "other",
+        },
+        "road_hazard": {
+            "road_barrier",
+            "traffic_cone",
+            "other",
+        },
+        "front_vehicle": {"vehicle"},
+        "slow_vehicle": {"vehicle"},
+        "vehicle": {"vehicle"},
     }.get(target_type)
-    if category is None:
+    if categories is None:
         return []
 
     candidates: list[dict[str, Any]] = []
     ego_speed = world_state.get("ego", {}).get("speed_mps")
     for obj in world_state.get("objects", []):
-        if not isinstance(obj, dict) or obj.get("category") != category:
+        if (
+            not isinstance(obj, dict)
+            or obj.get("category") not in categories
+        ):
             continue
         if target_type == "front_vehicle":
             position = obj.get("relative_position_ego_m")

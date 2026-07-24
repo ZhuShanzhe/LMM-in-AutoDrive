@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from scene_understanding.src.driving_intent_alignment import (
+    RELATION_HINTS,
     align_driving_intent,
     target_to_reference,
     validate_alignment_result,
@@ -12,6 +13,18 @@ from scene_understanding.src.driving_intent_alignment import (
 
 ROOT = Path(__file__).resolve().parents[2]
 WORLD_STATE_EXAMPLE = ROOT / "scene_understanding" / "schemas" / "examples" / "world_state.example.json"
+DRIVING_INTENT_EXAMPLE = (
+    ROOT
+    / "structured_command_parser"
+    / "examples"
+    / "complex_obstacle_avoidance.json"
+)
+DRIVING_INTENT_SCHEMA = (
+    ROOT
+    / "structured_command_parser"
+    / "schemas"
+    / "driving_intent.schema.json"
+)
 
 
 def complex_intent() -> dict:
@@ -72,6 +85,83 @@ class DrivingIntentAlignmentTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.world_state = json.loads(WORLD_STATE_EXAMPLE.read_text(encoding="utf-8"))
+
+    def test_accepts_current_driving_intent_schema_version(self):
+        driving_intent = json.loads(
+            DRIVING_INTENT_EXAMPLE.read_text(encoding="utf-8")
+        )
+
+        result = align_driving_intent(driving_intent, self.world_state)
+
+        self.assertEqual(result["request_id"], "complex-0001")
+        self.assertEqual(result["parse_status"], "VALID")
+        self.assertEqual(validate_alignment_result(result), [])
+
+    def test_covers_all_current_relation_values(self):
+        schema = json.loads(
+            DRIVING_INTENT_SCHEMA.read_text(encoding="utf-8")
+        )
+        relation_values = set(
+            schema["$defs"]["target"]["properties"]["relation"]["enum"]
+        )
+
+        self.assertEqual(
+            relation_values - set(RELATION_HINTS),
+            set(),
+        )
+
+    def test_maps_extended_spatial_relations(self):
+        expected_positions = {
+            "FRONT_LEFT": "front_left",
+            "FRONT_RIGHT": "front_right",
+            "REAR_LEFT": "rear_left",
+            "REAR_RIGHT": "rear_right",
+            "IN_FRONT_OF": "front",
+            "PAST": "rear",
+            "NEXT_TO": "unknown",
+            "NEAR": "unknown",
+            "INSIDE": "unknown",
+        }
+
+        for relation, expected_position in expected_positions.items():
+            with self.subTest(relation=relation):
+                reference = target_to_reference(
+                    {
+                        "type": "VEHICLE",
+                        "relation": relation,
+                    },
+                    action="FOLLOW",
+                )
+                self.assertEqual(
+                    reference["position_hint"],
+                    expected_position,
+                )
+
+    def test_maps_extended_actor_target_types(self):
+        expected_types = {
+            "CYCLIST": "cyclist",
+            "TRAFFIC_CONE": "traffic_cone",
+            "OBSTACLE": "obstacle",
+            "ROAD_HAZARD": "road_hazard",
+        }
+
+        for target_type, expected_type in expected_types.items():
+            with self.subTest(target_type=target_type):
+                reference = target_to_reference(
+                    {
+                        "type": target_type,
+                        "relation": "AHEAD",
+                    },
+                    action="AVOID",
+                )
+                self.assertEqual(
+                    reference["target_type"],
+                    expected_type,
+                )
+                self.assertEqual(
+                    reference["position_hint"],
+                    "front",
+                )
 
     def test_maps_structured_targets_without_reparsing_chinese(self):
         pedestrian = target_to_reference(
