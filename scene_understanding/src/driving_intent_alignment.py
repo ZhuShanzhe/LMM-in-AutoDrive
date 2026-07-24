@@ -37,6 +37,30 @@ TARGET_TYPE_MAP = {
     "JUNCTION": "junction",
 }
 
+# These target types are valid in DrivingIntent 1.1, but the current
+# WorldState contract does not expose corresponding map or route entities.
+# Keep them distinct from genuinely unknown target types so downstream
+# modules can wait, request another capability, or stop safely without
+# treating a valid parser result as malformed.
+WORLD_STATE_CAPABILITY_UNAVAILABLE_TARGET_TYPES = {
+    "AREA",
+    "CONSTRUCTION_ZONE",
+    "COORDINATE",
+    "CROSSWALK",
+    "CURB",
+    "DESTINATION",
+    "DROPOFF_POINT",
+    "LANDMARK",
+    "PARKING_AREA",
+    "PARKING_SPACE",
+    "PICKUP_POINT",
+    "ROAD",
+    "STOP_LINE",
+}
+WORLD_STATE_CAPABILITY_UNAVAILABLE_TARGET = (
+    "world_state_capability_unavailable"
+)
+
 RELATION_HINTS = {
     "AHEAD": ("front", "ego_lane"),
     "BEHIND": ("rear", "unknown"),
@@ -144,6 +168,11 @@ def target_to_reference(
             lane_hint = "right_adjacent_lane"
         else:
             target_type = "unknown"
+    elif (
+        target_type_raw
+        in WORLD_STATE_CAPABILITY_UNAVAILABLE_TARGET_TYPES
+    ):
+        target_type = WORLD_STATE_CAPABILITY_UNAVAILABLE_TARGET
     else:
         target_type = TARGET_TYPE_MAP.get(target_type_raw, "unknown")
 
@@ -215,6 +244,13 @@ def _align_reference(
     risk_by_id: Mapping[str, str],
 ) -> tuple[bool, int, dict[str, Any] | None, str]:
     target_type = reference["target_type"]
+    if target_type == WORLD_STATE_CAPABILITY_UNAVAILABLE_TARGET:
+        return (
+            False,
+            0,
+            None,
+            "world_state_capability_unavailable",
+        )
     if target_type == "unknown":
         return False, 0, None, "unsupported_target_type"
     if target_type in {"left_lane", "right_lane"}:

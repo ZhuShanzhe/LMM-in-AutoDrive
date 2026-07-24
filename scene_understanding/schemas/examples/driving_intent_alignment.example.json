@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0.0",
+  "request_id": "complex-0001",
+  "world_state_frame_id": "carla_000123",
+  "parse_status": "VALID",
+  "alignment_status": "PARTIAL",
+  "target_count": 3,
+  "matched_target_count": 2,
+  "step_alignments": [
+    {
+      "step_id": "step_1",
+      "action": "ADJUST_SPEED",
+      "target": {
+        "type": "PEDESTRIAN",
+        "relation": "AHEAD_CROSSING"
+      },
+      "alignment_required": true,
+      "alignment_success": false,
+      "candidate_count": 0,
+      "matched_entity": null,
+      "reason_code": "no_matching_entity"
+    },
+    {
+      "step_id": "step_2",
+      "action": "CHANGE_LANE",
+      "target": {
+        "type": "SLOW_VEHICLE",
+        "relation": "AHEAD"
+      },
+      "alignment_required": true,
+      "alignment_success": true,
+      "candidate_count": 1,
+      "matched_entity": {
+        "entity_type": "actor",
+        "entity_id": "carla_actor_42",
+        "category": "vehicle",
+        "distance_m": 20.0,
+        "relative_position": "front",
+        "lane_relation": "ego_lane",
+        "risk_level": "medium"
+      },
+      "reason_code": "matched_world_object"
+    },
+    {
+      "step_id": "step_3",
+      "action": "OVERTAKE",
+      "target": {
+        "type": "SLOW_VEHICLE",
+        "relation": "AHEAD"
+      },
+      "alignment_required": true,
+      "alignment_success": true,
+      "candidate_count": 1,
+      "matched_entity": {
+        "entity_type": "actor",
+        "entity_id": "carla_actor_42",
+        "category": "vehicle",
+        "distance_m": 20.0,
+        "relative_position": "front",
+        "lane_relation": "ego_lane",
+        "risk_level": "medium"
+      },
+      "reason_code": "matched_world_object"
+    }
+  ]
+}

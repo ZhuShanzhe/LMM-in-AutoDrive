@@ -5,6 +5,8 @@ from pathlib import Path
 
 from scene_understanding.src.driving_intent_alignment import (
     RELATION_HINTS,
+    TARGET_TYPE_MAP,
+    WORLD_STATE_CAPABILITY_UNAVAILABLE_TARGET_TYPES,
     align_driving_intent,
     target_to_reference,
     validate_alignment_result,
@@ -24,6 +26,19 @@ DRIVING_INTENT_SCHEMA = (
     / "structured_command_parser"
     / "schemas"
     / "driving_intent.schema.json"
+)
+DRIVING_INTENT_ALIGNMENT_SCHEMA = (
+    ROOT
+    / "scene_understanding"
+    / "schemas"
+    / "driving_intent_alignment.schema.json"
+)
+DRIVING_INTENT_ALIGNMENT_EXAMPLE = (
+    ROOT
+    / "scene_understanding"
+    / "schemas"
+    / "examples"
+    / "driving_intent_alignment.example.json"
 )
 
 
@@ -97,6 +112,60 @@ class DrivingIntentAlignmentTests(unittest.TestCase):
         self.assertEqual(result["parse_status"], "VALID")
         self.assertEqual(validate_alignment_result(result), [])
 
+    def test_checked_in_batch_alignment_contract_is_synchronized(self):
+        parser_schema = json.loads(
+            DRIVING_INTENT_SCHEMA.read_text(encoding="utf-8")
+        )
+        alignment_schema = json.loads(
+            DRIVING_INTENT_ALIGNMENT_SCHEMA.read_text(
+                encoding="utf-8"
+            )
+        )
+        example = json.loads(
+            DRIVING_INTENT_ALIGNMENT_EXAMPLE.read_text(
+                encoding="utf-8"
+            )
+        )
+        driving_intent = json.loads(
+            DRIVING_INTENT_EXAMPLE.read_text(encoding="utf-8")
+        )
+        expected = align_driving_intent(
+            driving_intent,
+            self.world_state,
+        )
+
+        self.assertEqual(example, expected)
+        self.assertEqual(validate_alignment_result(example), [])
+        self.assertEqual(
+            set(alignment_schema["required"]),
+            set(example),
+        )
+        self.assertEqual(
+            alignment_schema["properties"]["schema_version"][
+                "const"
+            ],
+            example["schema_version"],
+        )
+        self.assertEqual(
+            alignment_schema["$defs"]["target"],
+            parser_schema["$defs"]["target"],
+        )
+        self.assertEqual(
+            alignment_schema["$defs"]["coordinates"],
+            parser_schema["$defs"]["coordinates"],
+        )
+
+        required_step_fields = set(
+            alignment_schema["$defs"]["stepAlignment"][
+                "required"
+            ]
+        )
+        for alignment in example["step_alignments"]:
+            self.assertEqual(
+                required_step_fields,
+                set(alignment),
+            )
+
     def test_covers_all_current_relation_values(self):
         schema = json.loads(
             DRIVING_INTENT_SCHEMA.read_text(encoding="utf-8")
@@ -108,6 +177,26 @@ class DrivingIntentAlignmentTests(unittest.TestCase):
         self.assertEqual(
             relation_values - set(RELATION_HINTS),
             set(),
+        )
+
+    def test_classifies_all_current_target_types(self):
+        schema = json.loads(
+            DRIVING_INTENT_SCHEMA.read_text(encoding="utf-8")
+        )
+        schema_types = set(
+            schema["$defs"]["target"]["properties"]["type"]["enum"]
+        )
+        classified_types = (
+            set(TARGET_TYPE_MAP)
+            | set(
+                WORLD_STATE_CAPABILITY_UNAVAILABLE_TARGET_TYPES
+            )
+            | {"LANE", "UNKNOWN"}
+        )
+
+        self.assertEqual(
+            schema_types,
+            classified_types,
         )
 
     def test_maps_extended_spatial_relations(self):
@@ -218,6 +307,75 @@ class DrivingIntentAlignmentTests(unittest.TestCase):
         )
         self.assertEqual(reference["target_type"], "left_lane")
         self.assertEqual(reference["lane_hint"], "left_adjacent_lane")
+
+
+    def test_reports_world_state_capability_unavailable_for_map_targets(self):
+        target_types = {
+            "AREA",
+            "CONSTRUCTION_ZONE",
+            "COORDINATE",
+            "CROSSWALK",
+            "CURB",
+            "DESTINATION",
+            "DROPOFF_POINT",
+            "LANDMARK",
+            "PARKING_AREA",
+            "PARKING_SPACE",
+            "PICKUP_POINT",
+            "ROAD",
+            "STOP_LINE",
+        }
+
+        for target_type in sorted(target_types):
+            with self.subTest(target_type=target_type):
+                intent = complex_intent()
+                intent["intent"]["steps"] = [
+                    intent["intent"]["steps"][0]
+                ]
+                intent["intent"]["steps"][0]["target"] = {
+                    "type": target_type,
+                    "relation": "AHEAD",
+                }
+
+                result = align_driving_intent(
+                    intent,
+                    self.world_state,
+                )
+                alignment = result["step_alignments"][0]
+
+                self.assertFalse(
+                    alignment["alignment_success"]
+                )
+                self.assertIsNone(
+                    alignment["matched_entity"]
+                )
+                self.assertEqual(
+                    alignment["reason_code"],
+                    "world_state_capability_unavailable",
+                )
+
+    def test_keeps_unknown_target_type_explicitly_unsupported(self):
+        intent = complex_intent()
+        intent["intent"]["steps"] = [
+            intent["intent"]["steps"][0]
+        ]
+        intent["intent"]["steps"][0]["target"] = {
+            "type": "UNKNOWN",
+            "relation": "UNSPECIFIED",
+        }
+
+        result = align_driving_intent(
+            intent,
+            self.world_state,
+        )
+        alignment = result["step_alignments"][0]
+
+        self.assertFalse(alignment["alignment_success"])
+        self.assertIsNone(alignment["matched_entity"])
+        self.assertEqual(
+            alignment["reason_code"],
+            "unsupported_target_type",
+        )
 
 
 if __name__ == "__main__":

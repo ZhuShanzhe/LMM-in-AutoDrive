@@ -306,7 +306,10 @@ python -m scene_understanding.scripts.align_driving_intent \
   --output outputs/semantic_alignment.json
 ```
 
-目标不可见或不支持时会明确输出未匹配结果，不会虚构场景实体。
+批量输出遵循 `schemas/driving_intent_alignment.schema.json`。目标当前不可见时返回
+`no_matching_entity`；规范支持但 WorldState 暂不能表达的地图或路线目标返回
+`world_state_capability_unavailable`；真正未知的类型返回 `unsupported_target_type`。
+任何情况下都不会虚构场景实体。
 
 ### 2. 风险评估
 
@@ -472,7 +475,7 @@ PYTHONPATH=. python -m scene_understanding.async_semantics.run_minicpm_scene_inf
 python -m unittest discover -s scene_understanding/tests -v
 ```
 
-当前测试集共 171 项，覆盖：
+当前测试集覆盖：
 
 - JSON 结构和确定性校验；
 - WorldState 坐标与相对运动；
@@ -491,7 +494,8 @@ python -m unittest discover -s scene_understanding/tests -v
 所有稳定 JSON 契约位于 `schemas/`，可直接用于模块间字段确认。示例位于 `schemas/examples/`，包括：
 
 - `world_state.example.json`
-- `semantic_alignment.example.json`
+- `semantic_alignment.example.json`（单对象引用对齐）
+- `driving_intent_alignment.example.json`（DrivingIntent 多步骤批量对齐）
 - `risk_assessment.example.json`
 - `control_decision.example.json`
 - `control_plan_state.example.json`
