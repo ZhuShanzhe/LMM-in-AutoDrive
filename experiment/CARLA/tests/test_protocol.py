@@ -5,7 +5,7 @@ from control.protocol import normalize_intent
 
 def driving_intent(action, parameters=None, status="VALID", urgency="NORMAL"):
     return {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "request_id": "test-001",
         "input": {
             "modality": "TEXT",
@@ -99,6 +99,11 @@ class ProtocolDrivingIntentTest(unittest.TestCase):
         self.assertEqual(intent["action"], "stop")
         self.assertEqual(intent["target_speed_kmh"], 0.0)
         self.assertEqual(intent["parse_status"], "INVALID")
+
+    def test_unimplemented_v11_action_stops_with_a_clear_reason(self):
+        intent = normalize_intent(driving_intent("FOLLOW"))
+        self.assertEqual(intent["action"], "stop")
+        self.assertEqual(intent["reason"], "unsupported_parser_action_follow")
 
     def test_scene_understanding_control_decision_is_accepted(self):
         intent = normalize_intent(control_decision("lane_change_left", 36.0))

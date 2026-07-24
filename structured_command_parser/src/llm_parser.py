@@ -7,6 +7,7 @@ from time import perf_counter
 from typing import Any
 
 from .factory import make_document, make_step
+from .intent_boundaries import classify_chinese_braking
 from .normalizer import normalize_text
 from .schema_tools import IntentValidationError
 
@@ -159,7 +160,16 @@ class QwenIntentParser:
                     "target_speed_mps",
                     "speed_delta_mps",
                     "distance_m",
+                    "start_distance_m",
+                    "transition_distance_m",
+                    "following_distance_m",
+                    "duration_s",
                     "lane_count",
+                    "lane_index",
+                    "lane_reference",
+                    "parking_maneuver",
+                    "source_value",
+                    "source_unit",
                 )
                 if key in command
             }
@@ -171,16 +181,34 @@ class QwenIntentParser:
                 }
                 if command.get("target_description"):
                     target["description"] = command["target_description"]
+                if isinstance(command.get("target_coordinates"), dict):
+                    target["coordinates"] = command["target_coordinates"]
 
             trigger: dict[str, Any] = {"type": "IMMEDIATE"}
-            if previous_id is not None:
+            if action == "WAIT" and command.get("condition"):
+                trigger = {
+                    "type": "CONDITION",
+                    "description": command["condition"],
+                }
+            elif previous_id is not None:
                 trigger = {"type": "AFTER_STEP", "step_id": previous_id}
             elif action == "TURN" and "distance_m" in command:
                 trigger = {"type": "AT_DISTANCE", "distance_m": command["distance_m"]}
             elif action == "TURN":
                 trigger = {"type": "AT_JUNCTION"}
             elif target is not None and (
-                action in {"YIELD", "OVERTAKE", "AVOID"}
+                action
+                in {
+                    "FOLLOW",
+                    "APPROACH",
+                    "NAVIGATE_TO",
+                    "YIELD",
+                    "OVERTAKE",
+                    "PASS_BY",
+                    "AVOID",
+                    "ENTER_AREA",
+                    "EXIT_AREA",
+                }
                 or command.get("purpose") in {"YIELD", "OVERTAKE"}
             ):
                 trigger = {"type": "OBJECT_PRESENT"}
@@ -202,27 +230,61 @@ class QwenIntentParser:
             ):
                 preconditions = ["TARGET_VISIBLE"]
                 completion = {"type": "TARGET_CLEARED"}
-            elif action == "CHANGE_LANE":
+            elif action in {"CHANGE_LANE", "MERGE"}:
                 direction = command.get("direction")
-                side = "LEFT" if direction == "LEFT" else "RIGHT"
-                preconditions = [
-                    f"{side}_LANE_EXISTS",
-                    f"{side}_LANE_SAFE",
-                    "LANE_CHANGE_LEGAL",
-                ]
+                if direction in {"LEFT", "RIGHT"}:
+                    preconditions = [
+                        f"{direction}_LANE_EXISTS",
+                        f"{direction}_LANE_SAFE",
+                        "LANE_CHANGE_LEGAL",
+                    ]
+                else:
+                    preconditions = ["TARGET_LANE_SAFE", "LANE_CHANGE_LEGAL"]
                 on_blocked = "WAIT_FOR_SAFE"
                 completion = {"type": "LANE_CHANGE_COMPLETED"}
-            elif action == "TURN":
+            elif action in {"TURN", "U_TURN"}:
                 preconditions = ["JUNCTION_REACHED", "PATH_CLEAR"]
                 on_blocked = "WAIT_FOR_SAFE"
                 completion = {"type": "JUNCTION_EXITED"}
-            elif action in {"YIELD", "OVERTAKE", "AVOID"}:
+            elif action in {"YIELD", "OVERTAKE", "PASS_BY", "AVOID"}:
                 preconditions = ["TARGET_VISIBLE", "PATH_CLEAR"]
                 on_blocked = "SAFE_STOP"
                 completion = {"type": "TARGET_CLEARED"}
+            elif action == "FOLLOW":
+                preconditions = ["TARGET_VISIBLE", "PATH_CLEAR"]
+                on_blocked = "WAIT_FOR_SAFE"
+                completion = {
+                    "type": "DURATION_ELAPSED"
+                    if "duration_s" in parameters
+                    else "FOLLOWING_ESTABLISHED"
+                }
+            elif action in {"APPROACH", "NAVIGATE_TO"}:
+                preconditions = ["TARGET_REACHABLE", "PATH_CLEAR"]
+                on_blocked = "WAIT_FOR_SAFE"
+                completion = {"type": "TARGET_REACHED"}
+            elif action == "WAIT":
+                completion = {
+                    "type": "DURATION_ELAPSED"
+                    if "duration_s" in parameters
+                    else "WAIT_CONDITION_MET"
+                }
+            elif action == "PARK":
+                preconditions = ["PATH_CLEAR", "PARKING_SPACE_AVAILABLE"]
+                on_blocked = "REQUEST_CLARIFICATION"
+                completion = {"type": "PARKING_COMPLETED"}
+            elif action == "REVERSE":
+                preconditions = ["PATH_CLEAR"]
+                on_blocked = "SAFE_STOP"
+                completion = {"type": "ACTION_REACHED"}
+            elif action in {"ENTER_AREA", "EXIT_AREA"}:
+                preconditions = ["AREA_ACCESSIBLE", "PATH_CLEAR"]
+                on_blocked = "WAIT_FOR_SAFE"
+                completion = {
+                    "type": "AREA_ENTERED" if action == "ENTER_AREA" else "AREA_EXITED"
+                }
             elif action == "STOP" or action == "EMERGENCY_BRAKE":
                 completion = {"type": "VEHICLE_STOPPED"}
-            elif action == "RESUME":
+            elif action in {"PROCEED", "RESUME"}:
                 preconditions = ["PATH_CLEAR"]
                 on_blocked = "WAIT_FOR_SAFE"
 
@@ -365,12 +427,33 @@ class QwenIntentParser:
                     command["target_type"] = "SLOW_VEHICLE"
                     command.setdefault("target_relation", "AHEAD")
 
-        if any(token in normalized_text for token in ("突然", "紧急", "立即")):
+        braking_boundary = classify_chinese_braking(normalized_text)
+        if braking_boundary:
+            candidate_actions = {"STOP", "EMERGENCY_BRAKE"}
+            if braking_boundary.action == "ADJUST_SPEED":
+                candidate_actions.add("ADJUST_SPEED")
+            matched = False
             for command in commands:
-                if command.get("action") == "STOP":
-                    command["action"] = "EMERGENCY_BRAKE"
-                    payload["urgency"] = "EMERGENCY"
-                    payload["category"] = "EMERGENCY_RESPONSE"
+                if command.get("action") not in candidate_actions:
+                    continue
+                matched = True
+                command["action"] = braking_boundary.action
+                if braking_boundary.action == "ADJUST_SPEED":
+                    command["change"] = "DECREASE"
+                else:
+                    command.pop("change", None)
+            if not matched and braking_boundary.urgency != "NORMAL":
+                command = {"action": braking_boundary.action}
+                if braking_boundary.action == "ADJUST_SPEED":
+                    command["change"] = "DECREASE"
+                commands.append(command)
+
+            payload["urgency"] = braking_boundary.urgency
+            actions = {command.get("action") for command in commands}
+            if braking_boundary.action == "EMERGENCY_BRAKE":
+                payload["category"] = "EMERGENCY_RESPONSE"
+            elif actions <= {"STOP", "ADJUST_SPEED"}:
+                payload["category"] = "BASIC_CONTROL"
 
         if "加塞" in normalized_text and "避让" in normalized_text:
             for command in commands:

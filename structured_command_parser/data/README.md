@@ -1,69 +1,108 @@
 # 数据集说明
 
-本模块只处理文本，不需要下载 CARLA、Talk2Car 或 SimLingo 的完整图像与传感器数据。外部数据、模型权重和运行结果均保存在数据盘，不提交 Git。
+当前阶段只使用英文数据集归纳驾驶术语和解析规则。中文语音识别文本到英文的翻译将在英文解析器稳定后单独处理。
 
-## 当前数据
-
-| 数据 | 数量 | 用途 | 标注状态 |
-|---|---:|---|---|
-| 原中文端到端回归集 | 30 | 既有能力回归 | 参与过调试，不是独立测试集 |
-| 中文多样性开发集 | 80 | 扩展术语、动作、歧义和安全覆盖 | 人工设计的合成开发集，待复核 |
-| 中文多样性冻结集 | 40 | 一次性泛化检查 | 未用于调参，但仍是合成数据，待复核 |
-| SimLingo Dreamer validation | 327 | 验证英文驾驶指令解析 | 从官方归档筛选并按 source mode 映射 |
-| Talk2Car command annotations | 300 | 构造中文自然驾驶指令候选 | 启发式标签，待人工审核 |
-| SimLingo/Talk2Car 中文机器翻译候选 | 627 | 数据增强和审核底稿 | Qwen2.5-3B 机器生成，不作为金标准 |
-
-服务器上的原始数据位置：
+## 统一入口
 
 ```text
-/root/autodl-tmp/LMM-in-AutoDrive/structured_command_parser/data/external/simlingo/
-/root/autodl-tmp/LMM-in-AutoDrive/structured_command_parser/data/external/talk2car/
+/root/autodl-tmp/LMM-in-AutoDrive/structured_command_parser/data/corpus/
 ```
 
-当前 SimLingo 原始归档约 `205 MB`，包含约 `60,004` 个归档成员。现阶段只读取其中的文本元数据，不解压完整视觉数据。
+## 英文数据规模
 
-## 数据职责
-
-### 中文开发集与冻结集
-
-用于快速发现以下回归：
-
-- 专业术语没有映射到规范英文表达。
-- 否定、顺序或歧义在翻译中丢失。
-- 英文解析结果不符合 DrivingIntent Schema。
-- 最终动作、速度、车道或目标对象发生错误。
-
-80 条开发集用于提示词和规则调整。40 条冻结集在代码冻结后完整运行，契约匹配率为 `67.50%`；运行前曾因空翻译导致评测中断，修复了通用空输出兜底后重新完整执行。冻结集没有用于后续调参，但因为它仍是人工设计的合成数据，不能替代原生中文人工测试集。
-
-### SimLingo
-
-用于在真实外部英文驾驶指令上检查解析链路。当前 327 条候选经过任务筛选，并依据数据源中的 mode/action 信息构造期望结果，覆盖 100 条目标速度、100 条变道、80 条碰撞以及速度调整和停车指令。它能验证工程兼容性，但不等同于官方完整测试集。
-
-### Talk2Car
-
-Talk2Car 提供自然语言驾驶命令，可作为中文指令改写的语义来源。当前抽取 300 条进入人工审核队列。抽样已经发现车道序号误译、少量繁体字和不自然表达，人工确认前不得标记为 gold/test。
-
-## 建议的正式数据划分
-
-后续人工采集或审核原生中文指令时，先冻结测试集，再调整模型：
-
-| 划分 | 建议数量 | 用途 |
+| 数据 | 规模 | 当前用途 |
 |---|---:|---|
-| train | 1,000 以上 | 少样本微调或提示词示例库 |
-| dev | 200-300 | 提示词、术语表和归一化规则调试 |
-| test | 300-500 | 最终独立评测，冻结后禁止用于调参 |
-| asr-noise-test | 200 以上 | 测试真实/合成 ASR 错误鲁棒性 |
+| Talk2Car | 11,959条英文命令 | 自然驾驶命令、导航目标和口语表达 |
+| SimLingo Dreamer | 23,381,458次出现，去重后587,005条 | 动作、槽位、长尾句式、歧义和不支持表达 |
+| SimLingo Commentary | 2,085,459次出现，去重后63,736条 | 场景对象和驾驶上下文术语，不作为乘客命令 |
 
-划分时按场景、动作组合和原始语义分组，避免同一句模板的改写同时进入训练集和测试集。
+SimLingo语言归档共77个、约11.18GB。没有下载约1.17TB的视觉数据，因为当前工作只需要语言标注。
 
-## 正式评测要求
+## 当前目录
 
-- 中文输入应来自人工编写或人工审核，不把机器翻译文本直接当成金标准。
-- 每条数据至少包含中文原文、人工确认的英文语义和 DrivingIntent JSON。
-- 单独覆盖否定、条件、动作顺序、模糊方向、冲突指令和不可执行指令。
-- 翻译阶段不单独计算准确率，但必须记录术语约束通过率、中文残留率和端到端意图准确率。
-- ASR 联调后保留识别原文，不要只保存人工修正文本。
+```text
+corpus/
+├── raw/                                # 官方原始英文标注，只读
+│   ├── talk2car/
+│   └── simlingo/
+├── processed/                          # 全量英文统一JSONL
+│   ├── talk2car_all.jsonl
+│   ├── simlingo_dreamer_unique.jsonl
+│   └── simlingo_commentary_unique.jsonl
+├── knowledge_mining/
+│   ├── representative_samples.jsonl    # 1,000条分层代表样本
+│   ├── gpt_inputs/                     # 20个GPT输入批次，每批50条
+│   ├── gpt_outputs/
+│   │   ├── raw/                        # GPT原始候选结果
+│   │   ├── validated/                  # 格式校验通过
+│   │   ├── errors/                     # 校验失败
+│   │   └── merged/                     # 合并去重后的候选
+│   ├── artifacts/
+│   │   ├── candidates/                 # 待人工审核术语和规则
+│   │   └── approved/                   # 人工批准的术语和规则
+│   └── manifests/selection_summary.json
+├── deferred_translation/               # 旧双语种子和历史中文回归样本
+├── verified/                           # 后续英文解析金标准
+├── model_ready/                        # 后续英文小模型train/dev/test
+└── manifests/                          # 下载、处理和审计清单
+```
 
-## 磁盘预算
+## GPT输入
 
-当前文本任务新增空间很小：Qwen2.5-3B 权重约 `5.8 GB`，SimLingo 文本归档约 `205 MB`，Talk2Car 标注和派生 JSONL 远小于 `1 GB`。不下载完整视觉数据时，预留 `15-20 GB` 足够模型、缓存和结果使用。
+从以下文件开始：
+
+```text
+data/corpus/knowledge_mining/gpt_inputs/batch_001.input.jsonl
+```
+
+对应Prompt：
+
+```text
+structured_command_parser/prompts/ENGLISH_TERMINOLOGY_RULE_MINING_PROMPT.md
+```
+
+每批输出一个JSON文件，保存为：
+
+```text
+data/corpus/knowledge_mining/gpt_outputs/raw/batch_001.output.json
+```
+
+GPT只归纳英文术语候选和解析规则候选，不翻译中文、不逐条生成最终训练标签，也不判断当前道路环境能否执行指令。
+
+## 数据边界
+
+- `weak_hints`来自数据源元信息或启发式映射，不是金标准。
+- Commentary只提供上下文术语和语义边界。
+- GPT候选必须人工审核后才能进入`artifacts/approved/`。
+- 不直接执行GPT生成的代码或正则表达式。
+- 中文翻译数据当前保存在`deferred_translation/`，不参与本阶段处理。
+- 后续英文金标准必须按来源、场景和模板分组切分，不能随机逐句切分。
+
+详细流程见`structured_command_parser/ENGLISH_KNOWLEDGE_MINING.md`。
+
+## ModernBERT伪标签数据
+
+全量生成目录位于：
+
+```text
+data/processed/english_pseudolabels/
+├── all.jsonl                         # 662,700条完整伪标签
+├── train.jsonl                       # 463,890条，70%
+├── validation.jsonl                  # 132,540条，20%
+├── test.jsonl                        # 66,270条，10%
+├── train_sparse_augmentation.jsonl   # 108条稀有动作增强，仅训练使用
+├── label_schema.json
+└── manifest.json
+```
+
+切分使用规范化英文文本的SHA1分组，相同文本不会跨越训练、验证和测试集。每条记录保留`source`、`text_en`、完整`expected`、伪标签来源、训练权重和原始关键元数据。
+
+`SOURCE_MODE_AND_RULE`权重最高；纯规则标签按来源降权；无法可靠解析的文本标为`NEEDS_CLARIFICATION`，不编造动作；Commentary仅以低权重参与。`train_sparse_augmentation.jsonl`单独补充`EMERGENCY_BRAKE`和`CANCEL`，不进入验证或测试。
+
+这些文件是训练用伪标签，不是人工金标准。当前验证和测试指标只能解释为教师一致率，不能用来声明真实解析准确率。
+
+重新生成：
+
+```bash
+python -m structured_command_parser.scripts.build_full_english_pseudolabels
+```

@@ -79,7 +79,7 @@ def make_document(
         parse_result["clarification_question"] = clarification_question
 
     document = {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "request_id": request_id or f"cmd-{uuid4().hex[:16]}",
         "input": {
             "modality": modality,

@@ -27,6 +27,8 @@ class EgoPIDController:
         initial_transform = vehicle.get_transform()
         self._preferred_yaw = math.radians(initial_transform.rotation.yaw)
         self._straight_origin = initial_transform.location
+        self._lane_change_command_id = None
+        self._lane_change_target_lane_id = None
 
     def run_step(self, intent, dt):
         intent = normalize_intent(intent, self.default_speed_kmh)
@@ -115,14 +117,8 @@ class EgoPIDController:
 
     def _target_waypoint(self, waypoint, intent):
         action = intent["action"]
-        if action == "lane_change_left":
-            candidate = waypoint.get_left_lane()
-            if candidate is not None and candidate.lane_type == carla.LaneType.Driving:
-                waypoint = candidate
-        elif action == "lane_change_right":
-            candidate = waypoint.get_right_lane()
-            if candidate is not None and candidate.lane_type == carla.LaneType.Driving:
-                waypoint = candidate
+        if action in ("lane_change_left", "lane_change_right"):
+            waypoint = self._lane_change_waypoint(waypoint, intent)
 
         next_waypoints = waypoint.next(8.0)
         if not next_waypoints:
@@ -137,6 +133,39 @@ class EgoPIDController:
                 self._preferred_yaw,
             )),
         )
+
+    def _lane_change_waypoint(self, waypoint, intent):
+        command_id = intent.get("command_id") or intent["action"]
+        if command_id != self._lane_change_command_id:
+            candidate = (
+                waypoint.get_left_lane()
+                if intent["action"] == "lane_change_left"
+                else waypoint.get_right_lane()
+            )
+            self._lane_change_command_id = command_id
+            self._lane_change_target_lane_id = (
+                candidate.lane_id
+                if candidate is not None and candidate.lane_type == carla.LaneType.Driving
+                else None
+            )
+
+        if self._lane_change_target_lane_id is None:
+            return waypoint
+        if waypoint.lane_id == self._lane_change_target_lane_id:
+            return waypoint
+
+        candidate = (
+            waypoint.get_left_lane()
+            if intent["action"] == "lane_change_left"
+            else waypoint.get_right_lane()
+        )
+        if (
+            candidate is not None
+            and candidate.lane_type == carla.LaneType.Driving
+            and candidate.lane_id == self._lane_change_target_lane_id
+        ):
+            return candidate
+        return waypoint
 
     @staticmethod
     def _angle_delta(current, reference):

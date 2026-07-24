@@ -7,6 +7,7 @@ from time import perf_counter
 from typing import Any
 
 from .factory import make_document
+from .intent_boundaries import classify_english_braking
 from .llm_parser import QwenIntentParser
 from .qwen_runtime import QwenRuntime
 
@@ -152,20 +153,36 @@ class QwenEnglishIntentParser:
             "SLOW_DOWN": "ADJUST_SPEED",
             "SPEED_UP": "ADJUST_SPEED",
             "BRAKE": "STOP",
-            "PROCEED": "RESUME",
-            "PROCEED_WITH_CAUTION": "RESUME",
+            "PROCEED_WITH_CAUTION": "PROCEED",
+            "GO_FORWARD": "PROCEED",
+            "GO_TO": "NAVIGATE_TO",
+            "DRIVE_TO": "NAVIGATE_TO",
+            "PARKING": "PARK",
+            "PASS": "PASS_BY",
         }
         allowed_actions = {
             "KEEP_LANE",
             "SET_SPEED",
             "ADJUST_SPEED",
             "STOP",
+            "WAIT",
+            "FOLLOW",
+            "APPROACH",
+            "NAVIGATE_TO",
             "CHANGE_LANE",
+            "MERGE",
             "TURN",
+            "U_TURN",
+            "PROCEED",
             "YIELD",
             "PULL_OVER",
+            "PARK",
             "OVERTAKE",
+            "PASS_BY",
             "AVOID",
+            "REVERSE",
+            "ENTER_AREA",
+            "EXIT_AREA",
             "EMERGENCY_BRAKE",
             "RESUME",
             "CANCEL",
@@ -178,6 +195,11 @@ class QwenEnglishIntentParser:
             "CONSTRUCTION": "CONSTRUCTION_ZONE",
             "TRAFFIC_CONSTRUCTION": "CONSTRUCTION_ZONE",
             "CONE": "TRAFFIC_CONE",
+            "SIGN": "TRAFFIC_SIGN",
+            "PARKING": "PARKING_AREA",
+            "PARKING_LOT": "PARKING_AREA",
+            "PARKING_SPOT": "PARKING_SPACE",
+            "PLACE": "LANDMARK",
         }
         commands = payload.get("commands")
         if not isinstance(commands, list):
@@ -270,34 +292,10 @@ class QwenEnglishIntentParser:
             target = command.get("target_type")
             if target in target_aliases:
                 command["target_type"] = target_aliases[target]
-            if action in {
-                "KEEP_LANE",
-                "SET_SPEED",
-                "ADJUST_SPEED",
-                "STOP",
-                "EMERGENCY_BRAKE",
-                "RESUME",
-                "CANCEL",
-            }:
+            if action == "CANCEL":
                 command.pop("target_type", None)
                 command.pop("target_relation", None)
                 command.pop("target_description", None)
-            if action in {
-                "KEEP_LANE",
-                "STOP",
-                "EMERGENCY_BRAKE",
-                "RESUME",
-                "CANCEL",
-            }:
-                for key in (
-                    "direction",
-                    "change",
-                    "target_speed_mps",
-                    "speed_delta_mps",
-                    "distance_m",
-                    "lane_count",
-                ):
-                    command.pop(key, None)
             if action == "ADJUST_SPEED":
                 command.pop("target_speed_mps", None)
                 speed_delta = command.get("speed_delta_mps")
@@ -328,8 +326,10 @@ class QwenEnglishIntentParser:
                 }
             )
             return payload
-        if re.search(r"\bturn(?:\s+(?:there|ahead|at that place))?\b", text) and not re.search(
-            r"\b(?:left|right|straight)\b", text
+        if (
+            re.search(r"\bturn(?:\s+(?:there|ahead|at that place))?\b", text)
+            and not re.search(r"\b(?:left|right|straight)\b", text)
+            and not re.search(r"\b(?:u[- ]?turn|turn around)\b", text)
         ):
             payload.update(
                 {
@@ -412,14 +412,11 @@ class QwenEnglishIntentParser:
             payload["missing_slots"] = []
             payload.pop("clarification_question", None)
 
-        turn_match = re.search(
-            r"\b(?:(?:turn|go)\s+)(?P<direction>left|right|straight)\b|\bgo straight\b",
-            text,
-        )
+        turn_match = re.search(r"\bturn\s+(?P<direction>left|right)\b", text)
         if turn_match and not any(
             command.get("action") == "TURN" for command in commands
         ):
-            direction = turn_match.group("direction") or "straight"
+            direction = turn_match.group("direction")
             commands.append({"action": "TURN", "direction": direction.upper()})
             payload.update(
                 {"status": "VALID", "category": "NAVIGATION", "missing_slots": []}
@@ -552,10 +549,14 @@ class QwenEnglishIntentParser:
             payload["category"] = "EMERGENCY_RESPONSE"
             payload["driving_style"] = "CONSERVATIVE"
 
-        if re.search(r"continue driving|before continuing", text) and not any(
-            command.get("action") == "RESUME" for command in commands
+        if (
+            re.search(r"continue driving|continue straight|before continuing", text)
+            and not any(
+                command.get("action") in {"PROCEED", "RESUME"}
+                for command in commands
+            )
         ):
-            commands.append({"action": "RESUME"})
+            commands.append({"action": "PROCEED"})
             payload["status"] = "VALID"
 
         if "passengers are boarding and alighting" in text and "yield to" not in text:
@@ -605,7 +606,8 @@ class QwenEnglishIntentParser:
                     command["direction"] = lane_direction
                     command.setdefault("lane_count", 1)
 
-        if re.search(r"emergency brake|brake immediately|stop immediately|stop at once|stop right away", text):
+        braking_boundary = classify_english_braking(text)
+        if braking_boundary and braking_boundary.action == "EMERGENCY_BRAKE":
             for command in commands:
                 if command.get("action") in {"STOP", "EMERGENCY_BRAKE"}:
                     command["action"] = "EMERGENCY_BRAKE"
@@ -675,8 +677,12 @@ class QwenEnglishIntentParser:
                 preserved_actions.add("KEEP_LANE")
             if "pull over" in text:
                 preserved_actions.add("PULL_OVER")
-            if re.search(r"continue driving|before continuing", text):
-                preserved_actions.add("RESUME")
+            if re.search(r"continue driving|continue straight|before continuing", text):
+                preserved_actions.add(
+                    "RESUME"
+                    if any(command.get("action") == "RESUME" for command in commands)
+                    else "PROCEED"
+                )
             if re.search(r"change lane to (?:the )?(?:left|right)", text):
                 preserved_actions.add("CHANGE_LANE")
             rebuilt: list[dict[str, Any]] = []
@@ -689,7 +695,7 @@ class QwenEnglishIntentParser:
                     continue
                 if command.get("action") not in preserved_actions:
                     continue
-                if command.get("action") == "RESUME" and not inserted:
+                if command.get("action") == "PROCEED" and not inserted:
                     rebuilt.append(speed_command)
                     inserted = True
                 rebuilt.append(command)
@@ -713,25 +719,26 @@ class QwenEnglishIntentParser:
             payload.pop("clarification_question", None)
 
         urgent_stop = bool(
-            re.search(r"\b(?:immediate|immediately|instantly|now|without delay|at once|right away)\b", text)
-            and re.search(r"\b(?:stop|halt|standstill|cease)\b", text)
+            braking_boundary
+            and braking_boundary.action == "STOP"
+            and braking_boundary.urgency == "URGENT"
         )
         ordinary_stop = bool(
             re.search(r"\b(?:stop|halt|standstill|cease all movement)\b", text)
             and not urgent_stop
         )
         if urgent_stop:
-            commands[:] = [{"action": "EMERGENCY_BRAKE"}]
+            commands[:] = [{"action": "STOP"}]
             payload.update(
                 {
                     "status": "VALID",
-                    "category": "EMERGENCY_RESPONSE",
-                    "urgency": "EMERGENCY",
+                    "category": "BASIC_CONTROL",
+                    "urgency": "URGENT",
                     "missing_slots": [],
                 }
             )
         elif ordinary_stop and not re.search(
-            r"pull over|bus stop|stop beside|continue|resume|then|after", text
+            r"pull over|bus stop|stop beside|continue|resume|proceed|wait|then|after", text
         ):
             commands[:] = [{"action": "STOP"}]
             payload.update(
@@ -773,9 +780,152 @@ class QwenEnglishIntentParser:
                 for key, value in fields.items():
                     existing.setdefault(key, value)
 
-        explicit_turn = re.search(r"\bturn\s+(?P<side>left|right)\b|\bgo straight\b", text)
+        def inferred_target() -> tuple[str, str]:
+            if re.search(r"\b(?:pedestrian|person|man|woman|boy|girl|walker)\b", text):
+                return "PEDESTRIAN", "AHEAD"
+            if re.search(r"\bcyclist|bicycle|bike\b", text):
+                return "CYCLIST", "AHEAD"
+            if re.search(r"\bparking (?:space|spot)\b", text):
+                return "PARKING_SPACE", "AHEAD"
+            if re.search(r"\bparking (?:area|lot|garage)\b", text):
+                return "PARKING_AREA", "AHEAD"
+            if re.search(r"\b(?:car|vehicle|truck|bus|van|taxi|suv)\b", text):
+                return "VEHICLE", "AHEAD"
+            if re.search(r"\b(?:traffic )?sign\b", text):
+                return "TRAFFIC_SIGN", "AHEAD"
+            if re.search(r"\b(?:intersection|junction)\b", text):
+                return "JUNCTION", "AT_JUNCTION"
+            if re.search(r"\b(?:destination|location|place)\b", text):
+                return "DESTINATION", "NEAR_DESTINATION"
+            return "UNKNOWN", "UNSPECIFIED"
+
+        target_type, target_relation = inferred_target()
+        duration_match = re.search(
+            r"\b(?P<value>\d+(?:\.\d+)?|one|two|three|four|five|ten)\s*"
+            r"(?P<unit>seconds?|minutes?)\b",
+            text,
+        )
+        duration_s = None
+        if duration_match:
+            number_words = {
+                "one": 1,
+                "two": 2,
+                "three": 3,
+                "four": 4,
+                "five": 5,
+                "ten": 10,
+            }
+            raw_value = duration_match.group("value")
+            value = float(raw_value) if raw_value[0].isdigit() else number_words[raw_value]
+            duration_s = value * (60 if duration_match.group("unit").startswith("minute") else 1)
+
+        if re.search(r"\bu[- ]?turn\b|\bturn around\b", text):
+            ensure_action("U_TURN")
+            commands[:] = [
+                command
+                for command in commands
+                if not (
+                    command.get("action") == "TURN"
+                    and command.get("direction") in {"LEFT", "RIGHT"}
+                )
+            ]
+            payload.update({"status": "VALID", "category": "NAVIGATION"})
+        if re.search(r"\bmerge\b", text):
+            side = re.search(r"\b(?P<side>left|right)\b", text)
+            if side:
+                ensure_action("MERGE", direction=side.group("side").upper())
+                payload["status"] = "VALID"
+        if re.search(r"\b(?:follow|trail|stay behind|keep behind|get (?:right )?behind|catch up(?: to)?)\b", text):
+            fields: dict[str, Any] = {
+                "target_type": target_type,
+                "target_relation": target_relation,
+            }
+            if duration_s is not None:
+                fields["duration_s"] = duration_s
+            ensure_action("FOLLOW", **fields)
+            payload.update({"status": "VALID", "category": "NAVIGATION"})
+        if re.search(r"\b(?:approach|move closer|drive closer|get closer|come closer)\b", text):
+            ensure_action(
+                "APPROACH",
+                target_type=target_type,
+                target_relation=target_relation,
+            )
+            payload.update({"status": "VALID", "category": "NAVIGATION"})
+        if re.search(r"\b(?:go to|drive to|head to|navigate to|take me to)\b", text):
+            ensure_action(
+                "NAVIGATE_TO",
+                target_type=target_type,
+                target_relation=target_relation,
+            )
+            payload.update({"status": "VALID", "category": "NAVIGATION"})
+        if re.search(
+            r"\b(?:proceed|go forward|go ahead|continue straight|drive through)\b",
+            text,
+        ) and not any(command.get("action") == "RESUME" for command in commands):
+            ensure_action("PROCEED", direction="STRAIGHT")
+            payload.update({"status": "VALID", "category": "NAVIGATION"})
+        if re.search(r"\b(?:reverse|back up|back into)\b", text) and not re.search(
+            r"\b(?:reverse|back) into (?:a |the |any )?(?:parking )?(?:space|spot)\b",
+            text,
+        ):
+            ensure_action("REVERSE", direction="BACKWARD")
+            payload.update({"status": "VALID", "category": "NAVIGATION"})
+        if re.search(r"\bpark(?:ing)?\b", text):
+            park_type = (
+                target_type
+                if target_type in {
+                    "PARKING_AREA",
+                    "PARKING_SPACE",
+                    "VEHICLE",
+                    "LANDMARK",
+                }
+                else "PARKING_SPACE"
+            )
+            parking_maneuver = (
+                "REVERSE" if re.search(r"\breverse|back into\b", text) else "UNSPECIFIED"
+            )
+            ensure_action(
+                "PARK",
+                target_type=park_type,
+                target_relation=target_relation,
+                parking_maneuver=parking_maneuver,
+            )
+            payload.update({"status": "VALID", "category": "NAVIGATION"})
+        if re.search(r"\b(?:drive past|go past|pass by)\b", text):
+            ensure_action(
+                "PASS_BY",
+                target_type=target_type,
+                target_relation=target_relation,
+            )
+            payload["status"] = "VALID"
+        if re.search(r"\benter (?:the |this )?(?:area|parking|car park|construction)", text):
+            area_type = "PARKING_AREA" if "park" in text else "AREA"
+            ensure_action("ENTER_AREA", target_type=area_type, target_relation="INSIDE")
+            payload.update({"status": "VALID", "category": "NAVIGATION"})
+        if re.search(r"\b(?:exit|leave) (?:the |this )?(?:area|parking|car park|road)", text):
+            area_type = "PARKING_AREA" if "park" in text else "AREA"
+            ensure_action("EXIT_AREA", target_type=area_type, target_relation="INSIDE")
+            payload.update({"status": "VALID", "category": "NAVIGATION"})
+        wait_match = re.search(r"\bwait(?:\s+for\s+(?P<condition>.+?))?(?=\bthen\b|\bbefore\b|[,.!?]|$)", text)
+        if wait_match:
+            wait_fields: dict[str, Any] = {}
+            if duration_s is not None:
+                wait_fields["duration_s"] = duration_s
+            condition = wait_match.group("condition")
+            if condition:
+                wait_fields["condition"] = condition.strip()
+            if wait_fields:
+                if target_type != "UNKNOWN":
+                    wait_fields.update(
+                        target_type=target_type,
+                        target_relation=target_relation,
+                    )
+                ensure_action("WAIT", **wait_fields)
+                payload["status"] = "VALID"
+
+        explicit_turn = re.search(r"\bturn\s+(?P<side>left|right)\b", text)
         if explicit_turn:
-            side = explicit_turn.groupdict().get("side") or "straight"
+            side = explicit_turn.group("side")
             if "change lane" not in text:
                 commands[:] = [
                     command
@@ -856,7 +1006,7 @@ class QwenEnglishIntentParser:
                 ]
             payload["status"] = "VALID"
 
-        if re.search(r"\b(?:continue driving|continue|resume normal driving|resume previous driving state|continue in normal status|resume the original lane|return to (?:the )?original lane)\b", text):
+        if re.search(r"\b(?:resume normal driving|resume previous driving state|resume the original lane|return to (?:the )?original lane)\b", text):
             ensure_action("RESUME")
             if re.search(r"resume the original lane|return to (?:the )?original lane", text):
                 commands[:] = [
@@ -897,34 +1047,61 @@ class QwenEnglishIntentParser:
 
         if (
             re.search(r"\bstop\b", text)
-            and re.search(r"\b(?:continue|resume)\b", text)
+            and re.search(r"\b(?:continue|proceed|resume)\b", text)
             and "pull over" not in text
             and not explicit_speed
         ):
-            allowed = {"STOP", "RESUME", "EMERGENCY_BRAKE"}
+            allowed = {"STOP", "PROCEED", "RESUME", "EMERGENCY_BRAKE"}
             commands[:] = [
                 command for command in commands if command.get("action") in allowed
             ]
             ensure_action("STOP")
-            ensure_action("RESUME")
+            ensure_action(
+                "RESUME"
+                if "resume" in text
+                or any(command.get("action") == "RESUME" for command in commands)
+                else "PROCEED"
+            )
 
         for command in commands:
-            if command.get("action") not in {"CHANGE_LANE", "TURN"}:
+            if command.get("action") not in {
+                "CHANGE_LANE",
+                "MERGE",
+                "TURN",
+                "PROCEED",
+                "NAVIGATE_TO",
+                "REVERSE",
+            }:
                 command.pop("direction", None)
+            if command.get("action") not in {"CHANGE_LANE", "MERGE"}:
                 command.pop("lane_count", None)
+                command.pop("lane_index", None)
+                command.pop("lane_reference", None)
 
         keyword_patterns = {
             "KEEP_LANE": r"keep (?:the )?(?:current )?lane",
             "SET_SPEED": r"speed to|drive at|maintain|steady|decelerate to|reduce (?:the )?speed to",
             "ADJUST_SPEED": r"decelerate|reduce (?:the )?speed|slow down|accelerate|increase (?:the )?speed",
             "STOP": r"\bstop\b",
+            "WAIT": r"\bwait\b|hold position|remain in place",
+            "FOLLOW": r"\bfollow\b|stay behind|catch up|get behind",
+            "APPROACH": r"\bapproach\b|get closer|move closer|drive closer",
+            "NAVIGATE_TO": r"\bgo to\b|drive to|head to|navigate to",
             "CHANGE_LANE": r"change lane",
+            "MERGE": r"\bmerge\b",
             "TURN": r"\bturn\b|go straight",
+            "U_TURN": r"u-?turn|turn around",
+            "PROCEED": r"\bproceed\b|go forward|continue straight|drive through",
             "YIELD": r"yield to|give way|let .+ pass",
             "PULL_OVER": r"pull over",
+            "PARK": r"\bpark\b|parking space",
             "OVERTAKE": r"overtake|pass (?:the |that )?slow vehicle",
+            "PASS_BY": r"drive past|go past|pass by",
             "AVOID": r"avoid|go around|swerve around",
-            "EMERGENCY_BRAKE": r"emergency brake|stop immediately|brake immediately",
+            "REVERSE": r"\breverse\b|back up|back into",
+            "ENTER_AREA": r"\benter\b|drive into",
+            "EXIT_AREA": r"\bexit\b|leave the",
+            "EMERGENCY_BRAKE": r"emergency brake|emergency braking|slam (?:on )?(?:the )?brakes?|hard braking|brake hard",
             "RESUME": r"continue|resume",
             "CANCEL": r"cancel",
         }
@@ -949,6 +1126,34 @@ class QwenEnglishIntentParser:
                 if command.get("action") not in {"STOP", "RESUME"}
             ]
             commands[:] = stop_then_resume + remainder
+
+        braking_boundary = classify_english_braking(text)
+        if braking_boundary:
+            braking_actions = {"STOP", "EMERGENCY_BRAKE"}
+            if braking_boundary.action == "ADJUST_SPEED":
+                braking_actions.add("ADJUST_SPEED")
+            matched = False
+            for command in commands:
+                if command.get("action") not in braking_actions:
+                    continue
+                matched = True
+                command["action"] = braking_boundary.action
+                if braking_boundary.action == "ADJUST_SPEED":
+                    command["change"] = "DECREASE"
+                else:
+                    command.pop("change", None)
+            if not matched and braking_boundary.urgency != "NORMAL":
+                command = {"action": braking_boundary.action}
+                if braking_boundary.action == "ADJUST_SPEED":
+                    command["change"] = "DECREASE"
+                commands.append(command)
+
+            payload["urgency"] = braking_boundary.urgency
+            actions = {command.get("action") for command in commands}
+            if braking_boundary.action == "EMERGENCY_BRAKE":
+                payload["category"] = "EMERGENCY_RESPONSE"
+            elif actions <= {"STOP", "ADJUST_SPEED"}:
+                payload["category"] = "BASIC_CONTROL"
 
         deduplicated: list[dict[str, Any]] = []
         for command in commands:

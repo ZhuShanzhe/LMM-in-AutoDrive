@@ -12,7 +12,7 @@ from evaluation.video import FfmpegVideoWriter
 class ExperimentCamera:
     def __init__(self, world, ego_vehicle, output_dir, every_n_frames=1, width=1920, height=1080,
                  save_images=True, video_output=None, video_fps=30.0, ffmpeg_path=None,
-                 video_overlay=False):
+                 video_overlay=False, sensor_tick=None, camera_view="hood"):
         self.world = world
         self.ego_vehicle = ego_vehicle
         self.output_dir = output_dir
@@ -24,12 +24,16 @@ class ExperimentCamera:
         self.video_fps = float(video_fps)
         self.ffmpeg_path = ffmpeg_path
         self.video_overlay = bool(video_overlay)
+        self.sensor_tick = None if sensor_tick is None else max(0.0, float(sensor_tick))
+        self.camera_view = str(camera_view).lower()
         self.sensor = None
         self.video_writer = None
         self.saved_frames = 0
         self._images = queue.Queue()
         self._pending_images = {}
         self._speed_history = deque()
+        self._font_cache = {}
+        self._last_source_frame = None
 
     def start(self):
         import carla
@@ -40,9 +44,16 @@ class ExperimentCamera:
         blueprint.set_attribute("image_size_x", str(self.width))
         blueprint.set_attribute("image_size_y", str(self.height))
         blueprint.set_attribute("fov", "90")
-        if self.video_output is not None:
+        if self.sensor_tick is not None:
+            blueprint.set_attribute("sensor_tick", str(self.sensor_tick))
+        elif self.video_output is not None:
             blueprint.set_attribute("sensor_tick", str(1.0 / self.video_fps))
-        transform = carla.Transform(carla.Location(x=1.5, z=2.4))
+        if self.camera_view == "chase":
+            transform = carla.Transform(
+                carla.Location(x=-8.0, z=4.2), carla.Rotation(pitch=-16.0)
+            )
+        else:
+            transform = carla.Transform(carla.Location(x=1.5, z=2.4))
         self.sensor = self.world.spawn_actor(blueprint, transform, attach_to=self.ego_vehicle)
         if self.video_output is not None:
             self.video_writer = FfmpegVideoWriter(
@@ -60,13 +71,13 @@ class ExperimentCamera:
             self._images.put(image)
 
     def save_frame(self, frame, overlay=None, timeout_s=1.0):
-        """Persist the camera image belonging to a just-completed world tick."""
+        """Persist the latest camera image available for a completed world tick."""
         if not self.save_images and self.video_writer is None:
             return False
         frame = int(frame)
         if frame % self.every_n_frames != 0:
             return False
-        image = self._pending_images.pop(frame, None)
+        image = self._latest_pending_image(frame)
         deadline = time.time() + timeout_s
         while image is None and time.time() < deadline:
             try:
@@ -74,29 +85,60 @@ class ExperimentCamera:
             except queue.Empty:
                 break
             candidate_frame = int(candidate.frame)
-            if candidate_frame < frame:
-                continue
+            if candidate_frame <= frame:
+                image = candidate
+                break
             if candidate_frame > frame:
                 self._pending_images[candidate_frame] = candidate
                 break
-            image = candidate
         if image is None:
             return False
+        source_frame = bytes(image.raw_data)
+        self._last_source_frame = source_frame
+        raw_frame = source_frame
+        if self.video_overlay and overlay:
+            raw_frame = self._render_overlay(raw_frame, overlay)
         if self.save_images:
             path = os.path.join(self.output_dir, "{0:08d}.png".format(frame))
-            image.save_to_disk(path)
+            if raw_frame is source_frame:
+                image.save_to_disk(path)
+            else:
+                from PIL import Image
+                rendered = Image.frombuffer(
+                    "RGBA", (self.width, self.height), raw_frame, "raw", "BGRA", 0, 1
+                ).copy()
+                rendered.save(path)
             self.saved_frames += 1
         if self.video_writer is not None:
-            raw_frame = bytes(image.raw_data)
-            if self.video_overlay and overlay:
-                raw_frame = self._render_overlay(raw_frame, overlay)
             self.video_writer.write_raw(raw_frame)
         return True
+
+    def _latest_pending_image(self, frame):
+        eligible = [candidate_frame for candidate_frame in self._pending_images if candidate_frame <= frame]
+        if not eligible:
+            return None
+        newest = max(eligible)
+        image = self._pending_images.pop(newest)
+        for candidate_frame in eligible:
+            if candidate_frame != newest:
+                self._pending_images.pop(candidate_frame, None)
+        return image
 
     def hold_last_video_frame(self, duration_s):
         if self.video_writer is None:
             return 0
         return self.video_writer.append_last_frame(round(max(0.0, float(duration_s)) * self.video_fps))
+
+    def append_terminal_overlay(self, overlay, duration_s):
+        """Append a terminal status using the last unmodified camera frame."""
+        if self.video_writer is None or self._last_source_frame is None:
+            return 0
+        raw_frame = self._last_source_frame
+        if self.video_overlay and overlay:
+            raw_frame = self._render_overlay(raw_frame, overlay)
+        self.video_writer.write_raw(raw_frame)
+        hold_frames = max(0, round(max(0.0, float(duration_s)) * self.video_fps) - 1)
+        return 1 + self.video_writer.append_last_frame(hold_frames)
 
     def _render_overlay(self, raw_frame, overlay):
         from PIL import Image, ImageDraw, ImageFont
@@ -107,11 +149,20 @@ class ExperimentCamera:
         draw = ImageDraw.Draw(image, "RGBA")
 
         def font(size, bold=False):
-            name = "msyhbd.ttc" if bold else "msyh.ttc"
+            key = (int(size), bool(bold))
+            cached = self._font_cache.get(key)
+            if cached is not None:
+                return cached
+            name = "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"
+            bundled_font = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), "assets", "fonts", name
+            )
             try:
-                return ImageFont.truetype(os.path.join("C:\\Windows\\Fonts", name), size)
+                loaded = ImageFont.truetype(bundled_font, size)
             except OSError:
-                return ImageFont.load_default()
+                loaded = ImageFont.load_default()
+            self._font_cache[key] = loaded
+            return loaded
 
         status = str(overlay.get("status", "RUNNING")).upper()
         status_color = {
@@ -160,14 +211,24 @@ class ExperimentCamera:
         draw.text((128, 190), "km/h", font=font(19), fill=muted_color)
 
         rx = right_panel[0] + 20
-        draw.text((rx, 42), "ASR TEXT (DEMO BASELINE)", font=font(16, bold=True), fill=muted_color)
-        draw.text((rx, 62), str(overlay.get("asr_text", ""))[:42], font=font(21, bold=True), fill=text_color)
+        draw.text((rx, 42), "RUN TELEMETRY", font=font(16, bold=True), fill=muted_color)
+        draw.text((rx, 62), str(overlay.get("scenario", ""))[:42].upper(), font=font(21, bold=True), fill=text_color)
         source = str(overlay.get("decision_source", "rule")).upper()
-        intent_label = "EXTERNAL DECISION (PLACEHOLDER)" if source == "JSON_FILE" else "STRUCTURED INTENT (RULE)"
-        draw.text((rx, 95), intent_label, font=font(16, bold=True), fill=muted_color)
-        draw.text((rx, 115), "action={0}  target={1:.0f} km/h  emergency={2}".format(
-            str(overlay.get("action", "")).upper(), target_speed_kmh, overlay.get("emergency", False)
-        ), font=font(20), fill=status_color if overlay.get("emergency", False) else text_color)
+        draw.text((rx, 95), "CONTROL={0}".format(source), font=font(16, bold=True), fill=muted_color)
+        progress_m = overlay.get("route_progress_m")
+        route_length_m = overlay.get("route_length_m")
+        if progress_m is not None and route_length_m is not None:
+            route_text = "route={0:.0f}/{1:.0f} m  traffic={2}  ped={3}".format(
+                float(progress_m),
+                float(route_length_m),
+                int(overlay.get("traffic_count", 0)),
+                int(overlay.get("pedestrian_count", 0)),
+            )
+        else:
+            route_text = "action={0}  target={1:.0f} km/h".format(
+                str(overlay.get("action", "")).upper(), target_speed_kmh
+            )
+        draw.text((rx, 115), route_text, font=font(20), fill=text_color)
 
         def chip(label, value, x, y, color):
             draw.text((x, y), label, font=font(15, bold=True), fill=muted_color)
@@ -179,8 +240,10 @@ class ExperimentCamera:
 
         risk_level = str(overlay.get("risk_level", "LOW"))
         risk_color = {"HIGH": (244, 80, 80, 255), "MEDIUM": (255, 153, 51, 255), "LOW": (72, 208, 113, 255)}.get(risk_level, muted_color)
+        active_events = overlay.get("active_events", [])
+        event_state = active_events[0] if active_events else "NONE"
         chip("RISK", risk_level, rx, 150, risk_color)
-        chip("POLICY STATE", str(overlay.get("policy_state", "")), rx + 188, 150, status_color)
+        chip("EVENT", str(event_state).upper(), rx + 188, 150, status_color)
 
         def bar(label, value, y, color, centered=False):
             left = rx + 48

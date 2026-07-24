@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument("--frames", required=True, help="Directory containing PNG frames")
     parser.add_argument("--output", required=True, help="Output .mp4 path")
     parser.add_argument("--fps", type=float, default=20.0)
-    parser.add_argument("--ffmpeg", default=None, help="Optional path to ffmpeg.exe")
+    parser.add_argument("--ffmpeg", default=None, help="Optional path to the ffmpeg executable")
     parser.add_argument("--extension", default="png", help="Input frame extension, without a dot")
     return parser.parse_args()
 
@@ -48,14 +48,10 @@ def main():
 
 def find_ffmpeg(explicit_path):
     candidates = [explicit_path, shutil.which("ffmpeg")]
-    conda_prefix = os.environ.get("CONDA_PREFIX")
-    if conda_prefix:
-        candidates.append(os.path.join(conda_prefix, "Library", "bin", "ffmpeg.exe"))
-    candidates.append(r"D:\\anaconda3\\envs\\carla37\\Library\\bin\\ffmpeg.exe")
     for candidate in candidates:
         if candidate and os.path.isfile(candidate):
             return candidate
-    raise RuntimeError("ffmpeg was not found; pass --ffmpeg <path-to-ffmpeg.exe>")
+    raise RuntimeError("ffmpeg was not found; pass --ffmpeg <path-to-ffmpeg>")
 
 
 def write_concat_manifest(frame_paths, fps):
@@ -63,10 +59,10 @@ def write_concat_manifest(frame_paths, fps):
     handle = tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8")
     try:
         for path in frame_paths:
-            normalized_path = os.path.abspath(path).replace("\\", "/").replace("'", "\\\\'")
+            normalized_path = os.path.abspath(path).replace("'", "\\\\'")
             handle.write("file '{0}'\n".format(normalized_path))
             handle.write("duration {0:.8f}\n".format(interval_s))
-        normalized_path = os.path.abspath(frame_paths[-1]).replace("\\", "/").replace("'", "\\\\'")
+        normalized_path = os.path.abspath(frame_paths[-1]).replace("'", "\\\\'")
         handle.write("file '{0}'\n".format(normalized_path))
     finally:
         handle.close()

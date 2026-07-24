@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "request_id": "complex-0001",
   "input": {
     "modality": "VOICE",
@@ -103,4 +103,3 @@
     "latency_ms": 0.0
   }
 }
-

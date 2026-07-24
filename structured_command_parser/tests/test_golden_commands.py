@@ -34,6 +34,22 @@ class GoldenCommandTest(unittest.TestCase):
                     matches_expected(summarize_result(result), sample["expected"])
                 )
 
+    def test_all_competition_samples_use_fast_path_within_budget(self) -> None:
+        parser = HybridCommandParser()
+        samples = [
+            json.loads(line)
+            for line in FIXTURE.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        for sample in samples:
+            with self.subTest(sample=sample["sample_id"]):
+                result = parser.parse(sample["text"], request_id=sample["sample_id"])
+                validate_document(result)
+                self.assertTrue(
+                    matches_expected(summarize_result(result), sample["expected"])
+                )
+                self.assertLess(result["parse_result"]["latency_ms"], 50.0)
+
 
 if __name__ == "__main__":
     unittest.main()

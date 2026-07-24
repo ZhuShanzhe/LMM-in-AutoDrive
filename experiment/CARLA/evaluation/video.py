@@ -98,4 +98,4 @@ class FfmpegVideoWriter:
         candidate = explicit_path or shutil.which("ffmpeg")
         if candidate and os.path.isfile(candidate):
             return candidate
-        raise RuntimeError("ffmpeg was not found; pass --ffmpeg <path-to-ffmpeg.exe>")
+        raise RuntimeError("ffmpeg was not found; pass --ffmpeg <path-to-ffmpeg>")

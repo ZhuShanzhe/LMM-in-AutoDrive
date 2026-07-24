@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://xh-202602.local/schemas/driving_intent-1.0.0.json",
+  "$id": "https://xh-202602.local/schemas/driving_intent-1.1.0.json",
   "title": "XH-202602 Driving Intent",
   "description": "Natural-language driving intent passed to scene alignment and decision modules.",
   "type": "object",
@@ -14,7 +14,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.0.0"
+      "const": "1.1.0"
     },
     "request_id": {
       "type": "string",
@@ -151,12 +151,24 @@
             "SET_SPEED",
             "ADJUST_SPEED",
             "STOP",
+            "WAIT",
+            "FOLLOW",
+            "APPROACH",
+            "NAVIGATE_TO",
             "CHANGE_LANE",
+            "MERGE",
             "TURN",
+            "U_TURN",
+            "PROCEED",
             "YIELD",
             "PULL_OVER",
+            "PARK",
             "OVERTAKE",
+            "PASS_BY",
             "AVOID",
+            "REVERSE",
+            "ENTER_AREA",
+            "EXIT_AREA",
             "EMERGENCY_BRAKE",
             "RESUME",
             "CANCEL"
@@ -199,7 +211,10 @@
               "LANE_CHANGE_LEGAL",
               "JUNCTION_REACHED",
               "TARGET_VISIBLE",
-              "PATH_CLEAR"
+              "PATH_CLEAR",
+              "TARGET_REACHABLE",
+              "AREA_ACCESSIBLE",
+              "PARKING_SPACE_AVAILABLE"
             ]
           }
         },
@@ -232,10 +247,22 @@
             "TRAFFIC_CONE",
             "CONSTRUCTION_ZONE",
             "TRAFFIC_LIGHT",
+            "TRAFFIC_SIGN",
+            "CROSSWALK",
+            "STOP_LINE",
             "JUNCTION",
             "LANE",
+            "ROAD",
+            "AREA",
+            "PARKING_AREA",
+            "PARKING_SPACE",
+            "CURB",
+            "LANDMARK",
             "DESTINATION",
+            "PICKUP_POINT",
+            "DROPOFF_POINT",
             "ROAD_HAZARD",
+            "COORDINATE",
             "UNKNOWN"
           ]
         },
@@ -245,10 +272,19 @@
             "BEHIND",
             "LEFT",
             "RIGHT",
+            "FRONT_LEFT",
+            "FRONT_RIGHT",
+            "REAR_LEFT",
+            "REAR_RIGHT",
             "AHEAD_CROSSING",
             "ADJACENT",
+            "NEXT_TO",
+            "IN_FRONT_OF",
+            "NEAR",
             "AT_JUNCTION",
             "NEAR_DESTINATION",
+            "INSIDE",
+            "PAST",
             "UNSPECIFIED"
           ]
         },
@@ -256,6 +292,31 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 256
+        },
+        "coordinates": {
+          "$ref": "#/$defs/coordinates"
+        }
+      }
+    },
+    "coordinates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x_m",
+        "y_m"
+      ],
+      "properties": {
+        "x_m": {
+          "type": "number"
+        },
+        "y_m": {
+          "type": "number"
+        },
+        "frame": {
+          "enum": [
+            "EGO",
+            "MAP"
+          ]
         }
       }
     },
@@ -267,7 +328,9 @@
           "enum": [
             "LEFT",
             "RIGHT",
-            "STRAIGHT"
+            "STRAIGHT",
+            "FORWARD",
+            "BACKWARD"
           ]
         },
         "change": {
@@ -289,10 +352,45 @@
           "type": "number",
           "minimum": 0
         },
+        "start_distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "transition_distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "following_distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "duration_s": {
+          "type": "number",
+          "minimum": 0
+        },
         "lane_count": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 3
+          "maximum": 8
+        },
+        "lane_index": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "lane_reference": {
+          "enum": [
+            "LEFT_EDGE",
+            "RIGHT_EDGE"
+          ]
+        },
+        "parking_maneuver": {
+          "enum": [
+            "FORWARD",
+            "REVERSE",
+            "PARALLEL",
+            "UNSPECIFIED"
+          ]
         },
         "source_value": {
           "type": "number"
@@ -302,7 +400,8 @@
             "km/h",
             "m/s",
             "m",
-            "s"
+            "s",
+            "min"
           ]
         }
       }
@@ -353,7 +452,14 @@
             "TARGET_SPEED_REACHED",
             "LANE_CHANGE_COMPLETED",
             "JUNCTION_EXITED",
-            "VEHICLE_STOPPED"
+            "VEHICLE_STOPPED",
+            "WAIT_CONDITION_MET",
+            "DURATION_ELAPSED",
+            "FOLLOWING_ESTABLISHED",
+            "TARGET_REACHED",
+            "AREA_ENTERED",
+            "AREA_EXITED",
+            "PARKING_COMPLETED"
           ]
         }
       }
@@ -450,4 +556,3 @@
     }
   }
 }
-

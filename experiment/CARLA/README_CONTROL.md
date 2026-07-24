@@ -61,32 +61,10 @@ listed above and may include `frame_id`, `risk_level`, and other diagnostic
 fields; unsupported extra fields are preserved by the producer but ignored by
 the CARLA controller.
 
-```powershell
-python run_control_experiment.py emergency_brake --duration-s 20 `
-  --decision-source json_file `
-  --decision-json examples\decisions\emergency_brake.json
-```
-
 The included JSON file is only a temporary emergency-braking placeholder. A
 missing, malformed, or unsupported external document always becomes a safe
 `stop` command rather than allowing the ego vehicle to continue a stale action.
 The default `--decision-source rule` remains available for baseline tests.
-
-## Run an experiment
-
-CARLA `0.9.15` on this Windows machine ships a Python 3.7 API package. Start
-the CARLA server first, then use a Python 3.7 environment and run from this
-directory:
-
-```powershell
-python run_control_experiment.py straight_driving --duration-s 25 --goal-distance-m 60 --stop-when-goal-reached
-python run_control_experiment.py emergency_brake --duration-s 25
-python run_control_experiment.py pedestrian_crossing --duration-s 25
-python run_control_experiment.py emergency_brake --duration-s 25 --record-images --record-every-n 2 --camera-width 1920 --camera-height 1080
-```
-
-Set `CARLA_ROOT` if CARLA is not installed at
-`D:\CARLA\carla-0-9-15-windows\WindowsNoEditor`.
 
 ## Outputs
 
@@ -102,23 +80,8 @@ Each run writes to `outputs/runs/<scenario>_<time>/`:
 At control/evaluation level, `task_completed` means the requested distance was
 reached (when supplied) with no collision, lane invasion, or speeding event.
 
-With `--record-images`, `camera_frames/` holds front-camera evidence at the
-default 1920x1080 resolution. Convert
-the saved images into a demonstration video with:
-
-```powershell
-python frames_to_video.py --frames outputs\runs\<run>\camera_frames --output outputs\runs\<run>\demo.mp4 --fps 10
-```
-
-The script uses `ffmpeg` and automatically locates the bundled executable in
-the local `carla37` conda environment.
-
-For higher frame rate, bypass PNG files and stream the camera directly to an
-H.264 video:
-
-```powershell
-python run_control_experiment.py emergency_brake --duration-s 10 --fixed-delta-s 0.0333333333 --camera-width 1920 --camera-height 1080 --video-output outputs\runs\emergency_30fps.mp4 --video-fps 30 --ffmpeg C:\path\to\ffmpeg.exe
-```
+The recorder can persist front-camera frames or a directly encoded H.264 video
+as experiment evidence.
 
 `RuleDecisionPolicy` in `run_control_experiment.py` is a temporary safety rule
 used to validate the closed loop. Replace its `decide(world_state)` call with

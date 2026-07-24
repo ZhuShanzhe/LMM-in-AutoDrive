@@ -33,6 +33,7 @@ def summarize_result(document: dict[str, Any]) -> dict[str, Any]:
     return {
         "status": document["parse_result"]["status"],
         "category": document["intent"]["category"],
+        "urgency": document["intent"]["urgency"],
         "actions": [step["action"] for step in steps],
         "directions": [
             step["parameters"]["direction"]

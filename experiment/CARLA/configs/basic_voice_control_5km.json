@@ -1,0 +1,56 @@
+{
+  "scenario_id": "basic_voice_control_5km",
+  "environment": {
+    "weather": "ClearNoon",
+    "road_requirement": "urban_arterial_six_lanes",
+    "dynamic_traffic": false
+  },
+  "route": {
+    "length_m": 5000,
+    "step_m": 5,
+    "goal_tolerance_m": 15,
+    "minimum_same_direction_lanes": 3
+  },
+  "commands": [
+    {
+      "id": "keep_lane_speed_60",
+      "announce_at_m": 0,
+      "action": "keep_lane",
+      "target_speed_kmh": 60,
+      "voice_text": "保持当前车道，提速至60公里每小时",
+      "structured_command": {"action": "SET_SPEED", "target_speed_kmh": 60}
+    },
+    {
+      "id": "right_turn_ahead",
+      "announce_at_m": 900,
+      "action": "turn_right",
+      "target_speed_kmh": 50,
+      "voice_text": "前方300米路口右转",
+      "structured_command": {"action": "TURN", "direction": "RIGHT", "distance_m": 300},
+      "route_directive": {"distance_m": 1200, "action": "turn_right"}
+    },
+    {
+      "id": "lane_change_left",
+      "announce_at_m": 2300,
+      "action": "lane_change_left",
+      "target_speed_kmh": 50,
+      "voice_text": "向左变道",
+      "structured_command": {"action": "CHANGE_LANE", "direction": "LEFT"},
+      "route_directive": {"distance_m": 2300, "action": "lane_change_left"}
+    },
+    {
+      "id": "decelerate_to_40",
+      "announce_at_m": 3600,
+      "action": "decelerate",
+      "target_speed_kmh": 40,
+      "voice_text": "减速至40公里每小时",
+      "structured_command": {"action": "ADJUST_SPEED", "target_speed_kmh": 40}
+    }
+  ],
+  "success": {
+    "route_completed": true,
+    "all_commands_emitted": true,
+    "no_collision": true,
+    "no_illegal_lane_invasion": true
+  }
+}

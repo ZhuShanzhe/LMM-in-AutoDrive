@@ -1,6 +1,6 @@
 # DrivingIntent JSON 完整字段参考
 
-本文档对应 `schemas/driving_intent.schema.json` 的 `1.0.0` 版本，用于指令解析、语义对齐、风险判断、有限状态机和日志模块共同查阅。
+本文档对应 `schemas/driving_intent.schema.json` 的 `1.1.0` 版本，用于指令解析、语义对齐、风险判断、有限状态机和日志模块共同查阅。`1.1.0` 根据 Talk2Car 与 SimLingo 全量英文语料扩展动作、目标和参数，原 `1.0.0` 动作语义保持不变。
 
 JSON Schema 是机器校验依据；本文档用于解释字段语义、字段组合和下游处理约定。二者冲突时，以 Schema 为准并提交接口问题，不得由各模块自行解释。
 
@@ -25,14 +25,22 @@ DrivingIntent
 |   |   |-- target                  可选
 |   |   |   |-- type
 |   |   |   |-- relation
-|   |   |   `-- description         可选
+|   |   |   |-- description         可选
+|   |   |   `-- coordinates         可选，仅保存原指令明确坐标
 |   |   |-- parameters
 |   |   |   |-- direction           可选
 |   |   |   |-- change              可选
 |   |   |   |-- target_speed_mps    可选
 |   |   |   |-- speed_delta_mps     可选
 |   |   |   |-- distance_m          可选
+|   |   |   |-- start_distance_m    可选
+|   |   |   |-- transition_distance_m 可选
+|   |   |   |-- following_distance_m 可选
+|   |   |   |-- duration_s          可选
 |   |   |   |-- lane_count          可选
+|   |   |   |-- lane_index          可选
+|   |   |   |-- lane_reference      可选
+|   |   |   |-- parking_maneuver    可选
 |   |   |   |-- source_value        可选
 |   |   |   `-- source_unit         可选
 |   |   |-- trigger
@@ -65,7 +73,7 @@ DrivingIntent
 
 | 字段 | 类型 | 必填 | 允许内容 | 说明 |
 | --- | --- | --- | --- | --- |
-| `schema_version` | string | 是 | 固定为 `1.0.0` | 接口版本，不是模型版本 |
+| `schema_version` | string | 是 | 固定为 `1.1.0` | 接口版本，不是模型版本 |
 | `request_id` | string | 是 | 1-128 个字符 | 一条用户指令的唯一标识，贯穿所有模块日志 |
 | `input` | object | 是 | 见第 3 节 | 原始输入与规范化文本 |
 | `intent` | object | 是 | 见第 4 节 | 用户驾驶意图，不是最终车辆决策 |
@@ -130,14 +138,26 @@ DrivingIntent
 | `SET_SPEED` | 设置明确速度 | 必须有 `target_speed_mps` | 提速至 60 km/h |
 | `ADJUST_SPEED` | 定性或定量调速 | `change`；有明确差值时可用 `speed_delta_mps` | 开慢一点、加速 5 km/h |
 | `STOP` | 正常制动直至停车 | 可带目标或距离，推荐完成条件 `VEHICLE_STOPPED` | 前方停车 |
-| `CHANGE_LANE` | 横向换道 | 必须有 `direction`；推荐 `lane_count` | 向左变道 |
+| `WAIT` | 保持安全状态等待 | 必须有 `duration_s` 或条件触发 | 等行人通过后再走 |
+| `FOLLOW` | 持续跟随动态目标 | 必须有 `target`；可带 `duration_s`、`following_distance_m` | 跟随蓝色车辆 5 分钟 |
+| `APPROACH` | 缩短与目标的距离 | 必须有 `target` | 缓慢接近右侧行人 |
+| `NAVIGATE_TO` | 行驶至目标地点或目标所在位置 | 必须有 `target` | 开到银色汽车所在位置 |
+| `CHANGE_LANE` | 横向换道 | 必须有左右方向，或 `lane_index` + `lane_reference` | 向左变道 |
+| `MERGE` | 汇入目标车道或交通流 | 必须有左右方向，或目标车道序号 | 向右汇入主路 |
 | `TURN` | 路口转向 | 必须有 `direction`；通常带路口目标或距离触发 | 前方 300 米路口右转 |
+| `U_TURN` | 调转行驶方向 | 推荐在允许掉头的路口执行 | 前方允许处掉头 |
+| `PROCEED` | 开始或沿当前路线继续前进 | 可带 `direction=STRAIGHT` | 行人通过后继续直行 |
 | `YIELD` | 给对象让行 | 必须有 `target` | 给前方行人让行 |
 | `PULL_OVER` | 靠边行驶或停车 | 推荐 `direction` 和目标速度 | 靠边减速到 30 km/h |
+| `PARK` | 驶入并占用停车位置 | 推荐停车目标和 `parking_maneuver` | 倒车停入右侧车位 |
 | `OVERTAKE` | 超越目标 | 必须有 `target`；方向未明确时由规划器决定 | 超越前方慢车 |
+| `PASS_BY` | 从目标旁经过，不表达取得领先 | 必须有 `target` | 慢速经过路边行人 |
 | `AVOID` | 绕开目标 | 必须有 `target`；只有用户明确时才填写方向 | 避让施工锥桶 |
+| `REVERSE` | 独立倒车动作 | 可带距离和目标 | 向后倒车 2 米 |
+| `ENTER_AREA` | 进入明确区域 | 必须有区域目标 | 进入右侧停车场 |
+| `EXIT_AREA` | 驶出明确区域 | 必须有区域目标 | 驶出停车场 |
 | `EMERGENCY_BRAKE` | 紧急制动 | 目标可选，紧急程度应为 `EMERGENCY` | 前方危险，紧急停车 |
-| `RESUME` | 恢复正常驾驶状态 | 通常无参数 | 安全后继续行驶 |
+| `RESUME` | 临时动作后恢复先前路线、车道或驾驶状态 | 通常无参数 | 避障后回到原车道 |
 | `CANCEL` | 取消待执行用户指令 | 通常无参数；具体取消对象可在 purpose 中说明 | 取消刚才的变道 |
 
 这里的“必须”属于语义校验规则。Schema 负责结构校验，解析器和 `validate_examples.py` 后续还应逐步补全动作级语义校验。
@@ -156,10 +176,17 @@ DrivingIntent
 | `TRAFFIC_CONE` | 施工锥桶 |
 | `CONSTRUCTION_ZONE` | 施工区域或施工路段 |
 | `TRAFFIC_LIGHT` | 交通信号灯 |
+| `TRAFFIC_SIGN` | 交通标志 |
+| `CROSSWALK`、`STOP_LINE` | 人行横道和停止线 |
 | `JUNCTION` | 路口或交叉口 |
 | `LANE` | 语言中的左车道、右车道等语义车道 |
+| `ROAD`、`AREA` | 道路和通用区域 |
+| `PARKING_AREA`、`PARKING_SPACE`、`CURB` | 停车场、停车位和路缘 |
+| `LANDMARK` | 树、建筑等可用于定位的地标 |
 | `DESTINATION` | 目的地或停车点 |
+| `PICKUP_POINT`、`DROPOFF_POINT` | 明确接客点和下客点 |
 | `ROAD_HAZARD` | 路况危险、落物、积水等泛化危险 |
+| `COORDINATE` | 用户原话明确给出的坐标位置 |
 | `UNKNOWN` | 文本明确存在目标，但无法分类 |
 
 ### 8.2 `target.relation`
@@ -170,26 +197,37 @@ DrivingIntent
 | `BEHIND` | 自车后方 |
 | `LEFT` | 自车或参考目标左侧 |
 | `RIGHT` | 自车或参考目标右侧 |
+| `FRONT_LEFT`、`FRONT_RIGHT` | 自车前左或前右 |
+| `REAR_LEFT`、`REAR_RIGHT` | 自车后左或后右 |
 | `AHEAD_CROSSING` | 正在前方横穿 |
 | `ADJACENT` | 相邻位置或相邻车道 |
+| `NEXT_TO`、`IN_FRONT_OF`、`NEAR` | 在目标旁、目标前或附近 |
 | `AT_JUNCTION` | 位于路口 |
 | `NEAR_DESTINATION` | 位于目的地附近 |
+| `INSIDE`、`PAST` | 区域内部或已通过目标的位置 |
 | `UNSPECIFIED` | 原文未给出相对关系 |
 
-`target.description` 保存无法完全枚举的原文短语，例如“公交站旁边穿蓝衣服的人”。它只用于语义对齐，不允许填写 CARLA actor ID。
+`target.description` 保存无法完全枚举的原文短语，例如“公交站旁边穿蓝衣服的人”。它只用于语义对齐，不允许填写 CARLA actor ID。`target.coordinates` 只允许保存用户明确说出的 `x_m`、`y_m` 与 `frame`，禁止由解析器或感知模块猜测。
 
 ## 9. `parameters` 全部字段
 
 | 字段 | 类型 | 允许内容 | 使用方式 |
 | --- | --- | --- | --- |
-| `direction` | enum | `LEFT`、`RIGHT`、`STRAIGHT` | 变道、转弯、靠边、明确方向的避让 |
+| `direction` | enum | `LEFT`、`RIGHT`、`STRAIGHT`、`FORWARD`、`BACKWARD` | 变道、转弯、前进和倒车方向 |
 | `change` | enum | `INCREASE`、`DECREASE`、`HOLD` | 定性速度变化 |
 | `target_speed_mps` | number | `>=0` | 明确目标速度，单位 m/s |
 | `speed_delta_mps` | number | `>0` | 速度变化绝对值，方向由 `change` 表示 |
 | `distance_m` | number | `>=0` | 指令明确给出的距离，单位 m |
-| `lane_count` | integer | `1-3` | 需要横跨的车道数 |
+| `start_distance_m` | number | `>=0` | 距离动作开始点的距离 |
+| `transition_distance_m` | number | `>=0` | 换道或横向过渡距离 |
+| `following_distance_m` | number | `>=0` | 用户明确要求的跟车距离 |
+| `duration_s` | number | `>=0` | 跟随或等待时长，统一为秒 |
+| `lane_count` | integer | `1-8` | 需要横跨的车道数 |
+| `lane_index` | integer | `1-16` | 从道路一侧起算的自然序号；0、负数和 unknown 必须澄清 |
+| `lane_reference` | enum | `LEFT_EDGE`、`RIGHT_EDGE` | `lane_index` 的起算侧 |
+| `parking_maneuver` | enum | `FORWARD`、`REVERSE`、`PARALLEL`、`UNSPECIFIED` | 明确的停车方式 |
 | `source_value` | number | 任意数值 | 原始指令数值，用于日志追溯 |
-| `source_unit` | enum | `km/h`、`m/s`、`m`、`s` | 原始数值单位 |
+| `source_unit` | enum | `km/h`、`m/s`、`m`、`s`、`min` | 原始数值单位 |
 
 运行字段必须使用 SI 单位。`source_value` 和 `source_unit` 只能作为追溯信息，规划器应读取换算后的 `target_speed_mps`、`speed_delta_mps` 或 `distance_m`。
 
@@ -217,6 +255,10 @@ DrivingIntent
 | `LANE_CHANGE_COMPLETED` | 已稳定进入目标车道 |
 | `JUNCTION_EXITED` | 已完成路口动作并驶出路口 |
 | `VEHICLE_STOPPED` | 车辆已停止 |
+| `WAIT_CONDITION_MET`、`DURATION_ELAPSED` | 等待条件已满足或时长结束 |
+| `FOLLOWING_ESTABLISHED`、`TARGET_REACHED` | 已建立跟随或到达目标 |
+| `AREA_ENTERED`、`AREA_EXITED` | 已进入或驶出区域 |
+| `PARKING_COMPLETED` | 已完成停车 |
 
 `trigger.description` 只能描述后续模块能够实现的条件。禁止将任意自然语言直接作为可执行代码或表达式。
 
@@ -235,6 +277,9 @@ DrivingIntent
 | `JUNCTION_REACHED` | CARLA/地图 | 已到达目标路口 |
 | `TARGET_VISIBLE` | 感知/语义对齐 | 语言目标已匹配到场景对象 |
 | `PATH_CLEAR` | 风险判断 | 预计行驶路径无阻挡 |
+| `TARGET_REACHABLE` | 地图/语义对齐 | 目标可由当前道路网络到达 |
+| `AREA_ACCESSIBLE` | 地图/规则 | 目标区域允许驶入或驶出 |
+| `PARKING_SPACE_AVAILABLE` | 感知/地图 | 停车位置存在且可用 |
 
 ### 11.2 `on_blocked` 全部取值
 
@@ -287,6 +332,11 @@ DrivingIntent
 | 提速至 60 km/h | `BASIC_CONTROL` | `SET_SPEED(16.667 m/s)` |
 | 前方 300 米路口右转 | `NAVIGATION` | `TURN(RIGHT)` + `AT_DISTANCE(300 m)` |
 | 向左变道 | `BASIC_CONTROL` | `CHANGE_LANE(LEFT)` + 左车道安全条件 |
+| 跟随蓝色车辆 5 分钟 | `NAVIGATION` | `FOLLOW(VEHICLE, duration_s=300)` |
+| 缓慢接近右侧行人 | `NAVIGATION` | `ADJUST_SPEED(DECREASE)` -> `APPROACH(PEDESTRIAN)` |
+| 等行人通过后继续直行 | `COMPLEX_OBSTACLE_AVOIDANCE` | `WAIT(CONDITION)` -> `PROCEED(STRAIGHT)` |
+| 前方掉头后进入右侧停车场 | `NAVIGATION` | `U_TURN` -> `ENTER_AREA(PARKING_AREA)` |
+| 倒车停入右侧第一个车位接人 | `NAVIGATION` | `PARK(parking_maneuver=REVERSE, purpose=PICK_UP)` |
 | 前方公交站有行人上下车，靠边减速至 30 km/h，确认安全后继续行驶 | `COMPLEX_OBSTACLE_AVOIDANCE` | `PULL_OVER` -> `SET_SPEED` -> `RESUME` |
 | 避让施工锥桶并回归原车道 | `COMPLEX_OBSTACLE_AVOIDANCE` | `AVOID` -> `CHANGE_LANE` -> `RESUME` |
 | 突发车辆加塞，紧急避让 | `EMERGENCY_RESPONSE` | `AVOID` 或 `EMERGENCY_BRAKE`，urgency 为 EMERGENCY |
@@ -299,7 +349,7 @@ DrivingIntent
 
 | 禁止字段或内容 | 应由哪个模块产生 |
 | --- | --- |
-| CARLA `actor_id`、对象坐标、边界框 | CARLA 感知与语义对齐 |
+| CARLA `actor_id`、感知推断坐标、边界框 | CARLA 感知与语义对齐；仅用户明确说出的坐标可进入 `target.coordinates` |
 | 实际 `lane_id`、道路 ID、地图 waypoint | CARLA 地图与规划 |
 | TTC、安全距离、相对速度、风险等级 | 风险判断 |
 | 最终是否允许执行、决策原因 | 决策规划 |

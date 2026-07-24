@@ -10,6 +10,8 @@ import re
 import tarfile
 from typing import Any, Iterator
 
+from ..src.intent_boundaries import classify_english_braking
+
 
 MODULE_ROOT = Path(__file__).resolve().parents[1]
 DATA_ROOT = MODULE_ROOT / "data"
@@ -45,15 +47,6 @@ CRASH_TERMS = (
     "impact",
     "hit ",
     "ram ",
-)
-
-URGENT_TERMS = (
-    "now",
-    "immediate",
-    "instantly",
-    "without delay",
-    "right away",
-    "at once",
 )
 
 MODE_TERMS = {
@@ -122,31 +115,39 @@ def expected_for_simlingo(candidate: dict[str, Any]) -> dict[str, Any] | None:
             "target_speed_mps": [round(float(target_speed), 3)],
         }
     if mode in {"faster", "faster_factor", "slower", "slower_factor"}:
-        if (
-            mode.startswith("slower")
-            and any(term in instruction for term in URGENT_TERMS)
-            and "brake" in instruction
+        braking_boundary = classify_english_braking(instruction)
+        if mode.startswith("slower") and braking_boundary and (
+            braking_boundary.action == "EMERGENCY_BRAKE"
         ):
             return {
                 "status": "VALID",
                 "category": "EMERGENCY_RESPONSE",
+                "urgency": "EMERGENCY",
                 "actions": ["EMERGENCY_BRAKE"],
             }
         return {
             "status": "VALID",
             "category": "BASIC_CONTROL",
+            "urgency": (
+                braking_boundary.urgency
+                if mode.startswith("slower") and braking_boundary
+                else "NORMAL"
+            ),
             "actions": ["ADJUST_SPEED"],
         }
     if mode == "stop":
-        if any(term in instruction for term in URGENT_TERMS):
+        braking_boundary = classify_english_braking(instruction)
+        if braking_boundary and braking_boundary.action == "EMERGENCY_BRAKE":
             return {
                 "status": "VALID",
                 "category": "EMERGENCY_RESPONSE",
+                "urgency": "EMERGENCY",
                 "actions": ["EMERGENCY_BRAKE"],
             }
         return {
             "status": "VALID",
             "category": "BASIC_CONTROL",
+            "urgency": braking_boundary.urgency if braking_boundary else "NORMAL",
             "actions": ["STOP"],
         }
     if mode == "lane_change":

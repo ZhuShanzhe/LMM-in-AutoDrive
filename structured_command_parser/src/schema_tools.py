@@ -67,19 +67,57 @@ def semantic_errors(document: dict[str, Any]) -> list[str]:
             "change" in parameters or "speed_delta_mps" in parameters
         ):
             errors.append(f"{step_id} ADJUST_SPEED requires change or speed_delta_mps")
-        if action == "CHANGE_LANE" and parameters.get("direction") not in {
-            "LEFT",
-            "RIGHT",
-        }:
-            errors.append(f"{step_id} CHANGE_LANE requires LEFT or RIGHT direction")
+        if action in {"CHANGE_LANE", "MERGE"} and not (
+            parameters.get("direction") in {"LEFT", "RIGHT"}
+            or (
+                isinstance(parameters.get("lane_index"), int)
+                and parameters.get("lane_reference") in {"LEFT_EDGE", "RIGHT_EDGE"}
+            )
+        ):
+            errors.append(
+                f"{step_id} {action} requires LEFT/RIGHT direction or lane_index with lane_reference"
+            )
         if action == "TURN" and parameters.get("direction") not in {
             "LEFT",
             "RIGHT",
             "STRAIGHT",
         }:
             errors.append(f"{step_id} TURN requires a direction")
-        if action in {"YIELD", "OVERTAKE", "AVOID"} and target is None:
+        if action in {
+            "FOLLOW",
+            "APPROACH",
+            "NAVIGATE_TO",
+            "YIELD",
+            "OVERTAKE",
+            "PASS_BY",
+            "AVOID",
+            "ENTER_AREA",
+            "EXIT_AREA",
+        } and target is None:
             errors.append(f"{step_id} {action} requires a target")
+        if action == "WAIT" and not (
+            "duration_s" in parameters or trigger.get("type") == "CONDITION"
+        ):
+            errors.append(f"{step_id} WAIT requires duration_s or CONDITION trigger")
+        if action == "PARK" and target is not None and target.get("type") not in {
+            "PARKING_AREA",
+            "PARKING_SPACE",
+            "CURB",
+            "DESTINATION",
+            "VEHICLE",
+            "LANDMARK",
+            "UNKNOWN",
+        }:
+            errors.append(f"{step_id} PARK target type is not parkable")
+        if target is not None:
+            target_type = target.get("type")
+            has_coordinates = "coordinates" in target
+            if target_type == "COORDINATE" and not has_coordinates:
+                errors.append(f"{step_id} COORDINATE target requires coordinates")
+            if has_coordinates and target_type != "COORDINATE":
+                errors.append(
+                    f"{step_id} target coordinates require target type COORDINATE"
+                )
         if action == "EMERGENCY_BRAKE" and intent.get("urgency") != "EMERGENCY":
             errors.append("EMERGENCY_BRAKE requires EMERGENCY urgency")
 
@@ -101,4 +139,3 @@ def validate_document(document: dict[str, Any]) -> None:
     errors = schema_errors(document) + semantic_errors(document)
     if errors:
         raise IntentValidationError("\n".join(errors))
-

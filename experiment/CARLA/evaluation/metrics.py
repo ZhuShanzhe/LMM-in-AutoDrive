@@ -21,6 +21,10 @@ def summarize(records, scenario, goal_distance_m=None):
     distance_m = max(float(last["distance_m"]) - float(first["distance_m"]), 0.0)
     collisions = max(record["events"]["collision_count"] for record in records)
     lane_invasions = max(record["events"]["lane_invasion_count"] for record in records)
+    illegal_lane_invasions = max(
+        record["events"].get("illegal_lane_invasion_count", record["events"]["lane_invasion_count"])
+        for record in records
+    )
     speeds = [float(record["ego"]["speed_kmh"]) for record in records]
     response_latencies = [float(record["latency_ms"]["end_to_end"]) for record in records]
     control_latencies = [float(record["latency_ms"]["control"]) for record in records]
@@ -32,7 +36,7 @@ def summarize(records, scenario, goal_distance_m=None):
     )
 
     goal_reached = False if goal_distance_m is None else distance_m >= float(goal_distance_m)
-    violation_free = collisions == 0 and lane_invasions == 0 and speeding_frames == 0
+    violation_free = collisions == 0 and illegal_lane_invasions == 0 and speeding_frames == 0
     task_completed = bool(goal_reached and violation_free)
     return {
         "scenario": scenario,
@@ -46,11 +50,13 @@ def summarize(records, scenario, goal_distance_m=None):
         "goal_reached": goal_reached,
         "collision_events": collisions,
         "collision_free": collisions == 0,
-        "lane_invasion_free": lane_invasions == 0,
+        "lane_invasion_free": illegal_lane_invasions == 0,
         "collision_rate_per_1000_frames": round(collisions * 1000.0 / len(records), 4),
         "collision_rate_per_km": round(collisions / max(distance_m / 1000.0, 1e-6), 4),
         "lane_invasion_events": lane_invasions,
         "lane_invasion_rate_per_1000_frames": round(lane_invasions * 1000.0 / len(records), 4),
+        "illegal_lane_invasion_events": illegal_lane_invasions,
+        "illegal_lane_invasion_free": illegal_lane_invasions == 0,
         "speeding_frames": speeding_frames,
         "speeding_rate": round(speeding_frames / len(records), 5),
         "violation_free": violation_free,

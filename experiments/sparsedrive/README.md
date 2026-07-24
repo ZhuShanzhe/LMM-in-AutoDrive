@@ -23,13 +23,7 @@
 | `scripts/finalize_sparsedrive_experiment.py` | 指标、案例和 TensorBoard 汇总脚本 |
 | `configs/sparsedrive_small_stage2_mini.py` | 本次 mini 评测配置 |
 
-完整原始结果包含 `results.pkl`、81 张逐帧图、视频和 TensorBoard 事件文件，保存在本地归档：
-
-```text
-D:\LLM-AutoDrive\sparsedrive_final_20260709
-```
-
-这些大文件不提交到 Git，以避免仓库体积持续增长。
+完整原始结果包含 `results.pkl`、81 张逐帧图、视频和 TensorBoard 事件文件；为控制仓库体积，这些大文件不提交到 Git。
 
 ## 核心结果
 
