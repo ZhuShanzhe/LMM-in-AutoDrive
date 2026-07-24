@@ -154,6 +154,22 @@ class QwenSceneInferenceTests(unittest.TestCase):
         self.assertEqual(normalized["objects"][0]["object_id"], "vlm_obj_001")
         self.assertTrue(any("deterministic object_id" in action for action in actions))
 
+    def test_downgrades_ungrounded_traffic_light_state(self):
+        compact = json.loads(json.dumps(VALID_OUTPUT))
+        compact["scene"]["traffic_light_state"] = "red"
+
+        normalized, actions = normalize_scene_output(compact)
+
+        self.assertEqual(normalized["scene"]["traffic_light_state"], "unknown")
+        self.assertTrue(any("ungrounded traffic_light_state" in action for action in actions))
+        self.assertEqual(
+            evaluate_output(
+                {"frame_id": "frame_001", "source": "nuscenes", "camera_name": "CAM_FRONT"},
+                json.dumps(normalized),
+            )[1],
+            [],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,4 @@
+# Generated CARLA artifacts; curated evidence is kept in results/ instead.
+outputs/
+__pycache__/
+*.pyc

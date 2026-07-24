@@ -66,6 +66,17 @@ def _traffic_light_state(actor: Any) -> str:
     return name if name in {"red", "yellow", "green", "off"} else "unknown"
 
 
+def _static_prop_category(type_id: str) -> str:
+    """Map safety-relevant CARLA static props into the shared vocabulary."""
+
+    normalized = type_id.lower().replace("-", "_")
+    if "trafficcone" in normalized or "traffic_cone" in normalized:
+        return "traffic_cone"
+    if any(token in normalized for token in ("barrier", "barricade", "guardrail")):
+        return "road_barrier"
+    return "other"
+
+
 def _get_waypoint(carla_map: Any, location: Any, *, project_to_road: bool = True) -> Any:
     try:
         return carla_map.get_waypoint(location, project_to_road=project_to_road)
@@ -151,7 +162,12 @@ def _actor_groups(actors: Any) -> Iterable[tuple[Any, str]]:
             if not isinstance(actor_id, int) or actor_id in seen:
                 continue
             seen.add(actor_id)
-            yield actor, category
+            resolved_category = (
+                _static_prop_category(getattr(actor, "type_id", ""))
+                if category == "other"
+                else category
+            )
+            yield actor, resolved_category
 
 
 def _weather_values(weather: Any) -> dict[str, Any]:

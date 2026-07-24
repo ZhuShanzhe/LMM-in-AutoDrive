@@ -213,6 +213,75 @@ def evaluate_output(record: dict[str, Any], raw_output: str) -> tuple[Any | None
     return parsed, errors
 
 
+def infer_one_record(
+    record: dict[str, Any],
+    *,
+    model,
+    processor,
+    torch_module,
+    model_path: Path,
+    max_new_tokens: int,
+    min_visual_tokens: int,
+    max_visual_tokens: int,
+) -> dict[str, Any]:
+    """Run, normalize, and audit one manifest record with a loaded backend."""
+
+    raw_output, elapsed_seconds, peak_memory_gib, processed_size = generate_one(
+        record,
+        model=model,
+        processor=processor,
+        torch_module=torch_module,
+        max_new_tokens=max_new_tokens,
+    )
+    raw_parsed_output, raw_validation_errors = evaluate_output(record, raw_output)
+    if raw_parsed_output is None:
+        parsed_output = None
+        normalization_actions: list[str] = []
+        validation_errors = raw_validation_errors
+    else:
+        parsed_output, normalization_actions = normalize_scene_output(
+            raw_parsed_output,
+            processed_width=processed_size[0],
+            processed_height=processed_size[1],
+        )
+        validation_errors = validate_scene_output(
+            parsed_output,
+            expected_frame_id=record["frame_id"],
+            expected_source=record["source"],
+            expected_camera_name=record["camera_name"],
+        )
+    return {
+        "frame_id": record["frame_id"],
+        "source": record["source"],
+        "camera_name": record["camera_name"],
+        "image_path": record["image_path"],
+        "prompt_sha256": record.get(
+            "prompt_sha256",
+            hashlib.sha256(record["prompt"].encode("utf-8")).hexdigest(),
+        ),
+        "status": "valid" if not validation_errors else "invalid",
+        "elapsed_seconds": round(elapsed_seconds, 4),
+        "peak_memory_gib": round(peak_memory_gib, 4),
+        "processed_image_size": {
+            "width": processed_size[0],
+            "height": processed_size[1],
+        },
+        "inference_config": {
+            "model_path": str(model_path),
+            "max_new_tokens": max_new_tokens,
+            "min_visual_tokens": min_visual_tokens,
+            "max_visual_tokens": max_visual_tokens,
+            "do_sample": False,
+        },
+        "raw_output": raw_output,
+        "raw_parsed_output": raw_parsed_output,
+        "raw_validation_errors": raw_validation_errors,
+        "parsed_output": parsed_output,
+        "normalization_actions": normalization_actions,
+        "validation_errors": validation_errors,
+    }
+
+
 def append_jsonl(path: Path, record: dict[str, Any]) -> None:
     """Append and flush one result so an interrupted run can resume safely."""
 
@@ -282,66 +351,22 @@ def main() -> int:
         frame_id = record["frame_id"]
         print(f"[{index}/{len(selected)}] {frame_id}")
         try:
-            raw_output, elapsed_seconds, peak_memory_gib, processed_size = generate_one(
+            result = infer_one_record(
                 record,
                 model=model,
                 processor=processor,
                 torch_module=torch_module,
+                model_path=args.model_path,
                 max_new_tokens=args.max_new_tokens,
+                min_visual_tokens=args.min_visual_tokens,
+                max_visual_tokens=args.max_visual_tokens,
             )
-            raw_parsed_output, raw_validation_errors = evaluate_output(record, raw_output)
-            if raw_parsed_output is None:
-                parsed_output = None
-                normalization_actions: list[str] = []
-                validation_errors = raw_validation_errors
-            else:
-                parsed_output, normalization_actions = normalize_scene_output(
-                    raw_parsed_output,
-                    processed_width=processed_size[0],
-                    processed_height=processed_size[1],
-                )
-                validation_errors = validate_scene_output(
-                    parsed_output,
-                    expected_frame_id=record["frame_id"],
-                    expected_source=record["source"],
-                    expected_camera_name=record["camera_name"],
-                )
-            status = "valid" if not validation_errors else "invalid"
-            valid_count += int(status == "valid")
-            result = {
-                "frame_id": frame_id,
-                "source": record["source"],
-                "camera_name": record["camera_name"],
-                "image_path": record["image_path"],
-                "prompt_sha256": record.get(
-                    "prompt_sha256",
-                    hashlib.sha256(record["prompt"].encode("utf-8")).hexdigest(),
-                ),
-                "status": status,
-                "elapsed_seconds": round(elapsed_seconds, 4),
-                "peak_memory_gib": round(peak_memory_gib, 4),
-                "processed_image_size": {
-                    "width": processed_size[0],
-                    "height": processed_size[1],
-                },
-                "inference_config": {
-                    "model_path": str(args.model_path),
-                    "max_new_tokens": args.max_new_tokens,
-                    "min_visual_tokens": args.min_visual_tokens,
-                    "max_visual_tokens": args.max_visual_tokens,
-                    "do_sample": False,
-                },
-                "raw_output": raw_output,
-                "raw_parsed_output": raw_parsed_output,
-                "raw_validation_errors": raw_validation_errors,
-                "parsed_output": parsed_output,
-                "normalization_actions": normalization_actions,
-                "validation_errors": validation_errors,
-            }
+            valid_count += int(result["status"] == "valid")
             append_jsonl(args.output, result)
             print(
-                f"  status={status} elapsed={elapsed_seconds:.2f}s "
-                f"peak_memory={peak_memory_gib:.2f}GiB errors={len(validation_errors)}"
+                f"  status={result['status']} elapsed={result['elapsed_seconds']:.2f}s "
+                f"peak_memory={result['peak_memory_gib']:.2f}GiB "
+                f"errors={len(result['validation_errors'])}"
             )
         except Exception as exc:  # Keep an auditable record of failed frames.
             append_jsonl(

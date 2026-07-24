@@ -165,4 +165,17 @@ def normalize_scene_output(
             retained_hazards.append(hazard)
         normalized["potential_hazards"] = retained_hazards
 
+    scene = normalized.get("scene")
+    if isinstance(scene, dict):
+        traffic_light_state = scene.get("traffic_light_state")
+        has_traffic_light = any(
+            isinstance(obj, dict) and obj.get("category") == "traffic_light"
+            for obj in normalized["objects"]
+        )
+        if traffic_light_state not in {None, "unknown", "not_visible"} and not has_traffic_light:
+            scene["traffic_light_state"] = "unknown"
+            actions.append(
+                "scene: reset ungrounded traffic_light_state to unknown"
+            )
+
     return normalized, actions

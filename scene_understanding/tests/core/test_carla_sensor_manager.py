@@ -1,4 +1,6 @@
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 
@@ -107,7 +109,8 @@ class FakeImage:
     width = 800
     height = 600
 
-    def __init__(self):
+    def __init__(self, frame=42):
+        self.frame = frame
         self.saved_path = None
 
     def save_to_disk(self, path):
@@ -169,6 +172,55 @@ class CarlaSensorManagerTests(unittest.TestCase):
         self.assertEqual(latest["frame"], 42)
         self.assertTrue(latest["image_path"].endswith("00000042.png"))
         self.assertTrue(Path(latest["image_path"]).exists())
+        self.assertEqual(self.manager.camera_frame(42), latest)
+        self.assertIs(self.manager.front_camera_sensor, camera_sensor)
+
+    def test_camera_history_prunes_old_frames(self):
+        self.manager.camera_history_size = 2
+        self.manager.setup()
+        camera_sensor = self.world.spawned[2][0]
+        for frame in (41, 42, 43):
+            camera_sensor.emit(FakeImage(frame))
+        self.assertIsNone(self.manager.camera_frame(41))
+        self.assertEqual(self.manager.camera_frame(42)["frame"], 42)
+        self.assertEqual(self.manager.camera_frame(43)["frame"], 43)
+
+    def test_camera_frame_filter_skips_unselected_frames(self):
+        self.manager.camera_frame_filter = lambda frame: frame % 10 == 0
+        self.manager.setup()
+        camera_sensor = self.world.spawned[2][0]
+        skipped = FakeImage(41)
+        selected = FakeImage(50)
+
+        camera_sensor.emit(skipped)
+        camera_sensor.emit(selected)
+
+        self.assertIsNone(skipped.saved_path)
+        self.assertIsNone(self.manager.camera_frame(41))
+        self.assertEqual(self.manager.camera_frame(50)["frame"], 50)
+        self.assertIsNotNone(selected.saved_path)
+
+    def test_wait_for_camera_frame_returns_exact_delayed_frame(self):
+        self.manager.setup()
+        camera_sensor = self.world.spawned[2][0]
+
+        def emit_later():
+            time.sleep(0.02)
+            camera_sensor.emit(FakeImage(44))
+
+        thread = threading.Thread(target=emit_later)
+        thread.start()
+        record = self.manager.wait_for_camera_frame(44, timeout_s=0.5)
+        thread.join()
+        self.assertEqual(record["frame"], 44)
+
+    def test_wait_for_camera_frame_times_out(self):
+        self.manager.setup()
+        self.assertIsNone(self.manager.wait_for_camera_frame(99, timeout_s=0.01))
+
+    def test_wait_for_camera_frame_rejects_negative_timeout(self):
+        with self.assertRaisesRegex(ValueError, "timeout_s"):
+            self.manager.wait_for_camera_frame(1, timeout_s=-0.1)
 
     def test_destroy_is_idempotent(self):
         self.manager.setup()

@@ -9,9 +9,10 @@ from __future__ import annotations
 import importlib
 import math
 import threading
+import time
 from itertools import count
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 
 def _enum_name(value: Any) -> str:
@@ -108,6 +109,8 @@ class CarlaSensorManager:
         image_height: int = 600,
         camera_fov_deg: float = 90.0,
         camera_sensor_tick_s: float = 0.0,
+        camera_history_size: int = 32,
+        camera_frame_filter: Callable[[int], bool] | None = None,
         carla_module: Any | None = None,
     ) -> None:
         if image_width <= 0 or image_height <= 0:
@@ -116,6 +119,10 @@ class CarlaSensorManager:
             raise ValueError("camera_fov_deg must be between 0 and 180")
         if camera_sensor_tick_s < 0:
             raise ValueError("camera_sensor_tick_s must be non-negative")
+        if camera_history_size <= 0:
+            raise ValueError("camera_history_size must be positive")
+        if camera_frame_filter is not None and not callable(camera_frame_filter):
+            raise TypeError("camera_frame_filter must be callable")
         self.world = world
         self.ego_vehicle = ego_vehicle
         self.output_dir = Path(output_dir)
@@ -124,15 +131,24 @@ class CarlaSensorManager:
         self.image_height = int(image_height)
         self.camera_fov_deg = float(camera_fov_deg)
         self.camera_sensor_tick_s = float(camera_sensor_tick_s)
+        self.camera_history_size = int(camera_history_size)
+        self.camera_frame_filter = camera_frame_filter
         self._carla = carla_module
         self.event_buffer = SensorEventBuffer()
         self._sensors: dict[str, Any] = {}
-        self._camera_lock = threading.Lock()
+        self._camera_lock = threading.Condition()
         self._latest_camera_frame: dict[str, Any] | None = None
+        self._camera_frames: dict[int, dict[str, Any]] = {}
 
     @property
     def is_setup(self) -> bool:
         return bool(self._sensors)
+
+    @property
+    def front_camera_sensor(self) -> Any | None:
+        """Return the live front-camera actor for projection, if configured."""
+
+        return self._sensors.get("front_rgb")
 
     def setup(self) -> None:
         """Spawn and start the configured sensors exactly once."""
@@ -186,13 +202,16 @@ class CarlaSensorManager:
         sensor.listen(callback)
 
     def _record_camera_frame(self, image: Any) -> None:
+        frame = int(image.frame)
+        if self.camera_frame_filter is not None and not self.camera_frame_filter(frame):
+            return
         camera_dir = self.output_dir / "front_rgb"
         camera_dir.mkdir(parents=True, exist_ok=True)
-        path = camera_dir / f"{int(image.frame):08d}.png"
+        path = camera_dir / f"{frame:08d}.png"
         image.save_to_disk(str(path))
         record = {
             "camera_name": "front_rgb",
-            "frame": int(image.frame),
+            "frame": frame,
             "timestamp_s": float(image.timestamp),
             "width": int(image.width),
             "height": int(image.height),
@@ -200,10 +219,38 @@ class CarlaSensorManager:
         }
         with self._camera_lock:
             self._latest_camera_frame = record
+            self._camera_frames[record["frame"]] = record
+            while len(self._camera_frames) > self.camera_history_size:
+                del self._camera_frames[min(self._camera_frames)]
+            self._camera_lock.notify_all()
 
     def latest_camera_frame(self) -> dict[str, Any] | None:
         with self._camera_lock:
             return dict(self._latest_camera_frame) if self._latest_camera_frame else None
+
+    def camera_frame(self, frame: int) -> dict[str, Any] | None:
+        """Return the exact CARLA camera frame instead of a potentially newer one."""
+
+        with self._camera_lock:
+            record = self._camera_frames.get(int(frame))
+            return dict(record) if record else None
+
+    def wait_for_camera_frame(
+        self, frame: int, *, timeout_s: float = 1.0
+    ) -> dict[str, Any] | None:
+        """Wait briefly for the callback carrying an exact simulation frame."""
+
+        if timeout_s < 0:
+            raise ValueError("timeout_s must be non-negative")
+        frame = int(frame)
+        deadline = time.monotonic() + timeout_s
+        with self._camera_lock:
+            while frame not in self._camera_frames:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    return None
+                self._camera_lock.wait(remaining)
+            return dict(self._camera_frames[frame])
 
     def drain_events_through(self, frame: int) -> dict[str, list[dict[str, Any]]]:
         return self.event_buffer.drain_through(frame)

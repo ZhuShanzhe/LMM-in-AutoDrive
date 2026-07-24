@@ -127,6 +127,8 @@ class CarlaWorldStateTests(unittest.TestCase):
             4.0,
             velocity=FakeVector(0, -1, 0),
         )
+        cone = FakeActor(7, "static.prop.trafficcone01", 12.0, -3.0)
+        barrier = FakeActor(8, "static.prop.streetbarrier", 18.0, -3.0)
         carla_map = FakeMap(
             {
                 (0.0, 0.0): ego_lane,
@@ -135,7 +137,10 @@ class CarlaWorldStateTests(unittest.TestCase):
             }
         )
         self.ego = ego
-        self.world = FakeWorld([ego, front, left, light, far_vehicle, walker], carla_map)
+        self.world = FakeWorld(
+            [ego, front, left, light, far_vehicle, walker, cone, barrier],
+            carla_map,
+        )
 
     def test_collects_schema_valid_snapshot(self):
         state = CarlaWorldStateCollector(self.world, self.ego).collect()
@@ -160,6 +165,14 @@ class CarlaWorldStateTests(unittest.TestCase):
         state = CarlaWorldStateCollector(self.world, self.ego).collect()
         light = next(item for item in state["objects"] if item["category"] == "traffic_light")
         self.assertEqual(light["traffic_light_state"], "red")
+
+    def test_classifies_safety_relevant_static_props(self):
+        state = CarlaWorldStateCollector(self.world, self.ego).collect()
+        categories = {
+            item["source_object_id"]: item["category"] for item in state["objects"]
+        }
+        self.assertEqual(categories["7"], "traffic_cone")
+        self.assertEqual(categories["8"], "road_barrier")
 
     def test_classifies_adjacent_lane(self):
         left = FakeWaypoint(1, -2)
