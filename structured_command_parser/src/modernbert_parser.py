@@ -9,6 +9,11 @@ from typing import Any
 import torch
 from transformers import AutoTokenizer
 
+from .compositional_frame import (
+    decode_token_spans,
+    enrich_commands_with_frame,
+    extract_semantic_frame,
+)
 from .english_parser import QwenEnglishIntentParser
 from .factory import make_document
 from .llm_parser import QwenIntentParser
@@ -22,6 +27,11 @@ from .modernbert_labels import (
 )
 from .modernbert_model import ModernBertDrivingModel
 from .schema_tools import semantic_errors
+from .semantic_decomposer import decompose_atomic_actions
+from .semantic_normalizer import (
+    filter_suppressed_actions,
+    normalize_semantics,
+)
 
 
 ACTION_PATTERNS = {
@@ -107,10 +117,13 @@ class ModernBertEnglishIntentParser:
         *,
         modality: str = "TEXT",
         request_id: str | None = None,
+        source_text: str | None = None,
+        source_language: str | None = None,
     ) -> dict[str, Any]:
         if not text or not text.strip():
             raise ValueError("English command cannot be empty")
-        normalized = " ".join(text.strip().split())
+        normalization = normalize_semantics(text, source_text=source_text)
+        normalized = normalization["normalized_text"]
         self.load()
         assert self.model is not None and self.tokenizer is not None and self.device is not None
         started = perf_counter()
@@ -119,7 +132,9 @@ class ModernBertEnglishIntentParser:
             return_tensors="pt",
             truncation=True,
             max_length=self.max_length,
+            return_offsets_mapping=True,
         )
+        offsets = encoded.pop("offset_mapping")[0].tolist()
         encoded = {name: tensor.to(self.device) for name, tensor in encoded.items()}
         with torch.autocast(
             device_type=self.device.type,
@@ -136,15 +151,72 @@ class ModernBertEnglishIntentParser:
             "change": torch.softmax(logits["change"], dim=-1)[0].float().cpu(),
         }
         payload = self._payload(normalized, probabilities)
+        payload["commands"] = filter_suppressed_actions(
+            payload.get("commands", []),
+            normalization["suppressed_intents"],
+        )
+        predicted_spans = None
+        if self.model.semantic_head_loaded:
+            semantic_probabilities = torch.softmax(
+                logits["semantic_tags"], dim=-1
+            )[0].float().cpu()
+            predicted_spans = decode_token_spans(
+                normalized,
+                offsets,
+                semantic_probabilities,
+            )
+        frame = extract_semantic_frame(
+            normalized,
+            predicted_spans=predicted_spans,
+        )
+        payload["commands"] = enrich_commands_with_frame(
+            payload.get("commands", []),
+            frame,
+        )
+        atomic_commands = (
+            [dict(command) for command in payload["commands"]]
+            if payload.get("decomposition_used")
+            else None
+        )
+        payload.pop("decomposition_used", None)
         payload = QwenEnglishIntentParser._normalize_payload(payload, normalized)
+        if atomic_commands is not None and payload.get("status") == "VALID":
+            payload["commands"] = atomic_commands
         status = payload.pop("status")
         missing_slots = payload.pop("missing_slots", [])
         warnings = payload.pop("warnings", [])
+        warnings.extend(normalization["warnings"])
         clarification_question = payload.pop("clarification_question", None)
+        if not self.model.semantic_head_loaded and frame["entities"]:
+            warnings.append(
+                "Semantic token head unavailable; deterministic entity-span fallback used."
+            )
         steps = QwenIntentParser._expand_commands(payload.get("commands", []))
+        if (
+            normalization["requires_confirmation"]
+            or normalization["unresolved_references"]
+        ):
+            status = "NEEDS_CLARIFICATION"
+            steps = []
+            missing_slots = [
+                *missing_slots,
+                *(
+                    ["normalization.asr_confirmation"]
+                    if normalization["requires_confirmation"]
+                    else []
+                ),
+                *normalization["unresolved_references"],
+            ]
+            clarification_question = (
+                "Please confirm the uncertain direction or identify the referenced target."
+            )
         contract_errors = semantic_errors(
             {
-                "intent": {"steps": steps, "urgency": payload["urgency"]},
+                "intent": {
+                    "entities": frame["entities"],
+                    "steps": steps,
+                    "urgency": payload["urgency"],
+                },
                 "parse_result": {"status": status},
             }
         )
@@ -161,7 +233,7 @@ class ModernBertEnglishIntentParser:
         latency_ms = (perf_counter() - started) * 1000
         confidence = self._confidence(probabilities, status)
         return make_document(
-            raw_text=text,
+            raw_text=source_text or text,
             normalized_text=normalized,
             modality=modality,
             category=payload["category"],
@@ -179,21 +251,36 @@ class ModernBertEnglishIntentParser:
             driving_style=payload.get("driving_style", "NORMAL"),
             max_speed_mps=payload.get("max_speed_mps"),
             language="en-US",
+            entities=frame["entities"],
+            normalization_edits=normalization["edits"],
+            unresolved_references=normalization["unresolved_references"],
+            suppressed_intents=normalization["suppressed_intents"],
+            translated_text=text if source_text is not None else None,
+            source_language=source_language,
         )
 
     def _payload(self, text: str, probabilities: dict[str, torch.Tensor]) -> dict[str, Any]:
         action_scores = probabilities["actions"]
-        actions = [
-            action
-            for index, action in enumerate(ACTION_LABELS)
-            if float(action_scores[index]) >= self.action_thresholds[action]
-        ]
+        decomposed_commands = decompose_atomic_actions(text)
         status_index = int(probabilities["status"].argmax())
         status = STATUS_LABELS[status_index]
+        if decomposed_commands:
+            status = "VALID"
+            actions = []
+        else:
+            actions = [
+                action
+                for index, action in enumerate(ACTION_LABELS)
+                if float(action_scores[index]) >= self.action_thresholds[action]
+            ]
         if status == "VALID" and not actions:
             best_index = int(action_scores.argmax())
-            if float(action_scores[best_index]) >= 0.2:
+            if not decomposed_commands and float(action_scores[best_index]) >= 0.2:
                 actions = [ACTION_LABELS[best_index]]
+        if status == "VALID" and not decomposed_commands:
+            for action, pattern in ACTION_PATTERNS.items():
+                if action not in actions and re.search(pattern, text.casefold()):
+                    actions.append(action)
         actions.sort(key=lambda action: self._surface_position(text, action, action_scores))
 
         direction_scores = probabilities["directions"]
@@ -202,19 +289,30 @@ class ModernBertEnglishIntentParser:
             for index, direction in enumerate(DIRECTION_LABELS)
             if float(direction_scores[index]) >= self.direction_thresholds[direction]
         ]
+        if not directions:
+            if re.search(r"\bleft(?:-hand)?\b", text, re.IGNORECASE):
+                directions.append("LEFT")
+            elif re.search(r"\bright(?:-hand)?\b", text, re.IGNORECASE):
+                directions.append("RIGHT")
+            elif re.search(
+                r"\b(?:straight|forward|ahead)\b", text, re.IGNORECASE
+            ):
+                directions.append("STRAIGHT")
         change = CHANGE_LABELS[int(probabilities["change"].argmax())]
-        commands: list[dict[str, Any]] = []
-        for action in actions:
-            command: dict[str, Any] = {"action": action}
-            if action in {"CHANGE_LANE", "MERGE", "TURN"} and directions:
-                command["direction"] = directions.pop(0)
-            if action == "ADJUST_SPEED" and change != "NONE":
-                command["change"] = change
-            commands.append(command)
+        commands: list[dict[str, Any]] = list(decomposed_commands)
+        if not commands:
+            for action in actions:
+                command: dict[str, Any] = {"action": action}
+                if action in {"CHANGE_LANE", "MERGE", "TURN", "PROCEED"} and directions:
+                    command["direction"] = directions.pop(0)
+                if action == "ADJUST_SPEED" and change != "NONE":
+                    command["change"] = change
+                commands.append(command)
         if status != "VALID":
             commands = []
         return {
             "commands": commands,
+            "decomposition_used": bool(decomposed_commands),
             "status": status,
             "category": CATEGORY_LABELS[int(probabilities["category"].argmax())],
             "urgency": URGENCY_LABELS[int(probabilities["urgency"].argmax())],

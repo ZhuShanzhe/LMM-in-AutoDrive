@@ -36,11 +36,18 @@ def semantic_errors(document: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     intent = document.get("intent", {})
     steps = intent.get("steps", [])
+    entities = intent.get("entities", [])
     parse_result = document.get("parse_result", {})
     step_ids = [step.get("step_id") for step in steps]
+    entity_ids = [entity.get("entity_id") for entity in entities]
 
     if len(step_ids) != len(set(step_ids)):
         errors.append("step_id must be unique")
+    if len(entity_ids) != len(set(entity_ids)):
+        errors.append("entity_id must be unique")
+    known_entities = {
+        entity_id for entity_id in entity_ids if isinstance(entity_id, str)
+    }
 
     seen: set[str] = set()
     for step in steps:
@@ -48,7 +55,38 @@ def semantic_errors(document: dict[str, Any]) -> list[str]:
         action = step.get("action")
         parameters = step.get("parameters", {})
         target = step.get("target")
+        target_ref = step.get("target_ref")
         trigger = step.get("trigger", {})
+        if target_ref is not None and target_ref not in known_entities:
+            errors.append(f"{step_id} references unknown entity {target_ref}")
+        if target_ref is not None and target is not None:
+            entity = next(
+                (
+                    item
+                    for item in entities
+                    if item.get("entity_id") == target_ref
+                ),
+                None,
+            )
+            if entity is not None and target.get("type") != entity.get("type"):
+                errors.append(
+                    f"{step_id} compatibility target type differs from {target_ref}"
+                )
+        for condition in step.get("goal_conditions", []):
+            predicate = condition.get("predicate")
+            object_ref = condition.get("object")
+            secondary_ref = condition.get("secondary_object")
+            if predicate != "STOPPED" and object_ref not in known_entities:
+                errors.append(
+                    f"{step_id} {predicate} condition requires a known object"
+                )
+            if (
+                predicate == "BETWEEN"
+                and secondary_ref not in known_entities
+            ):
+                errors.append(
+                    f"{step_id} BETWEEN condition requires a known secondary_object"
+                )
 
         for dependency in step.get("depends_on", []):
             if dependency not in seen:
@@ -120,6 +158,14 @@ def semantic_errors(document: dict[str, Any]) -> list[str]:
                 )
         if action == "EMERGENCY_BRAKE" and intent.get("urgency") != "EMERGENCY":
             errors.append("EMERGENCY_BRAKE requires EMERGENCY urgency")
+        completion_type = (step.get("completion") or {}).get("type")
+        if completion_type == "STOPPED_BEFORE_TARGET" and not any(
+            condition.get("predicate") == "BEFORE"
+            for condition in step.get("goal_conditions", [])
+        ):
+            errors.append(
+                f"{step_id} STOPPED_BEFORE_TARGET requires a BEFORE goal condition"
+            )
 
         trigger_type = trigger.get("type")
         if trigger_type == "AFTER_STEP" and "step_id" not in trigger:
@@ -128,6 +174,11 @@ def semantic_errors(document: dict[str, Any]) -> list[str]:
             errors.append(f"{step_id} AT_DISTANCE trigger requires distance_m")
         if trigger_type == "CONDITION" and "description" not in trigger:
             errors.append(f"{step_id} CONDITION trigger requires description")
+        if trigger_type in {"ON_ENTITY_VISIBLE", "AFTER_ENTITY"}:
+            if trigger.get("entity_ref") not in known_entities:
+                errors.append(
+                    f"{step_id} {trigger_type} requires a known entity_ref"
+                )
         seen.add(step_id)
 
     if parse_result.get("status") == "VALID" and not steps:

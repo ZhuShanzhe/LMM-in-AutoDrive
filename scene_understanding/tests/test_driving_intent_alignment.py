@@ -308,6 +308,141 @@ class DrivingIntentAlignmentTests(unittest.TestCase):
         self.assertEqual(reference["target_type"], "left_lane")
         self.assertEqual(reference["lane_hint"], "left_adjacent_lane")
 
+    def _compositional_stop_intent(self) -> dict:
+        return {
+            "schema_version": "1.2.0",
+            "request_id": "grounding-0001",
+            "input": {
+                "modality": "TEXT",
+                "language": "en-US",
+                "raw_text": "Stop before the red truck.",
+                "normalized_text": "Stop before the red truck.",
+            },
+            "normalization": {
+                "edits": [],
+                "unresolved_references": [],
+            },
+            "intent": {
+                "category": "BASIC_CONTROL",
+                "urgency": "NORMAL",
+                "entities": [
+                    {
+                        "entity_id": "target_1",
+                        "type": "VEHICLE",
+                        "relation": "AHEAD",
+                        "description": "the red truck",
+                        "canonical_attributes": {
+                            "color": "RED",
+                            "vehicle_subtype": "TRUCK",
+                        },
+                        "open_descriptors": [],
+                        "source_span": "the red truck",
+                    }
+                ],
+                "suppressed_intents": [],
+                "steps": [
+                    {
+                        "step_id": "step_1",
+                        "action": "STOP",
+                        "target_ref": "target_1",
+                        "parameters": {},
+                        "trigger": {"type": "IMMEDIATE"},
+                        "depends_on": [],
+                        "preconditions": ["TARGET_VISIBLE"],
+                        "on_blocked": "SAFE_STOP",
+                        "goal_conditions": [
+                            {
+                                "predicate": "BEFORE",
+                                "subject": "EGO",
+                                "object": "target_1",
+                                "source_span": "before",
+                            }
+                        ],
+                        "completion": {"type": "STOPPED_BEFORE_TARGET"},
+                    }
+                ],
+                "constraints": {
+                    "safety_first": True,
+                    "obey_traffic_rules": True,
+                    "driving_style": "NORMAL",
+                },
+            },
+            "parse_result": {
+                "status": "VALID",
+                "method": "HYBRID",
+                "model": "test",
+                "confidence": 0.99,
+                "missing_slots": [],
+                "warnings": [],
+                "latency_ms": 1.0,
+            },
+        }
+
+    def test_structured_attributes_select_the_red_truck(self):
+        state = copy.deepcopy(self.world_state)
+        base = state["objects"][0]
+        red_truck = copy.deepcopy(base)
+        red_truck["object_id"] = "red_truck"
+        red_truck["subtype"] = "vehicle.test.truck"
+        red_truck["semantic_matches"] = [
+            {
+                "camera_name": "front",
+                "visual_object_id": "v-red",
+                "bbox_2d": [0.1, 0.1, 0.3, 0.4],
+                "description": "vehicle; truck; red; front",
+                "confidence": 0.98,
+            }
+        ]
+        white_car = copy.deepcopy(base)
+        white_car["object_id"] = "white_car"
+        white_car["distance_m"] = red_truck["distance_m"] - 2
+        white_car["semantic_matches"] = [
+            {
+                "camera_name": "front",
+                "visual_object_id": "v-white",
+                "bbox_2d": [0.5, 0.1, 0.7, 0.4],
+                "description": "vehicle; sedan; white; front",
+                "confidence": 0.98,
+            }
+        ]
+        state["objects"] = [white_car, red_truck]
+        result = align_driving_intent(
+            self._compositional_stop_intent(), state
+        )
+        alignment = result["step_alignments"][0]
+        self.assertTrue(alignment["alignment_success"])
+        self.assertEqual(alignment["matched_entity"]["entity_id"], "red_truck")
+        self.assertEqual(
+            alignment["resolved_goal_conditions"][0]["object"],
+            "red_truck",
+        )
+
+    def test_duplicate_red_trucks_are_rejected_as_ambiguous(self):
+        state = copy.deepcopy(self.world_state)
+        first = copy.deepcopy(state["objects"][0])
+        second = copy.deepcopy(state["objects"][0])
+        for index, obj in enumerate((first, second), start=1):
+            obj["object_id"] = f"red_truck_{index}"
+            obj["subtype"] = "vehicle.test.truck"
+            obj["semantic_matches"] = [
+                {
+                    "camera_name": "front",
+                    "visual_object_id": f"v-{index}",
+                    "bbox_2d": [0.1 * index, 0.1, 0.2 * index, 0.4],
+                    "description": "vehicle; red; truck; front",
+                    "confidence": 0.98,
+                }
+            ]
+        state["objects"] = [first, second]
+        result = align_driving_intent(
+            self._compositional_stop_intent(), state
+        )
+        alignment = result["step_alignments"][0]
+        self.assertFalse(alignment["alignment_success"])
+        self.assertEqual(
+            alignment["reason_code"], "ambiguous_matching_entities"
+        )
+
 
     def test_reports_world_state_capability_unavailable_for_map_targets(self):
         target_types = {

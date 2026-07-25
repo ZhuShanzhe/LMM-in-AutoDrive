@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1.0",
+  "schema_version": "1.2.0",
   "request_id": "basic-0001",
   "input": {
     "modality": "TEXT",
@@ -7,9 +7,15 @@
     "raw_text": "保持当前车道，提速至60km/h",
     "normalized_text": "保持当前车道，提速至60 km/h"
   },
+  "normalization": {
+    "edits": [],
+    "unresolved_references": []
+  },
   "intent": {
     "category": "BASIC_CONTROL",
     "urgency": "NORMAL",
+    "entities": [],
+    "suppressed_intents": [],
     "steps": [
       {
         "step_id": "step_1",

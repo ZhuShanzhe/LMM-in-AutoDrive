@@ -1,12 +1,8 @@
-"""Normalize instruction references and match them to WorldState entities.
-
-The functions in this module are deterministic and independent of CARLA.  An
-upstream command parser may pass either plain text (for example ``"前车"``) or
-a small mapping containing fields such as ``target_object`` or ``intent``.
-"""
+"""Normalize language references and ground them to WorldState entities."""
 
 from __future__ import annotations
 
+import re
 from typing import Any, Mapping
 
 
@@ -27,7 +23,6 @@ TARGET_TYPES = {
     "unknown",
 }
 
-# More specific phrases must appear before their shorter forms.
 REFERENCE_ALIASES: tuple[tuple[str, str], ...] = (
     ("change_lane_left", "left_lane"),
     ("向左变道", "left_lane"),
@@ -41,25 +36,21 @@ REFERENCE_ALIASES: tuple[tuple[str, str], ...] = (
     ("right lane", "right_lane"),
     ("intersection", "junction"),
     ("junction", "junction"),
-    ("十字路口", "junction"),
     ("路口", "junction"),
     ("slow vehicle", "slow_vehicle"),
     ("slow car", "slow_vehicle"),
-    ("低速车辆", "slow_vehicle"),
     ("慢车", "slow_vehicle"),
     ("front vehicle", "front_vehicle"),
     ("vehicle ahead", "front_vehicle"),
-    ("前方车辆", "front_vehicle"),
     ("前车", "front_vehicle"),
     ("pedestrian", "pedestrian"),
     ("walker", "pedestrian"),
     ("行人", "pedestrian"),
+    ("cyclist", "cyclist"),
+    ("traffic cone", "traffic_cone"),
     ("traffic light", "traffic_light"),
-    ("红绿灯", "traffic_light"),
     ("信号灯", "traffic_light"),
     ("traffic sign", "traffic_sign"),
-    ("交通标志", "traffic_sign"),
-    ("标志牌", "traffic_sign"),
     ("vehicle", "vehicle"),
     ("车辆", "vehicle"),
 )
@@ -76,6 +67,32 @@ REFERENCE_FIELDS = (
     "intent",
 )
 
+COLOR_TERMS = {
+    "black",
+    "blue",
+    "brown",
+    "gray",
+    "green",
+    "orange",
+    "red",
+    "silver",
+    "white",
+    "yellow",
+}
+
+VEHICLE_SUBTYPE_ALIASES = {
+    "bus": {"bus", "coach"},
+    "car": {"car", "vehicle"},
+    "hatchback": {"hatchback"},
+    "pickup": {"pickup"},
+    "sedan": {"sedan", "saloon"},
+    "suv": {"suv", "sport utility"},
+    "taxi": {"taxi", "cab"},
+    "truck": {"truck", "lorry"},
+    "van": {"van", "minivan"},
+    "unspecified": set(),
+}
+
 
 def _reference_text(reference_input: str | Mapping[str, Any]) -> str:
     if isinstance(reference_input, str):
@@ -91,11 +108,11 @@ def _reference_text(reference_input: str | Mapping[str, Any]) -> str:
 
 def normalize_instruction_reference(
     reference_input: str | Mapping[str, Any],
-) -> dict[str, str]:
-    """Return the team-plan target vocabulary plus position/lane hints."""
+) -> dict[str, Any]:
+    """Return target vocabulary, position hints, and optional attributes."""
 
     raw_text = _reference_text(reference_input)
-    normalized = raw_text.lower().replace("-", " ")
+    normalized = raw_text.casefold().replace("-", " ")
     target_type = "unknown"
     for alias, candidate in REFERENCE_ALIASES:
         if alias in normalized:
@@ -103,14 +120,11 @@ def normalize_instruction_reference(
             break
 
     if target_type == "left_lane":
-        position_hint = "left"
-        lane_hint = "left_adjacent_lane"
+        position_hint, lane_hint = "left", "left_adjacent_lane"
     elif target_type == "right_lane":
-        position_hint = "right"
-        lane_hint = "right_adjacent_lane"
+        position_hint, lane_hint = "right", "right_adjacent_lane"
     elif target_type == "front_vehicle":
-        position_hint = "front"
-        lane_hint = "ego_lane"
+        position_hint, lane_hint = "front", "ego_lane"
     else:
         if any(token in normalized for token in ("左侧", "左边", "left")):
             position_hint = "left"
@@ -124,17 +138,20 @@ def normalize_instruction_reference(
             position_hint = "unknown"
         lane_hint = "unknown"
 
-    return {
+    result: dict[str, Any] = {
         "raw_text": raw_text,
         "target_type": target_type,
         "position_hint": position_hint,
         "lane_hint": lane_hint,
     }
+    if isinstance(reference_input, Mapping):
+        for key in ("canonical_attributes", "open_descriptors"):
+            if key in reference_input:
+                result[key] = reference_input[key]
+    return result
 
 
 def relative_position_label(obj: Mapping[str, Any]) -> str:
-    """Convert an ego-frame metric position to a compact direction label."""
-
     position = obj.get("relative_position_ego_m")
     if not isinstance(position, Mapping):
         return "unknown"
@@ -144,8 +161,6 @@ def relative_position_label(obj: Mapping[str, Any]) -> str:
         return "unknown"
     if not isinstance(lateral, (int, float)) or isinstance(lateral, bool):
         return "unknown"
-
-    # CARLA adapter convention: positive lateral is right.
     if abs(float(lateral)) <= 2.5:
         return "front" if longitudinal >= 0 else "rear"
     if longitudinal >= 0:
@@ -155,7 +170,7 @@ def relative_position_label(obj: Mapping[str, Any]) -> str:
 
 def _candidate_score(
     obj: Mapping[str, Any],
-    reference: Mapping[str, str],
+    reference: Mapping[str, Any],
 ) -> tuple[float, float, str]:
     score = 0.0
     relation = obj.get("lane_relation")
@@ -180,15 +195,17 @@ def _candidate_score(
     elif position_hint == "right" and "right" in direction:
         score -= 50.0
     distance = obj.get("distance_m")
-    numeric_distance = float(distance) if isinstance(distance, (int, float)) else float("inf")
+    numeric_distance = (
+        float(distance) if isinstance(distance, (int, float)) else float("inf")
+    )
     return score, numeric_distance, str(obj.get("object_id", ""))
 
 
 def candidate_world_objects(
-    reference: Mapping[str, str],
+    reference: Mapping[str, Any],
     world_state: Mapping[str, Any],
 ) -> list[dict[str, Any]]:
-    """Return compatible actor candidates in deterministic best-first order."""
+    """Return geometrically compatible candidates in deterministic order."""
 
     target_type = reference["target_type"]
     categories = {
@@ -197,16 +214,8 @@ def candidate_world_objects(
         "traffic_light": {"traffic_light"},
         "traffic_sign": {"traffic_sign"},
         "traffic_cone": {"traffic_cone"},
-        "obstacle": {
-            "road_barrier",
-            "traffic_cone",
-            "other",
-        },
-        "road_hazard": {
-            "road_barrier",
-            "traffic_cone",
-            "other",
-        },
+        "obstacle": {"road_barrier", "traffic_cone", "other"},
+        "road_hazard": {"road_barrier", "traffic_cone", "other"},
         "front_vehicle": {"vehicle"},
         "slow_vehicle": {"vehicle"},
         "vehicle": {"vehicle"},
@@ -217,48 +226,197 @@ def candidate_world_objects(
     candidates: list[dict[str, Any]] = []
     ego_speed = world_state.get("ego", {}).get("speed_mps")
     for obj in world_state.get("objects", []):
-        if (
-            not isinstance(obj, dict)
-            or obj.get("category") not in categories
-        ):
+        if not isinstance(obj, dict) or obj.get("category") not in categories:
             continue
-
+        direction = relative_position_label(obj)
         position_hint = reference["position_hint"]
+        if position_hint in {
+            "front_left",
+            "front_right",
+            "rear_left",
+            "rear_right",
+        } and direction != position_hint:
+            continue
+        if position_hint == "front" and not direction.startswith("front"):
+            continue
+        if position_hint == "rear" and not direction.startswith("rear"):
+            continue
+        if position_hint == "left" and "left" not in direction:
+            continue
+        if position_hint == "right" and "right" not in direction:
+            continue
+        lane_hint = reference["lane_hint"]
         if (
-            position_hint
-            in {
-                "front_left",
-                "front_right",
-                "rear_left",
-                "rear_right",
-            }
-            and relative_position_label(obj) != position_hint
+            lane_hint != "unknown"
+            and obj.get("lane_relation") not in {lane_hint, "unknown"}
         ):
             continue
-
         if target_type == "front_vehicle":
             position = obj.get("relative_position_ego_m")
             if not isinstance(position, Mapping) or position.get("longitudinal", 0) <= 0:
                 continue
             if obj.get("lane_relation") not in {"ego_lane", "unknown"}:
                 continue
-            if obj.get("lane_relation") == "unknown" and abs(position.get("lateral", 99)) > 2.5:
+            if (
+                obj.get("lane_relation") == "unknown"
+                and abs(position.get("lateral", 99)) > 2.5
+            ):
                 continue
         if target_type == "slow_vehicle":
             speed = obj.get("speed_mps")
             if not isinstance(speed, (int, float)):
                 continue
-            is_slower_than_ego = isinstance(ego_speed, (int, float)) and speed < ego_speed - 0.5
-            if not is_slower_than_ego and speed * 3.6 > 30.0:
+            slower = (
+                isinstance(ego_speed, (int, float))
+                and speed < ego_speed - 0.5
+            )
+            if not slower and speed * 3.6 > 30.0:
                 continue
         candidates.append(obj)
     candidates.sort(key=lambda item: _candidate_score(item, reference))
     return candidates
 
 
+def _object_semantic_text(obj: Mapping[str, Any]) -> str:
+    parts = [str(obj.get("subtype", ""))]
+    for match in obj.get("semantic_matches", []):
+        if isinstance(match, Mapping):
+            parts.append(str(match.get("description", "")))
+    return re.sub(
+        r"[^a-z0-9\u4e00-\u9fff]+",
+        " ",
+        " ".join(parts).casefold().replace("_", " "),
+    ).strip()
+
+
+def _attribute_evidence(
+    obj: Mapping[str, Any],
+    reference: Mapping[str, Any],
+) -> tuple[bool, list[str], list[str]]:
+    requested = reference.get("canonical_attributes")
+    if not isinstance(requested, Mapping):
+        requested = {}
+    text = _object_semantic_text(obj)
+    words = set(text.split())
+    matched: list[str] = []
+    missing: list[str] = []
+
+    color = requested.get("color")
+    if isinstance(color, str):
+        expected = color.casefold()
+        observed = COLOR_TERMS & words
+        if expected in observed:
+            matched.append("color")
+        else:
+            missing.append("color")
+
+    subtype = requested.get("vehicle_subtype")
+    if isinstance(subtype, str) and subtype.casefold() != "unspecified":
+        expected_terms = VEHICLE_SUBTYPE_ALIASES.get(
+            subtype.casefold(), {subtype.casefold()}
+        )
+        if any(term in text for term in expected_terms):
+            matched.append("vehicle_subtype")
+        else:
+            missing.append("vehicle_subtype")
+
+    descriptors = reference.get("open_descriptors")
+    if isinstance(descriptors, list):
+        descriptor_tokens = {
+            token
+            for descriptor in descriptors
+            if isinstance(descriptor, str)
+            for token in descriptor.casefold().split()
+            if len(token) > 2
+        }
+        if descriptor_tokens:
+            if descriptor_tokens & words:
+                matched.append("open_descriptors")
+            else:
+                missing.append("open_descriptors")
+    return not missing, matched, missing
+
+
+def match_world_object(
+    reference: Mapping[str, Any],
+    world_state: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Match with explicit evidence and reject unresolved ambiguity."""
+
+    candidates = candidate_world_objects(reference, world_state)
+    eligible: list[tuple[dict[str, Any], list[str]]] = []
+    missing_fields: set[str] = set()
+    for obj in candidates:
+        matches, evidence, missing = _attribute_evidence(obj, reference)
+        missing_fields.update(missing)
+        if matches:
+            eligible.append((obj, evidence))
+
+    requested = reference.get("canonical_attributes")
+    has_attributes = isinstance(requested, Mapping) and bool(requested)
+    has_open_descriptors = bool(reference.get("open_descriptors"))
+    requires_semantics = has_attributes or has_open_descriptors
+    if requires_semantics and not eligible:
+        return {
+            "object": None,
+            "candidate_count": len(candidates),
+            "reason_code": "attribute_evidence_unavailable",
+            "matched_attributes": [],
+            "missing_attributes": sorted(missing_fields),
+        }
+    if not requires_semantics:
+        eligible = [(obj, []) for obj in candidates]
+
+    ordinal = requested.get("ordinal") if isinstance(requested, Mapping) else None
+    if isinstance(ordinal, int):
+        if ordinal < 1 or ordinal > len(eligible):
+            return {
+                "object": None,
+                "candidate_count": len(eligible),
+                "reason_code": "ordinal_target_unavailable",
+                "matched_attributes": ["ordinal"],
+                "missing_attributes": [],
+            }
+        selected, evidence = eligible[ordinal - 1]
+        return {
+            "object": selected,
+            "candidate_count": len(eligible),
+            "reason_code": "matched_ordinal_world_object",
+            "matched_attributes": sorted({*evidence, "ordinal"}),
+            "missing_attributes": [],
+        }
+
+    if requires_semantics and len(eligible) > 1:
+        return {
+            "object": None,
+            "candidate_count": len(eligible),
+            "reason_code": "ambiguous_matching_entities",
+            "matched_attributes": sorted(
+                {field for _, evidence in eligible for field in evidence}
+            ),
+            "missing_attributes": [],
+        }
+    if not eligible:
+        return {
+            "object": None,
+            "candidate_count": 0,
+            "reason_code": "no_matching_entity",
+            "matched_attributes": [],
+            "missing_attributes": [],
+        }
+    selected, evidence = eligible[0]
+    return {
+        "object": selected,
+        "candidate_count": len(eligible),
+        "reason_code": "matched_world_object",
+        "matched_attributes": evidence,
+        "missing_attributes": [],
+    }
+
+
 def select_world_object(
-    reference: Mapping[str, str],
+    reference: Mapping[str, Any],
     world_state: Mapping[str, Any],
 ) -> tuple[dict[str, Any] | None, int]:
-    candidates = candidate_world_objects(reference, world_state)
-    return (candidates[0] if candidates else None), len(candidates)
+    result = match_world_object(reference, world_state)
+    return result["object"], result["candidate_count"]

@@ -14,10 +14,16 @@
         "type": "PEDESTRIAN",
         "relation": "AHEAD_CROSSING"
       },
+      "target_ref": null,
+      "goal_conditions": [],
+      "resolved_goal_conditions": [],
+      "condition_entities": {},
       "alignment_required": true,
       "alignment_success": false,
       "candidate_count": 0,
       "matched_entity": null,
+      "matched_attributes": [],
+      "missing_attributes": [],
       "reason_code": "no_matching_entity"
     },
     {
@@ -27,6 +33,10 @@
         "type": "SLOW_VEHICLE",
         "relation": "AHEAD"
       },
+      "target_ref": null,
+      "goal_conditions": [],
+      "resolved_goal_conditions": [],
+      "condition_entities": {},
       "alignment_required": true,
       "alignment_success": true,
       "candidate_count": 1,
@@ -39,6 +49,8 @@
         "lane_relation": "ego_lane",
         "risk_level": "medium"
       },
+      "matched_attributes": [],
+      "missing_attributes": [],
       "reason_code": "matched_world_object"
     },
     {
@@ -48,6 +60,10 @@
         "type": "SLOW_VEHICLE",
         "relation": "AHEAD"
       },
+      "target_ref": null,
+      "goal_conditions": [],
+      "resolved_goal_conditions": [],
+      "condition_entities": {},
       "alignment_required": true,
       "alignment_success": true,
       "candidate_count": 1,
@@ -60,6 +76,8 @@
         "lane_relation": "ego_lane",
         "risk_level": "medium"
       },
+      "matched_attributes": [],
+      "missing_attributes": [],
       "reason_code": "matched_world_object"
     }
   ]

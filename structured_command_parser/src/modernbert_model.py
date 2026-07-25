@@ -7,6 +7,7 @@ import torch
 from torch import nn
 from transformers import AutoConfig, AutoModel
 
+from .compositional_frame import SEMANTIC_TAG_LABELS
 from .modernbert_labels import (
     ACTION_LABELS,
     CATEGORY_LABELS,
@@ -18,6 +19,7 @@ from .modernbert_labels import (
 
 
 HEADS_FILE = "multitask_heads.pt"
+SEMANTIC_HEAD_FILE = "semantic_token_head.pt"
 
 
 class ModernBertDrivingModel(nn.Module):
@@ -35,6 +37,10 @@ class ModernBertDrivingModel(nn.Module):
                 "change": nn.Linear(hidden_size, len(CHANGE_LABELS)),
             }
         )
+        self.semantic_token_head = nn.Linear(
+            hidden_size, len(SEMANTIC_TAG_LABELS)
+        )
+        self.semantic_head_loaded = False
 
     @classmethod
     def from_pretrained(
@@ -58,6 +64,13 @@ class ModernBertDrivingModel(nn.Module):
         if heads_path.is_file():
             state = torch.load(heads_path, map_location="cpu", weights_only=True)
             model.heads.load_state_dict(state)
+        semantic_head_path = path / SEMANTIC_HEAD_FILE
+        if semantic_head_path.is_file():
+            state = torch.load(
+                semantic_head_path, map_location="cpu", weights_only=True
+            )
+            model.semantic_token_head.load_state_dict(state)
+            model.semantic_head_loaded = True
         return model
 
     def save_pretrained(self, output_dir: str | Path) -> None:
@@ -65,8 +78,26 @@ class ModernBertDrivingModel(nn.Module):
         output.mkdir(parents=True, exist_ok=True)
         self.backbone.save_pretrained(output, safe_serialization=True)
         torch.save(self.heads.state_dict(), output / HEADS_FILE)
+        if self.semantic_head_loaded:
+            torch.save(
+                self.semantic_token_head.state_dict(),
+                output / SEMANTIC_HEAD_FILE,
+            )
+
+    def save_semantic_head(self, output_dir: str | Path) -> None:
+        output = Path(output_dir)
+        output.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            self.semantic_token_head.state_dict(),
+            output / SEMANTIC_HEAD_FILE,
+        )
+        self.semantic_head_loaded = True
 
     def forward(self, **model_inputs: Any) -> dict[str, torch.Tensor]:
         outputs = self.backbone(**model_inputs)
         pooled = self.dropout(outputs.last_hidden_state[:, 0])
-        return {name: head(pooled) for name, head in self.heads.items()}
+        logits = {name: head(pooled) for name, head in self.heads.items()}
+        logits["semantic_tags"] = self.semantic_token_head(
+            self.dropout(outputs.last_hidden_state)
+        )
+        return logits

@@ -39,6 +39,8 @@ class ModernBertCommandService:
         *,
         request_id: str | None = None,
         modality: str = "TEXT",
+        source_text: str | None = None,
+        source_language: str | None = None,
     ) -> dict[str, Any]:
         if not isinstance(text, str):
             raise TypeError("text must be a string")
@@ -51,11 +53,27 @@ class ModernBertCommandService:
             )
         if modality not in {"VOICE", "TEXT"}:
             raise ValueError("modality must be VOICE or TEXT")
+        if source_text is not None and (
+            not isinstance(source_text, str) or not source_text.strip()
+        ):
+            raise ValueError("source_text must be a non-empty string when provided")
+        if source_language is not None and (
+            not isinstance(source_language, str) or len(source_language) < 2
+        ):
+            raise ValueError("source_language must be a language tag when provided")
         with self._inference_lock:
             return self.parser.parse(
                 normalized,
                 modality=modality,
                 request_id=request_id,
+                **(
+                    {
+                        "source_text": source_text,
+                        "source_language": source_language,
+                    }
+                    if source_text is not None
+                    else {}
+                ),
             )
 
     def handle_message(self, message: dict[str, Any]) -> dict[str, Any]:
@@ -72,4 +90,6 @@ class ModernBertCommandService:
             message.get("text"),
             request_id=request_id,
             modality=message.get("modality", "TEXT"),
+            source_text=message.get("source_text"),
+            source_language=message.get("source_language"),
         )

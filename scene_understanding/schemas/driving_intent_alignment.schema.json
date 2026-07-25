@@ -146,6 +146,18 @@
           "minLength": 1,
           "maxLength": 256
         },
+        "canonical_attributes": {
+          "$ref": "#/$defs/canonicalAttributes"
+        },
+        "open_descriptors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
         "coordinates": {
           "$ref": "#/$defs/coordinates"
         }
@@ -231,10 +243,16 @@
         "step_id",
         "action",
         "target",
+        "target_ref",
+        "goal_conditions",
+        "resolved_goal_conditions",
+        "condition_entities",
         "alignment_required",
         "alignment_success",
         "candidate_count",
         "matched_entity",
+        "matched_attributes",
+        "missing_attributes",
         "reason_code"
       ],
       "properties": {
@@ -282,6 +300,46 @@
         "reason_code": {
           "type": "string",
           "minLength": 1
+        },
+        "target_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "goal_conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/goalCondition"
+          }
+        },
+        "resolved_goal_conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/goalCondition"
+          }
+        },
+        "condition_entities": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/matchedEntity"
+          }
+        },
+        "matched_attributes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "missing_attributes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "allOf": [
@@ -352,6 +410,71 @@
           }
         }
       ]
+    },
+    "canonicalAttributes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "integer",
+          "boolean"
+        ]
+      },
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]{0,63}$"
+      }
+    },
+    "goalCondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "predicate",
+        "subject",
+        "source_span"
+      ],
+      "properties": {
+        "predicate": {
+          "enum": [
+            "BEFORE",
+            "AFTER",
+            "BEHIND",
+            "IN_FRONT_OF",
+            "LEFT_OF",
+            "RIGHT_OF",
+            "NEAR",
+            "NEXT_TO",
+            "BETWEEN",
+            "INSIDE",
+            "PAST",
+            "UNTIL",
+            "VISIBLE",
+            "SAFE_DISTANCE",
+            "STOPPED"
+          ]
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "object": {
+          "type": "string",
+          "minLength": 1
+        },
+        "secondary_object": {
+          "type": "string",
+          "minLength": 1
+        },
+        "distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "source_span": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
     }
   }
 }

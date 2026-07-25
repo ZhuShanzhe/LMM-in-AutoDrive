@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1.0",
+  "schema_version": "1.2.0",
   "request_id": "complex-0001",
   "input": {
     "modality": "VOICE",
@@ -7,9 +7,15 @@
     "raw_text": "看到前方横穿马路的行人，减速避让后向左变道超越慢车",
     "normalized_text": "看到前方横穿马路的行人，减速避让后向左变道超越慢车"
   },
+  "normalization": {
+    "edits": [],
+    "unresolved_references": []
+  },
   "intent": {
     "category": "COMPLEX_OBSTACLE_AVOIDANCE",
     "urgency": "NORMAL",
+    "entities": [],
+    "suppressed_intents": [],
     "steps": [
       {
         "step_id": "step_1",
