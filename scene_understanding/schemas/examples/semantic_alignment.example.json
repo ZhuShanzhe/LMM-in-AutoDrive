@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "frame_id": "carla_000123",
+  "reference": {
+    "raw_text": "前车",
+    "target_type": "front_vehicle",
+    "position_hint": "front",
+    "lane_hint": "ego_lane"
+  },
+  "alignment_success": true,
+  "candidate_count": 1,
+  "matched_entity": {
+    "entity_type": "actor",
+    "entity_id": "carla_actor_42",
+    "category": "vehicle",
+    "distance_m": 20.0,
+    "relative_position": "front",
+    "lane_relation": "ego_lane",
+    "risk_level": "medium"
+  },
+  "reason_code": "matched_world_object"
+}

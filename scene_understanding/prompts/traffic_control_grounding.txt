@@ -1,0 +1,11 @@
+Locate every visible traffic-light signal head and every visible traffic sign in this image.
+
+Pay special attention to small, distant, side-mounted, overhead, and partly cropped traffic lights, plus no-entry, stop, yield, speed-limit, and one-way signs.
+
+Return only one JSON array. Do not include Markdown, metadata, explanations, scene descriptions, vehicles, roads, weather, hazards, or driving advice.
+
+Every array item must contain exactly two fields:
+- bbox_2d: [x_min, y_min, x_max, y_max] in the processed image coordinate system
+- label: a concise label such as red traffic light, green traffic light, no entry sign, or speed limit sign
+
+Never return an item without bbox_2d. Never use a whole-image placeholder box. Return at most 20 items. If no traffic light or traffic sign is visible, return [].

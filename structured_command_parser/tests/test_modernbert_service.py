@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from structured_command_parser.src.modernbert_service import ModernBertCommandService
+from structured_command_parser.src.modernbert_parser import ModernBertEnglishIntentParser
 
 
 class FakeParser:
@@ -59,6 +60,32 @@ class ModernBertCommandServiceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.service.parse_text(" ")
         self.assertEqual(self.parser.calls, [])
+
+    def test_withholds_ungrounded_stop_classifier_label(self) -> None:
+        payload = {
+            "commands": [
+                {"action": "TURN", "direction": "RIGHT"},
+                {"action": "STOP"},
+            ],
+            "warnings": [],
+        }
+        result = ModernBertEnglishIntentParser._withhold_ungrounded_terminal_actions(
+            payload,
+            "Turn right at the next junction.",
+        )
+        self.assertEqual(result["commands"], [{"action": "TURN", "direction": "RIGHT"}])
+        self.assertEqual(
+            result["warnings"],
+            ["classifier_action_withheld_without_text_evidence:STOP"],
+        )
+
+    def test_keeps_explicit_stop_classifier_label(self) -> None:
+        payload = {"commands": [{"action": "STOP"}], "warnings": []}
+        result = ModernBertEnglishIntentParser._withhold_ungrounded_terminal_actions(
+            payload,
+            "Stop before the red truck.",
+        )
+        self.assertEqual(result, payload)
 
 
 if __name__ == "__main__":

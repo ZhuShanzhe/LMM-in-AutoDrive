@@ -137,6 +137,7 @@ class ModernBertEnglishIntentParser:
         }
         payload = self._payload(normalized, probabilities)
         payload = QwenEnglishIntentParser._normalize_payload(payload, normalized)
+        payload = self._withhold_ungrounded_terminal_actions(payload, normalized)
         status = payload.pop("status")
         missing_slots = payload.pop("missing_slots", [])
         warnings = payload.pop("warnings", [])
@@ -222,6 +223,46 @@ class ModernBertEnglishIntentParser:
             "missing_slots": [] if status == "VALID" else ["intent.steps"],
             "warnings": [],
         }
+
+    @staticmethod
+    def _withhold_ungrounded_terminal_actions(
+        payload: dict[str, Any], text: str
+    ) -> dict[str, Any]:
+        """Suppress terminal classifier labels without an explicit surface cue.
+
+        The multi-label head can emit a high score for STOP or
+        EMERGENCY_BRAKE from an unrelated maneuver sentence.  Those actions
+        have an immediate vehicle effect, so a false positive must not enter
+        the executable plan.  Other action labels remain model-driven.
+        """
+
+        commands = payload.get("commands")
+        if not isinstance(commands, list):
+            return payload
+        filtered: list[dict[str, Any]] = []
+        withheld: list[str] = []
+        for command in commands:
+            if not isinstance(command, dict):
+                filtered.append(command)
+                continue
+            action = command.get("action")
+            if action in {"STOP", "EMERGENCY_BRAKE"} and not re.search(
+                ACTION_PATTERNS[action], text.casefold()
+            ):
+                withheld.append(str(action))
+                continue
+            filtered.append(command)
+        if not withheld:
+            return payload
+        result = dict(payload)
+        result["commands"] = filtered
+        warnings = list(result.get("warnings", []))
+        warnings.extend(
+            f"classifier_action_withheld_without_text_evidence:{action}"
+            for action in withheld
+        )
+        result["warnings"] = warnings
+        return result
 
     @staticmethod
     def _surface_position(text: str, action: str, scores: torch.Tensor) -> tuple[int, float]:
