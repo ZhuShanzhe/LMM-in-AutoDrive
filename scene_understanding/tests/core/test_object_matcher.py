@@ -111,6 +111,94 @@ class ObjectMatcherTests(unittest.TestCase):
                 )
 
 
+    def test_selects_exact_compound_position(self):
+        cases = {
+            "front_right": (10.0, 5.0),
+            "front_left": (10.0, -5.0),
+            "rear_right": (-10.0, 5.0),
+            "rear_left": (-10.0, -5.0),
+        }
+
+        for index, (
+            position_hint,
+            coordinates,
+        ) in enumerate(cases.items(), start=200):
+            with self.subTest(position_hint=position_hint):
+                state = copy.deepcopy(self.world_state)
+
+                wrong = copy.deepcopy(state["objects"][0])
+                wrong["object_id"] = f"wrong_{index}"
+                wrong["source_object_id"] = f"wrong_{index}"
+                wrong["category"] = "vehicle"
+                wrong["distance_m"] = 5.0
+                wrong["relative_position_ego_m"][
+                    "longitudinal"
+                ] = 5.0
+                wrong["relative_position_ego_m"][
+                    "lateral"
+                ] = 0.0
+                wrong["lane_relation"] = "ego_lane"
+
+                exact = copy.deepcopy(state["objects"][0])
+                exact["object_id"] = f"exact_{index}"
+                exact["source_object_id"] = f"exact_{index}"
+                exact["category"] = "vehicle"
+                exact["distance_m"] = 20.0
+                exact["relative_position_ego_m"][
+                    "longitudinal"
+                ] = coordinates[0]
+                exact["relative_position_ego_m"][
+                    "lateral"
+                ] = coordinates[1]
+                exact["lane_relation"] = "unknown"
+
+                state["objects"] = [wrong, exact]
+
+                reference = {
+                    "raw_text": position_hint,
+                    "target_type": "vehicle",
+                    "position_hint": position_hint,
+                    "lane_hint": "unknown",
+                }
+
+                selected, count = select_world_object(
+                    reference,
+                    state,
+                )
+
+                self.assertEqual(count, 1)
+                self.assertIsNotNone(selected)
+                self.assertEqual(
+                    selected["object_id"],
+                    f"exact_{index}",
+                )
+
+    def test_rejects_compound_position_mismatch(self):
+        state = copy.deepcopy(self.world_state)
+        actor = copy.deepcopy(state["objects"][0])
+
+        actor["category"] = "vehicle"
+        actor["distance_m"] = 15.0
+        actor["relative_position_ego_m"]["longitudinal"] = 15.0
+        actor["relative_position_ego_m"]["lateral"] = 0.0
+        actor["lane_relation"] = "ego_lane"
+        state["objects"] = [actor]
+
+        reference = {
+            "raw_text": "左前方车辆",
+            "target_type": "vehicle",
+            "position_hint": "front_left",
+            "lane_hint": "unknown",
+        }
+
+        selected, count = select_world_object(
+            reference,
+            state,
+        )
+
+        self.assertEqual(count, 0)
+        self.assertIsNone(selected)
+
 
 if __name__ == "__main__":
     unittest.main()

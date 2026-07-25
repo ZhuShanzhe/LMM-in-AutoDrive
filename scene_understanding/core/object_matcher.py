@@ -222,6 +222,20 @@ def candidate_world_objects(
             or obj.get("category") not in categories
         ):
             continue
+
+        position_hint = reference["position_hint"]
+        if (
+            position_hint
+            in {
+                "front_left",
+                "front_right",
+                "rear_left",
+                "rear_right",
+            }
+            and relative_position_label(obj) != position_hint
+        ):
+            continue
+
         if target_type == "front_vehicle":
             position = obj.get("relative_position_ego_m")
             if not isinstance(position, Mapping) or position.get("longitudinal", 0) <= 0:

@@ -311,6 +311,35 @@ python -m scene_understanding.scripts.align_driving_intent \
 `world_state_capability_unavailable`；真正未知的类型返回 `unsupported_target_type`。
 任何情况下都不会虚构场景实体。
 
+#### 多步骤语义对齐接口约定
+
+命令行输出文件可以命名为 `semantic_alignment.json`，其机器可读契约为
+`schemas/driving_intent_alignment.schema.json`；两者分别表示运行产物名称和
+Schema 文件名称，不是两种不同的数据格式。
+
+批量结果顶层字段如下：
+
+| 字段 | 含义 |
+|---|---|
+| `schema_version` | 语义对齐输出契约版本，当前为 `1.0.0` |
+| `request_id` | 原始 DrivingIntent 请求标识 |
+| `world_state_frame_id` | 本次对齐使用的 WorldState 帧标识 |
+| `parse_status` | 上游 DrivingIntent 解析状态 |
+| `alignment_status` | `COMPLETE`、`PARTIAL`、`FAILED` 或 `NOT_REQUIRED` |
+| `target_count` | 需要实体对齐的步骤目标数 |
+| `matched_target_count` | 成功匹配的步骤目标数 |
+| `step_alignments` | 与驾驶步骤一一对应的对齐结果 |
+
+每项 `step_alignments` 包含 `step_id`、`action`、原始 `target`、
+`alignment_required`、`alignment_success`、`candidate_count`、
+`matched_entity` 和 `reason_code`。下游只能在 `alignment_required=true`
+且 `alignment_success=true` 时使用 `matched_entity`；未匹配步骤必须保留
+空实体并依据 `reason_code` 执行等待、跳过或安全停车策略。
+
+对接时必须同时核对 `request_id` 和 `world_state_frame_id`，避免把旧请求或旧帧的
+匹配结果用于当前控制决策。详细字段约束以
+`schemas/driving_intent_alignment.schema.json` 为准。
+
 ### 2. 风险评估
 
 ```bash
