@@ -335,16 +335,24 @@ Schema 文件名称，不是两种不同的数据格式。
 | `request_id` | 原始 DrivingIntent 请求标识 |
 | `world_state_frame_id` | 本次对齐使用的 WorldState 帧标识 |
 | `parse_status` | 上游 DrivingIntent 解析状态 |
-| `alignment_status` | `COMPLETE`、`PARTIAL`、`FAILED` 或 `NOT_REQUIRED` |
+| `alignment_status` | `COMPLETE`、`PARTIAL`、`FAILED`、`NOT_REQUIRED` 或 `SKIPPED` |
 | `target_count` | 需要实体对齐的步骤目标数 |
 | `matched_target_count` | 成功匹配的步骤目标数 |
 | `step_alignments` | 与驾驶步骤一一对应的对齐结果 |
 
-每项 `step_alignments` 包含 `step_id`、`action`、原始 `target`、
-`alignment_required`、`alignment_success`、`candidate_count`、
-`matched_entity` 和 `reason_code`。下游只能在 `alignment_required=true`
-且 `alignment_success=true` 时使用 `matched_entity`；未匹配步骤必须保留
-空实体并依据 `reason_code` 执行等待、跳过或安全停车策略。
+每项 `step_alignments` 包含：
+
+- 基础步骤字段：`step_id`、`action` 和原始 `target`；
+- DrivingIntent 1.2 引用字段：`target_ref`、`goal_conditions`、
+  `resolved_goal_conditions` 和 `condition_entities`；
+- 匹配状态字段：`alignment_required`、`alignment_success`、
+  `candidate_count`、`matched_entity` 和 `reason_code`；
+- 属性审计字段：`matched_attributes` 和 `missing_attributes`。
+
+下游只能在 `alignment_required=true` 且 `alignment_success=true` 时使用
+`matched_entity` 和已经解析的目标条件。未匹配步骤必须保留空实体，并依据
+`reason_code` 执行等待、跳过或安全停车策略。`SKIPPED` 表示上游
+`parse_status` 不是 `VALID`，因此对齐器没有执行实体匹配。
 
 对接时必须同时核对 `request_id` 和 `world_state_frame_id`，避免把旧请求或旧帧的
 匹配结果用于当前控制决策。详细字段约束以

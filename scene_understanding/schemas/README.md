@@ -77,8 +77,10 @@
 - `../core/object_matcher.py`：归一化“行人、前车、慢车、左车道、路口”等方案词汇，
   并按类别、方向、车道关系和距离选择候选对象。
 - `../core/semantic_alignment.py`：保留单对象文本引用对齐接口，并为匹配实体附加风险等级。
-- `../src/driving_intent_alignment.py`：接收 DrivingIntent 1.0/1.1 JSON，对每个步骤目标执行
-  批量语义对齐，并明确区分未匹配、未知类型和 WorldState 能力暂不可用。
+- `../src/driving_intent_alignment.py`：兼容 DrivingIntent 1.0/1.1，并接收当前
+  DrivingIntent 1.2 的共享实体、`target_ref` 和 `goal_conditions`，对每个步骤目标执行
+  批量语义对齐；输出同时记录目标条件解析、属性匹配结果，并明确区分未匹配、
+  未知类型、歧义匹配和 WorldState 能力暂不可用。
 
 校验示例：
 
