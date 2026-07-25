@@ -70,12 +70,15 @@
 - `examples/risk_assessment.example.json`：使用示例 WorldState 计算出的合法风险结果。
 - `../scene_understanding/core/risk_assessment.py`：按队长方案阈值计算安全距离、TTC、风险等级、
   推荐动作以及左右变道安全性；不依赖 CARLA 或模型运行时。
-- `semantic_alignment.schema.json`：指令对象与 CARLA actor、车道或路口的对齐结果格式。
-- `examples/semantic_alignment.example.json`：将“前车”对齐到具体 CARLA actor 的示例。
-- `../scene_understanding/core/object_matcher.py`：归一化“行人、前车、慢车、左车道、路口”等方案词汇，
+- `semantic_alignment.schema.json`：单个文本指令对象与 CARLA actor、车道或路口的对齐结果格式。
+- `examples/semantic_alignment.example.json`：将单个“前车”引用对齐到具体 CARLA actor 的示例。
+- `driving_intent_alignment.schema.json`：DrivingIntent 多步骤目标与单帧 WorldState 的批量对齐结果格式。
+- `examples/driving_intent_alignment.example.json`：对行人避让、变道和超车三个步骤执行批量对齐的示例。
+- `../core/object_matcher.py`：归一化“行人、前车、慢车、左车道、路口”等方案词汇，
   并按类别、方向、车道关系和距离选择候选对象。
-- `../scene_understanding/core/semantic_alignment.py`：接收文本或指令解析字典，将指令对象与当前
-  WorldState 实体对齐，并附加风险等级。
+- `../core/semantic_alignment.py`：保留单对象文本引用对齐接口，并为匹配实体附加风险等级。
+- `../src/driving_intent_alignment.py`：接收 DrivingIntent 1.0/1.1 JSON，对每个步骤目标执行
+  批量语义对齐，并明确区分未匹配、未知类型和 WorldState 能力暂不可用。
 
 校验示例：
 

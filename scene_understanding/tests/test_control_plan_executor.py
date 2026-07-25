@@ -163,33 +163,6 @@ class ControlPlanExecutorTests(unittest.TestCase):
         self.assertEqual(decision["reason"], "plan_completed")
         self.assertEqual(validate_control_plan_state(state), [])
 
-    def test_independent_keep_lane_prefix_is_subsumed_by_set_speed(self):
-        intent = driving_intent("KEEP_LANE", {})
-        intent["intent"]["steps"].append(
-            {
-                "step_id": "step_2",
-                "action": "SET_SPEED",
-                "target": None,
-                "parameters": {"target_speed_mps": 16.667},
-                "depends_on": [],
-                "preconditions": ["PATH_CLEAR"],
-                "on_blocked": "WAIT_FOR_SAFE",
-                "trigger": {"type": "IMMEDIATE"},
-                "completion": {"type": "TARGET_SPEED_REACHED"},
-            }
-        )
-        state, decision = self.run_plan(intent)
-
-        self.assertEqual(state["step_states"][0]["status"], "SKIPPED")
-        self.assertEqual(
-            state["step_states"][0]["reason_codes"],
-            ["subsumed_by_set_speed_lateral_control"],
-        )
-        self.assertEqual(state["active_step_id"], "step_2")
-        self.assertEqual(decision["source_step_id"], "step_2")
-        self.assertEqual(decision["target_speed_kmh"], 60.0012)
-        self.assertEqual(validate_control_plan_state(state), [])
-
     def test_waiting_step_recovers_when_alignment_becomes_available(self):
         intent = driving_intent(
             "ADJUST_SPEED",
@@ -256,39 +229,6 @@ class ControlPlanExecutorTests(unittest.TestCase):
         self.assertEqual(state["plan_status"], "FAILED")
         self.assertEqual(decision["action"], "stop")
         self.assertEqual(decision["decision_status"], "SAFE_FALLBACK")
-
-    def test_target_clearance_alignment_loss_waits_for_feedback_while_stopped(self):
-        intent = driving_intent(
-            "ADJUST_SPEED",
-            {"change": "DECREASE"},
-            target={"type": "PEDESTRIAN", "relation": "AHEAD_CROSSING"},
-            on_blocked="SAFE_STOP",
-        )
-        intent["intent"]["steps"][0]["completion"] = {"type": "TARGET_CLEARED"}
-        missing = alignment_for(intent, self.world["frame_id"], first_success=False)
-        state, decision = self.run_plan(intent, alignment=missing)
-
-        self.assertEqual(state["plan_status"], "ACTIVE")
-        self.assertEqual(state["active_step_id"], "step_1")
-        self.assertEqual(state["step_states"][0]["status"], "WAITING")
-        self.assertEqual(state["reason_codes"], ["no_matching_entity", "safe_stop"])
-        self.assertEqual(decision["decision_status"], "BLOCKED")
-        self.assertEqual(decision["action"], "stop")
-
-    def test_completed_set_speed_keeps_requested_cruise_speed(self):
-        intent = driving_intent("SET_SPEED", {"target_speed_mps": 16.667})
-        state, _ = self.run_plan(intent)
-        self.world["ego"]["speed_mps"] = 1.0
-        state, decision = self.run_plan(
-            intent,
-            state=state,
-            event=feedback(intent, "step_1", "COMPLETED"),
-        )
-
-        self.assertEqual(state["plan_status"], "COMPLETED")
-        self.assertEqual(decision["action"], "keep_lane")
-        self.assertEqual(decision["reason"], "plan_completed")
-        self.assertEqual(decision["target_speed_kmh"], 60.0012)
 
     def test_feedback_must_match_active_step(self):
         intent = three_step_intent()

@@ -53,6 +53,8 @@ class RuleDecisionPolicy:
     def __init__(self, scenario_name, cruise_speed_kmh):
         self.scenario_name = scenario_name
         self.cruise_speed_kmh = cruise_speed_kmh
+        self._emergency_latched = False
+        self._emergency_reason = None
 
     def decide(self, world_state):
         nearby_vehicles = world_state.get("vehicles", [])
@@ -66,17 +68,49 @@ class RuleDecisionPolicy:
         front_vehicle = min(front_vehicles, key=lambda item: item["distance"], default=None)
         front_distance = front_vehicle["distance"] if front_vehicle is not None else float("inf")
         pedestrian_distance = min([item["distance"] for item in nearby_pedestrians] or [float("inf")])
-        front_braking = (
-            front_vehicle is not None
-            and front_distance < 30.0
-            and ego_speed_kmh - front_vehicle.get("speed_kmh", ego_speed_kmh) > 5.0
+        front_speed_kmh = (
+            float(front_vehicle.get("speed_kmh", ego_speed_kmh))
+            if front_vehicle is not None
+            else ego_speed_kmh
         )
-        if front_distance < 12.0 or pedestrian_distance < 10.0 or front_braking:
+        closing_speed_kmh = max(0.0, ego_speed_kmh - front_speed_kmh)
+        closing_speed_mps = closing_speed_kmh / 3.6
+        front_ttc_s = (
+            front_distance / closing_speed_mps
+            if closing_speed_mps > 0.1
+            else float("inf")
+        )
+        imminent_front_risk = (
+            front_vehicle is not None
+            and (
+                front_distance < 10.0
+                or (front_distance < 25.0 and front_ttc_s < 3.0)
+            )
+        )
+        if pedestrian_distance < 10.0 or imminent_front_risk:
+            self._emergency_latched = True
+            self._emergency_reason = (
+                "front_vehicle_braking"
+                if imminent_front_risk
+                else "rule_safety_distance"
+            )
+        if self._emergency_latched:
             return {
                 "action": "emergency_brake",
                 "target_speed_kmh": 0.0,
                 "emergency": True,
-                "reason": "front_vehicle_braking" if front_braking else "rule_safety_distance",
+                "reason": self._emergency_reason,
+            }
+        if (
+            front_vehicle is not None
+            and front_distance < 35.0
+            and closing_speed_kmh > 3.0
+        ):
+            return {
+                "action": "decelerate",
+                "target_speed_kmh": max(0.0, front_speed_kmh),
+                "emergency": False,
+                "reason": "closing_front_vehicle",
             }
         return {
             "action": "keep_lane",

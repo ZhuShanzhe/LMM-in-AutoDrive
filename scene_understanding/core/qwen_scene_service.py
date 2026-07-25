@@ -8,7 +8,7 @@ import time
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 from scene_understanding.core.run_qwen_scene_inference import (
     infer_one_record,
@@ -82,15 +82,8 @@ class LatestFrameWorker:
 
     _STOP = object()
 
-    def __init__(
-        self,
-        service: SceneService,
-        *,
-        name: str = "qwen-scene-worker",
-        monotonic_clock: Callable[[], float] = time.monotonic,
-    ) -> None:
+    def __init__(self, service: SceneService, *, name: str = "qwen-scene-worker") -> None:
         self.service = service
-        self._monotonic_clock = monotonic_clock
         self._queue: queue.Queue[object] = queue.Queue(maxsize=1)
         self._lock = threading.Lock()
         self._result_event = threading.Event()
@@ -98,7 +91,7 @@ class LatestFrameWorker:
         self._started = False
         self._closed = False
         self._latest: dict[str, Any] | None = None
-        self._latest_completed_monotonic_s: float | None = None
+        self._latest_completed_perf_counter_s: float | None = None
         self._stats = {"submitted": 0, "dropped": 0, "completed": 0, "errors": 0}
 
     def start(self) -> None:
@@ -140,9 +133,8 @@ class LatestFrameWorker:
                 return None
             if (
                 max_age_seconds is not None
-                and self._latest_completed_monotonic_s is not None
-                and self._monotonic_clock() - self._latest_completed_monotonic_s
-                > max_age_seconds
+                and self._latest_completed_perf_counter_s is not None
+                and time.perf_counter() - self._latest_completed_perf_counter_s > max_age_seconds
             ):
                 return None
             return deepcopy(self._latest)
@@ -200,7 +192,7 @@ class LatestFrameWorker:
                 result["service_elapsed_seconds"] = round(time.perf_counter() - started, 6)
                 with self._lock:
                     self._latest = result
-                    self._latest_completed_monotonic_s = self._monotonic_clock()
+                    self._latest_completed_perf_counter_s = time.perf_counter()
                     self._stats["completed"] += 1
                     self._result_event.set()
             finally:

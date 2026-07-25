@@ -16,7 +16,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--driving-intent",
         required=True,
         type=Path,
-        help="Supported DrivingIntent JSON file",
+        help="DrivingIntent 1.0.0 JSON file",
     )
     parser.add_argument(
         "--world-state",

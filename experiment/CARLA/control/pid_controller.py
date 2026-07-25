@@ -24,9 +24,6 @@ class EgoPIDController:
         self.default_speed_kmh = float(target_speed_kmh)
         self._speed_integral = 0.0
         self._previous_speed_error = 0.0
-        initial_transform = vehicle.get_transform()
-        self._preferred_yaw = math.radians(initial_transform.rotation.yaw)
-        self._straight_origin = initial_transform.location
         self._lane_change_command_id = None
         self._lane_change_target_lane_id = None
 
@@ -96,24 +93,8 @@ class EgoPIDController:
         if requested is not None:
             return carla.Location(requested["x"], requested["y"], requested["z"])
 
-        if intent["action"] == "keep_lane":
-            return self._straight_ahead_target(vehicle_transform)
-
         target_waypoint = self._target_waypoint(waypoint, intent)
         return target_waypoint.transform.location if target_waypoint is not None else None
-
-    def _straight_ahead_target(self, vehicle_transform):
-        forward_x = math.cos(self._preferred_yaw)
-        forward_y = math.sin(self._preferred_yaw)
-        relative_x = vehicle_transform.location.x - self._straight_origin.x
-        relative_y = vehicle_transform.location.y - self._straight_origin.y
-        progress = relative_x * forward_x + relative_y * forward_y
-        lookahead_m = 12.0
-        return carla.Location(
-            x=self._straight_origin.x + forward_x * (progress + lookahead_m),
-            y=self._straight_origin.y + forward_y * (progress + lookahead_m),
-            z=vehicle_transform.location.z,
-        )
 
     def _target_waypoint(self, waypoint, intent):
         action = intent["action"]
@@ -130,7 +111,7 @@ class EgoPIDController:
             next_waypoints,
             key=lambda candidate: abs(self._angle_delta(
                 math.radians(candidate.transform.rotation.yaw),
-                self._preferred_yaw,
+                math.radians(waypoint.transform.rotation.yaw),
             )),
         )
 

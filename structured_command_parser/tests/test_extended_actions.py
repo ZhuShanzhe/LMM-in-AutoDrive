@@ -99,7 +99,7 @@ class ExtendedActionContractTest(unittest.TestCase):
             confidence=1.0,
             latency_ms=1.0,
         )
-        self.assertEqual(document["schema_version"], "1.1.0")
+        self.assertEqual(document["schema_version"], "1.2.0")
         validate_document(document)
 
     def test_target_required_extended_actions_are_checked(self) -> None:

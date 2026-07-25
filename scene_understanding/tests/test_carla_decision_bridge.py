@@ -61,7 +61,7 @@ class CarlaDecisionBridgeTests(unittest.TestCase):
             accepted = policy.decide({"simulation_frame": safe_world["simulation_frame"]})
 
         self.assertEqual(frame_id, safe_world["frame_id"])
-        self.assertEqual(self.intent["schema_version"], "1.1.0")
+        self.assertEqual(self.intent["schema_version"], "1.2.0")
         self.assertEqual(decision["frame_id"], safe_world["frame_id"])
         self.assertEqual(accepted["decision_age_frames"], 0)
         self.assertEqual(policy.telemetry()["status"], "accepted")

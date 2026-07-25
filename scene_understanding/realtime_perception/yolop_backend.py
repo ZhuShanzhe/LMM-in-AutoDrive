@@ -36,8 +36,7 @@ class YolopPanopticBackend:
         self.torch = torch
         self.non_max_suppression = non_max_suppression
         self.scale_coords = scale_coords
-        requested_cuda = str(device).lower().startswith("cuda")
-        self.device = torch.device(device if requested_cuda and torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if device == "cuda" and torch.cuda.is_available() else "cpu")
         self.image_size = image_size
         self.score_threshold = score_threshold
         self.iou_threshold = iou_threshold

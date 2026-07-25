@@ -273,15 +273,7 @@ def _initial_state(
 
 
 def _subsumed_keep_lane_prefix(steps: list[Mapping[str, Any]]) -> bool:
-    """Recognise one parser form that represents a single lateral/longitudinal action.
-
-    Rule parsing may emit ``KEEP_LANE`` and ``SET_SPEED`` as independent
-    immediate clauses for a sentence such as "keep the current lane and set
-    speed to 60 km/h".  A SET_SPEED ControlDecision already keeps the lane,
-    so the unconstrained KEEP_LANE prefix is compiled away rather than
-    inventing a completion event.  Dependent or otherwise constrained lane
-    steps keep their normal explicit-feedback semantics.
-    """
+    """Recognize one lateral/longitudinal parser form as a single action."""
 
     if len(steps) < 2:
         return False
@@ -410,14 +402,7 @@ def _blocked_policy(step: Mapping[str, Any]) -> str:
 def _await_target_clearance_feedback(
     step: Mapping[str, Any], reason_codes: list[str]
 ) -> bool:
-    """Keep a target-clearance step active after its target leaves AHEAD.
-
-    A correctly yielded pedestrian or overtaken vehicle no longer satisfies an
-    AHEAD/AHEAD_CROSSING alignment reference on its first clearance frame.
-    The execution-feedback service must inspect that frame before the plan is
-    terminal.  This narrow exception retains the blocked stop decision and
-    applies only to the explicit matcher miss used by that transition.
-    """
+    """Keep a target-clearance step active for its completion observation."""
 
     completion = step.get("completion")
     return (
@@ -504,19 +489,6 @@ def advance_control_plan(
     if state["plan_status"] == "SAFE_FALLBACK":
         state["reason_codes"] = list(decision["blocked_reason_codes"])
     elif state["plan_status"] == "COMPLETED":
-        # SET_SPEED remains a persistent longitudinal setpoint after its
-        # completion event.  Replacing it with instantaneous speed makes the
-        # target decay frame by frame and can unintentionally stop the ego.
-        if decision.get("source_step_action") == "SET_SPEED":
-            decision = _replace_decision(
-                decision,
-                status="READY",
-                action="keep_lane",
-                reason="plan_completed",
-                target_speed_kmh=float(decision["target_speed_kmh"]),
-                blocked_reason_codes=[],
-            )
-            return state, decision
         current_speed_kmh = round(float(world_state["ego"]["speed_mps"]) * 3.6, 6)
         decision = _replace_decision(
             decision,

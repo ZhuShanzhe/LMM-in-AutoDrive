@@ -10,23 +10,47 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from scene_understanding.core.object_matcher import relative_position_label, select_world_object
+from scene_understanding.core.object_matcher import (
+    match_world_object,
+    relative_position_label,
+)
 from scene_understanding.core.risk_assessment import assess_world_state, distance_risk_level
 from scene_understanding.core.world_state import validate_world_state
 
 
-SUPPORTED_DRIVING_INTENT_SCHEMA_VERSIONS = {"1.0.0", "1.1.0"}
+DRIVING_INTENT_SCHEMA_VERSION = "1.2.0"
+SUPPORTED_DRIVING_INTENT_SCHEMA_VERSIONS = {"1.0.0", "1.1.0", "1.2.0"}
 ALIGNMENT_SCHEMA_VERSION = "1.0.0"
 PARSE_STATUSES = {"VALID", "NEEDS_CLARIFICATION", "UNSUPPORTED", "INVALID"}
 ALIGNMENT_STATUSES = {"COMPLETE", "PARTIAL", "FAILED", "NOT_REQUIRED", "SKIPPED"}
 
 TARGET_TYPE_MAP = {
     "PEDESTRIAN": "pedestrian",
+    "CYCLIST": "cyclist",
     "SLOW_VEHICLE": "slow_vehicle",
     "VEHICLE": "vehicle",
+    "OBSTACLE": "obstacle",
+    "TRAFFIC_CONE": "traffic_cone",
+    "ROAD_HAZARD": "road_hazard",
     "TRAFFIC_LIGHT": "traffic_light",
     "TRAFFIC_SIGN": "traffic_sign",
     "JUNCTION": "junction",
+}
+
+WORLD_STATE_CAPABILITY_UNAVAILABLE_TARGET_TYPES = {
+    "AREA",
+    "CONSTRUCTION_ZONE",
+    "COORDINATE",
+    "CROSSWALK",
+    "CURB",
+    "DESTINATION",
+    "DROPOFF_POINT",
+    "LANDMARK",
+    "PARKING_AREA",
+    "PARKING_SPACE",
+    "PICKUP_POINT",
+    "ROAD",
+    "STOP_LINE",
 }
 
 RELATION_HINTS = {
@@ -34,10 +58,19 @@ RELATION_HINTS = {
     "BEHIND": ("rear", "unknown"),
     "LEFT": ("left", "unknown"),
     "RIGHT": ("right", "unknown"),
+    "FRONT_LEFT": ("front_left", "unknown"),
+    "FRONT_RIGHT": ("front_right", "unknown"),
+    "REAR_LEFT": ("rear_left", "unknown"),
+    "REAR_RIGHT": ("rear_right", "unknown"),
     "AHEAD_CROSSING": ("front", "crossing_ego_path"),
     "ADJACENT": ("unknown", "unknown"),
+    "NEXT_TO": ("unknown", "unknown"),
+    "IN_FRONT_OF": ("front", "unknown"),
+    "NEAR": ("unknown", "unknown"),
     "AT_JUNCTION": ("front", "ego_lane"),
     "NEAR_DESTINATION": ("front", "unknown"),
+    "INSIDE": ("unknown", "unknown"),
+    "PAST": ("rear", "unknown"),
     "UNSPECIFIED": ("unknown", "unknown"),
 }
 
@@ -48,9 +81,9 @@ def validate_driving_intent(document: Any) -> None:
     if not isinstance(document, dict):
         raise ValueError("DrivingIntent must be a JSON object")
     if document.get("schema_version") not in SUPPORTED_DRIVING_INTENT_SCHEMA_VERSIONS:
-        supported = ", ".join(sorted(SUPPORTED_DRIVING_INTENT_SCHEMA_VERSIONS))
         raise ValueError(
-            "DrivingIntent schema_version must be one of: " + supported
+            "DrivingIntent schema_version must be one of "
+            + ", ".join(sorted(SUPPORTED_DRIVING_INTENT_SCHEMA_VERSIONS))
         )
     request_id = document.get("request_id")
     if not isinstance(request_id, str) or not request_id:
@@ -71,6 +104,14 @@ def validate_driving_intent(document: Any) -> None:
         raise ValueError("DrivingIntent intent.steps must be an array")
     if status == "VALID" and not steps:
         raise ValueError("VALID DrivingIntent must contain at least one step")
+    entities = intent.get("entities", [])
+    if not isinstance(entities, list):
+        raise ValueError("DrivingIntent intent.entities must be an array")
+    entity_ids = {
+        entity.get("entity_id")
+        for entity in entities
+        if isinstance(entity, dict)
+    }
 
     step_ids: set[str] = set()
     for index, step in enumerate(steps):
@@ -86,6 +127,11 @@ def validate_driving_intent(document: Any) -> None:
         if not isinstance(action, str) or not action:
             raise ValueError(f"DrivingIntent step {step_id!r} action is invalid")
         target = step.get("target")
+        target_ref = step.get("target_ref")
+        if target_ref is not None and target_ref not in entity_ids:
+            raise ValueError(
+                f"DrivingIntent step {step_id!r} target_ref is unknown"
+            )
         if target is not None:
             if not isinstance(target, dict):
                 raise ValueError(f"DrivingIntent step {step_id!r} target must be an object")
@@ -100,7 +146,7 @@ def target_to_reference(
     *,
     action: str,
     parameters: Mapping[str, Any] | None = None,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     """Convert one DrivingIntent target to the existing matcher vocabulary."""
 
     target_type_raw = str(target.get("type", "UNKNOWN")).upper()
@@ -123,6 +169,8 @@ def target_to_reference(
             lane_hint = "right_adjacent_lane"
         else:
             target_type = "unknown"
+    elif target_type_raw in WORLD_STATE_CAPABILITY_UNAVAILABLE_TARGET_TYPES:
+        target_type = "world_state_capability_unavailable"
     else:
         target_type = TARGET_TYPE_MAP.get(target_type_raw, "unknown")
 
@@ -130,12 +178,19 @@ def target_to_reference(
     raw_text = f"{target_type_raw}/{relation_raw}"
     if isinstance(description, str) and description.strip():
         raw_text = description.strip()
-    return {
+    reference: dict[str, Any] = {
         "raw_text": raw_text,
         "target_type": target_type,
         "position_hint": position_hint,
         "lane_hint": lane_hint,
     }
+    attributes = target.get("canonical_attributes")
+    if isinstance(attributes, Mapping):
+        reference["canonical_attributes"] = dict(attributes)
+    descriptors = target.get("open_descriptors")
+    if isinstance(descriptors, list):
+        reference["open_descriptors"] = list(descriptors)
+    return reference
 
 
 def _risk_by_object_id(risk: Mapping[str, Any]) -> dict[str, str]:
@@ -189,35 +244,89 @@ def _junction_entity(world_state: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _align_reference(
-    reference: Mapping[str, str],
+    reference: Mapping[str, Any],
     world_state: Mapping[str, Any],
     risk_by_id: Mapping[str, str],
-) -> tuple[bool, int, dict[str, Any] | None, str]:
+) -> tuple[bool, int, dict[str, Any] | None, str, list[str], list[str]]:
     target_type = reference["target_type"]
+    if target_type == "world_state_capability_unavailable":
+        return (
+            False,
+            0,
+            None,
+            "world_state_capability_unavailable",
+            [],
+            [],
+        )
     if target_type == "unknown":
-        return False, 0, None, "unsupported_target_type"
+        return False, 0, None, "unsupported_target_type", [], []
     if target_type in {"left_lane", "right_lane"}:
         direction = "left" if target_type == "left_lane" else "right"
         lane = world_state["ego"]["adjacent_lanes"][direction]
         if lane is None:
-            return False, 0, None, f"{direction}_lane_unavailable"
-        return True, 1, _lane_entity(direction, lane), "matched_adjacent_lane"
+            return False, 0, None, f"{direction}_lane_unavailable", [], []
+        return (
+            True,
+            1,
+            _lane_entity(direction, lane),
+            "matched_adjacent_lane",
+            [],
+            [],
+        )
     if target_type == "junction":
+        attributes = reference.get("canonical_attributes")
+        if isinstance(attributes, Mapping) and attributes.get("ordinal") not in {
+            None,
+            1,
+        }:
+            return (
+                False,
+                0,
+                None,
+                "route_entity_capability_unavailable",
+                [],
+                ["ordinal"],
+            )
         available = world_state["ego"]["is_junction"] is True or (
             world_state["environment"]["is_intersection"] is True
         )
         if not available:
-            return False, 0, None, "junction_not_currently_available"
-        return True, 1, _junction_entity(world_state), "matched_current_junction"
+            return (
+                False,
+                0,
+                None,
+                "junction_not_currently_available",
+                [],
+                [],
+            )
+        return (
+            True,
+            1,
+            _junction_entity(world_state),
+            "matched_current_junction",
+            [],
+            [],
+        )
 
-    obj, candidate_count = select_world_object(reference, world_state)
+    match = match_world_object(reference, world_state)
+    obj = match["object"]
+    candidate_count = match["candidate_count"]
     if obj is None:
-        return False, candidate_count, None, "no_matching_entity"
+        return (
+            False,
+            candidate_count,
+            None,
+            match["reason_code"],
+            match["matched_attributes"],
+            match["missing_attributes"],
+        )
     return (
         True,
         candidate_count,
         _actor_entity(obj, risk_by_id),
-        "matched_world_object",
+        match["reason_code"],
+        match["matched_attributes"],
+        match["missing_attributes"],
     )
 
 
@@ -246,21 +355,37 @@ def align_driving_intent(
         }
 
     risk_by_id = _risk_by_object_id(assess_world_state(world_state))
+    entity_definitions = {
+        entity["entity_id"]: entity
+        for entity in driving_intent["intent"].get("entities", [])
+        if isinstance(entity, dict) and isinstance(entity.get("entity_id"), str)
+    }
     step_alignments: list[dict[str, Any]] = []
     target_count = 0
     matched_count = 0
     for step in driving_intent["intent"]["steps"]:
-        target = step.get("target")
+        target_ref = step.get("target_ref")
+        target = (
+            entity_definitions.get(target_ref)
+            if isinstance(target_ref, str)
+            else step.get("target")
+        )
         if target is None:
             step_alignments.append(
                 {
                     "step_id": step["step_id"],
                     "action": step["action"],
                     "target": None,
+                    "target_ref": None,
+                    "goal_conditions": step.get("goal_conditions", []),
+                    "resolved_goal_conditions": [],
+                    "condition_entities": {},
                     "alignment_required": False,
                     "alignment_success": None,
                     "candidate_count": 0,
                     "matched_entity": None,
+                    "matched_attributes": [],
+                    "missing_attributes": [],
                     "reason_code": "target_not_required",
                 }
             )
@@ -272,9 +397,59 @@ def align_driving_intent(
             action=step["action"],
             parameters=step.get("parameters"),
         )
-        success, candidates, entity, reason = _align_reference(
+        (
+            success,
+            candidates,
+            entity,
+            reason,
+            matched_attributes,
+            missing_attributes,
+        ) = _align_reference(
             reference, world_state, risk_by_id
         )
+        resolved_conditions: list[dict[str, Any]] = []
+        condition_entities: dict[str, dict[str, Any]] = {}
+        if success and entity is not None:
+            for condition in step.get("goal_conditions", []):
+                resolved = dict(condition)
+                condition_failed = False
+                for key in ("object", "secondary_object"):
+                    entity_ref = condition.get(key)
+                    if entity_ref == target_ref:
+                        resolved[key] = entity["entity_id"]
+                        condition_entities[entity_ref] = entity
+                        continue
+                    definition = entity_definitions.get(entity_ref)
+                    if definition is None:
+                        continue
+                    condition_reference = target_to_reference(
+                        definition,
+                        action=step["action"],
+                        parameters=step.get("parameters"),
+                    )
+                    (
+                        condition_success,
+                        _,
+                        condition_entity,
+                        condition_reason,
+                        _,
+                        condition_missing,
+                    ) = _align_reference(
+                        condition_reference,
+                        world_state,
+                        risk_by_id,
+                    )
+                    if not condition_success or condition_entity is None:
+                        success = False
+                        condition_failed = True
+                        reason = f"condition_{condition_reason}"
+                        missing_attributes.extend(condition_missing)
+                        break
+                    resolved[key] = condition_entity["entity_id"]
+                    condition_entities[entity_ref] = condition_entity
+                if condition_failed:
+                    break
+                resolved_conditions.append(resolved)
         if success:
             matched_count += 1
         step_alignments.append(
@@ -282,10 +457,16 @@ def align_driving_intent(
                 "step_id": step["step_id"],
                 "action": step["action"],
                 "target": target,
+                "target_ref": target_ref,
+                "goal_conditions": step.get("goal_conditions", []),
+                "resolved_goal_conditions": resolved_conditions,
+                "condition_entities": condition_entities,
                 "alignment_required": True,
                 "alignment_success": success,
                 "candidate_count": candidates,
                 "matched_entity": entity,
+                "matched_attributes": matched_attributes,
+                "missing_attributes": sorted(set(missing_attributes)),
                 "reason_code": reason,
             }
         )

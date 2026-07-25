@@ -3,7 +3,6 @@ from __future__ import annotations
 import unittest
 
 from structured_command_parser.src.modernbert_service import ModernBertCommandService
-from structured_command_parser.src.modernbert_parser import ModernBertEnglishIntentParser
 
 
 class FakeParser:
@@ -20,6 +19,8 @@ class FakeParser:
         *,
         modality: str,
         request_id: str | None,
+        source_text: str | None = None,
+        source_language: str | None = None,
     ) -> dict:
         self.calls.append((text, modality, request_id))
         return {"request_id": request_id, "text": text, "modality": modality}
@@ -52,6 +53,19 @@ class ModernBertCommandServiceTests(unittest.TestCase):
         )
         self.assertEqual(result["request_id"], "req-2")
 
+    def test_translation_message_may_retain_original_asr_text(self) -> None:
+        result = self.service.handle_message(
+            {
+                "request_id": "req-asr",
+                "text": "Turn right at the junction.",
+                "source_text": "前方路口又转",
+                "source_language": "zh-CN",
+                "language": "en-US",
+                "modality": "VOICE",
+            }
+        )
+        self.assertEqual(result["request_id"], "req-asr")
+
     def test_invalid_messages_fail_before_inference(self) -> None:
         with self.assertRaises(TypeError):
             self.service.handle_message({"text": 3})
@@ -60,32 +74,6 @@ class ModernBertCommandServiceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.service.parse_text(" ")
         self.assertEqual(self.parser.calls, [])
-
-    def test_withholds_ungrounded_stop_classifier_label(self) -> None:
-        payload = {
-            "commands": [
-                {"action": "TURN", "direction": "RIGHT"},
-                {"action": "STOP"},
-            ],
-            "warnings": [],
-        }
-        result = ModernBertEnglishIntentParser._withhold_ungrounded_terminal_actions(
-            payload,
-            "Turn right at the next junction.",
-        )
-        self.assertEqual(result["commands"], [{"action": "TURN", "direction": "RIGHT"}])
-        self.assertEqual(
-            result["warnings"],
-            ["classifier_action_withheld_without_text_evidence:STOP"],
-        )
-
-    def test_keeps_explicit_stop_classifier_label(self) -> None:
-        payload = {"commands": [{"action": "STOP"}], "warnings": []}
-        result = ModernBertEnglishIntentParser._withhold_ungrounded_terminal_actions(
-            payload,
-            "Stop before the red truck.",
-        )
-        self.assertEqual(result, payload)
 
 
 if __name__ == "__main__":

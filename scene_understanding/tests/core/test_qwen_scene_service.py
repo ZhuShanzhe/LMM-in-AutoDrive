@@ -36,17 +36,6 @@ class _BlockingService:
         return {"frame_id": record["frame_id"], "status": "valid"}
 
 
-class _Clock:
-    def __init__(self) -> None:
-        self.value = 0.0
-
-    def __call__(self) -> float:
-        return self.value
-
-    def advance(self, seconds: float) -> None:
-        self.value += seconds
-
-
 class QwenSceneServiceTests(unittest.TestCase):
     def test_config_rejects_invalid_token_bounds(self):
         with self.assertRaisesRegex(ValueError, "visual token"):
@@ -116,12 +105,11 @@ class QwenSceneServiceTests(unittest.TestCase):
             worker.close()
 
     def test_latest_result_can_expire(self):
-        clock = _Clock()
-        worker = LatestFrameWorker(_Service(), monotonic_clock=clock)
+        worker = LatestFrameWorker(_Service())
         try:
             worker.submit({"frame_id": "frame_3"})
             self.assertIsNotNone(worker.wait_for_result(1.0))
-            clock.advance(0.002)
+            time.sleep(0.01)
             self.assertIsNone(worker.latest(max_age_seconds=0.001))
         finally:
             worker.close()

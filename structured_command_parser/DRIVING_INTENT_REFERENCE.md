@@ -1,6 +1,6 @@
 # DrivingIntent JSON 完整字段参考
 
-本文档对应 `schemas/driving_intent.schema.json` 的 `1.1.0` 版本，用于指令解析、语义对齐、风险判断、有限状态机和日志模块共同查阅。`1.1.0` 根据 Talk2Car 与 SimLingo 全量英文语料扩展动作、目标和参数，原 `1.0.0` 动作语义保持不变。
+本文档对应 `schemas/driving_intent.schema.json` 的 `1.2.0` 版本，用于指令解析、语义对齐、风险判断、有限状态机和日志模块共同查阅。`1.2.0` 在原动作空间上增加规范化审计、共享实体、否定/修正、目标引用和可组合关系条件，解决“在红色卡车前停车”等限定语义在动作拆分后丢失的问题。
 
 JSON Schema 是机器校验依据；本文档用于解释字段语义、字段组合和下游处理约定。二者冲突时，以 Schema 为准并提交接口问题，不得由各模块自行解释。
 
@@ -14,10 +14,24 @@ DrivingIntent
 |   |-- modality
 |   |-- language
 |   |-- raw_text
+|   |-- translated_text             可选
+|   |-- source_language             可选
 |   `-- normalized_text
+|-- normalization
+|   |-- edits[]
+|   `-- unresolved_references[]
 |-- intent
 |   |-- category
 |   |-- urgency
+|   |-- entities[]
+|   |   |-- entity_id
+|   |   |-- type
+|   |   |-- relation
+|   |   |-- description
+|   |   |-- canonical_attributes
+|   |   |-- open_descriptors[]
+|   |   `-- source_span
+|   |-- suppressed_intents[]
 |   |-- steps[]
 |   |   |-- step_id
 |   |   |-- action
@@ -26,7 +40,11 @@ DrivingIntent
 |   |   |   |-- type
 |   |   |   |-- relation
 |   |   |   |-- description         可选
+|   |   |   |-- canonical_attributes 可选
+|   |   |   |-- open_descriptors[]  可选
 |   |   |   `-- coordinates         可选，仅保存原指令明确坐标
+|   |   |-- target_ref              可选，引用 entities[].entity_id
+|   |   |-- goal_conditions[]       可选
 |   |   |-- parameters
 |   |   |   |-- direction           可选
 |   |   |   |-- change              可选
@@ -46,6 +64,7 @@ DrivingIntent
 |   |   |-- trigger
 |   |   |   |-- type
 |   |   |   |-- step_id             可选
+|   |   |   |-- entity_ref          可选
 |   |   |   |-- distance_m          可选
 |   |   |   `-- description         可选
 |   |   |-- completion              可选
@@ -73,9 +92,10 @@ DrivingIntent
 
 | 字段 | 类型 | 必填 | 允许内容 | 说明 |
 | --- | --- | --- | --- | --- |
-| `schema_version` | string | 是 | 固定为 `1.1.0` | 接口版本，不是模型版本 |
+| `schema_version` | string | 是 | 固定为 `1.2.0` | 接口版本，不是模型版本 |
 | `request_id` | string | 是 | 1-128 个字符 | 一条用户指令的唯一标识，贯穿所有模块日志 |
 | `input` | object | 是 | 见第 3 节 | 原始输入与规范化文本 |
+| `normalization` | object | 是 | `edits`、`unresolved_references` | 记录规范化操作和未解决指代 |
 | `intent` | object | 是 | 见第 4 节 | 用户驾驶意图，不是最终车辆决策 |
 | `parse_result` | object | 是 | 见第 13 节 | 解析过程及质量信息 |
 
@@ -86,11 +106,13 @@ DrivingIntent
 | 字段 | 类型 | 必填 | 允许内容 | 说明 |
 | --- | --- | --- | --- | --- |
 | `modality` | enum | 是 | `TEXT`、`VOICE` | 当前输入来源；VOICE 表示文本来自 ASR |
-| `language` | string | 是 | 推荐 `zh-CN` | 使用 BCP 47 风格语言代码 |
+| `language` | string | 是 | 推荐 `en-US` | 当前被解析文本的 BCP 47 语言代码 |
 | `raw_text` | string | 是 | 非空字符串 | 用户输入或 ASR 原始结果，禁止改写 |
-| `normalized_text` | string | 是 | 非空字符串 | 清洗空格、中文数字和单位后的文本 |
+| `translated_text` | string | 否 | 非空英文字符串 | 原始文本非英文时保存上游翻译结果 |
+| `source_language` | string | 否 | 例如 `zh-CN` | `raw_text` 的语言；原文和解析文本同语种时可省略 |
+| `normalized_text` | string | 是 | 非空字符串 | 进入分解器的规范英文文本 |
 
-规范化可以将“三百米”“60公里每小时”等统一为便于解析的表达，但不能改变动作、方向、目标和先后顺序。
+`normalization.edits[]` 的类型包括同义规范化、省略恢复、指代恢复、否定约束规范化、ASR 同音纠正和 ASR 同音候选。每项必须保存原片段、替换文本、置信度及是否需要用户确认。存在未解决指代或需要确认的 ASR 候选时，解析结果不得进入可执行链路。
 
 ## 4. `intent` 意图字段
 
@@ -98,6 +120,8 @@ DrivingIntent
 | --- | --- | --- | --- | --- |
 | `category` | enum | 是 | 见第 5 节 | 指令整体所属赛题场景 |
 | `urgency` | enum | 是 | `NORMAL`、`URGENT`、`EMERGENCY` | 表达用户语义紧迫度，不代表允许越过安全规则 |
+| `entities` | array | 是 | 0 个或多个 Entity | 指令中可复用的目标实体，使用稳定 `entity_id` |
+| `suppressed_intents` | array | 是 | 0 个或多个否定动作 | 保存被明确否定、修正或替代的动作，不进入 `steps` |
 | `steps` | array | 是 | 0 个或多个 Step | `VALID` 时至少一个；其他状态可以为空 |
 | `constraints` | object | 是 | 见第 12 节 | 全局安全和驾驶风格约束 |
 
@@ -121,6 +145,8 @@ DrivingIntent
 | `action` | enum | 是 | 高层动作，见第 7 节 |
 | `purpose` | string | 否 | 简短目的，例如 `YIELD`、`OVERTAKE`、`REDUCE_RISK` |
 | `target` | object | 否 | 语言中明确提到的目标对象，见第 8 节 |
+| `target_ref` | string | 否 | 引用 `intent.entities[].entity_id`；多步共享同一目标时优先使用 |
+| `goal_conditions` | object[] | 否 | 结构化空间、时序或安全关系，如 `BEFORE(EGO,target_1)` |
 | `parameters` | object | 是 | 动作参数；没有参数时使用 `{}` |
 | `trigger` | object | 是 | 何时开始考虑执行该动作，见第 10 节 |
 | `completion` | object | 否 | 动作完成的语义条件，见第 10 节 |
@@ -160,7 +186,7 @@ DrivingIntent
 | `RESUME` | 临时动作后恢复先前路线、车道或驾驶状态 | 通常无参数 | 避障后回到原车道 |
 | `CANCEL` | 取消待执行用户指令 | 通常无参数；具体取消对象可在 purpose 中说明 | 取消刚才的变道 |
 
-这里的“必须”属于语义校验规则。Schema 负责结构校验，解析器和 `validate_examples.py` 后续还应逐步补全动作级语义校验。
+这里的“必须”属于语义校验规则。Schema 负责结构校验，解析器和 `validate_examples.py` 共同执行动作级语义校验。
 
 ## 8. `target` 目标对象
 
@@ -207,7 +233,14 @@ DrivingIntent
 | `INSIDE`、`PAST` | 区域内部或已通过目标的位置 |
 | `UNSPECIFIED` | 原文未给出相对关系 |
 
-`target.description` 保存无法完全枚举的原文短语，例如“公交站旁边穿蓝衣服的人”。它只用于语义对齐，不允许填写 CARLA actor ID。`target.coordinates` 只允许保存用户明确说出的 `x_m`、`y_m` 与 `frame`，禁止由解析器或感知模块猜测。
+`target.description` 保存完整目标短语；`canonical_attributes` 保存可枚举属性，例如 `color=RED`、`vehicle_subtype=TRUCK`、`ordinal=2`；`open_descriptors` 保存不能稳定枚举的描述。`intent.entities[]` 还必须保存 `source_span`，供审计和失败解释使用。语言实体只用于语义对齐，不允许填写 CARLA actor ID。`target.coordinates` 只允许保存用户明确说出的 `x_m`、`y_m` 与 `frame`，禁止由解析器或感知模块猜测。
+
+### 8.3 共享实体、否定动作和目标条件
+
+- 同一语言目标在多个步骤中必须复用同一个 `entity_id`，步骤通过 `target_ref` 引用，避免各步骤各自重建目标。
+- `suppressed_intents[]` 记录 `EXPLICIT_NEGATION`、`USER_CORRECTION` 或 `SUPERSEDED_ACTION`。例如 “Do not turn left; continue straight” 只把直行放入 `steps`，左转写入 `suppressed_intents`。
+- `goal_conditions[]` 将限定条件拆成 `predicate`、`subject`、`object`、可选 `secondary_object`/`distance_m` 和 `source_span`。谓词包括 `BEFORE`、`AFTER`、`BEHIND`、`IN_FRONT_OF`、`LEFT_OF`、`RIGHT_OF`、`NEAR`、`NEXT_TO`、`BETWEEN`、`INSIDE`、`PAST`、`UNTIL`、`VISIBLE`、`SAFE_DISTANCE` 和 `STOPPED`。
+- `subject` 通常为 `EGO` 或实体 ID；`object` 和 `secondary_object` 引用实体 ID。引用必须能够在当前文档中解析，不能把自由文本当作对象 ID。
 
 ## 9. `parameters` 全部字段
 
@@ -242,8 +275,10 @@ DrivingIntent
 | `AT_DISTANCE` | 到达指定距离点时执行 | 必须有 `distance_m` |
 | `AT_JUNCTION` | 到达路口时执行 | 可带目标路口 |
 | `OBJECT_PRESENT` | 对应目标被场景模块确认时执行 | Step 应有 `target` |
+| `ON_ENTITY_VISIBLE` | 共享实体被场景模块唯一匹配后执行 | 必须有 `entity_ref` |
+| `AFTER_ENTITY` | 通过或经过共享实体后执行 | 必须有 `entity_ref` |
 | `WHEN_SAFE` | 风险模块判定安全后执行 | 应有相应 `preconditions` |
-| `CONDITION` | 其他可机器判断的语义条件 | 必须有 `description`，后续需映射为规则 |
+| `CONDITION` | 其他可机器判断的语义条件 | 必须有 `description` 并由下游能力注册表确认 |
 
 ### 10.2 `completion.type`
 
@@ -255,6 +290,7 @@ DrivingIntent
 | `LANE_CHANGE_COMPLETED` | 已稳定进入目标车道 |
 | `JUNCTION_EXITED` | 已完成路口动作并驶出路口 |
 | `VEHICLE_STOPPED` | 车辆已停止 |
+| `STOPPED_BEFORE_TARGET` | 车辆已停止且满足目标前方的空间约束 |
 | `WAIT_CONDITION_MET`、`DURATION_ELAPSED` | 等待条件已满足或时长结束 |
 | `FOLLOWING_ESTABLISHED`、`TARGET_REACHED` | 已建立跟随或到达目标 |
 | `AREA_ENTERED`、`AREA_EXITED` | 已进入或驶出区域 |
@@ -362,9 +398,9 @@ DrivingIntent
 
 | 模块 | 应读取的字段 |
 | --- | --- |
-| 语义对齐 | `target`、`action`、`trigger`、`input.normalized_text` |
-| 风险判断 | `action`、`target`、`preconditions`、`constraints` |
-| 有限状态机 | `steps`、`depends_on`、`trigger`、`completion`、`on_blocked` |
+| 语义对齐 | `intent.entities`、`target_ref`、`goal_conditions`、`trigger.entity_ref`；不重新解析 `raw_text` |
+| 风险判断 | `action`、共享实体匹配结果、`goal_conditions`、`preconditions`、`constraints` |
+| 有限状态机 | `steps`、`depends_on`、`trigger`、`completion`、`goal_conditions`、`on_blocked` |
 | 车辆控制 | 不直接读取 DrivingIntent；只读取决策规划输出 |
 | 日志评估 | `request_id`、`parse_result`、动作序列及各模块关联结果 |
 
@@ -379,4 +415,7 @@ DrivingIntent
 7. 安全和交通规则字段始终为 true。
 8. 意图中不含风险结果、CARLA ID 或控制量。
 9. 组合指令没有动作遗漏。
-10. 日志能够用 `request_id` 串联完整链路。
+10. 所有 `target_ref`、`entity_ref` 和条件对象都能解析到唯一实体。
+11. 被否定或被修正动作只进入 `suppressed_intents`，不会进入执行步骤。
+12. 需要确认的 ASR 候选和未解决指代返回 `NEEDS_CLARIFICATION`。
+13. 日志能够用 `request_id` 串联完整链路。

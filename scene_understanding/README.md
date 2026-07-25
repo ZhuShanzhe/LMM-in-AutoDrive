@@ -2,8 +2,6 @@
 
 场景理解模块负责把结构化驾驶指令与 CARLA 世界状态对齐，生成确定性的风险判断、控制决策和多步骤计划状态。模块通过 JSON 文件与指令解析模块和车辆控制模块联调，不直接依赖其他成员的 Python 包内部实现。
 
-CARLA 控制接入的帧约束、原子写入和过期决策策略见 `CARLA_CONTROL_HANDOFF.md`。
-
 ## 运行环境
 
 - CARLA：0.9.16
@@ -45,6 +43,16 @@ DrivingIntent ──> 目标语义对齐 ──> 风险/TTC ──> 安全门控
 - 异步视觉大模型只补充场景摘要和开放语义，超时、非法或过期结果直接丢弃；
 - 碰撞、TTC、交通灯状态和变道安全不能仅依赖视觉大模型文本；
 - 输出通过稳定 JSON Schema 与指令解析、决策和车辆控制模块连接。
+
+## 与上一版不同
+
+- 语义对齐从每步自由文本目标升级为 DrivingIntent `1.2.0` 共享实体、`target_ref`
+  和 `goal_conditions`；
+- 目标匹配加入类别、相对方向、颜色、车辆子类型和开放描述证据，唯一候选才允许写入
+  WorldState/CARLA 对象 ID；
+- 两个同属性候选不再按距离猜测，而是返回歧义；路线级序数地标能力不足时明确失败；
+- ASR 疑义和未解决指代在解析阶段停止，不进入对齐、风险或控制；
+- 补齐 `左车道/右车道` 与 `左侧车道/右侧车道` 的等价入口，保持中文接口兼容。
 
 ## 目录结构
 
@@ -308,7 +316,56 @@ python -m scene_understanding.scripts.align_driving_intent \
   --output outputs/semantic_alignment.json
 ```
 
-目标不可见或不支持时会明确输出未匹配结果，不会虚构场景实体。
+批量输出遵循 `schemas/driving_intent_alignment.schema.json`。目标当前不可见时返回
+`no_matching_entity`；规范支持但 WorldState 暂不能表达的地图或路线目标返回
+`world_state_capability_unavailable`；真正未知的类型返回 `unsupported_target_type`。
+任何情况下都不会虚构场景实体。
+
+#### 多步骤语义对齐接口约定
+
+命令行输出文件可以命名为 `semantic_alignment.json`，其机器可读契约为
+`schemas/driving_intent_alignment.schema.json`；两者分别表示运行产物名称和
+Schema 文件名称，不是两种不同的数据格式。
+
+批量结果顶层字段如下：
+
+| 字段 | 含义 |
+|---|---|
+| `schema_version` | 语义对齐输出契约版本，当前为 `1.0.0` |
+| `request_id` | 原始 DrivingIntent 请求标识 |
+| `world_state_frame_id` | 本次对齐使用的 WorldState 帧标识 |
+| `parse_status` | 上游 DrivingIntent 解析状态 |
+| `alignment_status` | `COMPLETE`、`PARTIAL`、`FAILED` 或 `NOT_REQUIRED` |
+| `target_count` | 需要实体对齐的步骤目标数 |
+| `matched_target_count` | 成功匹配的步骤目标数 |
+| `step_alignments` | 与驾驶步骤一一对应的对齐结果 |
+
+每项 `step_alignments` 包含 `step_id`、`action`、原始 `target`、
+`alignment_required`、`alignment_success`、`candidate_count`、
+`matched_entity` 和 `reason_code`。下游只能在 `alignment_required=true`
+且 `alignment_success=true` 时使用 `matched_entity`；未匹配步骤必须保留
+空实体并依据 `reason_code` 执行等待、跳过或安全停车策略。
+
+对接时必须同时核对 `request_id` 和 `world_state_frame_id`，避免把旧请求或旧帧的
+匹配结果用于当前控制决策。详细字段约束以
+`schemas/driving_intent_alignment.schema.json` 为准。
+
+DrivingIntent `1.2.0` 联调时，场景模块直接读取 `intent.entities[]`、步骤
+`target_ref`、`goal_conditions[]` 和 `trigger.entity_ref`，不会重新解析
+`input.raw_text`。匹配按目标类别、空间关系、规范属性和开放描述进行；只有唯一候选
+才能写入 CARLA/WorldState 对象 ID，多候选、无候选和能力不足均返回可审计失败状态。
+多个步骤引用同一 `entity_id` 时复用同一对齐结果。
+
+在 RTX 5090 上完成 5 条解析到对齐定向联调：唯一红色卡车匹配成功；两辆同属性红色
+卡车被判定为歧义；“第二个路口”因当前缺少路线级序数定位能力而明确失败；ASR
+“又转/右转”疑义和无先行词的 `it` 均在解析阶段返回 `NEEDS_CLARIFICATION`，
+不会进入对齐或控制。最终复测 5/5 行为符合预期，解析平均 `38.22ms`、最大
+`74.43ms`，对齐平均 `0.59ms`、最大 `2.15ms`。复现命令：
+
+```bash
+python -m structured_command_parser.scripts.evaluate_parser_alignment \
+  --model /root/autodl-tmp/models/modernbert-drive-command-compositional
+```
 
 ### 2. 风险评估
 
@@ -466,6 +523,30 @@ PYTHONPATH=. python -m scene_understanding.async_semantics.run_minicpm_scene_inf
 
 实验运行入口位于 `scripts/run_*_control_experiment.py`。实验输出和完整时间线属于运行证据，不提交到源代码目录。
 
+### 最新 CARLA 版本检查与回归
+
+已检查 `origin/lx` 的 `556e30d` 版本。该版本相对当前基础场景增加配置化 5 km 连续
+路线、交通/行人流、前车制动、车辆加塞、行人横穿、检查点恢复和统一终态；`whr`
+分支仍是较早的 8 km 单脚本组织。本次没有把 `lx` 整套目录覆盖到当前工作区。
+
+初始原子场景对照为直行 3/3、行人横穿 3/3、紧急制动 0/3。紧急制动三轮均因
+`keep_lane` 固定沿出生航向而在弯道碰撞 `static.pole`。控制修复后，当前 `main`
+严格紧急制动 3/3：
+
+| 指标 | 三轮结果 |
+|---|---|
+| 场景终态 | 3/3 `safe_stop_after_front_brake` |
+| 触发时主车速度 | 19.384-19.400 km/h |
+| 制动反应时间 | 0.200 s |
+| 最小前车距离 | 11.661-11.938 m |
+| 最终速度 | 0 km/h |
+| 碰撞/非法压线/超速误报 | 0/0/0 |
+| `task_completed` | 3/3 |
+
+`origin/lx` 的 500 m 连续场景检查点另重复 3 次：三轮均到达 500 m，碰撞和非法
+压线均为 0，420 m 前车制动事件三轮均 `COMPLETED`。900 m 加塞和 1350 m 行人
+事件在该检查点范围外，保持 `PENDING`；该结果不表述为完整 5 km 任务完成。
+
 ## 测试
 
 在仓库根目录运行：
@@ -474,7 +555,7 @@ PYTHONPATH=. python -m scene_understanding.async_semantics.run_minicpm_scene_inf
 python -m unittest discover -s scene_understanding/tests -v
 ```
 
-当前测试集共 171 项，覆盖：
+当前测试集共 186 项，全部通过，覆盖：
 
 - JSON 结构和确定性校验；
 - WorldState 坐标与相对运动；
@@ -493,7 +574,8 @@ python -m unittest discover -s scene_understanding/tests -v
 所有稳定 JSON 契约位于 `schemas/`，可直接用于模块间字段确认。示例位于 `schemas/examples/`，包括：
 
 - `world_state.example.json`
-- `semantic_alignment.example.json`
+- `semantic_alignment.example.json`（单对象引用对齐）
+- `driving_intent_alignment.example.json`（DrivingIntent 多步骤批量对齐）
 - `risk_assessment.example.json`
 - `control_decision.example.json`
 - `control_plan_state.example.json`
@@ -505,8 +587,8 @@ python -m unittest discover -s scene_understanding/tests -v
 
 - 三个闭环步骤目前通过持久化 JSON 状态在独立 CARLA 场景中依次验证，并非同一场景进程中的一次连续演示。
 - 当前超车完成条件是超过慢车并稳定保持超车道，尚未包含返回原车道。
-- 风险阈值属于确定性研究规则，需要在更多场景和速度分布中继续标定。
-- 视觉模型已在修正投影后的 36 个隔离 CARLA 关键帧上复测；交通灯小目标定位仍需改进。
+- 风险阈值属于确定性研究规则，当前结果只覆盖已记录的场景和速度分布。
+- 视觉模型已在修正投影后的 36 个隔离 CARLA 关键帧上复测；交通灯小目标定位是当前已知弱项。
 - 当前 BDD100K、nuScenes 各 1,000 帧独立测试和 CARLA 36 帧测试都不替代面向目标
   硬件、目标摄像头和批量场景矩阵的大规模标定。
 - CARLA 启动和 GPU 图形库兼容方式由部署环境决定，不随本模块提交大型镜像或运行产物。
