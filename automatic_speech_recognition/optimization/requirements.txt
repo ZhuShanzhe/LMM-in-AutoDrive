@@ -1,0 +1,8 @@
+cosyvoice
+torch
+torchaudio
+librosa
+soundfile
+pydub
+numpy
+modelscope

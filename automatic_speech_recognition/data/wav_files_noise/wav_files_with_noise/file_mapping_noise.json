@@ -1,0 +1,3002 @@
+[
+  {
+    "index": 1,
+    "original": "park next to the white car on the left",
+    "translation": "把车停在左边那辆白色汽车旁边",
+    "audio_file": "data/wav_files_noise/commands_1_noise.wav"
+  },
+  {
+    "index": 2,
+    "original": "pull over to pick up my father on the right",
+    "translation": "向右靠边停车接我父亲",
+    "audio_file": "data/wav_files_noise/commands_2_noise.wav"
+  },
+  {
+    "index": 3,
+    "original": "that is my friend that we are picking up on the right.",
+    "translation": "那是我们正在接的那个朋友。",
+    "audio_file": "data/wav_files_noise/commands_3_noise.wav"
+  },
+  {
+    "index": 4,
+    "original": "pull over near that bike, it looks just like the one i recently lost!",
+    "translation": "靠边停在那辆自行车旁边，它看起来就像我最近丢失的那一辆！",
+    "audio_file": "data/wav_files_noise/commands_4_noise.wav"
+  },
+  {
+    "index": 5,
+    "original": "switch lanes and drive behind motorcycle",
+    "translation": "换到其他车道，然后在摩托车后面驾驶",
+    "audio_file": "data/wav_files_noise/commands_5_noise.wav"
+  },
+  {
+    "index": 6,
+    "original": "turn left into the driveway past the first trashcan on the left",
+    "translation": "左转进入车道，经过第一个垃圾桶左侧",
+    "audio_file": "data/wav_files_noise/commands_6_noise.wav"
+  },
+  {
+    "index": 7,
+    "original": "park behind that yellow bus",
+    "translation": "把车停在那辆黄巴士后面",
+    "audio_file": "data/wav_files_noise/commands_7_noise.wav"
+  },
+  {
+    "index": 8,
+    "original": "the guy crossing the street looks cute. let him pass!",
+    "translation": "那个过马路的男人看起来很可爱。让他先过去吧！",
+    "audio_file": "data/wav_files_noise/commands_8_noise.wav"
+  },
+  {
+    "index": 9,
+    "original": "turn around and follow that white van.",
+    "translation": "转过身去，跟着那辆白色货车。",
+    "audio_file": "data/wav_files_noise/commands_9_noise.wav"
+  },
+  {
+    "index": 10,
+    "original": "pull up next to this truck so i can say hi to my friend.",
+    "translation": "停在这辆卡车旁边，我可以向我的朋友问好。",
+    "audio_file": "data/wav_files_noise/commands_10_noise.wav"
+  },
+  {
+    "index": 11,
+    "original": "there is where i left my bicycle.  move to the right lane and stop near it. ",
+    "translation": "那就是我停自行车的地方。向右变道，停在它附近。",
+    "audio_file": "data/wav_files_noise/commands_11_noise.wav"
+  },
+  {
+    "index": 12,
+    "original": "stop, the truck on your left side wants to pull out.",
+    "translation": "停下，你左边的卡车想变道。",
+    "audio_file": "data/wav_files_noise/commands_12_noise.wav"
+  },
+  {
+    "index": 13,
+    "original": "change destination and go in the same lane as the white car.",
+    "translation": "改变目的地，继续在同一车道上行驶，就跟那辆白色汽车一样。",
+    "audio_file": "data/wav_files_noise/commands_13_noise.wav"
+  },
+  {
+    "index": 14,
+    "original": "stop the car next to the blue motorcycle.",
+    "translation": "把车停在蓝摩托车旁边。",
+    "audio_file": "data/wav_files_noise/commands_14_noise.wav"
+  },
+  {
+    "index": 15,
+    "original": "go past the black car in the right lane",
+    "translation": "过去右车道那辆黑色的车",
+    "audio_file": "data/wav_files_noise/commands_15_noise.wav"
+  },
+  {
+    "index": 16,
+    "original": "park near that white truck",
+    "translation": "把车停在那辆白色卡车附近",
+    "audio_file": "data/wav_files_noise/commands_16_noise.wav"
+  },
+  {
+    "index": 17,
+    "original": "oh, there is my friend on that hill. stop near the sidewalk next to him.",
+    "translation": "哦，那边山上是我的朋友。停在他旁边的人行道上。",
+    "audio_file": "data/wav_files_noise/commands_17_noise.wav"
+  },
+  {
+    "index": 18,
+    "original": "park next to the white truck.",
+    "translation": "把车停在白色卡车旁边。",
+    "audio_file": "data/wav_files_noise/commands_18_noise.wav"
+  },
+  {
+    "index": 19,
+    "original": "pull over to pick up my brother he is the one coming from inside the building",
+    "translation": "靠边停车去接我弟弟，他从大楼里出来",
+    "audio_file": "data/wav_files_noise/commands_19_noise.wav"
+  },
+  {
+    "index": 20,
+    "original": "please pull up next to the red car, i think i know the driver.",
+    "translation": "请停在那辆红车旁边，我觉得我知道司机。",
+    "audio_file": "data/wav_files_noise/commands_20_noise.wav"
+  },
+  {
+    "index": 21,
+    "original": "pull over near that bicycle",
+    "translation": "就近把车停在那辆自行车附近",
+    "audio_file": "data/wav_files_noise/commands_21_noise.wav"
+  },
+  {
+    "index": 22,
+    "original": "stop at the bike on the left, it looks like my friend's which was stolen.",
+    "translation": "停下左边那辆自行车，看起来像是我朋友的，那辆被偷了。",
+    "audio_file": "data/wav_files_noise/commands_22_noise.wav"
+  },
+  {
+    "index": 23,
+    "original": "follow that large white trailer when we can go again",
+    "translation": "跟着那辆大型白色拖车，当我们可以再去的时候。",
+    "audio_file": "data/wav_files_noise/commands_23_noise.wav"
+  },
+  {
+    "index": 24,
+    "original": "pick up the person waiting here on the corner.",
+    "translation": "将这里角落等待的人接过来。",
+    "audio_file": "data/wav_files_noise/commands_24_noise.wav"
+  },
+  {
+    "index": 25,
+    "original": "keep left so the car does not hit you.",
+    "translation": "请靠左行驶，以免撞到你。",
+    "audio_file": "data/wav_files_noise/commands_25_noise.wav"
+  },
+  {
+    "index": 26,
+    "original": "find parking on the right, up by the car with the lights on",
+    "translation": "在右边找到停车位，靠近那辆亮着灯的车。",
+    "audio_file": "data/wav_files_noise/commands_26_noise.wav"
+  },
+  {
+    "index": 27,
+    "original": "turn right after passing the guy that is standing on the corner of the street",
+    "translation": "右转经过街角站着的人之后",
+    "audio_file": "data/wav_files_noise/commands_27_noise.wav"
+  },
+  {
+    "index": 28,
+    "original": "follow the silver car in front from a safe distance. ",
+    "translation": "保持在前面的银色汽车后面安全距离。",
+    "audio_file": "data/wav_files_noise/commands_28_noise.wav"
+  },
+  {
+    "index": 29,
+    "original": "turn and park behind that car on the left.",
+    "translation": "向那辆左邊的車轉彎並停在它後面。",
+    "audio_file": "data/wav_files_noise/commands_29_noise.wav"
+  },
+  {
+    "index": 30,
+    "original": "catch up with the black truck down the road",
+    "translation": "赶上路那边的黑色卡车",
+    "audio_file": "data/wav_files_noise/commands_30_noise.wav"
+  },
+  {
+    "index": 31,
+    "original": "i think my brother takes that bus, follow it so i can offer him a ride.",
+    "translation": "我觉得我哥哥坐那辆公交车，跟着它我可以给他提供一辆车。",
+    "audio_file": "data/wav_files_noise/commands_31_noise.wav"
+  },
+  {
+    "index": 32,
+    "original": "turn off the engine until the vehicle in front has started moving.",
+    "translation": "熄火直到前面的车辆开始移动。",
+    "audio_file": "data/wav_files_noise/commands_32_noise.wav"
+  },
+  {
+    "index": 33,
+    "original": "park the car near to that construction worker ",
+    "translation": "把车停在那名建筑工人近的地方",
+    "audio_file": "data/wav_files_noise/commands_33_noise.wav"
+  },
+  {
+    "index": 34,
+    "original": "stop next to that person.",
+    "translation": "停在那个人旁边。",
+    "audio_file": "data/wav_files_noise/commands_34_noise.wav"
+  },
+  {
+    "index": 35,
+    "original": "careful, the white truck just crossed the yellow line. ",
+    "translation": "小心，那辆白色的卡车刚刚越过了黄线。",
+    "audio_file": "data/wav_files_noise/commands_35_noise.wav"
+  },
+  {
+    "index": 36,
+    "original": "park behind this black truck",
+    "translation": "把车停在这辆黑色卡车后面",
+    "audio_file": "data/wav_files_noise/commands_36_noise.wav"
+  },
+  {
+    "index": 37,
+    "original": "park in front of that car",
+    "translation": "把车停在那辆汽车前面",
+    "audio_file": "data/wav_files_noise/commands_37_noise.wav"
+  },
+  {
+    "index": 38,
+    "original": "i think that van is parked, slow down and go around it.",
+    "translation": "我认为那辆货车停着了，慢点，绕过去。",
+    "audio_file": "data/wav_files_noise/commands_38_noise.wav"
+  },
+  {
+    "index": 39,
+    "original": "turn where that car is parked.",
+    "translation": "向那辆 parked 的车转。",
+    "audio_file": "data/wav_files_noise/commands_39_noise.wav"
+  },
+  {
+    "index": 40,
+    "original": "drop me off near the car near the trees.",
+    "translation": "把你停在车附近，树附近。",
+    "audio_file": "data/wav_files_noise/commands_40_noise.wav"
+  },
+  {
+    "index": 41,
+    "original": "keep a safe distance from the white car.",
+    "translation": "保持与白色汽车的安全距离。",
+    "audio_file": "data/wav_files_noise/commands_41_noise.wav"
+  },
+  {
+    "index": 42,
+    "original": "get behind the yellow truck",
+    "translation": "跟在黄色卡车后面",
+    "audio_file": "data/wav_files_noise/commands_42_noise.wav"
+  },
+  {
+    "index": 43,
+    "original": "pull up next to those cars",
+    "translation": "紧挨着那些车停下",
+    "audio_file": "data/wav_files_noise/commands_43_noise.wav"
+  },
+  {
+    "index": 44,
+    "original": "turn left and follow the big red truck in front.",
+    "translation": "向左转，跟随前方的大红色卡车。",
+    "audio_file": "data/wav_files_noise/commands_44_noise.wav"
+  },
+  {
+    "index": 45,
+    "original": "go after that white car.",
+    "translation": "追那辆白车。",
+    "audio_file": "data/wav_files_noise/commands_45_noise.wav"
+  },
+  {
+    "index": 46,
+    "original": "pull up next to this black car on our right. ",
+    "translation": "靠近我们右边那辆黑色的车停下。",
+    "audio_file": "data/wav_files_noise/commands_46_noise.wav"
+  },
+  {
+    "index": 47,
+    "original": "we need to pick up the pedestrian standing away from the road on our left. ",
+    "translation": "我们需要从我们左边的路旁接一个站在远处的行人。",
+    "audio_file": "data/wav_files_noise/commands_47_noise.wav"
+  },
+  {
+    "index": 48,
+    "original": "make a right turn where the red car just came from",
+    "translation": "向刚刚那辆红车驶来的方向右转",
+    "audio_file": "data/wav_files_noise/commands_48_noise.wav"
+  },
+  {
+    "index": 49,
+    "original": "pull into the construction site near that guy.",
+    "translation": "驶向那 guy 那个工地。",
+    "audio_file": "data/wav_files_noise/commands_49_noise.wav"
+  },
+  {
+    "index": 50,
+    "original": "pull up close to the white car on the right",
+    "translation": "靠近右边那辆白色的汽车",
+    "audio_file": "data/wav_files_noise/commands_50_noise.wav"
+  },
+  {
+    "index": 51,
+    "original": "there is a pedestrian across the street from here, close to the cross walk. pull up next to the pedestrian and park.",
+    "translation": "前方街上有一行人，靠近人行横道。请停在行人旁边并停车。",
+    "audio_file": "data/wav_files_noise/commands_51_noise.wav"
+  },
+  {
+    "index": 52,
+    "original": "follow the red car",
+    "translation": "跟着那辆红车",
+    "audio_file": "data/wav_files_noise/commands_52_noise.wav"
+  },
+  {
+    "index": 53,
+    "original": "pass this gray car, then pull over and stop",
+    "translation": "通过那辆灰色的车，然后停车停下",
+    "audio_file": "data/wav_files_noise/commands_53_noise.wav"
+  },
+  {
+    "index": 54,
+    "original": "slow down, that might be jane's car - all i know about it is that it is white.",
+    "translation": "慢一点，那可能是简的车——我只知道它是白色的。",
+    "audio_file": "data/wav_files_noise/commands_54_noise.wav"
+  },
+  {
+    "index": 55,
+    "original": "follow this car on the outer left",
+    "translation": "跟在左边那辆车上",
+    "audio_file": "data/wav_files_noise/commands_55_noise.wav"
+  },
+  {
+    "index": 56,
+    "original": "if that is the red truck we are looking for please pull over in front of it.",
+    "translation": "如果那是我们要找的红色卡车，请在它前面停车。",
+    "audio_file": "data/wav_files_noise/commands_56_noise.wav"
+  },
+  {
+    "index": 57,
+    "original": "i see my wife. she is walking on the left side of the road, holding an umbrella. let us pick her up. ",
+    "translation": "我看我的妻子，她正走在路的左边，拿着雨伞。我们去接她吧。",
+    "audio_file": "data/wav_files_noise/commands_57_noise.wav"
+  },
+  {
+    "index": 58,
+    "original": "drop me off near my friend, she should be wearing a black jacket.",
+    "translation": "把你停在离我朋友近的地方，她应该穿着黑色夹克。",
+    "audio_file": "data/wav_files_noise/commands_58_noise.wav"
+  },
+  {
+    "index": 59,
+    "original": "park behind that car",
+    "translation": "把车停在那辆汽车后面",
+    "audio_file": "data/wav_files_noise/commands_59_noise.wav"
+  },
+  {
+    "index": 60,
+    "original": "follow this white people carrier",
+    "translation": "跟著這輛白人卡車",
+    "audio_file": "data/wav_files_noise/commands_60_noise.wav"
+  },
+  {
+    "index": 61,
+    "original": "find me a parking spot near that car on the left.",
+    "translation": "帮我找左边那辆车附近的停车位。",
+    "audio_file": "data/wav_files_noise/commands_61_noise.wav"
+  },
+  {
+    "index": 62,
+    "original": "stop at the crosswalk and allow this pedestrian to cross the street",
+    "translation": "请在人行横道处停车，让这位行人过马路。",
+    "audio_file": "data/wav_files_noise/commands_62_noise.wav"
+  },
+  {
+    "index": 63,
+    "original": "please switch to the lane next to the white barrier.",
+    "translation": "请切换到白色标线旁边的车道。",
+    "audio_file": "data/wav_files_noise/commands_63_noise.wav"
+  },
+  {
+    "index": 64,
+    "original": "reduce your current speed and take a right turn. please yield to the pedestrian who is using the walkway.",
+    "translation": "减速并右转。请让正在使用人行道的行人先行。",
+    "audio_file": "data/wav_files_noise/commands_64_noise.wav"
+  },
+  {
+    "index": 65,
+    "original": "follow the car turning right",
+    "translation": "跟着车右转",
+    "audio_file": "data/wav_files_noise/commands_65_noise.wav"
+  },
+  {
+    "index": 66,
+    "original": "follow the car in front of us when it moves.",
+    "translation": "紧跟在我们前面的车后面行驶。",
+    "audio_file": "data/wav_files_noise/commands_66_noise.wav"
+  },
+  {
+    "index": 67,
+    "original": "park behind the white car.",
+    "translation": "把车停在白色汽车后面。",
+    "audio_file": "data/wav_files_noise/commands_67_noise.wav"
+  },
+  {
+    "index": 68,
+    "original": "drive around the white vehicle on the left, but remain in the left lane.",
+    "translation": "绕左边那辆白色的车辆行驶，但保持在左车道。",
+    "audio_file": "data/wav_files_noise/commands_68_noise.wav"
+  },
+  {
+    "index": 69,
+    "original": "wait here behind this white car as people are getting out of it. ",
+    "translation": "请在这辆白色汽车后面等待，人们正在下车。",
+    "audio_file": "data/wav_files_noise/commands_69_noise.wav"
+  },
+  {
+    "index": 70,
+    "original": "i hope this is the right building. stop near that man with the tie so i can ask him",
+    "translation": "我希望这是正确的建筑。停在那系着领带的男人旁边，我可以问他。",
+    "audio_file": "data/wav_files_noise/commands_70_noise.wav"
+  },
+  {
+    "index": 71,
+    "original": "speed up to pass the car",
+    "translation": "加速通过那辆车",
+    "audio_file": "data/wav_files_noise/commands_71_noise.wav"
+  },
+  {
+    "index": 72,
+    "original": "park in front of that person standing on the right.",
+    "translation": "把车停在那人右边站着的地方。",
+    "audio_file": "data/wav_files_noise/commands_72_noise.wav"
+  },
+  {
+    "index": 73,
+    "original": "park next to that vehicle",
+    "translation": "把车旁边停放",
+    "audio_file": "data/wav_files_noise/commands_73_noise.wav"
+  },
+  {
+    "index": 74,
+    "original": "turn left into the lot that white suv is pulling out of",
+    "translation": "向左转进入那辆白色SUV正在驶出的停车场",
+    "audio_file": "data/wav_files_noise/commands_74_noise.wav"
+  },
+  {
+    "index": 75,
+    "original": "stop next to this bus. i need to get out.",
+    "translation": "请停在这辆公交车旁边，我要下车。",
+    "audio_file": "data/wav_files_noise/commands_75_noise.wav"
+  },
+  {
+    "index": 76,
+    "original": "see that pedestrian crossing the street? let me get out over there. ",
+    "translation": "你看那正在过马路的行人？我过去那边。",
+    "audio_file": "data/wav_files_noise/commands_76_noise.wav"
+  },
+  {
+    "index": 77,
+    "original": "those people will cross the road, slow down.",
+    "translation": "这些人会过马路，减速。",
+    "audio_file": "data/wav_files_noise/commands_77_noise.wav"
+  },
+  {
+    "index": 78,
+    "original": "stop next to that pedestrian.",
+    "translation": "请停在那行人处。",
+    "audio_file": "data/wav_files_noise/commands_78_noise.wav"
+  },
+  {
+    "index": 79,
+    "original": "get closer to that person over there, near the building entrance.",
+    "translation": "靠近那边建筑入口附近的那个人。",
+    "audio_file": "data/wav_files_noise/commands_79_noise.wav"
+  },
+  {
+    "index": 80,
+    "original": "switch lanes and get behind the silver car.",
+    "translation": "换到另一个车道，跟在那辆银色汽车后面。",
+    "audio_file": "data/wav_files_noise/commands_80_noise.wav"
+  },
+  {
+    "index": 81,
+    "original": "that girl close to the curb is my friend, we need to meet before class, please stop ",
+    "translation": "那个靠路边的女孩是我的朋友，我们需要在上课前见面，请停。",
+    "audio_file": "data/wav_files_noise/commands_81_noise.wav"
+  },
+  {
+    "index": 82,
+    "original": "let us stop and ask for directions. slow down and halt next to man on right.",
+    "translation": "让我们停下来问路。慢下来，停在右边的那个人旁边。",
+    "audio_file": "data/wav_files_noise/commands_82_noise.wav"
+  },
+  {
+    "index": 83,
+    "original": "get in the left lane with that red car.",
+    "translation": "跟那辆红车一起进入左车道。",
+    "audio_file": "data/wav_files_noise/commands_83_noise.wav"
+  },
+  {
+    "index": 84,
+    "original": "pull over next to this woman",
+    "translation": "靠边停车，停在这位女士旁边",
+    "audio_file": "data/wav_files_noise/commands_84_noise.wav"
+  },
+  {
+    "index": 85,
+    "original": "pull into the driveway that is behind the first trashcan on the left and turn around",
+    "translation": "停在左边第一个垃圾桶后方的车道上，然后掉头",
+    "audio_file": "data/wav_files_noise/commands_85_noise.wav"
+  },
+  {
+    "index": 86,
+    "original": "switch to the left lane in order to avoid this construction cone",
+    "translation": "请切换到左侧车道以避开这个施工锥桶",
+    "audio_file": "data/wav_files_noise/commands_86_noise.wav"
+  },
+  {
+    "index": 87,
+    "original": "park in front of the cone",
+    "translation": "把车停在锥形物前面",
+    "audio_file": "data/wav_files_noise/commands_87_noise.wav"
+  },
+  {
+    "index": 88,
+    "original": "pull over up here behind the big truck",
+    "translation": "靠边停车，停在这辆大卡车后面",
+    "audio_file": "data/wav_files_noise/commands_88_noise.wav"
+  },
+  {
+    "index": 89,
+    "original": "turn around and park behind that van on the left",
+    "translation": "转过身来，在左边那辆货车后面停车",
+    "audio_file": "data/wav_files_noise/commands_89_noise.wav"
+  },
+  {
+    "index": 90,
+    "original": "turn right into this parking lot, just after the traffic cone",
+    "translation": "向右转进入这个停车场，在交通锥之后 just after the traffic cone 翻译为 在交通锥之后更为准确。因此最终翻译为：\n\n向右转进入这个停车场，在交通锥之后。",
+    "audio_file": "data/wav_files_noise/commands_90_noise.wav"
+  },
+  {
+    "index": 91,
+    "original": "that motorcycle in front of us has stopped, stop behind it.",
+    "translation": "那辆我们前面的摩托车停下了，停在它后面。",
+    "audio_file": "data/wav_files_noise/commands_91_noise.wav"
+  },
+  {
+    "index": 92,
+    "original": "i see my friend mark, slow down and stop near him so i can talk to him.",
+    "translation": "我看见我的朋友马克，慢一点，停在他旁边，我可以和他说话。",
+    "audio_file": "data/wav_files_noise/commands_92_noise.wav"
+  },
+  {
+    "index": 93,
+    "original": "i think that is my boss car, turn left and stop beside it",
+    "translation": "我认为那是我的老板的车，左转停在它旁边。",
+    "audio_file": "data/wav_files_noise/commands_93_noise.wav"
+  },
+  {
+    "index": 94,
+    "original": "get in the left lane to maintain speed and get around the car is slowing down",
+    "translation": "进入左车道以保持速度并绕过减速的那辆车",
+    "audio_file": "data/wav_files_noise/commands_94_noise.wav"
+  },
+  {
+    "index": 95,
+    "original": "speed up so you can pass the truck.",
+    "translation": "加快速度以便能通过那辆卡车。",
+    "audio_file": "data/wav_files_noise/commands_95_noise.wav"
+  },
+  {
+    "index": 96,
+    "original": "turn right after the bus",
+    "translation": "在公交车后转右",
+    "audio_file": "data/wav_files_noise/commands_96_noise.wav"
+  },
+  {
+    "index": 97,
+    "original": "wait for the car coming from the left to pass us. then get behind it. ",
+    "translation": "等待左边驶来的汽车先通过我们，然后跟在它后面。",
+    "audio_file": "data/wav_files_noise/commands_97_noise.wav"
+  },
+  {
+    "index": 98,
+    "original": "go slow past that bike, so i see if it is pete's ",
+    "translation": "慢点，绕过那辆自行车，然后我看看是不是佩特的。",
+    "audio_file": "data/wav_files_noise/commands_98_noise.wav"
+  },
+  {
+    "index": 99,
+    "original": "wait for the black suv to leave, then take its parking spot. ",
+    "translation": "等待黑色SUV离开后，再取它的停车位。",
+    "audio_file": "data/wav_files_noise/commands_99_noise.wav"
+  },
+  {
+    "index": 100,
+    "original": "follow the black car up ahead, get behind it",
+    "translation": "跟在前面那辆黑车后面，然后在它后面。",
+    "audio_file": "data/wav_files_noise/commands_100_noise.wav"
+  },
+  {
+    "index": 101,
+    "original": "turn left into the parking space next to the suv.",
+    "translation": "向左转进入SUV旁边的停车位。",
+    "audio_file": "data/wav_files_noise/commands_101_noise.wav"
+  },
+  {
+    "index": 102,
+    "original": "make a left once that guy finishes crossing the street",
+    "translation": "左转，等那个人穿过马路。",
+    "audio_file": "data/wav_files_noise/commands_102_noise.wav"
+  },
+  {
+    "index": 103,
+    "original": "pick up my son. he is wearing an orange hoodie.",
+    "translation": "来接我儿子。他穿着橙色的夹克。",
+    "audio_file": "data/wav_files_noise/commands_103_noise.wav"
+  },
+  {
+    "index": 104,
+    "original": "pick up that man in the distance on the sidewalk",
+    "translation": "捡起远处人行道上的那个人",
+    "audio_file": "data/wav_files_noise/commands_104_noise.wav"
+  },
+  {
+    "index": 105,
+    "original": "match the speed of the car ahead and get behind it. ",
+    "translation": "跟在前方汽车的车速后并与其保持距离。",
+    "audio_file": "data/wav_files_noise/commands_105_noise.wav"
+  },
+  {
+    "index": 106,
+    "original": "hey! there is a parking spot before the black suv. park there.",
+    "translation": "嘿！前面有一辆黑色的SUV，那里有一个停车位，请停在那里。",
+    "audio_file": "data/wav_files_noise/commands_106_noise.wav"
+  },
+  {
+    "index": 107,
+    "original": "slow down and watch out for that man crossing the road up ahead.",
+    "translation": "减速，注意那前方过马路的男人。",
+    "audio_file": "data/wav_files_noise/commands_107_noise.wav"
+  },
+  {
+    "index": 108,
+    "original": "drop me off near my colleague who is walking on our right side in the blue shirt.",
+    "translation": "把你停在我右边穿蓝色衣服的同事附近。",
+    "audio_file": "data/wav_files_noise/commands_108_noise.wav"
+  },
+  {
+    "index": 109,
+    "original": "stop so you do not hit the bus.",
+    "translation": "停下，以免撞到公交车。",
+    "audio_file": "data/wav_files_noise/commands_109_noise.wav"
+  },
+  {
+    "index": 110,
+    "original": "follow the truck on our left side.",
+    "translation": "跟在我们左边的卡车后面。",
+    "audio_file": "data/wav_files_noise/commands_110_noise.wav"
+  },
+  {
+    "index": 111,
+    "original": "get behind the silver car in the lane to the left",
+    "translation": "在左边车道的银色汽车后面停车",
+    "audio_file": "data/wav_files_noise/commands_111_noise.wav"
+  },
+  {
+    "index": 112,
+    "original": "pull over behind this black suv",
+    "translation": "靠边停车，停在这辆黑色的SUV后面",
+    "audio_file": "data/wav_files_noise/commands_112_noise.wav"
+  },
+  {
+    "index": 113,
+    "original": "pick up my brother, he is wearing a white shirt",
+    "translation": "帮我 Pickup my brother, he is wearing a white shirt",
+    "audio_file": "data/wav_files_noise/commands_113_noise.wav"
+  },
+  {
+    "index": 114,
+    "original": "park one spot away from the red car. ",
+    "translation": "把车停在那辆红车旁边的一个空位上。",
+    "audio_file": "data/wav_files_noise/commands_114_noise.wav"
+  },
+  {
+    "index": 115,
+    "original": "get in front of this car",
+    "translation": "站在这辆车的前面",
+    "audio_file": "data/wav_files_noise/commands_115_noise.wav"
+  },
+  {
+    "index": 116,
+    "original": "turn left after they gray vehicle",
+    "translation": "左转经过那辆灰色的车辆",
+    "audio_file": "data/wav_files_noise/commands_116_noise.wav"
+  },
+  {
+    "index": 117,
+    "original": "drive through the parking lot and park near that grey car on the right ",
+    "translation": "开车穿过停车场，停在右边那辆灰色汽车附近",
+    "audio_file": "data/wav_files_noise/commands_117_noise.wav"
+  },
+  {
+    "index": 118,
+    "original": "turn left after that pedestrian has crossed the road",
+    "translation": "那名行人过马路后左转",
+    "audio_file": "data/wav_files_noise/commands_118_noise.wav"
+  },
+  {
+    "index": 119,
+    "original": "turn right, after the car just ahead of you has passed.",
+    "translation": "向右转，在你前方的一辆车过后。",
+    "audio_file": "data/wav_files_noise/commands_119_noise.wav"
+  },
+  {
+    "index": 120,
+    "original": "turn right when we are past that black truck and find a parking spot.",
+    "translation": "右转，当我们经过那辆黑色卡车后，找一个停车位。",
+    "audio_file": "data/wav_files_noise/commands_120_noise.wav"
+  },
+  {
+    "index": 121,
+    "original": "park next to the white truck on the left ",
+    "translation": "把车停在左边那辆白色卡车旁边",
+    "audio_file": "data/wav_files_noise/commands_121_noise.wav"
+  },
+  {
+    "index": 122,
+    "original": "i'm meeting my husband, he is wearing a white shirt. ",
+    "translation": "我正在见我丈夫，他穿着白色衬衫。",
+    "audio_file": "data/wav_files_noise/commands_122_noise.wav"
+  },
+  {
+    "index": 123,
+    "original": "can we pull up alongside that traffic cone please ",
+    "translation": "请让我们靠近那个交通锥好吗？",
+    "audio_file": "data/wav_files_noise/commands_123_noise.wav"
+  },
+  {
+    "index": 124,
+    "original": "attempt to pass the car ahead, while watching for any construction notices.",
+    "translation": "尝试通过前面的那辆车的同时，注意观察是否有施工告示。",
+    "audio_file": "data/wav_files_noise/commands_124_noise.wav"
+  },
+  {
+    "index": 125,
+    "original": "it looks like the truck ahead might be turning right; slow down behind the truck.",
+    "translation": "看起来前面的卡车可能要右转；请在卡车后面减速。",
+    "audio_file": "data/wav_files_noise/commands_125_noise.wav"
+  },
+  {
+    "index": 126,
+    "original": "go straight. follow that white car that is up ahead in this lane",
+    "translation": "直行。前方这条车道上，跟着那辆白色的车。",
+    "audio_file": "data/wav_files_noise/commands_126_noise.wav"
+  },
+  {
+    "index": 127,
+    "original": "park behind the dark suv up ahead.",
+    "translation": "把车停在前面那辆黑色的SUV后面。",
+    "audio_file": "data/wav_files_noise/commands_127_noise.wav"
+  },
+  {
+    "index": 128,
+    "original": "i need to ask for directions, pull over behind this person.",
+    "translation": "我需要问路，请在这个人后面停车。",
+    "audio_file": "data/wav_files_noise/commands_128_noise.wav"
+  },
+  {
+    "index": 129,
+    "original": "park near this man",
+    "translation": "把车停在这个人附近",
+    "audio_file": "data/wav_files_noise/commands_129_noise.wav"
+  },
+  {
+    "index": 130,
+    "original": "turn right where that car is turning and follow it.",
+    "translation": "向那辆汽车转弯的方向右转并跟随它。",
+    "audio_file": "data/wav_files_noise/commands_130_noise.wav"
+  },
+  {
+    "index": 131,
+    "original": "there is anna, the one wearing an orange umbrella, she said she would meet me at the corner. stop near her.",
+    "translation": "那里有安娜，她拿着一把橙色的伞，她说会在拐角等我。停在她旁边。",
+    "audio_file": "data/wav_files_noise/commands_131_noise.wav"
+  },
+  {
+    "index": 132,
+    "original": "turn left after that suv has passed.",
+    "translation": "左转那辆SUV过后。",
+    "audio_file": "data/wav_files_noise/commands_132_noise.wav"
+  },
+  {
+    "index": 133,
+    "original": "wait for that bike to cross and then make the turn slowly",
+    "translation": "等那辆自行车过去，然后慢慢转弯",
+    "audio_file": "data/wav_files_noise/commands_133_noise.wav"
+  },
+  {
+    "index": 134,
+    "original": "park next to that car",
+    "translation": "把车旁边那辆汽车旁边停车",
+    "audio_file": "data/wav_files_noise/commands_134_noise.wav"
+  },
+  {
+    "index": 135,
+    "original": "drive slower, i want to say hello with that guy.",
+    "translation": "慢点开，我想和那个 guy 打招呼。",
+    "audio_file": "data/wav_files_noise/commands_135_noise.wav"
+  },
+  {
+    "index": 136,
+    "original": "caution big truck, little visibility. ",
+    "translation": "小心大货车，视线不良。",
+    "audio_file": "data/wav_files_noise/commands_136_noise.wav"
+  },
+  {
+    "index": 137,
+    "original": "turn a bit to the right to avoid collapsing with that person",
+    "translation": "稍微向右转以避免与那个人碰撞",
+    "audio_file": "data/wav_files_noise/commands_137_noise.wav"
+  },
+  {
+    "index": 138,
+    "original": "pull up next to the white car",
+    "translation": "停在那辆白色汽车旁边",
+    "audio_file": "data/wav_files_noise/commands_138_noise.wav"
+  },
+  {
+    "index": 139,
+    "original": "find a place to park near the silver car on the right",
+    "translation": "找到右边银色汽车附近可以停车的地方",
+    "audio_file": "data/wav_files_noise/commands_139_noise.wav"
+  },
+  {
+    "index": 140,
+    "original": "evade the parked truck.",
+    "translation": "避开那辆停着的卡车。",
+    "audio_file": "data/wav_files_noise/commands_140_noise.wav"
+  },
+  {
+    "index": 141,
+    "original": "get closer to that car and follow it.",
+    "translation": "靠近那辆车并跟随它。",
+    "audio_file": "data/wav_files_noise/commands_141_noise.wav"
+  },
+  {
+    "index": 142,
+    "original": "turn left and park next to the truck.",
+    "translation": "向左转，在卡车旁边停车。",
+    "audio_file": "data/wav_files_noise/commands_142_noise.wav"
+  },
+  {
+    "index": 143,
+    "original": "turn left at the leftmost barrier up ahead. ",
+    "translation": "在前方第一个障碍物的左边转左。",
+    "audio_file": "data/wav_files_noise/commands_143_noise.wav"
+  },
+  {
+    "index": 144,
+    "original": "drop me off by my friend up ahead. he is standing next to the woman in the white dress",
+    "translation": "把你停在我前面朋友的车里。他站在白裙女子旁边。",
+    "audio_file": "data/wav_files_noise/commands_144_noise.wav"
+  },
+  {
+    "index": 145,
+    "original": "my friend is ahead on the right keep going straight to pick him up",
+    "translation": "我的朋友在右边领先，直走去接他。",
+    "audio_file": "data/wav_files_noise/commands_145_noise.wav"
+  },
+  {
+    "index": 146,
+    "original": "stop next to the first black car parked along the left side of the road",
+    "translation": "请停在马路左侧行车道上的第一辆黑色汽车旁边",
+    "audio_file": "data/wav_files_noise/commands_146_noise.wav"
+  },
+  {
+    "index": 147,
+    "original": "that guy on the left is my friend, pull up just ahead of him so i can pick him up",
+    "translation": "那个人在左边是我的朋友，你往前开一点，我好把他接上。",
+    "audio_file": "data/wav_files_noise/commands_147_noise.wav"
+  },
+  {
+    "index": 148,
+    "original": "stop next to person wearing the red jacked. he is on the right side of the street. ",
+    "translation": "请停在穿红色夹克的人旁边。他站在街道右侧。",
+    "audio_file": "data/wav_files_noise/commands_148_noise.wav"
+  },
+  {
+    "index": 149,
+    "original": "squeeze in to the right of this car to be ready to turn right up here",
+    "translation": "挤到这辆车的右边准备好在这里右转",
+    "audio_file": "data/wav_files_noise/commands_149_noise.wav"
+  },
+  {
+    "index": 150,
+    "original": "find a parking spot near that truck to the right. ",
+    "translation": "找到右边那辆卡车附近的一个停车位。",
+    "audio_file": "data/wav_files_noise/commands_150_noise.wav"
+  },
+  {
+    "index": 151,
+    "original": "wait for the guy with the backpack to pass then turn left. ",
+    "translation": "等待背着背包的人走过然后向左转。",
+    "audio_file": "data/wav_files_noise/commands_151_noise.wav"
+  },
+  {
+    "index": 152,
+    "original": "park on the sidewalk near that person to the left",
+    "translation": "把车停在那人左边的 sidewalk 上",
+    "audio_file": "data/wav_files_noise/commands_152_noise.wav"
+  },
+  {
+    "index": 153,
+    "original": "    remain to the left of the bicycle in front.",
+    "translation": "保持在前面的自行车的左边。",
+    "audio_file": "data/wav_files_noise/commands_153_noise.wav"
+  },
+  {
+    "index": 154,
+    "original": "there is my neighbor johnathan, stop near him so i can speak to him.",
+    "translation": "这就是我的邻居约翰athan，停在他身边，我可以和他说话。",
+    "audio_file": "data/wav_files_noise/commands_154_noise.wav"
+  },
+  {
+    "index": 155,
+    "original": "turn right now, i see mom.",
+    "translation": "现在右转，我看到妈妈了。",
+    "audio_file": "data/wav_files_noise/commands_155_noise.wav"
+  },
+  {
+    "index": 156,
+    "original": "park before that white cars ahead",
+    "translation": "停在那辆辆白车前面",
+    "audio_file": "data/wav_files_noise/commands_156_noise.wav"
+  },
+  {
+    "index": 157,
+    "original": "turn left after the truck.",
+    "translation": "左转过了那辆卡车。",
+    "audio_file": "data/wav_files_noise/commands_157_noise.wav"
+  },
+  {
+    "index": 158,
+    "original": "slow down and stop to let that motorcycle pass",
+    "translation": "减速并停车让那辆摩托车通过",
+    "audio_file": "data/wav_files_noise/commands_158_noise.wav"
+  },
+  {
+    "index": 159,
+    "original": "pass that vehicle on the left",
+    "translation": "把那辆左边的车辆让过去",
+    "audio_file": "data/wav_files_noise/commands_159_noise.wav"
+  },
+  {
+    "index": 160,
+    "original": "move away from that total black truck.",
+    "translation": "远离那辆全黑的卡车。",
+    "audio_file": "data/wav_files_noise/commands_160_noise.wav"
+  },
+  {
+    "index": 161,
+    "original": "park next to the white car on the right",
+    "translation": "把车停在右边那辆白色汽车旁边",
+    "audio_file": "data/wav_files_noise/commands_161_noise.wav"
+  },
+  {
+    "index": 162,
+    "original": "there is a pedestrian in front of us. make a left turn here down the street.",
+    "translation": "前方有一行人。在此左转，沿街行驶。",
+    "audio_file": "data/wav_files_noise/commands_162_noise.wav"
+  },
+  {
+    "index": 163,
+    "original": "speed up to pass the bus",
+    "translation": "加速通过公交车",
+    "audio_file": "data/wav_files_noise/commands_163_noise.wav"
+  },
+  {
+    "index": 164,
+    "original": "i'm looking for my dad in a blue shirt.",
+    "translation": "我在找一个穿蓝色衬衫的父亲。",
+    "audio_file": "data/wav_files_noise/commands_164_noise.wav"
+  },
+  {
+    "index": 165,
+    "original": "stop behind the bus",
+    "translation": "请停在公交车后面",
+    "audio_file": "data/wav_files_noise/commands_165_noise.wav"
+  },
+  {
+    "index": 166,
+    "original": "turn in the parking lot before the parked bus.",
+    "translation": "将车停在停着的公交车前面的停车场。",
+    "audio_file": "data/wav_files_noise/commands_166_noise.wav"
+  },
+  {
+    "index": 167,
+    "original": "turn right here before the pedestrians start to cross",
+    "translation": "在这里转右，然后在行人开始过马路时停下",
+    "audio_file": "data/wav_files_noise/commands_167_noise.wav"
+  },
+  {
+    "index": 168,
+    "original": "slow down and veer right to avoid the dude on the scooter trike ahead of us.",
+    "translation": "减速并向右避让在我们前面的那辆滑板三轮车上的人。",
+    "audio_file": "data/wav_files_noise/commands_168_noise.wav"
+  },
+  {
+    "index": 169,
+    "original": "get closer to the car in front and drive at the same speed as the car.",
+    "translation": "靠近前车并保持与前车相同的速度。",
+    "audio_file": "data/wav_files_noise/commands_169_noise.wav"
+  },
+  {
+    "index": 170,
+    "original": "see that car over there, i want to check it out bring the car to a full stop when i'm in front of it.",
+    "translation": "看那边那辆汽车，我想过去看看。当我在它前面时，把车停稳。",
+    "audio_file": "data/wav_files_noise/commands_170_noise.wav"
+  },
+  {
+    "index": 171,
+    "original": "go around this vehicle and then make a right turn into the parking.",
+    "translation": "绕过这辆车然后向右转进入停车场。",
+    "audio_file": "data/wav_files_noise/commands_171_noise.wav"
+  },
+  {
+    "index": 172,
+    "original": "turn right after the second van has passed.",
+    "translation": "在第二辆货车过后转右。",
+    "audio_file": "data/wav_files_noise/commands_172_noise.wav"
+  },
+  {
+    "index": 173,
+    "original": "park behind the white car on the right.",
+    "translation": "把车停在右边那辆白色汽车后面。",
+    "audio_file": "data/wav_files_noise/commands_173_noise.wav"
+  },
+  {
+    "index": 174,
+    "original": "that is mike's car! parallel park behind the first car on the left.",
+    "translation": "那是迈克的车！并排停在左边第一辆车后面。",
+    "audio_file": "data/wav_files_noise/commands_174_noise.wav"
+  },
+  {
+    "index": 175,
+    "original": "stop and put hazards on so we can pick up mike, the guy in the white shirt. ",
+    "translation": "停下来看看，把障碍物移开，我们才能把穿白衬衫的 mike 拿起来。",
+    "audio_file": "data/wav_files_noise/commands_175_noise.wav"
+  },
+  {
+    "index": 176,
+    "original": "i see there is a parking spot before that truck up ahead. park there.",
+    "translation": "我看那辆卡车前面有个停车位。停那。",
+    "audio_file": "data/wav_files_noise/commands_176_noise.wav"
+  },
+  {
+    "index": 177,
+    "original": "park next to that vehicle next to the white car",
+    "translation": "把车旁边那辆车旁边停车",
+    "audio_file": "data/wav_files_noise/commands_177_noise.wav"
+  },
+  {
+    "index": 178,
+    "original": "my motorcycle is parked near the tree, drop me off there! ",
+    "translation": "我的摩托车停在树旁边，送我到那里！",
+    "audio_file": "data/wav_files_noise/commands_178_noise.wav"
+  },
+  {
+    "index": 179,
+    "original": "slow down by the forklift",
+    "translation": "减速，靠近叉车",
+    "audio_file": "data/wav_files_noise/commands_179_noise.wav"
+  },
+  {
+    "index": 180,
+    "original": "turn right after you have passed that car.",
+    "translation": "转过那辆汽车后向右转。",
+    "audio_file": "data/wav_files_noise/commands_180_noise.wav"
+  },
+  {
+    "index": 181,
+    "original": "i wonder how those traffic cones are made, could you stop next to it so i can inspect it?",
+    "translation": "我想知道那些交通锥是怎么做的，你能停在它旁边让我检查一下吗？",
+    "audio_file": "data/wav_files_noise/commands_181_noise.wav"
+  },
+  {
+    "index": 182,
+    "original": "follow the white suv",
+    "translation": "跟着白色的SUV",
+    "audio_file": "data/wav_files_noise/commands_182_noise.wav"
+  },
+  {
+    "index": 183,
+    "original": "park next to this truck, that is my friend. ",
+    "translation": "把车旁边停好，那是我的朋友。",
+    "audio_file": "data/wav_files_noise/commands_183_noise.wav"
+  },
+  {
+    "index": 184,
+    "original": "be careful, do not go ! there is a  adult pedestrian walking in front of your car.",
+    "translation": "小心，不要过去！前面你的车有一名成年人在行走。",
+    "audio_file": "data/wav_files_noise/commands_184_noise.wav"
+  },
+  {
+    "index": 185,
+    "original": "we need to be where that man is standing on the road. go there please.",
+    "translation": "我们需要那个人站在路边的位置。请去那里。",
+    "audio_file": "data/wav_files_noise/commands_185_noise.wav"
+  },
+  {
+    "index": 186,
+    "original": "drop me off near the first traffic cone.",
+    "translation": "把你停在第一个交通锥附近。",
+    "audio_file": "data/wav_files_noise/commands_186_noise.wav"
+  },
+  {
+    "index": 187,
+    "original": "park my car behind that black car on the right",
+    "translation": "把我的车停在右边那辆黑色车后面",
+    "audio_file": "data/wav_files_noise/commands_187_noise.wav"
+  },
+  {
+    "index": 188,
+    "original": "let us go to where that truck is",
+    "translation": "让我们去那辆卡车所在的地方。",
+    "audio_file": "data/wav_files_noise/commands_188_noise.wav"
+  },
+  {
+    "index": 189,
+    "original": "could you stop at the same level as that silver car?",
+    "translation": "你能停在那辆银色汽车同一水平吗？",
+    "audio_file": "data/wav_files_noise/commands_189_noise.wav"
+  },
+  {
+    "index": 190,
+    "original": "could you get me to that construction vehicle please?",
+    "translation": "你能帮我把那辆 construction vehicle 拿过来吗？",
+    "audio_file": "data/wav_files_noise/commands_190_noise.wav"
+  },
+  {
+    "index": 191,
+    "original": "get into the right hand lane so we can follow the white suv",
+    "translation": "请进入右侧车道，我们可以跟在那辆白色SUV后面。",
+    "audio_file": "data/wav_files_noise/commands_191_noise.wav"
+  },
+  {
+    "index": 192,
+    "original": "if this is bastian's car then pull over.",
+    "translation": "如果这是巴斯丁的车，那就靠边停车。",
+    "audio_file": "data/wav_files_noise/commands_192_noise.wav"
+  },
+  {
+    "index": 193,
+    "original": "turn around and stop by the traffic cones.",
+    "translation": "转身停在交通锥旁。",
+    "audio_file": "data/wav_files_noise/commands_193_noise.wav"
+  },
+  {
+    "index": 194,
+    "original": "go straight past the black car.",
+    "translation": "直行过去那辆黑色的车。",
+    "audio_file": "data/wav_files_noise/commands_194_noise.wav"
+  },
+  {
+    "index": 195,
+    "original": "follow this car around the right turn.",
+    "translation": "跟着这辆车转右弯。",
+    "audio_file": "data/wav_files_noise/commands_195_noise.wav"
+  },
+  {
+    "index": 196,
+    "original": "that man on the left,with the darke clothes, looks like my husband, stop next to him.",
+    "translation": "那个人在左边，穿着黑色衣服的，看起来像我丈夫，停在他旁边。",
+    "audio_file": "data/wav_files_noise/commands_196_noise.wav"
+  },
+  {
+    "index": 197,
+    "original": "park at the parking spot behind the red car",
+    "translation": "把车停在红车后面的停车位上",
+    "audio_file": "data/wav_files_noise/commands_197_noise.wav"
+  },
+  {
+    "index": 198,
+    "original": "quickly go to the left turn lane and make a you turn and follow the car on the left that is going in the opposite direction",
+    "translation": "迅速前往左转车道，做一次左转，并跟随左边那辆正在相反方向行驶的车。",
+    "audio_file": "data/wav_files_noise/commands_198_noise.wav"
+  },
+  {
+    "index": 199,
+    "original": "park beside this man at the bus stop",
+    "translation": "把车停在这位男士的旁边等公交车",
+    "audio_file": "data/wav_files_noise/commands_199_noise.wav"
+  },
+  {
+    "index": 200,
+    "original": "park in front of that truck.",
+    "translation": "把车停在那辆卡车前面。",
+    "audio_file": "data/wav_files_noise/commands_200_noise.wav"
+  },
+  {
+    "index": 201,
+    "original": "stop next to the person that is walking towards us. i know her from high school, i will offer her a ride home. ",
+    "translation": "停下脚步站在朝我们走来的人旁边。我知道她是高中的同学，我将给她送回家。",
+    "audio_file": "data/wav_files_noise/commands_201_noise.wav"
+  },
+  {
+    "index": 202,
+    "original": "park near this person.",
+    "translation": "把车停在这个人附近。",
+    "audio_file": "data/wav_files_noise/commands_202_noise.wav"
+  },
+  {
+    "index": 203,
+    "original": "let the white car pass, than make a you-turn",
+    "translation": "让白色汽车先通过，然后做右转。",
+    "audio_file": "data/wav_files_noise/commands_203_noise.wav"
+  },
+  {
+    "index": 204,
+    "original": "my wife should be behind this grey jeep. turn and pick her up.",
+    "translation": "我的妻子应该在那辆灰色吉普车后面。转过身去接她。",
+    "audio_file": "data/wav_files_noise/commands_204_noise.wav"
+  },
+  {
+    "index": 205,
+    "original": "stop next to the truck.",
+    "translation": "请停在卡车旁边。",
+    "audio_file": "data/wav_files_noise/commands_205_noise.wav"
+  },
+  {
+    "index": 206,
+    "original": "change destination and turn left after the truck.",
+    "translation": "更改目的地，在卡车后转弯左转。",
+    "audio_file": "data/wav_files_noise/commands_206_noise.wav"
+  },
+  {
+    "index": 207,
+    "original": "parallel park behind the white car on the right side of the road",
+    "translation": "并排停在路右边那辆白色的车后方",
+    "audio_file": "data/wav_files_noise/commands_207_noise.wav"
+  },
+  {
+    "index": 208,
+    "original": "follow the car in the right lane in front of us",
+    "translation": "紧跟我们前方右车道的那辆车",
+    "audio_file": "data/wav_files_noise/commands_208_noise.wav"
+  },
+  {
+    "index": 209,
+    "original": "hey my friend is right there in that car, park my car as close as possible",
+    "translation": "嘿，我朋友就在那辆车上，把我的车停得尽可能近一些。",
+    "audio_file": "data/wav_files_noise/commands_209_noise.wav"
+  },
+  {
+    "index": 210,
+    "original": "i know the man wearing the long black sleeve shirt, pull up next to him",
+    "translation": "我知道那穿长袖黑衬衫的男人，停在他旁边。",
+    "audio_file": "data/wav_files_noise/commands_210_noise.wav"
+  },
+  {
+    "index": 211,
+    "original": "find a place to stop near my friends bike on the right",
+    "translation": "找到一个靠近我朋友右边自行车的地方停车",
+    "audio_file": "data/wav_files_noise/commands_211_noise.wav"
+  },
+  {
+    "index": 212,
+    "original": "pull up next to the man sitting on the bench placed in front of the wall on the left side of the street.",
+    "translation": "停在左边街道那堵墙前的长椅上坐着的男人旁边。",
+    "audio_file": "data/wav_files_noise/commands_212_noise.wav"
+  },
+  {
+    "index": 213,
+    "original": "there is a vehicle ahead of us in the lane next to us. pull up alongside that vehicle and match their speed.",
+    "translation": "在我们旁边的车道上，有一辆车在我们前面。靠到那辆车旁边，并匹配他们的速度。",
+    "audio_file": "data/wav_files_noise/commands_213_noise.wav"
+  },
+  {
+    "index": 214,
+    "original": "take a left and continue through the parking lot where that truck is parked",
+    "translation": "向左转，继续穿过那辆卡车停放的停车场",
+    "audio_file": "data/wav_files_noise/commands_214_noise.wav"
+  },
+  {
+    "index": 215,
+    "original": "pull over in front of that pedestrian in white clothing.",
+    "translation": "把车停在那个白色衣服的行人前面。",
+    "audio_file": "data/wav_files_noise/commands_215_noise.wav"
+  },
+  {
+    "index": 216,
+    "original": "that is my friend's bicycle. pull up next to it.",
+    "translation": "那就是我朋友的自行车。停在它旁边。",
+    "audio_file": "data/wav_files_noise/commands_216_noise.wav"
+  },
+  {
+    "index": 217,
+    "original": "pull over behind the white truck",
+    "translation": "靠到白色卡车后面停车",
+    "audio_file": "data/wav_files_noise/commands_217_noise.wav"
+  },
+  {
+    "index": 218,
+    "original": "let the truck pass first then continue straight ahead",
+    "translation": "让卡车先通过，然后直行。",
+    "audio_file": "data/wav_files_noise/commands_218_noise.wav"
+  },
+  {
+    "index": 219,
+    "original": "wait for the oncoming car to pass and then proceed",
+    "translation": "等待前方车辆驶过后再行进",
+    "audio_file": "data/wav_files_noise/commands_219_noise.wav"
+  },
+  {
+    "index": 220,
+    "original": "that man looks like a local, pull up next to him so i can ask for directions.",
+    "translation": "那个人看起来像是当地人，靠近他一点，我可以向他问路。",
+    "audio_file": "data/wav_files_noise/commands_220_noise.wav"
+  },
+  {
+    "index": 221,
+    "original": "park behind the red car",
+    "translation": "把车停在红车后面",
+    "audio_file": "data/wav_files_noise/commands_221_noise.wav"
+  },
+  {
+    "index": 222,
+    "original": "proceed with caution in case that car on the left pulls out in front of you.",
+    "translation": "谨慎驾驶，以防左边的那辆车突然向前开到你前面。",
+    "audio_file": "data/wav_files_noise/commands_222_noise.wav"
+  },
+  {
+    "index": 223,
+    "original": "stop ahead and let that person on the right cross the street.",
+    "translation": "前方停车，让右边的人先过马路。",
+    "audio_file": "data/wav_files_noise/commands_223_noise.wav"
+  },
+  {
+    "index": 224,
+    "original": "the truck on the right has the furniture for the office in it. pull up behind it so i can unload it.",
+    "translation": "右边的卡车里装着办公室用的家具，请停在我后面，我好卸货。",
+    "audio_file": "data/wav_files_noise/commands_224_noise.wav"
+  },
+  {
+    "index": 225,
+    "original": "follow that bus!",
+    "translation": "跟着那辆公交车！",
+    "audio_file": "data/wav_files_noise/commands_225_noise.wav"
+  },
+  {
+    "index": 226,
+    "original": "watch out for the motorcycle passing you to your left, stay on the right side of the lane",
+    "translation": "注意左边车道驶过的摩托车，保持在右侧车道上。",
+    "audio_file": "data/wav_files_noise/commands_226_noise.wav"
+  },
+  {
+    "index": 227,
+    "original": "there is a car in the lane adjacent to us. merge into the right hand lane and follow that vehicle.",
+    "translation": "在我们旁边的车道上有一辆汽车。请并入右侧车道并跟随那辆车辆。",
+    "audio_file": "data/wav_files_noise/commands_227_noise.wav"
+  },
+  {
+    "index": 228,
+    "original": "drop me off next to that traffic cone",
+    "translation": "把车停在那交通锥旁边",
+    "audio_file": "data/wav_files_noise/commands_228_noise.wav"
+  },
+  {
+    "index": 229,
+    "original": "pass that car that just pulled into my lane. ",
+    "translation": "通过那辆刚刚开进我车道的车。",
+    "audio_file": "data/wav_files_noise/commands_229_noise.wav"
+  },
+  {
+    "index": 230,
+    "original": "park up ahead to see frank who is near that red car.",
+    "translation": "停在前方看弗兰克，他靠近那辆红车。",
+    "audio_file": "data/wav_files_noise/commands_230_noise.wav"
+  },
+  {
+    "index": 231,
+    "original": "i think josh has his bike over there. see if there is parking further up, closer to the bike rack.",
+    "translation": "我觉得Josh的自行车在那边。去看看再往上一点的地方是否有停车位，离自行车架更近一些。",
+    "audio_file": "data/wav_files_noise/commands_231_noise.wav"
+  },
+  {
+    "index": 232,
+    "original": "find a spot to park briefly so we can pick up sam who is over there on the left. ",
+    "translation": "找个地方短停一下，我们可以去左边那里接Sam。",
+    "audio_file": "data/wav_files_noise/commands_232_noise.wav"
+  },
+  {
+    "index": 233,
+    "original": "follow the mazda",
+    "translation": "跟随马自达",
+    "audio_file": "data/wav_files_noise/commands_233_noise.wav"
+  },
+  {
+    "index": 234,
+    "original": "stop next to the person on the left. i need to pick him up",
+    "translation": "停在左边的人旁边。我需要把他接过来。",
+    "audio_file": "data/wav_files_noise/commands_234_noise.wav"
+  },
+  {
+    "index": 235,
+    "original": "pull in next to that black car in the parking lot across the street.",
+    "translation": "靠近街对面停车场那辆黑色的车旁边停下。",
+    "audio_file": "data/wav_files_noise/commands_235_noise.wav"
+  },
+  {
+    "index": 236,
+    "original": "stop next to that car, i want to talk with the driver",
+    "translation": "请停在那辆汽车旁边，我想和司机说话。",
+    "audio_file": "data/wav_files_noise/commands_236_noise.wav"
+  },
+  {
+    "index": 237,
+    "original": "park behind the bus.",
+    "translation": "把车停在公交车后面。",
+    "audio_file": "data/wav_files_noise/commands_237_noise.wav"
+  },
+  {
+    "index": 238,
+    "original": "turn left up here, between the lamppost and the dark colored parked car facing us",
+    "translation": "左转在这里，在我们面前的路灯和那辆朝我们停放的黑色汽车之间",
+    "audio_file": "data/wav_files_noise/commands_238_noise.wav"
+  },
+  {
+    "index": 239,
+    "original": "this is redish car is my mom's car, which i told her i would pick up. pull up next to it so i can get out.",
+    "translation": "这是一辆红棕色的车是我的妈妈的车，我告诉她我会去接她。停在它旁边，我就可以下车了。",
+    "audio_file": "data/wav_files_noise/commands_239_noise.wav"
+  },
+  {
+    "index": 240,
+    "original": "there she is. pull over here so i can pick up my girlfriend.",
+    "translation": "那就是她，我停在这里来接我的女朋友。",
+    "audio_file": "data/wav_files_noise/commands_240_noise.wav"
+  },
+  {
+    "index": 241,
+    "original": "find me a parking spot near the cars on our right",
+    "translation": "找一个靠近我们右边那辆车附近的停车位",
+    "audio_file": "data/wav_files_noise/commands_241_noise.wav"
+  },
+  {
+    "index": 242,
+    "original": "you can just drop me next to that person. thanks for the ride!",
+    "translation": "你可以直接把车停在那个人旁边。谢谢送我！",
+    "audio_file": "data/wav_files_noise/commands_242_noise.wav"
+  },
+  {
+    "index": 243,
+    "original": "park here on the right, somewhere in the space in front of that green bin",
+    "translation": "请在这里右侧停车，停在那绿色垃圾桶前面的空位上。",
+    "audio_file": "data/wav_files_noise/commands_243_noise.wav"
+  },
+  {
+    "index": 244,
+    "original": "see that pedestrian over on the left corner. we need to pick him up from work. ",
+    "translation": "看左边角落的那个行人。我们需要从他工作的地方把他接过来。",
+    "audio_file": "data/wav_files_noise/commands_244_noise.wav"
+  },
+  {
+    "index": 245,
+    "original": "pull up to the side of the road to pick up that person.",
+    "translation": "靠边停车去接那个人。",
+    "audio_file": "data/wav_files_noise/commands_245_noise.wav"
+  },
+  {
+    "index": 246,
+    "original": "pull up next to the black suv on the right. ",
+    "translation": "靠右停在黑色的SUV旁边。",
+    "audio_file": "data/wav_files_noise/commands_246_noise.wav"
+  },
+  {
+    "index": 247,
+    "original": "park near the car in the shade.",
+    "translation": "把车停在树荫下的停车场。",
+    "audio_file": "data/wav_files_noise/commands_247_noise.wav"
+  },
+  {
+    "index": 248,
+    "original": "park on the right behind the white car.",
+    "translation": "把车停在那辆白色汽车右边的前方。",
+    "audio_file": "data/wav_files_noise/commands_248_noise.wav"
+  },
+  {
+    "index": 249,
+    "original": "oh, i see my daughter. she is walking on our left, stop next to her.",
+    "translation": "哦，我看到我女儿了。她正在我们左边走，停在她旁边。",
+    "audio_file": "data/wav_files_noise/commands_249_noise.wav"
+  },
+  {
+    "index": 250,
+    "original": "wait for that taxi to move, i want to follow it.",
+    "translation": "等那辆出租车动起来，我想跟着它。",
+    "audio_file": "data/wav_files_noise/commands_250_noise.wav"
+  },
+  {
+    "index": 251,
+    "original": "please park in front of the bus",
+    "translation": "请将车停在公交车前",
+    "audio_file": "data/wav_files_noise/commands_251_noise.wav"
+  },
+  {
+    "index": 252,
+    "original": "after the bike has passed, enter the roundabout.",
+    "translation": "在自行车通过后，进入环岛。",
+    "audio_file": "data/wav_files_noise/commands_252_noise.wav"
+  },
+  {
+    "index": 253,
+    "original": "i changed my mind. check that it is clear and follow this truck.",
+    "translation": "我改变了主意。请确认清楚并按照这辆卡车行动。",
+    "audio_file": "data/wav_files_noise/commands_253_noise.wav"
+  },
+  {
+    "index": 254,
+    "original": "stop in front of that white chevy, i want to see if it belongs to a friend of mine ",
+    "translation": "停在那辆白色雪佛兰前，我想看看是不是我朋友的车",
+    "audio_file": "data/wav_files_noise/commands_254_noise.wav"
+  },
+  {
+    "index": 255,
+    "original": "stop in a safe place next to the construction worker, i would like to talk to him",
+    "translation": "请停在一个安全的地方，靠近那个建筑工人，我想和他谈谈。",
+    "audio_file": "data/wav_files_noise/commands_255_noise.wav"
+  },
+  {
+    "index": 256,
+    "original": "there is a vehicle parked on the street to our right. make a right turn and proceed down that street.",
+    "translation": "有一辆车停在我们右边的街上。向右转，沿着那条街行驶。",
+    "audio_file": "data/wav_files_noise/commands_256_noise.wav"
+  },
+  {
+    "index": 257,
+    "original": "turn right by the pedestrian",
+    "translation": "在人行道右转",
+    "audio_file": "data/wav_files_noise/commands_257_noise.wav"
+  },
+  {
+    "index": 258,
+    "original": "stop to talk to driver of the oncoming car",
+    "translation": "停下和对面来车的司机说话",
+    "audio_file": "data/wav_files_noise/commands_258_noise.wav"
+  },
+  {
+    "index": 259,
+    "original": "park near the car under the trees.",
+    "translation": "把车停在树下的停车场。",
+    "audio_file": "data/wav_files_noise/commands_259_noise.wav"
+  },
+  {
+    "index": 260,
+    "original": "that is jack way up there across the street. can we turn around whenever it is possible? i need to meet him. ",
+    "translation": "那是杰克在街对面很远的地方。我们可以随时调头吗？我需要见他。",
+    "audio_file": "data/wav_files_noise/commands_260_noise.wav"
+  },
+  {
+    "index": 261,
+    "original": "park in the car park where the white jeep is over on the right",
+    "translation": "把车停在那辆白色吉普车右边的停车场里。",
+    "audio_file": "data/wav_files_noise/commands_261_noise.wav"
+  },
+  {
+    "index": 262,
+    "original": "there is a man way up ahead by that crosswalk who is about to cross the street. slow down. ",
+    "translation": "前方十字路口有一人即将穿过马路，减速。",
+    "audio_file": "data/wav_files_noise/commands_262_noise.wav"
+  },
+  {
+    "index": 263,
+    "original": "wait for this guy to move out the way to enter the construction site",
+    "translation": "等这个人挪出路来进入施工场地",
+    "audio_file": "data/wav_files_noise/commands_263_noise.wav"
+  },
+  {
+    "index": 264,
+    "original": "bessie usually buys cheesy corn puffs from me on this corner. pull up to the curb and roll down the driver's seat window.",
+    "translation": "贝西通常会在这个角落里从我这里买酥脆玉米片。停在人行道边，降下车窗。",
+    "audio_file": "data/wav_files_noise/commands_264_noise.wav"
+  },
+  {
+    "index": 265,
+    "original": "wait for that car to pass before left turning.",
+    "translation": "等待那辆车过去再左转。",
+    "audio_file": "data/wav_files_noise/commands_265_noise.wav"
+  },
+  {
+    "index": 266,
+    "original": "slow down in case that truck on the left reverses.",
+    "translation": "减速以防左边的卡车倒车。",
+    "audio_file": "data/wav_files_noise/commands_266_noise.wav"
+  },
+  {
+    "index": 267,
+    "original": "slow down and let the bus start turning before passing it",
+    "translation": "减速，在公交车开始转弯之前通过它",
+    "audio_file": "data/wav_files_noise/commands_267_noise.wav"
+  },
+  {
+    "index": 268,
+    "original": "stop behind the black car",
+    "translation": "停在黑色的车后面",
+    "audio_file": "data/wav_files_noise/commands_268_noise.wav"
+  },
+  {
+    "index": 269,
+    "original": "park next to my friend who is walking on the other side of the road. ",
+    "translation": "把车停在朋友旁边，他正在路的另一边散步。",
+    "audio_file": "data/wav_files_noise/commands_269_noise.wav"
+  },
+  {
+    "index": 270,
+    "original": "do you see that silver suv parked on the side of the road over there? we need to park in front of it.",
+    "translation": "你看那边路边那辆银色的SUV吗？我们需要把它前面停车。",
+    "audio_file": "data/wav_files_noise/commands_270_noise.wav"
+  },
+  {
+    "index": 271,
+    "original": "make a quick stop near the man on the right side of the road.",
+    "translation": "在路右边那人的近处做一个短暂的停靠。",
+    "audio_file": "data/wav_files_noise/commands_271_noise.wav"
+  },
+  {
+    "index": 272,
+    "original": "park beside the garbage can ahead",
+    "translation": "把车停在前方的垃圾桶旁",
+    "audio_file": "data/wav_files_noise/commands_272_noise.wav"
+  },
+  {
+    "index": 273,
+    "original": "turn left when you get to that man up ahead",
+    "translation": "左转，当你看到那前方的男人时。",
+    "audio_file": "data/wav_files_noise/commands_273_noise.wav"
+  },
+  {
+    "index": 274,
+    "original": "head down the same road as the white car in front.",
+    "translation": "低着头跟在前面那辆白车后面。",
+    "audio_file": "data/wav_files_noise/commands_274_noise.wav"
+  },
+  {
+    "index": 275,
+    "original": "follow that car and take the next right",
+    "translation": "跟着那辆车，然后转下一个右弯",
+    "audio_file": "data/wav_files_noise/commands_275_noise.wav"
+  },
+  {
+    "index": 276,
+    "original": "there is a vehicle in front of us. follow that vehicle.",
+    "translation": "前面有一辆车。跟着那辆车。",
+    "audio_file": "data/wav_files_noise/commands_276_noise.wav"
+  },
+  {
+    "index": 277,
+    "original": "slow down and park in front of the second vehicle we have on our right. ",
+    "translation": "减速并在我们右边第二辆车前停车。",
+    "audio_file": "data/wav_files_noise/commands_277_noise.wav"
+  },
+  {
+    "index": 278,
+    "original": "get behind the truck on the left",
+    "translation": "在左边的卡车后面待着",
+    "audio_file": "data/wav_files_noise/commands_278_noise.wav"
+  },
+  {
+    "index": 279,
+    "original": "park beside  the motorcycle up ahead",
+    "translation": "把车停在前方的摩托车旁边",
+    "audio_file": "data/wav_files_noise/commands_279_noise.wav"
+  },
+  {
+    "index": 280,
+    "original": "could you please drop me off next to that second construction vehicle?",
+    "translation": "你能把车停在那辆第二辆施工车辆旁边吗？",
+    "audio_file": "data/wav_files_noise/commands_280_noise.wav"
+  },
+  {
+    "index": 281,
+    "original": "follow this van.",
+    "translation": "跟着这辆货车。",
+    "audio_file": "data/wav_files_noise/commands_281_noise.wav"
+  },
+  {
+    "index": 282,
+    "original": "turn around and follow the black car on the left.",
+    "translation": "向左转并跟随那辆黑色的车。",
+    "audio_file": "data/wav_files_noise/commands_282_noise.wav"
+  },
+  {
+    "index": 283,
+    "original": "please find parking near the white car on the left.",
+    "translation": "请找到左边那辆白色汽车旁边的停车位。",
+    "audio_file": "data/wav_files_noise/commands_283_noise.wav"
+  },
+  {
+    "index": 284,
+    "original": "when turning, stop for the woman in black.",
+    "translation": "转弯时，请为黑色衣服的女人停下。",
+    "audio_file": "data/wav_files_noise/commands_284_noise.wav"
+  },
+  {
+    "index": 285,
+    "original": "get closer to the car in front of us",
+    "translation": "靠近我们前面的那辆车",
+    "audio_file": "data/wav_files_noise/commands_285_noise.wav"
+  },
+  {
+    "index": 286,
+    "original": "the suspect is still moving around on his motorcycle. stay close to him",
+    "translation": "嫌疑人仍然骑着摩托车四处游荡。跟紧他。",
+    "audio_file": "data/wav_files_noise/commands_286_noise.wav"
+  },
+  {
+    "index": 287,
+    "original": "see those people up ahead and to the left? we need to turn left there and drive past them. ",
+    "translation": "看那边前方和左边的人？我们需要在那里左转并驶过他们。",
+    "audio_file": "data/wav_files_noise/commands_287_noise.wav"
+  },
+  {
+    "index": 288,
+    "original": " merge into the lane of this car.",
+    "translation": "融入这辆车所在的车道。",
+    "audio_file": "data/wav_files_noise/commands_288_noise.wav"
+  },
+  {
+    "index": 289,
+    "original": "that is henry's mazda. follow it. ",
+    "translation": "那是henry的mazda，跟着它。",
+    "audio_file": "data/wav_files_noise/commands_289_noise.wav"
+  },
+  {
+    "index": 290,
+    "original": "hey that is my friend over there by the sidewalk near the trees, park my car as close as possible ",
+    "translation": "嘿，那边树边的那就是我的朋友了，把车停得尽可能近一些。",
+    "audio_file": "data/wav_files_noise/commands_290_noise.wav"
+  },
+  {
+    "index": 291,
+    "original": "see that black car after passing it make the first turn to the right",
+    "translation": "看过了那辆黑色的车后，做第一个右转。",
+    "audio_file": "data/wav_files_noise/commands_291_noise.wav"
+  },
+  {
+    "index": 292,
+    "original": "i think the driver of this car in front of us is wasted. better slow down then.",
+    "translation": "我觉得我们前面那辆车的司机太浪费了，最好减速。",
+    "audio_file": "data/wav_files_noise/commands_292_noise.wav"
+  },
+  {
+    "index": 293,
+    "original": "park across the street from that pedestrian walking on the left. ",
+    "translation": "把车停在那行人左边街道对面。",
+    "audio_file": "data/wav_files_noise/commands_293_noise.wav"
+  },
+  {
+    "index": 294,
+    "original": "make a right just like the bus.",
+    "translation": "向右转，就像公交车一样。",
+    "audio_file": "data/wav_files_noise/commands_294_noise.wav"
+  },
+  {
+    "index": 295,
+    "original": "when that red car has passed the intersection, continue straight",
+    "translation": "当那辆红车通过交叉路口后，继续直行。",
+    "audio_file": "data/wav_files_noise/commands_295_noise.wav"
+  },
+  {
+    "index": 296,
+    "original": "see the guy sitting down in front of that building on the right. park in front of him. ",
+    "translation": "看右边那栋建筑前面坐着的那个男人。在他前面停车。",
+    "audio_file": "data/wav_files_noise/commands_296_noise.wav"
+  },
+  {
+    "index": 297,
+    "original": "turn left after we pass that pickup truck",
+    "translation": "左转我们经过那辆卡车之后。",
+    "audio_file": "data/wav_files_noise/commands_297_noise.wav"
+  },
+  {
+    "index": 298,
+    "original": "slow down and wait for that pedestrian to cross.",
+    "translation": "减速并等待行人过马路。",
+    "audio_file": "data/wav_files_noise/commands_298_noise.wav"
+  },
+  {
+    "index": 299,
+    "original": "my work truck is to the left, park next to it.",
+    "translation": "我的工作卡车在左边，停在它旁边。",
+    "audio_file": "data/wav_files_noise/commands_299_noise.wav"
+  },
+  {
+    "index": 300,
+    "original": "follow that car. ",
+    "translation": "跟着那辆车。",
+    "audio_file": "data/wav_files_noise/commands_300_noise.wav"
+  },
+  {
+    "index": 301,
+    "original": "follow that silver car going right for one mile",
+    "translation": "跟着那辆向右行驶的一英里远的银色轿车",
+    "audio_file": "data/wav_files_noise/commands_301_noise.wav"
+  },
+  {
+    "index": 302,
+    "original": "turn into the left lane and slow down, the car ahead is stopping for the pedestrians. ",
+    "translation": "请进入左车道并减速，前面的车在为行人停车。",
+    "audio_file": "data/wav_files_noise/commands_302_noise.wav"
+  },
+  {
+    "index": 303,
+    "original": "follow the white suv through the bend in the road",
+    "translation": "跟随白色SUV穿过路的弯道",
+    "audio_file": "data/wav_files_noise/commands_303_noise.wav"
+  },
+  {
+    "index": 304,
+    "original": "let us stop by our friend.",
+    "translation": "让我们停一下去看我们的朋友。",
+    "audio_file": "data/wav_files_noise/commands_304_noise.wav"
+  },
+  {
+    "index": 305,
+    "original": "slow down like the car is doing in front of you.",
+    "translation": "像前面的车一样减速。",
+    "audio_file": "data/wav_files_noise/commands_305_noise.wav"
+  },
+  {
+    "index": 306,
+    "original": "please turn around and follow that red truck.",
+    "translation": "请转身跟着那辆红色的卡车。",
+    "audio_file": "data/wav_files_noise/commands_306_noise.wav"
+  },
+  {
+    "index": 307,
+    "original": "stay in this lane while passing the oncoming truck.",
+    "translation": "在经过对面的卡车时，留在这条车道上。",
+    "audio_file": "data/wav_files_noise/commands_307_noise.wav"
+  },
+  {
+    "index": 308,
+    "original": "switch over to the lane behind this car.",
+    "translation": "切换到这辆车后面的车道。",
+    "audio_file": "data/wav_files_noise/commands_308_noise.wav"
+  },
+  {
+    "index": 309,
+    "original": "make a right into the driveway near the next trashcan on the right.",
+    "translation": "向右转进入 driveway 靠右边的下一个垃圾桶附近。",
+    "audio_file": "data/wav_files_noise/commands_309_noise.wav"
+  },
+  {
+    "index": 310,
+    "original": "turn left and follow that big truck",
+    "translation": "左转跟随那辆大卡车",
+    "audio_file": "data/wav_files_noise/commands_310_noise.wav"
+  },
+  {
+    "index": 311,
+    "original": "find a parking spot near that bus.",
+    "translation": "找一个靠近那辆公交车的停车位。",
+    "audio_file": "data/wav_files_noise/commands_311_noise.wav"
+  },
+  {
+    "index": 312,
+    "original": "get in the most right lane as that grey car.",
+    "translation": "进入那辆灰色汽车最右边的车道。",
+    "audio_file": "data/wav_files_noise/commands_312_noise.wav"
+  },
+  {
+    "index": 313,
+    "original": "let the car turn left before we follow it.",
+    "translation": "让车先左转然后我们再跟上。",
+    "audio_file": "data/wav_files_noise/commands_313_noise.wav"
+  },
+  {
+    "index": 314,
+    "original": "stop next to the white van on the right",
+    "translation": "停在右边的白色小货车旁边",
+    "audio_file": "data/wav_files_noise/commands_314_noise.wav"
+  },
+  {
+    "index": 315,
+    "original": "follow the bus.",
+    "translation": "跟着公交车。",
+    "audio_file": "data/wav_files_noise/commands_315_noise.wav"
+  },
+  {
+    "index": 316,
+    "original": "follow that car.",
+    "translation": "跟着那辆车。",
+    "audio_file": "data/wav_files_noise/commands_316_noise.wav"
+  },
+  {
+    "index": 317,
+    "original": "park next to the bike on the right",
+    "translation": "把车停在右边的停车场里",
+    "audio_file": "data/wav_files_noise/commands_317_noise.wav"
+  },
+  {
+    "index": 318,
+    "original": "drive into the street where the white truck is coming from",
+    "translation": "冲向那辆白卡车来的街道",
+    "audio_file": "data/wav_files_noise/commands_318_noise.wav"
+  },
+  {
+    "index": 319,
+    "original": "turn right onto the road with the white vehicle",
+    "translation": "右转进入那辆白色车辆的道路",
+    "audio_file": "data/wav_files_noise/commands_319_noise.wav"
+  },
+  {
+    "index": 320,
+    "original": "pick up my wife, she is the one with the black shirt standing closest to us at the bus stop.",
+    "translation": "帮我接我妻子，她穿着黑色上衣，站在我们closest to the bus stop的地方。",
+    "audio_file": "data/wav_files_noise/commands_320_noise.wav"
+  },
+  {
+    "index": 321,
+    "original": "if that is not our company truck please keep going.",
+    "translation": "如果那不是我们公司的卡车，请继续前行。",
+    "audio_file": "data/wav_files_noise/commands_321_noise.wav"
+  },
+  {
+    "index": 322,
+    "original": "park near the semi-trailer.",
+    "translation": "把车停在半挂车附近。",
+    "audio_file": "data/wav_files_noise/commands_322_noise.wav"
+  },
+  {
+    "index": 323,
+    "original": "stop beside the grey truck",
+    "translation": "停在灰色的卡车旁",
+    "audio_file": "data/wav_files_noise/commands_323_noise.wav"
+  },
+  {
+    "index": 324,
+    "original": "pull in behind that car, those two people are standing next to. ",
+    "translation": "跟在那辆车后面，那两个人站在那里。",
+    "audio_file": "data/wav_files_noise/commands_324_noise.wav"
+  },
+  {
+    "index": 325,
+    "original": "i think this is the place. turn right here, the driveway behind the red pickup",
+    "translation": "我认为这里就是。在这里右转，红皮卡车后面的车道。",
+    "audio_file": "data/wav_files_noise/commands_325_noise.wav"
+  },
+  {
+    "index": 326,
+    "original": "make a left at the fork ahead and stop next to the man wearing the white shirt and blue bag.",
+    "translation": "在前方的分岔路处 turn left, 然后停在穿白色衬衫的男人旁边，手提蓝色袋子的地方。",
+    "audio_file": "data/wav_files_noise/commands_326_noise.wav"
+  },
+  {
+    "index": 327,
+    "original": "just keep following that black suv in front of us. there are no available parking spots here. ",
+    "translation": "只管跟在我们前面那辆黑色的SUV后面行驶。这里没有可用的停车位。",
+    "audio_file": "data/wav_files_noise/commands_327_noise.wav"
+  },
+  {
+    "index": 328,
+    "original": "pull over here behind the first concrete barrier",
+    "translation": "在这里靠边停车，停在第一个混凝土屏障后面",
+    "audio_file": "data/wav_files_noise/commands_328_noise.wav"
+  },
+  {
+    "index": 329,
+    "original": "parallel park in front of the large truck on the north side of the street. ",
+    "translation": "侧 Park in front of the large truck on the north side of the street.",
+    "audio_file": "data/wav_files_noise/commands_329_noise.wav"
+  },
+  {
+    "index": 330,
+    "original": "drop me off in front of these bins",
+    "translation": "把车停在这些垃圾桶前面",
+    "audio_file": "data/wav_files_noise/commands_330_noise.wav"
+  },
+  {
+    "index": 331,
+    "original": "drop me off behind the car on our right.",
+    "translation": "把你停在我右边的那辆汽车后面。",
+    "audio_file": "data/wav_files_noise/commands_331_noise.wav"
+  },
+  {
+    "index": 332,
+    "original": "pull over so i can talk to that person.",
+    "translation": "靠边停车让我和那个人说话。",
+    "audio_file": "data/wav_files_noise/commands_332_noise.wav"
+  },
+  {
+    "index": 333,
+    "original": "follow the car in front of us.",
+    "translation": "跟在我们前面的车后面。",
+    "audio_file": "data/wav_files_noise/commands_333_noise.wav"
+  },
+  {
+    "index": 334,
+    "original": "turn left but drive slowly in case the black car ahead makes a you turn.",
+    "translation": "左转，但要慢慢驾驶，以防前面那辆黑色的车突然变道。",
+    "audio_file": "data/wav_files_noise/commands_334_noise.wav"
+  },
+  {
+    "index": 335,
+    "original": "the man walking might need help. stop next to him.",
+    "translation": "那人走路可能需要帮助。停在他旁边。",
+    "audio_file": "data/wav_files_noise/commands_335_noise.wav"
+  },
+  {
+    "index": 336,
+    "original": "park in front of that white van in front of us.",
+    "translation": "把车停在我们前面那辆白色货车的前面。",
+    "audio_file": "data/wav_files_noise/commands_336_noise.wav"
+  },
+  {
+    "index": 337,
+    "original": "change our destination and get behind that bus",
+    "translation": "改变目的地，跟在那辆公交车后面",
+    "audio_file": "data/wav_files_noise/commands_337_noise.wav"
+  },
+  {
+    "index": 338,
+    "original": "get closer to the car in front.",
+    "translation": "靠近你前面的那辆车。",
+    "audio_file": "data/wav_files_noise/commands_338_noise.wav"
+  },
+  {
+    "index": 339,
+    "original": "take slow turn after this motorcycle passed",
+    "translation": "在这个摩托车过去之后，转慢一点。",
+    "audio_file": "data/wav_files_noise/commands_339_noise.wav"
+  },
+  {
+    "index": 340,
+    "original": "turn left where the van is now.",
+    "translation": "向左转，现在货车所在的地方。",
+    "audio_file": "data/wav_files_noise/commands_340_noise.wav"
+  },
+  {
+    "index": 341,
+    "original": "try to find a parking spot after passing the white car.",
+    "translation": "尝试在经过那辆白车后找一个停车泊位。",
+    "audio_file": "data/wav_files_noise/commands_341_noise.wav"
+  },
+  {
+    "index": 342,
+    "original": "go and park near that car",
+    "translation": "去把车停在那辆汽车附近",
+    "audio_file": "data/wav_files_noise/commands_342_noise.wav"
+  },
+  {
+    "index": 343,
+    "original": "park behind that silver sedan on the right",
+    "translation": "把车停在右边那辆银色轿车后面",
+    "audio_file": "data/wav_files_noise/commands_343_noise.wav"
+  },
+  {
+    "index": 344,
+    "original": "that bus is standing next to a bus stop. get closer to it and drop my kids off.",
+    "translation": "那辆公共汽车停在公交站旁边。靠近它，把我的孩子送进去。",
+    "audio_file": "data/wav_files_noise/commands_344_noise.wav"
+  },
+  {
+    "index": 345,
+    "original": "change to the lane on the left and get behind that car to avoid bicycles in this lane.",
+    "translation": "变到左边车道，跟在那辆车后面以避开这条车道上的自行车。",
+    "audio_file": "data/wav_files_noise/commands_345_noise.wav"
+  },
+  {
+    "index": 346,
+    "original": "turn right after passing the pedestrian",
+    "translation": "右转经过行人后。",
+    "audio_file": "data/wav_files_noise/commands_346_noise.wav"
+  },
+  {
+    "index": 347,
+    "original": "stop and park beside that first car on the left. i want to shop there",
+    "translation": "停下并把车停在左边第一辆车旁。我想在那里购物。",
+    "audio_file": "data/wav_files_noise/commands_347_noise.wav"
+  },
+  {
+    "index": 348,
+    "original": "follow the black car driving in front of us",
+    "translation": "跟随我们前面那辆黑色的车",
+    "audio_file": "data/wav_files_noise/commands_348_noise.wav"
+  },
+  {
+    "index": 349,
+    "original": "park in the space behind the white car to your right.",
+    "translation": "把车停在你右手边那辆白色汽车后面的空位上。",
+    "audio_file": "data/wav_files_noise/commands_349_noise.wav"
+  },
+  {
+    "index": 350,
+    "original": "turn around and pull up next to that white suv ",
+    "translation": "转身倒车，停在那辆白色SUV旁边",
+    "audio_file": "data/wav_files_noise/commands_350_noise.wav"
+  },
+  {
+    "index": 351,
+    "original": "pull over where that bus is on the left and park.",
+    "translation": "把车停在左边那辆公共汽车旁边，然后靠边停车。",
+    "audio_file": "data/wav_files_noise/commands_351_noise.wav"
+  },
+  {
+    "index": 352,
+    "original": "park after that car has passed us.",
+    "translation": "停车等那辆车过去。",
+    "audio_file": "data/wav_files_noise/commands_352_noise.wav"
+  },
+  {
+    "index": 353,
+    "original": "keep to the right till we are past that second cone.",
+    "translation": "保持右侧行驶直到我们经过第二个锥形标志物。",
+    "audio_file": "data/wav_files_noise/commands_353_noise.wav"
+  },
+  {
+    "index": 354,
+    "original": "pull up next to the white barrier",
+    "translation": "靠近并停在白色障碍物旁边",
+    "audio_file": "data/wav_files_noise/commands_354_noise.wav"
+  },
+  {
+    "index": 355,
+    "original": "that man is my friend, please pull over near him",
+    "translation": "那个人是我的朋友，请在他附近停车",
+    "audio_file": "data/wav_files_noise/commands_355_noise.wav"
+  },
+  {
+    "index": 356,
+    "original": "follow the silver car.",
+    "translation": "跟着银色的车。",
+    "audio_file": "data/wav_files_noise/commands_356_noise.wav"
+  },
+  {
+    "index": 357,
+    "original": "pull over next to the white car on the left, but turn around first so we are facing the same way.",
+    "translation": "先将车停在左边那辆白色的车旁边，但先转一圈以便我们朝同一方向看。",
+    "audio_file": "data/wav_files_noise/commands_357_noise.wav"
+  },
+  {
+    "index": 358,
+    "original": "when that black car has passed make a turn to the right",
+    "translation": "当那辆黑车过去时，向右转。",
+    "audio_file": "data/wav_files_noise/commands_358_noise.wav"
+  },
+  {
+    "index": 359,
+    "original": "change course and turn left in front of the silver car.",
+    "translation": "改变方向，在银色汽车前面转左。",
+    "audio_file": "data/wav_files_noise/commands_359_noise.wav"
+  },
+  {
+    "index": 360,
+    "original": "you see that car behind the tree? it is mine. could you drop me off next to it? thanks!",
+    "translation": "你看那棵树后面的那辆汽车？那是我的。你能把它停在我旁边吗？谢谢！",
+    "audio_file": "data/wav_files_noise/commands_360_noise.wav"
+  },
+  {
+    "index": 361,
+    "original": "follow the white bus.",
+    "translation": "跟着白色的公交车。",
+    "audio_file": "data/wav_files_noise/commands_361_noise.wav"
+  },
+  {
+    "index": 362,
+    "original": "that truck might open it is door, careful not to get too close as you go by",
+    "translation": "那辆卡车可能会打开车门，你过去时要小心不要太靠近。",
+    "audio_file": "data/wav_files_noise/commands_362_noise.wav"
+  },
+  {
+    "index": 363,
+    "original": "stop for the lady and allow her to cross the street",
+    "translation": "请为女士让行，让她先过马路",
+    "audio_file": "data/wav_files_noise/commands_363_noise.wav"
+  },
+  {
+    "index": 364,
+    "original": "pull in behind that truck.",
+    "translation": "跟在那辆卡车后面停下。",
+    "audio_file": "data/wav_files_noise/commands_364_noise.wav"
+  },
+  {
+    "index": 365,
+    "original": "that is susan standing on the corner, pull up next to her so i can pick her up.",
+    "translation": "那是苏珊站在街角，停在她旁边，我就可以把她抱起来了。",
+    "audio_file": "data/wav_files_noise/commands_365_noise.wav"
+  },
+  {
+    "index": 366,
+    "original": "follow the black car coming from our right. ",
+    "translation": "跟随从我们右边开来那辆黑色的车。",
+    "audio_file": "data/wav_files_noise/commands_366_noise.wav"
+  },
+  {
+    "index": 367,
+    "original": "slow down if when we are less than two meters away from this man - i will just ask for directions.",
+    "translation": "减速，如果当我们距离这个男人不到两米时——我就会请路。",
+    "audio_file": "data/wav_files_noise/commands_367_noise.wav"
+  },
+  {
+    "index": 368,
+    "original": "go forward, past that silver car on the left",
+    "translation": "继续前行，过去左边那辆银色的车",
+    "audio_file": "data/wav_files_noise/commands_368_noise.wav"
+  },
+  {
+    "index": 369,
+    "original": "pull up closer to that truck up ahead.",
+    "translation": "靠近那辆前方的卡车一些。",
+    "audio_file": "data/wav_files_noise/commands_369_noise.wav"
+  },
+  {
+    "index": 370,
+    "original": "turn right at this junction when the person has crossed the road ",
+    "translation": "在行人过马路后，转右行驶。",
+    "audio_file": "data/wav_files_noise/commands_370_noise.wav"
+  },
+  {
+    "index": 371,
+    "original": "find me a parking spot after passing the first car on our left. ",
+    "translation": "在我们左边第一辆车后找到一个停车 spot。",
+    "audio_file": "data/wav_files_noise/commands_371_noise.wav"
+  },
+  {
+    "index": 372,
+    "original": "park in front of the truck.",
+    "translation": "把车停在卡车前面。",
+    "audio_file": "data/wav_files_noise/commands_372_noise.wav"
+  },
+  {
+    "index": 373,
+    "original": "i left my bike at that bike rack before us. can we please stop next to it? i'm going to put my bike in the trunk as it is raining.",
+    "translation": "我之前把自行车停在那边的自行车架上。我们能不能停在它旁边？我要把自行车放在后备箱，因为正在下雨。",
+    "audio_file": "data/wav_files_noise/commands_373_noise.wav"
+  },
+  {
+    "index": 374,
+    "original": "turn left, i want to see the yellow car clearer.",
+    "translation": "向左转，我想看清楚那辆黄色的车。",
+    "audio_file": "data/wav_files_noise/commands_374_noise.wav"
+  },
+  {
+    "index": 375,
+    "original": "actually, if it is clear, continue straight, up by that white van",
+    "translation": "实际上，如果是晴天，就直走，然后上那辆白色的货车。",
+    "audio_file": "data/wav_files_noise/commands_375_noise.wav"
+  },
+  {
+    "index": 376,
+    "original": "slow down, i want to try and get that drivers attention, i think it is my mom's neighbor.",
+    "translation": "慢一点，我想试着引起那个司机的注意，我觉得可能是我妈妈的邻居。",
+    "audio_file": "data/wav_files_noise/commands_376_noise.wav"
+  },
+  {
+    "index": 377,
+    "original": "there is a car parked on the left hand side of the road. drive into the avenue in front of that vehicle.",
+    "translation": "有一辆汽车停在路的左侧。开车进入那辆车前方的 avenue。",
+    "audio_file": "data/wav_files_noise/commands_377_noise.wav"
+  },
+  {
+    "index": 378,
+    "original": "it is raining! drop me ff near the car under the building.",
+    "translation": "下雨了！请就近将车停在建筑物下。",
+    "audio_file": "data/wav_files_noise/commands_378_noise.wav"
+  },
+  {
+    "index": 379,
+    "original": "take a turn direct opposite to that car",
+    "translation": "向那辆汽车直接相反的方向转弯",
+    "audio_file": "data/wav_files_noise/commands_379_noise.wav"
+  },
+  {
+    "index": 380,
+    "original": "move one lane to the left after we have cleared this intersection and get behind the gray suv.",
+    "translation": "在我们穿过这个交叉口后，向左移动一条车道，并且跟在那辆灰色的SUV后面。",
+    "audio_file": "data/wav_files_noise/commands_380_noise.wav"
+  },
+  {
+    "index": 381,
+    "original": "we should go where that truck is.",
+    "translation": "我们应该去那辆卡车所在的地方。",
+    "audio_file": "data/wav_files_noise/commands_381_noise.wav"
+  },
+  {
+    "index": 382,
+    "original": "go slowly, i'm not sure if the guy in this car sees us or not",
+    "translation": "慢慢来，我不确定这辆车里的 guy 是否看到了我们。",
+    "audio_file": "data/wav_files_noise/commands_382_noise.wav"
+  },
+  {
+    "index": 383,
+    "original": "we need to turn right but there is someone on the road. ",
+    "translation": "我们需要向右转，但路上有人。",
+    "audio_file": "data/wav_files_noise/commands_383_noise.wav"
+  },
+  {
+    "index": 384,
+    "original": "turn left at the next driveway before the trashcan.",
+    "translation": "在下一个垃圾桶前的侧道左转。",
+    "audio_file": "data/wav_files_noise/commands_384_noise.wav"
+  },
+  {
+    "index": 385,
+    "original": "if this is a cop's car then pull over.",
+    "translation": "如果是警车就靠边停车。",
+    "audio_file": "data/wav_files_noise/commands_385_noise.wav"
+  },
+  {
+    "index": 386,
+    "original": "that silver car before the black car is my ride, please stop there.",
+    "translation": "那辆银色的车在黑色车前面是我的车，请停在那里。",
+    "audio_file": "data/wav_files_noise/commands_386_noise.wav"
+  },
+  {
+    "index": 387,
+    "original": "we should turn left where the black car is.",
+    "translation": "我们应该在那辆黑色汽车的左边转弯。",
+    "audio_file": "data/wav_files_noise/commands_387_noise.wav"
+  },
+  {
+    "index": 388,
+    "original": "follow that large green trailer to its destination. i need to help the driver unload it. ",
+    "translation": "跟随那辆大型绿色拖车到它的目的地。我需要帮司机卸货。",
+    "audio_file": "data/wav_files_noise/commands_388_noise.wav"
+  },
+  {
+    "index": 389,
+    "original": "pull up to left next to the yellow bike.",
+    "translation": "靠近左侧停在黄色自行车旁边。",
+    "audio_file": "data/wav_files_noise/commands_389_noise.wav"
+  },
+  {
+    "index": 390,
+    "original": "please park the car next to the black car on your left.",
+    "translation": "请将车停在你左边那辆黑色车旁边。",
+    "audio_file": "data/wav_files_noise/commands_390_noise.wav"
+  },
+  {
+    "index": 391,
+    "original": "let this bmw pass and then switch lanes.",
+    "translation": "让这辆宝马车先过去，然后换到另一个车道。",
+    "audio_file": "data/wav_files_noise/commands_391_noise.wav"
+  },
+  {
+    "index": 392,
+    "original": "slow down to allow that car to pass",
+    "translation": "减速以便让那辆车通过",
+    "audio_file": "data/wav_files_noise/commands_392_noise.wav"
+  },
+  {
+    "index": 393,
+    "original": "pull over in front of that bike",
+    "translation": "在那辆自行车前面停车",
+    "audio_file": "data/wav_files_noise/commands_393_noise.wav"
+  },
+  {
+    "index": 394,
+    "original": "drive slower, a pedestrian is going to cross the road",
+    "translation": "减速，行人正在过马路",
+    "audio_file": "data/wav_files_noise/commands_394_noise.wav"
+  },
+  {
+    "index": 395,
+    "original": "wait for the car ahead to move before you proceed into the intersection.",
+    "translation": "请在前面的车辆驶入交叉路口后再前行。",
+    "audio_file": "data/wav_files_noise/commands_395_noise.wav"
+  },
+  {
+    "index": 396,
+    "original": "park the car near that parked car on the right.",
+    "translation": "把车停在右边那辆车附近。",
+    "audio_file": "data/wav_files_noise/commands_396_noise.wav"
+  },
+  {
+    "index": 397,
+    "original": "turn left where that lady is crossing the street. ",
+    "translation": "向那位女士正在过马路的方向左转。",
+    "audio_file": "data/wav_files_noise/commands_397_noise.wav"
+  },
+  {
+    "index": 398,
+    "original": "start reducing speed and come to complete stop behind the black car",
+    "translation": "减速并停在黑色汽车后面然后完全停车",
+    "audio_file": "data/wav_files_noise/commands_398_noise.wav"
+  },
+  {
+    "index": 399,
+    "original": "please park behind the silver suv on the right.",
+    "translation": "请将车停在右边的银色SUV后面。",
+    "audio_file": "data/wav_files_noise/commands_399_noise.wav"
+  },
+  {
+    "index": 400,
+    "original": "please pass the silver car in front of us. ",
+    "translation": "请把我们前面那辆银色的车递给一下。",
+    "audio_file": "data/wav_files_noise/commands_400_noise.wav"
+  },
+  {
+    "index": 401,
+    "original": "park near that black car in the lot. ",
+    "translation": "把车停在那辆黑色汽车旁边的停车场里。",
+    "audio_file": "data/wav_files_noise/commands_401_noise.wav"
+  },
+  {
+    "index": 402,
+    "original": "follow behind this car.",
+    "translation": "跟在這輛車後面。",
+    "audio_file": "data/wav_files_noise/commands_402_noise.wav"
+  },
+  {
+    "index": 403,
+    "original": "that white car is parking, go a bit to the right as there is no one coming.",
+    "translation": "那辆白色轿车正在停车，往右稍稍挪动，因为没有车辆过来。",
+    "audio_file": "data/wav_files_noise/commands_403_noise.wav"
+  },
+  {
+    "index": 404,
+    "original": "sue needs a ride, stop and pick her up. she is standing beside the tree on the right. ",
+    "translation": "苏 needs a ride, stop and pick her up. She is standing beside the tree on the right.",
+    "audio_file": "data/wav_files_noise/commands_404_noise.wav"
+  },
+  {
+    "index": 405,
+    "original": "take a left. we need to navigate to where that person is. that is my end destination!",
+    "translation": "左转。我们需要导航到那个人的位置。那是我的目的地！",
+    "audio_file": "data/wav_files_noise/commands_405_noise.wav"
+  },
+  {
+    "index": 406,
+    "original": "pull over by that man so i can ask directions.",
+    "translation": "靠那男人的车边，我好问路。",
+    "audio_file": "data/wav_files_noise/commands_406_noise.wav"
+  },
+  {
+    "index": 407,
+    "original": "turn around and parallel park in front of that delivery truck. ",
+    "translation": "转过身来，在那辆送货车前面并排停车。",
+    "audio_file": "data/wav_files_noise/commands_407_noise.wav"
+  },
+  {
+    "index": 408,
+    "original": "i think john is on the second white bus follow him when the light turns green",
+    "translation": "我认为约翰在第二辆白色公交车上，等绿灯亮了就跟着他。",
+    "audio_file": "data/wav_files_noise/commands_408_noise.wav"
+  },
+  {
+    "index": 409,
+    "original": "take a left where that silver car is.",
+    "translation": "向那辆银色汽车左转。",
+    "audio_file": "data/wav_files_noise/commands_409_noise.wav"
+  },
+  {
+    "index": 410,
+    "original": "follow the car in the front",
+    "translation": "跟在前面的车后面",
+    "audio_file": "data/wav_files_noise/commands_410_noise.wav"
+  },
+  {
+    "index": 411,
+    "original": "that is my bicycle i forgot last night when i was drunk. pull over so i can grab it. ",
+    "translation": "那是我的自行车，我昨晚喝醉时忘了。请停一下，让我去拿。",
+    "audio_file": "data/wav_files_noise/commands_411_noise.wav"
+  },
+  {
+    "index": 412,
+    "original": "follow the white truck, make a you-turn first",
+    "translation": "跟随白色卡车，先做右转。",
+    "audio_file": "data/wav_files_noise/commands_412_noise.wav"
+  },
+  {
+    "index": 413,
+    "original": "let this blue truck pass, then turn left",
+    "translation": "让这辆蓝色的卡车先过去，然后 turn left",
+    "audio_file": "data/wav_files_noise/commands_413_noise.wav"
+  },
+  {
+    "index": 414,
+    "original": "please switch lanes after we pass the traffic cone.",
+    "translation": "请在我们经过交通锥后换到其他车道。",
+    "audio_file": "data/wav_files_noise/commands_414_noise.wav"
+  },
+  {
+    "index": 415,
+    "original": "can you find me a safe place to park near the person with white shirt?",
+    "translation": "你能帮我找一个靠近穿白衬衫的人附近的安全停车处吗？",
+    "audio_file": "data/wav_files_noise/commands_415_noise.wav"
+  },
+  {
+    "index": 416,
+    "original": "stop before the black car that is currently on the crosswalk.",
+    "translation": "请在那辆当前在人行横道上的黑色汽车前停下。",
+    "audio_file": "data/wav_files_noise/commands_416_noise.wav"
+  },
+  {
+    "index": 417,
+    "original": "get behind that car to the left of us.",
+    "translation": "站到我们左边那辆汽车后面去。",
+    "audio_file": "data/wav_files_noise/commands_417_noise.wav"
+  },
+  {
+    "index": 418,
+    "original": "that girl with light colored shirt looks cute. let us park here. i am going to ask her out. ",
+    "translation": "那个穿浅色上衣的女孩看起来很可爱。我们停在这里吧。我要去追她。",
+    "audio_file": "data/wav_files_noise/commands_418_noise.wav"
+  },
+  {
+    "index": 419,
+    "original": "i need to follow the truck coming from the opposite direction.",
+    "translation": "我需要跟随从相反方向来的那辆卡车。",
+    "audio_file": "data/wav_files_noise/commands_419_noise.wav"
+  },
+  {
+    "index": 420,
+    "original": "the car on the right might be pulling out be cautious",
+    "translation": "右边的那辆车可能会开出来，请小心。",
+    "audio_file": "data/wav_files_noise/commands_420_noise.wav"
+  },
+  {
+    "index": 421,
+    "original": "park in front of that vehicle on the other side of the intersection.",
+    "translation": "把车停在交叉路口对面那辆车前面。",
+    "audio_file": "data/wav_files_noise/commands_421_noise.wav"
+  },
+  {
+    "index": 422,
+    "original": "turn around and get in front of that white suv ",
+    "translation": "转过身来，站在那辆白色SUV前面",
+    "audio_file": "data/wav_files_noise/commands_422_noise.wav"
+  },
+  {
+    "index": 423,
+    "original": "follow that car",
+    "translation": "跟着那辆车",
+    "audio_file": "data/wav_files_noise/commands_423_noise.wav"
+  },
+  {
+    "index": 424,
+    "original": "get real close to the green trash can, so i can reach out and put something in it",
+    "translation": "靠近绿色垃圾桶很近，这样我可以伸手把它填满。",
+    "audio_file": "data/wav_files_noise/commands_424_noise.wav"
+  },
+  {
+    "index": 425,
+    "original": "stop next to that person, i want to ask where i can find a good restaurant.",
+    "translation": "请停在那个人旁边，我想问哪里有好餐厅。",
+    "audio_file": "data/wav_files_noise/commands_425_noise.wav"
+  },
+  {
+    "index": 426,
+    "original": "find me a parking spot near that traffic cone.",
+    "translation": "找个停车位靠近那个交通锥。",
+    "audio_file": "data/wav_files_noise/commands_426_noise.wav"
+  },
+  {
+    "index": 427,
+    "original": "get near to that person up ahead on the right. ",
+    "translation": "靠近那前方右边的人。",
+    "audio_file": "data/wav_files_noise/commands_427_noise.wav"
+  },
+  {
+    "index": 428,
+    "original": "looks like that car is about to leave, pull up so i can take that spot",
+    "translation": "看起来那辆车就要离开了，停一下让我占那个位置。",
+    "audio_file": "data/wav_files_noise/commands_428_noise.wav"
+  },
+  {
+    "index": 429,
+    "original": "take a right turn, same direction as that sedan that is going across the intersection. ",
+    "translation": "向右转，方向和那辆穿过交叉口的轿车一样。",
+    "audio_file": "data/wav_files_noise/commands_429_noise.wav"
+  },
+  {
+    "index": 430,
+    "original": "allow the car on the right to pass if it does not stop.",
+    "translation": "允许右边的车通行，如果它不停车。",
+    "audio_file": "data/wav_files_noise/commands_430_noise.wav"
+  },
+  {
+    "index": 431,
+    "original": "pull over in front of that silver vehicle on the right",
+    "translation": "在那辆右前方的银色车辆前停车",
+    "audio_file": "data/wav_files_noise/commands_431_noise.wav"
+  },
+  {
+    "index": 432,
+    "original": "i think ryan takes that bus, let us follow it so i can offer him a ride.",
+    "translation": "我认为瑞安坐那辆公交车，我们跟着它，我可以给他提供一辆车。",
+    "audio_file": "data/wav_files_noise/commands_432_noise.wav"
+  },
+  {
+    "index": 433,
+    "original": "make a complete stop until that vehicle has cleared the road.",
+    "translation": "停下直到那辆车驶离道路。",
+    "audio_file": "data/wav_files_noise/commands_433_noise.wav"
+  },
+  {
+    "index": 434,
+    "original": "that might be someone i know. drive slowly past that person",
+    "translation": "可能是我认识的人。慢慢开车经过那个人。",
+    "audio_file": "data/wav_files_noise/commands_434_noise.wav"
+  },
+  {
+    "index": 435,
+    "original": "start because the truck has started to move fowardd",
+    "translation": "出发，因为卡车已经开始向前移动了。",
+    "audio_file": "data/wav_files_noise/commands_435_noise.wav"
+  },
+  {
+    "index": 436,
+    "original": "wait for that pedestrian to safely cross the road before speeding up again.",
+    "translation": "等那行人安全穿过马路后再加速。",
+    "audio_file": "data/wav_files_noise/commands_436_noise.wav"
+  },
+  {
+    "index": 437,
+    "original": "take a right, where that truck is turning. ",
+    "translation": "向右转，那辆卡车正在转弯的地方。",
+    "audio_file": "data/wav_files_noise/commands_437_noise.wav"
+  },
+  {
+    "index": 438,
+    "original": "give this man a ride home. he has requested a ride via uber.",
+    "translation": "把这个男人送到家。他通过优步请求了一辆车。",
+    "audio_file": "data/wav_files_noise/commands_438_noise.wav"
+  },
+  {
+    "index": 439,
+    "original": "change lanes before the car in front moves again",
+    "translation": "在前面的车再次移动前变道",
+    "audio_file": "data/wav_files_noise/commands_439_noise.wav"
+  },
+  {
+    "index": 440,
+    "original": "pull over when you get to where that car is.",
+    "translation": "一到那辆汽车的位置就停车。",
+    "audio_file": "data/wav_files_noise/commands_440_noise.wav"
+  },
+  {
+    "index": 441,
+    "original": "see that person over on the left. pull over there. ",
+    "translation": "看左边那个人，停在那里。",
+    "audio_file": "data/wav_files_noise/commands_441_noise.wav"
+  },
+  {
+    "index": 442,
+    "original": "a car is parked in the northwest corner of the intersection.  when you turn left make a narrow turn to stay in the inner lane and avoid the parked vehicle. ",
+    "translation": "一辆车停在交叉路口西北角。左转时做窄转弯，留在内侧车道以避开停放的车辆。",
+    "audio_file": "data/wav_files_noise/commands_442_noise.wav"
+  },
+  {
+    "index": 443,
+    "original": "the car that is in front of us goes way to slow, overtake it when possible. ",
+    "translation": "前面的车开得太慢了，有机会就超车。",
+    "audio_file": "data/wav_files_noise/commands_443_noise.wav"
+  },
+  {
+    "index": 444,
+    "original": "pull over and let that person over by the sidewalk cross the road",
+    "translation": "靠边停车，让那个人穿过人行道再过马路",
+    "audio_file": "data/wav_files_noise/commands_444_noise.wav"
+  },
+  {
+    "index": 445,
+    "original": "can you please stop near that barrier.",
+    "translation": "你可以请停在那道栏杆附近吗。",
+    "audio_file": "data/wav_files_noise/commands_445_noise.wav"
+  },
+  {
+    "index": 446,
+    "original": "those cones are close, move into the next lane.",
+    "translation": "那些 cones 靠得近，移入下一车道。",
+    "audio_file": "data/wav_files_noise/commands_446_noise.wav"
+  },
+  {
+    "index": 447,
+    "original": "i have to wait for my sister. stop by the traffic cone.",
+    "translation": "我得等我姐姐。停在交通锥旁。",
+    "audio_file": "data/wav_files_noise/commands_447_noise.wav"
+  },
+  {
+    "index": 448,
+    "original": "stop in front of the guy in the gray shirt, we are supposed to pick him up",
+    "translation": "停在灰色T恤的男人面前，我们 supposed to pick him up 应该把他接过来",
+    "audio_file": "data/wav_files_noise/commands_448_noise.wav"
+  },
+  {
+    "index": 449,
+    "original": "a truck is coming in front of us. avoid it when we reach it",
+    "translation": "一辆卡车正在我们前面。到达时避开它。",
+    "audio_file": "data/wav_files_noise/commands_449_noise.wav"
+  },
+  {
+    "index": 450,
+    "original": "park behind the grey truck.",
+    "translation": "把车停在灰色卡车后面。",
+    "audio_file": "data/wav_files_noise/commands_450_noise.wav"
+  },
+  {
+    "index": 451,
+    "original": "follow that car heading to the right.",
+    "translation": "跟着那辆向右行驶的车。",
+    "audio_file": "data/wav_files_noise/commands_451_noise.wav"
+  },
+  {
+    "index": 452,
+    "original": "turn left in the street behind the construction worker.",
+    "translation": "在 construction worker 后面的街道左转。",
+    "audio_file": "data/wav_files_noise/commands_452_noise.wav"
+  },
+  {
+    "index": 453,
+    "original": "let me out near that person in white",
+    "translation": "让我靠近那个人穿白衣服的",
+    "audio_file": "data/wav_files_noise/commands_453_noise.wav"
+  },
+  {
+    "index": 454,
+    "original": "keep following the car driving in front of us. ",
+    "translation": "继续跟随我们前面的那辆车。",
+    "audio_file": "data/wav_files_noise/commands_454_noise.wav"
+  },
+  {
+    "index": 455,
+    "original": "stay clear of the barrier, drive on the left side of the lane.",
+    "translation": "保持远离障碍物，靠左行驶。",
+    "audio_file": "data/wav_files_noise/commands_455_noise.wav"
+  },
+  {
+    "index": 456,
+    "original": "pull up behind that first cone and let me out.",
+    "translation": "倒车停在第一个锥形标志物后面，然后让我下车。",
+    "audio_file": "data/wav_files_noise/commands_456_noise.wav"
+  },
+  {
+    "index": 457,
+    "original": "slow down when we get to where this car is now - we will be almost there.",
+    "translation": "减速，当我们到达这辆车现在的位置时——我们将快到那里了。",
+    "audio_file": "data/wav_files_noise/commands_457_noise.wav"
+  },
+  {
+    "index": 458,
+    "original": "i know that guy. park next to him",
+    "translation": "我知道那个人。挨着他停车。",
+    "audio_file": "data/wav_files_noise/commands_458_noise.wav"
+  },
+  {
+    "index": 459,
+    "original": "slow down and watch out for that man, he is hardly visible",
+    "translation": "减速，注意那个男人，他几乎看不见。",
+    "audio_file": "data/wav_files_noise/commands_459_noise.wav"
+  },
+  {
+    "index": 460,
+    "original": "closely follow the red car in front of us. ",
+    "translation": "紧随我们前面的那辆红车。",
+    "audio_file": "data/wav_files_noise/commands_460_noise.wav"
+  },
+  {
+    "index": 461,
+    "original": "please be careful of the jaywalking pedestrian to your right.  ",
+    "translation": "请注意右边正在过马路的行人。",
+    "audio_file": "data/wav_files_noise/commands_461_noise.wav"
+  },
+  {
+    "index": 462,
+    "original": "keep following that white car that is currently switching lanes. ",
+    "translation": "继续跟随那辆正在变道的白色汽车。",
+    "audio_file": "data/wav_files_noise/commands_462_noise.wav"
+  },
+  {
+    "index": 463,
+    "original": "parallel park in front of that bike",
+    "translation": "并排把车停在那辆自行车前面",
+    "audio_file": "data/wav_files_noise/commands_463_noise.wav"
+  },
+  {
+    "index": 464,
+    "original": "stop behind the orange car",
+    "translation": "停在橙色汽车后面",
+    "audio_file": "data/wav_files_noise/commands_464_noise.wav"
+  },
+  {
+    "index": 465,
+    "original": "go around the dude working on the plants by the road.",
+    "translation": "绕过路边正在种植物的人。",
+    "audio_file": "data/wav_files_noise/commands_465_noise.wav"
+  },
+  {
+    "index": 466,
+    "original": "park in front of this vehicle.",
+    "translation": "把车停在这辆车上前面。",
+    "audio_file": "data/wav_files_noise/commands_466_noise.wav"
+  },
+  {
+    "index": 467,
+    "original": "we should head to the blue truck on our right",
+    "translation": "我们应该朝右边的蓝色卡车前进",
+    "audio_file": "data/wav_files_noise/commands_467_noise.wav"
+  },
+  {
+    "index": 468,
+    "original": "park where that bus is over there.",
+    "translation": "那边那辆公交车停着的地方。",
+    "audio_file": "data/wav_files_noise/commands_468_noise.wav"
+  },
+  {
+    "index": 469,
+    "original": "park before to that woman",
+    "translation": "把车停在那女人前面",
+    "audio_file": "data/wav_files_noise/commands_469_noise.wav"
+  },
+  {
+    "index": 470,
+    "original": "wait for the white car to pass, then turn left into the parking lot.",
+    "translation": "等待白色汽车驶过，然后左转进入停车场。",
+    "audio_file": "data/wav_files_noise/commands_470_noise.wav"
+  },
+  {
+    "index": 471,
+    "original": "pull over by the bicycles, i am looking for a friend",
+    "translation": "把车停在自行车旁边，我在找一个朋友。",
+    "audio_file": "data/wav_files_noise/commands_471_noise.wav"
+  },
+  {
+    "index": 472,
+    "original": "cross the junction and pick up the person over on the left sidewalk. ",
+    "translation": "穿过十字路口，去左边人行道接那个人。",
+    "audio_file": "data/wav_files_noise/commands_472_noise.wav"
+  },
+  {
+    "index": 473,
+    "original": "pull in after the other car has pulled out.",
+    "translation": "等前一辆车开出后再开。",
+    "audio_file": "data/wav_files_noise/commands_473_noise.wav"
+  },
+  {
+    "index": 474,
+    "original": "turn into that driveway on the left, in front of that parked car",
+    "translation": "转到左边那条车道，在那辆停着的车前面",
+    "audio_file": "data/wav_files_noise/commands_474_noise.wav"
+  },
+  {
+    "index": 475,
+    "original": "we are going the wrong way, make a you-turn before this truck.",
+    "translation": "我们走错路了，前面那辆大货车请先左转。",
+    "audio_file": "data/wav_files_noise/commands_475_noise.wav"
+  },
+  {
+    "index": 476,
+    "original": "get behind the red car in the right turn lane",
+    "translation": "跟在右转车道那辆红色汽车后面",
+    "audio_file": "data/wav_files_noise/commands_476_noise.wav"
+  },
+  {
+    "index": 477,
+    "original": "speed up to where that white car is. ",
+    "translation": "加速到那辆白色汽车那里。",
+    "audio_file": "data/wav_files_noise/commands_477_noise.wav"
+  },
+  {
+    "index": 478,
+    "original": "pull over next to this bike so i can load it in my car",
+    "translation": "把车开到这辆自行车旁边，我好把车装上自行车",
+    "audio_file": "data/wav_files_noise/commands_478_noise.wav"
+  },
+  {
+    "index": 479,
+    "original": "speed up to where the man is. he is my janitor and he called in sick.",
+    "translation": "加速到那个男人那里去。他是我的清洁工，他请了假。",
+    "audio_file": "data/wav_files_noise/commands_479_noise.wav"
+  },
+  {
+    "index": 480,
+    "original": "turn right when you pass the white van on the right",
+    "translation": "右转当你经过右边的白色货车时",
+    "audio_file": "data/wav_files_noise/commands_480_noise.wav"
+  },
+  {
+    "index": 481,
+    "original": "pull over next to that pedestrian, i need information ",
+    "translation": "靠边停在那行人旁边，我需要信息",
+    "audio_file": "data/wav_files_noise/commands_481_noise.wav"
+  },
+  {
+    "index": 482,
+    "original": "park next to that car.",
+    "translation": "把车旁边那辆汽车旁边停车。",
+    "audio_file": "data/wav_files_noise/commands_482_noise.wav"
+  },
+  {
+    "index": 483,
+    "original": "i know the second guy coming down the stairs, slow down so i can say hello",
+    "translation": "我知道楼梯上下来的是第二个人，慢点，让我先打个招呼。",
+    "audio_file": "data/wav_files_noise/commands_483_noise.wav"
+  },
+  {
+    "index": 484,
+    "original": "takeover the car before",
+    "translation": "在接管这辆车之前",
+    "audio_file": "data/wav_files_noise/commands_484_noise.wav"
+  },
+  {
+    "index": 485,
+    "original": "watch our the cars parked on the left. they could pull out at any moment, keep to the right side of the lane.",
+    "translation": "注意左边停放的车辆，它们随时可能开出，保持在车道右侧。",
+    "audio_file": "data/wav_files_noise/commands_485_noise.wav"
+  },
+  {
+    "index": 486,
+    "original": "avoid the cement wall on the right, go to the left lane",
+    "translation": "避开右侧的水泥墙，往左车道走",
+    "audio_file": "data/wav_files_noise/commands_486_noise.wav"
+  },
+  {
+    "index": 487,
+    "original": "i wonder if the car that stopped up ahead on the road needs help. pull up behind it. ",
+    "translation": "我想知道路前方停着的那辆车是否需要帮助。停在它后面。",
+    "audio_file": "data/wav_files_noise/commands_487_noise.wav"
+  },
+  {
+    "index": 488,
+    "original": "pull up behind this van to drop off a passenger in the car.",
+    "translation": "将车倒车停在这辆货车后面，送完乘客再走。",
+    "audio_file": "data/wav_files_noise/commands_488_noise.wav"
+  },
+  {
+    "index": 489,
+    "original": "when the light changes, turn left onto the street past where those people are standing",
+    "translation": "当灯光改变时，向左转驶过那些人在站着的地方的街道",
+    "audio_file": "data/wav_files_noise/commands_489_noise.wav"
+  },
+  {
+    "index": 490,
+    "original": "merge into the left lane before reaching the traffic cone",
+    "translation": "在到达交通锥前汇入左车道",
+    "audio_file": "data/wav_files_noise/commands_490_noise.wav"
+  },
+  {
+    "index": 491,
+    "original": "parallel park in front of this first white van. ",
+    "translation": "并排停在 this first white van 前面。",
+    "audio_file": "data/wav_files_noise/commands_491_noise.wav"
+  },
+  {
+    "index": 492,
+    "original": "follow the pickup truck straight and then take the next left. ",
+    "translation": "沿着卡车直行，然后 turn 一下左转。",
+    "audio_file": "data/wav_files_noise/commands_492_noise.wav"
+  },
+  {
+    "index": 493,
+    "original": "make sure that that lady has finished crossing the street before we proceed.",
+    "translation": "确保那位女士已经穿过马路后再我们继续前进。",
+    "audio_file": "data/wav_files_noise/commands_493_noise.wav"
+  },
+  {
+    "index": 494,
+    "original": "stop to pick up my friend",
+    "translation": "停下来接我的朋友",
+    "audio_file": "data/wav_files_noise/commands_494_noise.wav"
+  },
+  {
+    "index": 495,
+    "original": "turn right in front of the truck",
+    "translation": "在卡车前面转右",
+    "audio_file": "data/wav_files_noise/commands_495_noise.wav"
+  },
+  {
+    "index": 496,
+    "original": "slow down next to the man.",
+    "translation": "减速，靠近那人。",
+    "audio_file": "data/wav_files_noise/commands_496_noise.wav"
+  },
+  {
+    "index": 497,
+    "original": "park beside the trash can",
+    "translation": "把车停在垃圾桶旁",
+    "audio_file": "data/wav_files_noise/commands_497_noise.wav"
+  },
+  {
+    "index": 498,
+    "original": "keep distance, do not cross into the right lane, there is a car there",
+    "translation": "保持距离，不要进入右侧车道，那边有一辆车。",
+    "audio_file": "data/wav_files_noise/commands_498_noise.wav"
+  },
+  {
+    "index": 499,
+    "original": "please get in front that black car to our left.",
+    "translation": "请到我们左边那辆黑色汽车前面来。",
+    "audio_file": "data/wav_files_noise/commands_499_noise.wav"
+  },
+  {
+    "index": 500,
+    "original": "make you turn when this bus passes then proceed to follow it ",
+    "translation": "当这辆公交车经过时让你转过身去，然后跟上它。",
+    "audio_file": "data/wav_files_noise/commands_500_noise.wav"
+  }
+]

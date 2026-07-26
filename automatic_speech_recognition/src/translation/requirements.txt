@@ -1,0 +1,7 @@
+torch
+transformers>=4.37.0
+accelerate>=0.25.0
+sentencepiece>=0.1.99
+protobuf>=3.20.0
+typing-extensions>=4.5.0
+
