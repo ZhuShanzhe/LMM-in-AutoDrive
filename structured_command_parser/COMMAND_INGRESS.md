@@ -14,7 +14,9 @@ renames it into place. The parser service accepts only translated English:
   "request_id": "voice-0001",
   "text": "Slow down and stop before the red truck.",
   "language": "en-US",
-  "modality": "VOICE"
+  "modality": "VOICE",
+  "source_text": "在红色卡车前减速并停车。",
+  "source_language": "zh-CN"
 }
 ```
 
@@ -22,12 +24,17 @@ renames it into place. The parser service accepts only translated English:
 be `en`, `en-US`, or `en-GB`; Chinese text is intentionally rejected here so a
 missing translation stage cannot silently reach the English parser.
 
+`prepare_asr_ingress.py` adapts the ASR module's `chinese_text` and
+`english_translation` result into this snapshot, preserving source text and
+optional ASR/translation latency fields for audit. It rejects empty source or
+translated text before the parser service is called.
+
 ## Service Boundary
 
 `run_english_parser_service.py` warms the parser once, ignores byte-identical
 input snapshots, and atomically writes two files:
 
-- `driving_intent.json`: schema-valid `DrivingIntent 1.1.0` for the scene and
+- `driving_intent.json`: schema-valid `DrivingIntent 1.2.0` for the scene and
   decision modules.
 - `parser_receipt.json`: request ID, modality, parser method, status, and the
   parser-only latency.
