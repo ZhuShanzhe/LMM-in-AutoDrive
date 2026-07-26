@@ -6,6 +6,7 @@ from pathlib import Path
 from scene_understanding.core.risk_assessment import (
     assess_world_state,
     compute_ttc_s,
+    required_stopping_distance_m,
     safe_following_distance_m,
     ttc_risk_level,
     validate_risk_assessment,
@@ -27,6 +28,19 @@ class RiskAssessmentTests(unittest.TestCase):
         self.assertEqual(safe_following_distance_m(30.0 / 3.6), 20.0)
         self.assertEqual(safe_following_distance_m(60.0 / 3.6), 20.0)
         self.assertEqual(safe_following_distance_m(60.1 / 3.6), 40.0)
+
+    def test_two_stage_stopping_distance(self):
+        self.assertAlmostEqual(
+            required_stopping_distance_m(20.0),
+            72.0,
+        )
+        self.assertAlmostEqual(
+            required_stopping_distance_m(
+                20.0,
+                deceleration_mps2=8.0,
+            ),
+            47.0,
+        )
 
     def test_ttc_thresholds_match_plan(self):
         self.assertEqual(ttc_risk_level(4.1), "none")
@@ -59,7 +73,10 @@ class RiskAssessmentTests(unittest.TestCase):
         result = assess_world_state(state)
         self.assertEqual(result["risk_level"], "high")
         self.assertEqual(result["object_assessments"][0]["ttc_s"], 0.5)
-        self.assertEqual(result["recommended_action"], "decelerate")
+        self.assertEqual(
+            result["recommended_action"],
+            "emergency_brake",
+        )
 
     def test_collision_requires_emergency_brake(self):
         state = copy.deepcopy(self.world_state)

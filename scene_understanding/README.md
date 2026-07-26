@@ -383,7 +383,28 @@ python -m scene_understanding.scripts.assess_risk \
   --output outputs/risk_assessment.json
 ```
 
-风险输出包含安全跟车距离、TTC、目标风险、碰撞与压线事件，以及左右变道安全判断。
+风险输出遵循 `schemas/risk_assessment.schema.json`，当前继续使用
+`schema_version: 1.0`。输出包含安全跟车距离、逐目标 TTC、风险等级、推荐动作、
+碰撞与压线事件，以及左右变道安全判断。
+
+基础跟车距离保留团队方案中的三档规则：自车速度低于 30 km/h、30–60 km/h、
+高于 60 km/h 时分别使用 10 m、20 m、40 m。在此基础上增加场景风险规则：
+
+- 对停止车辆、施工锥桶、护栏和道路障碍物，额外计算
+  `反应距离 + 制动距离 + 2 m 缓冲距离`；当前使用 1 s 反应时间，
+  4 m/s² 划定提前减速区，8 m/s² 划定紧急制动区；
+- 对相邻车道车辆，预测其横向进入主车行驶走廊的时间，并计算进入时的纵向间距；
+  只有 4 s 内进入且预测间距不大于当前安全距离时，才升级为加塞冲突；
+- 对路侧行人和骑行者使用同样的走廊进入预测，避免只按当前欧氏距离判断；
+- 左右变道分别使用目标车道前车和后车的纵向相对速度计算方向相关 TTC；
+- 已发生碰撞、TTC 小于 1 s、1 s 内迫近路径冲突或应急停车距离不足时建议
+  `emergency_brake`；远距离横向运动目标只保持监控，不触发不必要的紧急制动。
+
+新增的可审计原因包括 `cut_in_path_conflict_imminent`、
+`pedestrian_path_conflict_imminent`、`cyclist_path_conflict_imminent` 和
+`insufficient_stopping_distance`、`insufficient_emergency_stopping_distance`。
+所有距离和速度仍来自同步 WorldState/CARLA
+真值，视觉模型文本不能参与 TTC、停车距离或紧急制动计算。
 
 ### 3. 单步控制决策
 

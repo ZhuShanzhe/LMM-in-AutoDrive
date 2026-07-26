@@ -20,6 +20,19 @@ RISK_LEVELS = ("none", "low", "medium", "high")
 RISK_RANK = {level: rank for rank, level in enumerate(RISK_LEVELS)}
 RECOMMENDED_ACTIONS = {"maintain_speed", "monitor", "decelerate", "emergency_brake"}
 
+EGO_PATH_HALF_WIDTH_M = 2.5
+PATH_CONFLICT_HORIZON_S = 4.0
+DRIVER_REACTION_TIME_S = 1.0
+COMFORTABLE_DECELERATION_MPS2 = 4.0
+EMERGENCY_DECELERATION_MPS2 = 8.0
+STOPPING_DISTANCE_BUFFER_M = 2.0
+STATIC_HAZARD_CATEGORIES = {
+    "traffic_cone",
+    "road_barrier",
+    "obstacle",
+    "other",
+}
+
 TOP_LEVEL_KEYS = {
     "schema_version",
     "frame_id",
@@ -107,15 +120,206 @@ def _max_risk(*levels: str) -> str:
     return max(levels, key=RISK_RANK.__getitem__)
 
 
+def required_stopping_distance_m(
+    ego_speed_mps: float,
+    *,
+    reaction_time_s: float = DRIVER_REACTION_TIME_S,
+    deceleration_mps2: float = COMFORTABLE_DECELERATION_MPS2,
+    buffer_m: float = STOPPING_DISTANCE_BUFFER_M,
+) -> float:
+    """Return reaction distance plus braking distance and a small buffer."""
+
+    values = {
+        "ego_speed_mps": ego_speed_mps,
+        "reaction_time_s": reaction_time_s,
+        "deceleration_mps2": deceleration_mps2,
+        "buffer_m": buffer_m,
+    }
+    if any(
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+        for value in values.values()
+    ):
+        raise ValueError("stopping-distance inputs must be finite numbers")
+    if ego_speed_mps < 0 or reaction_time_s < 0 or buffer_m < 0:
+        raise ValueError(
+            "speed, reaction time and buffer must be non-negative"
+        )
+    if deceleration_mps2 <= 0:
+        raise ValueError("deceleration_mps2 must be positive")
+
+    reaction_distance = ego_speed_mps * reaction_time_s
+    braking_distance = (
+        ego_speed_mps * ego_speed_mps
+        / (2.0 * deceleration_mps2)
+    )
+    return reaction_distance + braking_distance + buffer_m
+
+
+def _corridor_entry_time_s(
+    obj: dict[str, Any],
+) -> float | None:
+    """Predict when a laterally approaching object enters the ego corridor."""
+
+    position = obj.get("relative_position_ego_m")
+    velocity = obj.get("relative_velocity_ego_mps")
+    if not isinstance(position, dict) or not isinstance(
+        velocity,
+        dict,
+    ):
+        return None
+
+    lateral = position.get("lateral")
+    longitudinal = position.get("longitudinal")
+    lateral_velocity = velocity.get("lateral")
+    longitudinal_velocity = velocity.get("longitudinal")
+
+    values = (
+        lateral,
+        longitudinal,
+        lateral_velocity,
+        longitudinal_velocity,
+    )
+    if any(
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+        for value in values
+    ):
+        return None
+    if longitudinal <= 0:
+        return None
+
+    lateral_distance = abs(lateral)
+    if lateral_distance <= EGO_PATH_HALF_WIDTH_M:
+        entry_time = 0.0
+    else:
+        if (
+            abs(lateral_velocity) <= 1e-6
+            or lateral * lateral_velocity >= 0
+        ):
+            return None
+        entry_time = (
+            lateral_distance - EGO_PATH_HALF_WIDTH_M
+        ) / abs(lateral_velocity)
+
+    if entry_time > PATH_CONFLICT_HORIZON_S:
+        return None
+
+    predicted_longitudinal = (
+        longitudinal
+        + longitudinal_velocity * entry_time
+    )
+    if predicted_longitudinal <= 0:
+        return None
+    return entry_time
+
+
+def _path_conflict_kind(
+    obj: dict[str, Any],
+) -> str | None:
+    category = obj["category"]
+    relation = obj["lane_relation"]
+
+    if (
+        category == "vehicle"
+        and relation
+        in {"left_adjacent_lane", "right_adjacent_lane"}
+    ):
+        return "cut_in"
+
+    if (
+        category in {"pedestrian", "cyclist"}
+        and relation
+        in {"roadside", "unknown", "crossing_ego_path"}
+    ):
+        return category
+
+    return None
+
+
+def _predicted_longitudinal_gap_at_entry_m(
+    obj: dict[str, Any],
+    conflict_time_s: float | None,
+) -> float | None:
+    """Return predicted forward separation at corridor entry."""
+
+    if conflict_time_s is None:
+        return None
+
+    position = obj.get("relative_position_ego_m")
+    velocity = obj.get("relative_velocity_ego_mps")
+    if not isinstance(position, dict) or not isinstance(
+        velocity,
+        dict,
+    ):
+        return None
+
+    longitudinal = position.get("longitudinal")
+    longitudinal_velocity = velocity.get("longitudinal")
+    values = (
+        longitudinal,
+        longitudinal_velocity,
+        conflict_time_s,
+    )
+    if any(
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+        for value in values
+    ):
+        return None
+
+    return (
+        longitudinal
+        + longitudinal_velocity * conflict_time_s
+    )
+
+
+def _conflict_risk_level(
+    conflict_time_s: float | None,
+    predicted_gap_m: float | None,
+    *,
+    safe_distance_m: float,
+) -> str:
+    if (
+        conflict_time_s is None
+        or predicted_gap_m is None
+        or predicted_gap_m > safe_distance_m
+    ):
+        return "none"
+    if conflict_time_s <= 1.0:
+        return "high"
+    if conflict_time_s <= 2.0:
+        return "medium"
+    if conflict_time_s <= PATH_CONFLICT_HORIZON_S:
+        return "low"
+    return "none"
+
+
 def _is_path_relevant(obj: dict[str, Any]) -> bool:
     if obj["category"] in {"traffic_light", "traffic_sign"}:
         return False
+
     position = obj.get("relative_position_ego_m")
-    if not isinstance(position, dict) or position["longitudinal"] <= 0:
+    if (
+        not isinstance(position, dict)
+        or position["longitudinal"] <= 0
+    ):
         return False
+
     relation = obj["lane_relation"]
     if relation in {"ego_lane", "crossing_ego_path"}:
         return True
+
+    conflict_kind = _path_conflict_kind(obj)
+    if (
+        conflict_kind is not None
+        and _corridor_entry_time_s(obj) is not None
+    ):
+        return True
+
     if relation in {
         "left_adjacent_lane",
         "right_adjacent_lane",
@@ -124,24 +328,64 @@ def _is_path_relevant(obj: dict[str, Any]) -> bool:
     }:
         return False
 
-    lateral = position["lateral"]
-    if abs(lateral) <= 2.5:
+    return abs(position["lateral"]) <= EGO_PATH_HALF_WIDTH_M
+
+
+def _is_static_path_hazard(
+    obj: dict[str, Any],
+) -> bool:
+    if obj["category"] in STATIC_HAZARD_CATEGORIES:
         return True
-    relative_velocity = obj.get("relative_velocity_ego_mps")
+    if obj["category"] != "vehicle":
+        return False
+
+    speed = obj.get("speed_mps")
     return (
-        obj["category"] in {"pedestrian", "cyclist"}
-        and abs(lateral) <= 6.0
-        and isinstance(relative_velocity, dict)
-        and lateral * relative_velocity["lateral"] < 0
+        isinstance(speed, (int, float))
+        and not isinstance(speed, bool)
+        and math.isfinite(speed)
+        and speed <= 0.5
     )
 
 
-def assess_object(obj: dict[str, Any], *, safe_distance_m: float) -> dict[str, Any]:
+def assess_object(
+    obj: dict[str, Any],
+    *,
+    safe_distance_m: float,
+    ego_speed_mps: float,
+) -> dict[str, Any]:
     relevant = _is_path_relevant(obj)
     distance = obj.get("distance_m")
     closing_speed = obj.get("closing_speed_mps")
-    ttc = compute_ttc_s(distance, closing_speed) if relevant else None
+    ttc = (
+        compute_ttc_s(distance, closing_speed)
+        if relevant
+        else None
+    )
     ttc_level = ttc_risk_level(ttc)
+
+    conflict_kind = (
+        _path_conflict_kind(obj)
+        if relevant
+        else None
+    )
+    conflict_time = (
+        _corridor_entry_time_s(obj)
+        if conflict_kind is not None
+        else None
+    )
+    predicted_conflict_gap = (
+        _predicted_longitudinal_gap_at_entry_m(
+            obj,
+            conflict_time,
+        )
+    )
+    conflict_level = _conflict_risk_level(
+        conflict_time,
+        predicted_conflict_gap,
+        safe_distance_m=safe_distance_m,
+    )
+
     reasons: list[str] = []
 
     if not relevant:
@@ -149,8 +393,16 @@ def assess_object(obj: dict[str, Any], *, safe_distance_m: float) -> dict[str, A
         distance_is_safe = None
     else:
         distance_level = distance_risk_level(distance)
-        risk_level = _max_risk(distance_level, ttc_level)
-        distance_is_safe = distance is not None and distance >= safe_distance_m
+        risk_level = _max_risk(
+            distance_level,
+            ttc_level,
+            conflict_level,
+        )
+        distance_is_safe = (
+            distance is not None
+            and distance >= safe_distance_m
+        )
+
         if distance is None:
             reasons.append("metric_distance_unavailable")
         elif distance < 10.0:
@@ -159,9 +411,16 @@ def assess_object(obj: dict[str, Any], *, safe_distance_m: float) -> dict[str, A
             reasons.append("distance_10_to_25m")
         else:
             reasons.append("distance_above_25m")
+
         if distance_is_safe is False:
-            risk_level = _max_risk(risk_level, "medium")
-            reasons.append("below_speed_based_safe_distance")
+            risk_level = _max_risk(
+                risk_level,
+                "medium",
+            )
+            reasons.append(
+                "below_speed_based_safe_distance"
+            )
+
         if ttc_level == "high":
             reasons.append("ttc_below_1s")
         elif ttc_level == "medium":
@@ -169,14 +428,68 @@ def assess_object(obj: dict[str, Any], *, safe_distance_m: float) -> dict[str, A
         elif ttc_level == "low":
             reasons.append("ttc_2_to_4s")
 
+        if conflict_kind is not None:
+            if conflict_level == "high":
+                reasons.append(
+                    f"{conflict_kind}_path_conflict_imminent"
+                )
+            elif conflict_level in {"medium", "low"}:
+                reasons.append(
+                    f"{conflict_kind}_path_conflict_predicted"
+                )
+
+        if (
+            distance is not None
+            and _is_static_path_hazard(obj)
+        ):
+            comfortable_stopping_distance = (
+                required_stopping_distance_m(
+                    ego_speed_mps
+                )
+            )
+            emergency_stopping_distance = (
+                required_stopping_distance_m(
+                    ego_speed_mps,
+                    deceleration_mps2=(
+                        EMERGENCY_DECELERATION_MPS2
+                    ),
+                )
+            )
+
+            if distance < emergency_stopping_distance:
+                risk_level = "high"
+                reasons.append(
+                    "insufficient_emergency_stopping_distance"
+                )
+            elif distance < comfortable_stopping_distance:
+                risk_level = _max_risk(
+                    risk_level,
+                    "medium",
+                )
+                reasons.append(
+                    "insufficient_stopping_distance"
+                )
+
     return {
         "object_id": obj["object_id"],
         "relevant_to_ego_path": relevant,
-        "distance_m": round(distance, 6) if distance is not None else None,
+        "distance_m": (
+            round(distance, 6)
+            if distance is not None
+            else None
+        ),
         "safe_distance_m": safe_distance_m,
         "distance_is_safe": distance_is_safe,
-        "closing_speed_mps": round(closing_speed, 6) if closing_speed is not None else None,
-        "ttc_s": round(ttc, 6) if ttc is not None else None,
+        "closing_speed_mps": (
+            round(closing_speed, 6)
+            if closing_speed is not None
+            else None
+        ),
+        "ttc_s": (
+            round(ttc, 6)
+            if ttc is not None
+            else None
+        ),
         "ttc_risk_level": ttc_level,
         "risk_level": risk_level,
         "reason_codes": reasons,
@@ -219,7 +532,32 @@ def assess_lane_change(
         else:
             rear_gaps.append(gap)
             gap_reason = "target_lane_rear_gap_too_small"
-        ttc = compute_ttc_s(obj.get("distance_m"), obj.get("closing_speed_mps"))
+        relative_speed = obj.get(
+            "relative_longitudinal_speed_mps"
+        )
+        if isinstance(relative_speed, (int, float)) and not isinstance(
+            relative_speed,
+            bool,
+        ):
+            if longitudinal >= 0:
+                lane_closing_speed = max(
+                    0.0,
+                    -float(relative_speed),
+                )
+            else:
+                lane_closing_speed = max(
+                    0.0,
+                    float(relative_speed),
+                )
+        else:
+            lane_closing_speed = obj.get(
+                "closing_speed_mps"
+            )
+
+        ttc = compute_ttc_s(
+            gap,
+            lane_closing_speed,
+        )
         if gap < safe_distance_m:
             blocking_ids.append(obj["object_id"])
             reasons.append(gap_reason)
@@ -250,8 +588,14 @@ def assess_world_state(world_state: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("invalid WorldState: " + "; ".join(input_errors))
 
     safe_distance = safe_following_distance_m(world_state["ego"]["speed_mps"])
+    ego_speed = world_state["ego"]["speed_mps"]
     object_assessments = [
-        assess_object(obj, safe_distance_m=safe_distance) for obj in world_state["objects"]
+        assess_object(
+            obj,
+            safe_distance_m=safe_distance,
+            ego_speed_mps=ego_speed,
+        )
+        for obj in world_state["objects"]
     ]
     overall = "none"
     for assessment in object_assessments:
@@ -273,7 +617,25 @@ def assess_world_state(world_state: dict[str, Any]) -> dict[str, Any]:
             top_reasons.extend(assessment["reason_codes"])
     top_reasons = list(dict.fromkeys(top_reasons))
 
-    if collisions:
+    emergency_reason_codes = {
+        "cut_in_path_conflict_imminent",
+        "pedestrian_path_conflict_imminent",
+        "cyclist_path_conflict_imminent",
+        "insufficient_emergency_stopping_distance",
+    }
+    emergency_required = any(
+        (
+            assessment["ttc_s"] is not None
+            and assessment["ttc_s"] < 1.0
+        )
+        or bool(
+            emergency_reason_codes
+            & set(assessment["reason_codes"])
+        )
+        for assessment in object_assessments
+    )
+
+    if collisions or emergency_required:
         action = "emergency_brake"
     elif overall in {"high", "medium"}:
         action = "decelerate"

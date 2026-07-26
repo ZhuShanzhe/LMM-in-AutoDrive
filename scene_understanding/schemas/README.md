@@ -68,8 +68,9 @@
   使用 CARLA 原始帧号保存图片，并按帧缓存碰撞与压线事件。
 - `risk_assessment.schema.json`：风险等级、逐目标 TTC 和左右变道判断的输出格式。
 - `examples/risk_assessment.example.json`：使用示例 WorldState 计算出的合法风险结果。
-- `../scene_understanding/core/risk_assessment.py`：按队长方案阈值计算安全距离、TTC、风险等级、
-  推荐动作以及左右变道安全性；不依赖 CARLA 或模型运行时。
+- `../scene_understanding/core/risk_assessment.py`：保留队长方案的基础安全距离和 TTC
+  阈值，并增加停车距离、加塞/横穿冲突预测、碰撞前紧急制动以及方向相关的
+  变道 TTC；不依赖 CARLA 或模型运行时。
 - `semantic_alignment.schema.json`：单个文本指令对象与 CARLA actor、车道或路口的对齐结果格式。
 - `examples/semantic_alignment.example.json`：将单个“前车”引用对齐到具体 CARLA actor 的示例。
 - `driving_intent_alignment.schema.json`：DrivingIntent 多步骤目标与单帧 WorldState 的批量对齐结果格式。
@@ -195,10 +196,19 @@ python -m scene_understanding.core.risk_assessment \
   --output outputs/risk_assessment.example.json
 ```
 
-风险模块采用方案中的固定阈值：自车速度低于 30 km/h、30–60 km/h、高于
-60 km/h 时安全距离分别为 10 m、20 m、40 m；TTC 大于 4 s、2–4 s、
-1–2 s、小于 1 s 分别对应无、低、中、高风险。左右变道判断同时检查地图许可、
-目标车道前后间距以及 TTC；碰撞事件直接触发高风险和 `emergency_brake` 建议。
+风险模块保留方案中的固定基础阈值：自车速度低于 30 km/h、30–60 km/h、
+高于 60 km/h 时安全距离分别为 10 m、20 m、40 m；TTC 大于 4 s、
+2–4 s、1–2 s、小于 1 s 分别对应无、低、中、高风险。
+
+场景增强规则使用 WorldState 的纵向/横向相对位置和速度：停止车辆及静态障碍物
+分别使用 4 m/s² 和 8 m/s² 制动距离划定提前减速区和紧急制动区；相邻车辆、
+路侧行人和骑行者预测
+4 s 内是否进入主车走廊，并要求进入时的预测纵向间距不大于当前安全距离。
+左右变道分别根据前车变慢和后车逼近计算方向相关 TTC。碰撞、TTC 小于 1 s、
+1 s 内迫近路径冲突或应急停车距离不足均触发高风险和
+`emergency_brake` 建议；仅进入舒适制动区时建议 `decelerate`。
+输出字段和 `schema_version: 1.0` 保持不变，新增场景语义通过 `reason_codes`
+审计，不影响现有决策和控制接口。
 
 语义对齐示例（可选地复用同一帧风险输出）：
 
