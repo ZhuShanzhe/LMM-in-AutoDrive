@@ -163,6 +163,16 @@ class ControlDecisionTests(unittest.TestCase):
         self.assertTrue(result["emergency"])
         self.assertEqual(result["target_speed_kmh"], 0.0)
 
+    def test_emergency_risk_overrides_an_ordinary_stop(self):
+        intent = driving_intent("STOP")
+        self.risk["risk_level"] = "high"
+        self.risk["reason_codes"] = ["collision_event"]
+        self.risk["recommended_action"] = "emergency_brake"
+        result = self.build(intent)
+        self.assertEqual(result["decision_status"], "BLOCKED")
+        self.assertEqual(result["action"], "emergency_brake")
+        self.assertEqual(result["reason"], "risk_requires_emergency_brake")
+
     def test_non_valid_parse_status_stops(self):
         intent = driving_intent(status="NEEDS_CLARIFICATION")
         alignment = semantic_alignment(intent, self.world_state["frame_id"])

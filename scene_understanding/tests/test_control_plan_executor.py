@@ -163,6 +163,25 @@ class ControlPlanExecutorTests(unittest.TestCase):
         self.assertEqual(decision["reason"], "plan_completed")
         self.assertEqual(validate_control_plan_state(state), [])
 
+    def test_compiles_parser_keep_lane_then_set_speed_form(self):
+        intent = driving_intent("KEEP_LANE", {})
+        intent["intent"]["steps"].append(
+            {
+                "step_id": "step_2",
+                "action": "SET_SPEED",
+                "parameters": {"target_speed_mps": 16.667},
+                "trigger": {"type": "AFTER_STEP", "step_id": "step_1"},
+                "depends_on": ["step_1"],
+                "preconditions": ["PATH_CLEAR"],
+                "on_blocked": "WAIT_FOR_SAFE",
+                "completion": {"type": "TARGET_SPEED_REACHED"},
+            }
+        )
+        state, decision = self.run_plan(intent)
+        self.assertEqual(state["step_states"][0]["status"], "SKIPPED")
+        self.assertEqual(state["active_step_id"], "step_2")
+        self.assertAlmostEqual(decision["target_speed_kmh"], 60.0012)
+
     def test_waiting_step_recovers_when_alignment_becomes_available(self):
         intent = driving_intent(
             "ADJUST_SPEED",

@@ -273,7 +273,13 @@ def _initial_state(
 
 
 def _subsumed_keep_lane_prefix(steps: list[Mapping[str, Any]]) -> bool:
-    """Recognize one lateral/longitudinal parser form as a single action."""
+    """Recognize one lateral/longitudinal parser form as a single action.
+
+    The current parser may emit a sequential ``AFTER_STEP`` relation for an
+    otherwise concurrent "keep lane and set speed" command.  Because an
+    unconstrained KEEP_LANE step has no completion event, that representation
+    cannot progress unless it is compiled into the SET_SPEED action.
+    """
 
     if len(steps) < 2:
         return False
@@ -288,9 +294,15 @@ def _subsumed_keep_lane_prefix(steps: list[Mapping[str, Any]]) -> bool:
         return False
     if str(speed_step.get("action", "")).upper() != "SET_SPEED":
         return False
-    if speed_step.get("depends_on"):
-        return False
-    return speed_step.get("trigger", {}).get("type", "IMMEDIATE") == "IMMEDIATE"
+    dependencies = speed_step.get("depends_on", [])
+    trigger = speed_step.get("trigger", {})
+    if not dependencies:
+        return trigger.get("type", "IMMEDIATE") == "IMMEDIATE"
+    return (
+        dependencies == [lane_step["step_id"]]
+        and trigger.get("type") == "AFTER_STEP"
+        and trigger.get("step_id") == lane_step["step_id"]
+    )
 
 
 def _check_state_matches_intent(
