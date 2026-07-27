@@ -46,6 +46,8 @@ DrivingIntent ──> 目标语义对齐 ──> 风险/TTC ──> 安全门控
 
 ## 与上一版不同
 
+- 新增场景 2 的 VLA 多模态输入框架，将语音指令、四路 RGB、LiDAR 和 WorldState 组成统一同步 Bundle；
+- 新增 `VlaActionProposal` 输出契约和确定性安全门，VLA 提议不能绕过风险判断直接控制车辆；
 - 语义对齐从每步自由文本目标升级为 DrivingIntent `1.2.0` 共享实体、`target_ref`
   和 `goal_conditions`；
 - 目标匹配加入类别、相对方向、颜色、车辆子类型和开放描述证据，唯一候选才允许写入
@@ -259,6 +261,8 @@ python -m scene_understanding.realtime_perception.evaluate_dataset \
 |---|---|---|---|
 | `driving_intent.json` | 结构化指令解析模块 | 本模块 | 驾驶步骤、目标、依赖关系和阻塞策略 |
 | `world_state.json` | CARLA 世界状态采集器 | 对齐与风险模块 | 主车、交通参与者、车道、环境和传感器事件 |
+| `multimodal_frame_bundle.json` | ASR、多传感器采集器与 WorldState | VLA 模型 | 同帧语音、四路 RGB、LiDAR、车辆状态及标定信息 |
+| `vla_action_proposal.json` | VLA 模型 | 确定性安全门 | 未经信任的模型动作提议、置信度与证据模态 |
 | `semantic_alignment.json` | 本模块 | 控制决策模块 | 将“行人、慢车、前车、车道”等目标关联到实体 |
 | `risk_assessment.json` | 本模块 | 控制决策模块 | 距离、TTC、碰撞风险和左右变道安全性 |
 | `control_decision.json` | 本模块 | 团队控制模块 | 单帧安全门控后的扁平控制动作 |
@@ -406,7 +410,19 @@ python -m scene_understanding.scripts.assess_risk \
 所有距离和速度仍来自同步 WorldState/CARLA
 真值，视觉模型文本不能参与 TTC、停车距离或紧急制动计算。
 
-### 3. 单步控制决策
+### 3. VLA 多模态输入与安全决策
+
+场景 2 使用语音指令、四路 RGB 摄像头、车顶 LiDAR 和同步的 `WorldState` 作为 VLA 输入。当前版本完成输入输出契约、CARLA 采集适配、严格同步、命令行构建器和确定性安全门；具体 VLA 模型后端可以在不改变下游接口的情况下继续接入。
+
+输入链路为：ASR、四路 RGB、LiDAR 和 WorldState 组成 `MultimodalFrameBundle`，VLA 模型输出 `VlaActionProposal`，再由风险判断和确定性安全门生成现有的 `ControlDecision 1.0.0`。
+
+Bundle 以 CARLA `simulation_frame` 为同步主键，不允许使用相邻帧传感器数据补齐当前帧。缺少必需模态时标记为 `INCOMPLETE`，不能进入 VLA 决策。
+
+命令行入口为 `python -m scene_understanding.scripts.build_multimodal_vla_input`；核心适配 API 为 `assemble_vla_multimodal_input(...)`，安全审核入口为 `gate_vla_action_proposal(...)`。
+
+`VlaActionProposal` 只是未经信任的模型动作提议，不能直接发送给车辆。紧急制动、减速和变道安全判断始终以确定性的 `RiskAssessment` 为准。
+
+### 4. 单步控制决策
 
 ```bash
 python -m scene_understanding.scripts.build_control_decision \
@@ -419,7 +435,7 @@ python -m scene_understanding.scripts.build_control_decision \
 
 风险规则始终高于普通驾驶动作。目标未匹配、车道不安全或输入状态无效时，模块按照 `on_blocked` 策略减速或停车。
 
-### 4. 多步骤计划推进
+### 5. 多步骤计划推进
 
 初始化计划：
 
@@ -584,11 +600,15 @@ PYTHONPATH=. python -m scene_understanding.async_semantics.run_minicpm_scene_inf
 python -m unittest discover -s scene_understanding/tests -v
 ```
 
-当前测试集共 186 项，全部通过，覆盖：
+当前测试集共 250 项，全部通过，覆盖：
 
 - JSON 结构和确定性校验；
 - WorldState 坐标与相对运动；
 - CARLA Actor、车道、交通灯与传感器采集；
+- 四路 RGB 与车顶 LiDAR 的同帧采集、缓存淘汰和跨帧拒绝；
+- 多模态 Bundle 构建、Schema 校验、时间容差和必需模态缺失处理；
+- ASR、传感器快照与 WorldState 输入适配及命令行产物生成；
+- VLA 动作提议契约、低置信度拒绝和确定性风险安全覆盖；
 - 施工锥桶和道路障碍物等安全相关静态 Actor 类别映射；
 - CARLA 三维框投影、关键帧清单和跨帧拒绝；
 - 一对一视觉语义融合、低置信度过滤和异步最新帧替换；
@@ -603,6 +623,8 @@ python -m unittest discover -s scene_understanding/tests -v
 所有稳定 JSON 契约位于 `schemas/`，可直接用于模块间字段确认。示例位于 `schemas/examples/`，包括：
 
 - `world_state.example.json`
+- `multimodal_frame_bundle.example.json`（VLA 多模态同步输入）
+- `vla_action_proposal.example.json`（未经安全审核的 VLA 动作提议）
 - `semantic_alignment.example.json`（单对象引用对齐）
 - `driving_intent_alignment.example.json`（DrivingIntent 多步骤批量对齐）
 - `risk_assessment.example.json`
@@ -614,6 +636,7 @@ python -m unittest discover -s scene_understanding/tests -v
 
 ## 当前边界
 
+- 当前交付的是 VLA 多模态输入、动作提议和确定性安全门框架，尚未接入或训练具体 VLA 模型权重。
 - 三个闭环步骤目前通过持久化 JSON 状态在独立 CARLA 场景中依次验证，并非同一场景进程中的一次连续演示。
 - 当前超车完成条件是超过慢车并稳定保持超车道，尚未包含返回原车道。
 - 风险阈值属于确定性研究规则，当前结果只覆盖已记录的场景和速度分布。

@@ -66,6 +66,16 @@
   接收队友场景提供的 `world` 和 `scenario.ego_vehicle`，不改变场景代码。
 - `../scene_understanding/core/carla_sensor_manager.py`：统一管理前视 RGB、碰撞和压线传感器，
   使用 CARLA 原始帧号保存图片，并按帧缓存碰撞与压线事件。
+- `multimodal_frame_bundle.schema.json`：语音、四路 RGB、LiDAR 和 WorldState 的同帧 VLA 输入契约。
+- `examples/multimodal_frame_bundle.example.json`：包含完整同步模态和相机标定信息的合法示例。
+- `../core/carla_multimodal_sensor_manager.py`：按 CARLA 原始帧号采集四路 RGB 和车顶 LiDAR，拒绝使用相邻帧补齐数据。
+- `../core/multimodal_frame_bundle.py`：构建并校验多模态 Bundle，记录精确同步、容差同步和模态缺失状态。
+- `../core/multimodal_input_adapter.py`：将 ASR 结果、传感器快照和 WorldState 适配为统一 VLA 输入。
+- `../scripts/build_multimodal_vla_input.py`：生成可审计多模态输入文件的命令行入口。
+- `vla_action_proposal.schema.json`：未经信任的 VLA 动作提议、置信度和证据模态输出契约。
+- `examples/vla_action_proposal.example.json`：合法 VLA 变道动作提议示例。
+- `../core/vla_action_proposal.py`：校验 VLA 提议状态、动作字段和帧标识的一致性。
+- `../src/vla_safety_gate.py`：使用确定性风险结果审核或覆盖 VLA 提议，并输出现有 ControlDecision 接口。
 - `risk_assessment.schema.json`：风险等级、逐目标 TTC 和左右变道判断的输出格式。
 - `examples/risk_assessment.example.json`：使用示例 WorldState 计算出的合法风险结果。
 - `../scene_understanding/core/risk_assessment.py`：保留队长方案的基础安全距离和 TTC

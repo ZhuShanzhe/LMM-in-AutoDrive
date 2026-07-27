@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "proposal_id": "vla-proposal-001",
+  "request_id": "request-001",
+  "bundle_id": "bundle_carla_000123_request_001",
+  "frame_id": "carla_000123",
+  "simulation_frame": 123,
+  "status": "VALID",
+  "action": "lane_change_left",
+  "target_speed_kmh": 25.0,
+  "target_lane": "left",
+  "target_location": null,
+  "confidence": 0.91,
+  "model_name": "multimodal-vla",
+  "inference_latency_ms": 42.5,
+  "matched_entity_id": null,
+  "evidence_modalities": [
+    "instruction",
+    "front_rgb",
+    "left_rgb",
+    "right_rgb",
+    "rear_rgb",
+    "lidar",
+    "world_state"
+  ],
+  "reason_codes": [
+    "multimodal_context_supports_lane_change"
+  ]
+}
