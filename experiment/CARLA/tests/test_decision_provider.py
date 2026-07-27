@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 import unittest
+from pathlib import Path
 
 from control.decision_provider import JsonFileDecisionPolicy
 from control.placeholder_following_policy import (
@@ -16,6 +17,22 @@ def write_json(path, document):
 
 
 class JsonFileDecisionPolicyTest(unittest.TestCase):
+    def test_reads_checked_in_scene_understanding_contract(self):
+        root = Path(__file__).resolve().parents[3]
+        document = json.loads(
+            (root / "scene_understanding" / "schemas" / "examples" / "control_decision.example.json")
+            .read_text(encoding="utf-8")
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = os.path.join(temp_dir, "decision.json")
+            write_json(path, document)
+            decision = JsonFileDecisionPolicy(path, max_age_frames=3).decide({
+                "simulation_frame": 125,
+            })
+        self.assertEqual(decision["action"], "decelerate")
+        self.assertEqual(decision["decision_frame_id"], "carla_000123")
+        self.assertEqual(decision["decision_age_frames"], 2)
+
     def test_reads_scene_understanding_control_decision(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = os.path.join(temp_dir, "decision.json")
@@ -47,6 +64,35 @@ class JsonFileDecisionPolicyTest(unittest.TestCase):
         self.assertEqual(decision["action"], "stop")
         self.assertEqual(decision["target_speed_kmh"], 0.0)
         self.assertIn("external_decision_unavailable", decision["reason"])
+
+    def test_accepts_utf8_bom_external_document(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = os.path.join(temp_dir, "decision.json")
+            with open(path, "w", encoding="utf-8-sig") as handle:
+                json.dump({"action": "keep_lane", "target_speed_kmh": 35.0}, handle)
+            decision = JsonFileDecisionPolicy(path).decide({})
+        self.assertEqual(decision["action"], "keep_lane")
+        self.assertEqual(decision["target_speed_kmh"], 35.0)
+
+    def test_rejects_stale_or_future_external_decision(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = os.path.join(temp_dir, "decision.json")
+            document = {
+                "action": "keep_lane",
+                "target_speed_kmh": 30.0,
+                "frame_id": "carla_000100",
+            }
+            write_json(path, document)
+            policy = JsonFileDecisionPolicy(path, max_age_frames=3)
+            stale = policy.decide({"simulation_frame": 104})
+            self.assertEqual(stale["action"], "stop")
+            self.assertEqual(stale["reason"], "external_decision_stale")
+
+            document["frame_id"] = "carla_000106"
+            write_json(path, document)
+            future = policy.decide({"simulation_frame": 104})
+            self.assertEqual(future["action"], "stop")
+            self.assertEqual(future["reason"], "external_decision_future_frame")
 
     def test_placeholder_policy_brakes_for_closing_front_vehicle(self):
         decision = build_control_decision({

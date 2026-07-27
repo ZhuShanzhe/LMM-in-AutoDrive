@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 
@@ -28,9 +28,11 @@ def resolve_drivelm_image_path(image_root: Path, annotation_path: str) -> Path:
     """Resolve DriveLM paths such as ../nuscenes/samples/CAM_FRONT/image.jpg."""
 
     normalized = annotation_path.replace("\\", "/")
+    if PurePosixPath(normalized).is_absolute():
+        return Path(normalized)
     if normalized.startswith("../"):
         normalized = "data/" + normalized[3:]
-    return (image_root / normalized).resolve()
+    return image_root / normalized
 
 
 def normalize_category(raw_category: Any, visual_description: Any) -> str:

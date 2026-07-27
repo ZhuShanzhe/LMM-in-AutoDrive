@@ -236,25 +236,73 @@ def _initial_state(
         {
             "step_id": step["step_id"],
             "action": step["action"],
-            "status": "ACTIVE" if active and index == 0 else "PENDING",
-            "activation_frame_id": frame_id if active and index == 0 else None,
+            "status": "PENDING",
+            "activation_frame_id": None,
             "terminal_frame_id": None,
             "reason_codes": [],
         }
         for index, step in enumerate(steps)
     ]
+    active_index = 0 if active else None
+    if active and _subsumed_keep_lane_prefix(steps):
+        step_states[0].update(
+            {
+                "status": "SKIPPED",
+                "terminal_frame_id": frame_id,
+                "reason_codes": ["subsumed_by_set_speed_lateral_control"],
+            }
+        )
+        active_index = 1
+    if active_index is not None:
+        step_states[active_index]["status"] = "ACTIVE"
+        step_states[active_index]["activation_frame_id"] = frame_id
     return {
         "schema_version": CONTROL_PLAN_STATE_SCHEMA_VERSION,
         "request_id": request_id,
         "revision": 0,
         "plan_status": "ACTIVE" if active else "SAFE_FALLBACK",
-        "active_step_index": 0 if active else None,
-        "active_step_id": steps[0]["step_id"] if active else None,
+        "active_step_index": active_index,
+        "active_step_id": (
+            steps[active_index]["step_id"] if active_index is not None else None
+        ),
         "step_states": step_states,
         "last_frame_id": frame_id,
         "last_feedback_outcome": "INITIALIZED",
         "reason_codes": [] if active else [f"parse_status_{str(parse_status).lower()}"],
     }
+
+
+def _subsumed_keep_lane_prefix(steps: list[Mapping[str, Any]]) -> bool:
+    """Recognize one lateral/longitudinal parser form as a single action.
+
+    The current parser may emit a sequential ``AFTER_STEP`` relation for an
+    otherwise concurrent "keep lane and set speed" command.  Because an
+    unconstrained KEEP_LANE step has no completion event, that representation
+    cannot progress unless it is compiled into the SET_SPEED action.
+    """
+
+    if len(steps) < 2:
+        return False
+    lane_step, speed_step = steps[0], steps[1]
+    if str(lane_step.get("action", "")).upper() != "KEEP_LANE":
+        return False
+    if lane_step.get("completion") is not None or lane_step.get("target") is not None:
+        return False
+    if lane_step.get("depends_on") or lane_step.get("preconditions"):
+        return False
+    if lane_step.get("trigger", {}).get("type", "IMMEDIATE") != "IMMEDIATE":
+        return False
+    if str(speed_step.get("action", "")).upper() != "SET_SPEED":
+        return False
+    dependencies = speed_step.get("depends_on", [])
+    trigger = speed_step.get("trigger", {})
+    if not dependencies:
+        return trigger.get("type", "IMMEDIATE") == "IMMEDIATE"
+    return (
+        dependencies == [lane_step["step_id"]]
+        and trigger.get("type") == "AFTER_STEP"
+        and trigger.get("step_id") == lane_step["step_id"]
+    )
 
 
 def _check_state_matches_intent(
@@ -361,6 +409,19 @@ def _blocked_policy(step: Mapping[str, Any]) -> str:
     if value in {"SKIP", "SKIP_STEP", "CONTINUE"}:
         return "SKIP"
     return "STOP"
+
+
+def _await_target_clearance_feedback(
+    step: Mapping[str, Any], reason_codes: list[str]
+) -> bool:
+    """Keep a target-clearance step active for its completion observation."""
+
+    completion = step.get("completion")
+    return (
+        isinstance(completion, Mapping)
+        and completion.get("type") == "TARGET_CLEARED"
+        and "no_matching_entity" in reason_codes
+    )
 
 
 def _replace_decision(
@@ -480,6 +541,11 @@ def advance_control_plan(
                 state["reason_codes"] = reasons
                 break
             if policy == "STOP":
+                if _await_target_clearance_feedback(step, reasons):
+                    state["step_states"][index]["status"] = "WAITING"
+                    state["step_states"][index]["reason_codes"] = reasons
+                    state["reason_codes"] = reasons
+                    break
                 _set_terminal(state, index, "BLOCKED", frame_id, reasons)
                 state["plan_status"] = "BLOCKED"
                 state["active_step_index"] = None

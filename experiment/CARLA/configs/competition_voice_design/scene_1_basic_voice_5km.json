@@ -1,0 +1,113 @@
+{
+  "schema_version": "competition_voice_scene_plan/v1",
+  "design_status": "design_only",
+  "scene_id": "scene_1_basic_voice_5km",
+  "competition_stage": "entry",
+  "design_principle": "One voice utterance has one primary driving action. A speed or lane constraint may accompany that action, but no obstacle-dependent multi-step behavior is introduced.",
+  "scene_profile": {
+    "weather": "ClearNoon",
+    "road_form": "urban arterial with three same-direction lanes and a separated opposite carriageway",
+    "visibility": "good",
+    "dynamic_interference": false,
+    "sensors": ["front_rgb_camera", "vehicle_state"]
+  },
+  "route_design": {
+    "total_length_m": 5000,
+    "map_binding_status": "topology requirements only; concrete CARLA waypoints must be selected during implementation",
+    "required_topology": [
+      "three same-direction lanes for at least 500 m before each lane-change command",
+      "a signalized right-turn junction near 1000 m",
+      "a signalized left-turn junction near 2000 m",
+      "a legal median opening or signalized U-turn node near 3500 m",
+      "no pedestrians, background vehicles, stopped vehicles, cones, or other dynamic conflict actors"
+    ],
+    "segments": [
+      {"id": "S1-01", "range_m": [0, 700], "length_m": 700, "topology": "eastbound six-lane arterial", "purpose": "accelerate and change left"},
+      {"id": "S1-02", "range_m": [700, 1500], "length_m": 800, "topology": "right turn at J1, then southbound arterial", "purpose": "distance-qualified right turn and speed reduction"},
+      {"id": "S1-03", "range_m": [1500, 2700], "length_m": 1200, "topology": "left turn at J2, then eastbound arterial", "purpose": "left turn and right lane change"},
+      {"id": "S1-04", "range_m": [2700, 3900], "length_m": 1200, "topology": "median opening J3", "purpose": "legal U-turn"},
+      {"id": "S1-05", "range_m": [3900, 5000], "length_m": 1100, "topology": "return arterial", "purpose": "resume a stable speed and finish"}
+    ]
+  },
+  "voice_command_schedule": [
+    {
+      "id": "s1_cmd_01_set_speed_60",
+      "announce_at_m": 0,
+      "spoken_text": "保持当前车道，提速至60公里每小时。",
+      "primary_action": "SET_SPEED",
+      "expected_parse": {"category": "BASIC_CONTROL", "urgency": "NORMAL", "target_speed_mps": 16.67, "lane_constraint": "CURRENT_LANE"},
+      "execution_binding": {"route_segment": "S1-01", "trigger": "IMMEDIATE", "completion": "TARGET_SPEED_REACHED", "on_blocked": "SAFE_STOP"},
+      "evaluation_window_m": [0, 300]
+    },
+    {
+      "id": "s1_cmd_02_change_left",
+      "announce_at_m": 450,
+      "spoken_text": "向左变道。",
+      "primary_action": "CHANGE_LANE",
+      "expected_parse": {"category": "BASIC_CONTROL", "urgency": "NORMAL", "direction": "LEFT", "lane_count": 1},
+      "execution_binding": {"route_segment": "S1-01", "trigger": "WHEN_SAFE", "completion": "LANE_CHANGE_COMPLETED", "preconditions": ["LEFT_LANE_EXISTS", "LEFT_LANE_SAFE", "LANE_CHANGE_LEGAL"], "on_blocked": "WAIT_FOR_SAFE"},
+      "evaluation_window_m": [450, 650]
+    },
+    {
+      "id": "s1_cmd_03_turn_right_300m",
+      "announce_at_m": 700,
+      "spoken_text": "前方300米路口右转。",
+      "primary_action": "TURN",
+      "expected_parse": {"category": "NAVIGATION", "urgency": "NORMAL", "direction": "RIGHT", "distance_m": 300},
+      "execution_binding": {"route_segment": "S1-02", "trigger": "AT_JUNCTION", "completion": "JUNCTION_EXITED", "preconditions": ["JUNCTION_REACHED", "PATH_CLEAR"], "on_blocked": "SAFE_STOP"},
+      "evaluation_window_m": [700, 1150]
+    },
+    {
+      "id": "s1_cmd_04_set_speed_40",
+      "announce_at_m": 1400,
+      "spoken_text": "减速至40公里每小时。",
+      "primary_action": "SET_SPEED",
+      "expected_parse": {"category": "BASIC_CONTROL", "urgency": "NORMAL", "target_speed_mps": 11.11},
+      "execution_binding": {"route_segment": "S1-02", "trigger": "IMMEDIATE", "completion": "TARGET_SPEED_REACHED", "on_blocked": "SAFE_STOP"},
+      "evaluation_window_m": [1400, 1650]
+    },
+    {
+      "id": "s1_cmd_05_turn_left",
+      "announce_at_m": 1800,
+      "spoken_text": "下一个路口左转。",
+      "primary_action": "TURN",
+      "expected_parse": {"category": "NAVIGATION", "urgency": "NORMAL", "direction": "LEFT"},
+      "execution_binding": {"route_segment": "S1-03", "trigger": "AT_JUNCTION", "completion": "JUNCTION_EXITED", "preconditions": ["JUNCTION_REACHED", "PATH_CLEAR"], "on_blocked": "SAFE_STOP"},
+      "evaluation_window_m": [1800, 2200]
+    },
+    {
+      "id": "s1_cmd_06_change_right",
+      "announce_at_m": 2500,
+      "spoken_text": "向右变道。",
+      "primary_action": "CHANGE_LANE",
+      "expected_parse": {"category": "BASIC_CONTROL", "urgency": "NORMAL", "direction": "RIGHT", "lane_count": 1},
+      "execution_binding": {"route_segment": "S1-03", "trigger": "WHEN_SAFE", "completion": "LANE_CHANGE_COMPLETED", "preconditions": ["RIGHT_LANE_EXISTS", "RIGHT_LANE_SAFE", "LANE_CHANGE_LEGAL"], "on_blocked": "WAIT_FOR_SAFE"},
+      "evaluation_window_m": [2500, 2700]
+    },
+    {
+      "id": "s1_cmd_07_u_turn",
+      "announce_at_m": 3200,
+      "spoken_text": "前方允许掉头处掉头。",
+      "primary_action": "U_TURN",
+      "expected_parse": {"category": "NAVIGATION", "urgency": "NORMAL", "target": "LEGAL_MEDIAN_OPENING"},
+      "execution_binding": {"route_segment": "S1-04", "trigger": "AT_JUNCTION", "completion": "JUNCTION_EXITED", "preconditions": ["JUNCTION_REACHED", "PATH_CLEAR"], "on_blocked": "SAFE_STOP"},
+      "evaluation_window_m": [3200, 3700]
+    },
+    {
+      "id": "s1_cmd_08_set_speed_50",
+      "announce_at_m": 4100,
+      "spoken_text": "保持当前车道，以50公里每小时行驶至终点。",
+      "primary_action": "SET_SPEED",
+      "expected_parse": {"category": "BASIC_CONTROL", "urgency": "NORMAL", "target_speed_mps": 13.89, "lane_constraint": "CURRENT_LANE"},
+      "execution_binding": {"route_segment": "S1-05", "trigger": "IMMEDIATE", "completion": "ROUTE_COMPLETED", "on_blocked": "SAFE_STOP"},
+      "evaluation_window_m": [4100, 5000]
+    }
+  ],
+  "special_events": [],
+  "evaluation_protocol": {
+    "online_demo_commands": 8,
+    "offline_utterance_set": "At least 20 paraphrases for each of the 8 semantic templates; report recognition and semantic-slot accuracy separately from the single-route result.",
+    "success_conditions": ["route_completed", "no_collision", "no_illegal_lane_invasion", "all_8_commands_completed"],
+    "required_metrics": ["command_recognition_accuracy", "semantic_alignment_accuracy", "end_to_end_latency_ms", "action_completion_rate"]
+  }
+}

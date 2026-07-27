@@ -25,4 +25,3 @@
 
 
 本次实验使用 SparseDrive 官方 Stage2 权重和 nuScenes v1.0-mini 进行离线开环评测。该结果用于 baseline 调研、推理成本分析和案例分析，不等价于 CARLA比赛指标。
-

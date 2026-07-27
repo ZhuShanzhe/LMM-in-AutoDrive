@@ -50,11 +50,22 @@ class RoadFinder:
         self,
         waypoint,
         distance=100,
-        step=5
+        step=5,
+        direction="next"
     ):
+
+        if direction not in ("next", "previous"):
+
+            raise ValueError(
+
+                "direction must be 'next' or 'previous'"
+
+            )
 
 
         current = waypoint
+
+        reference_yaw = waypoint.transform.rotation.yaw
 
 
         checked = 0
@@ -65,13 +76,7 @@ class RoadFinder:
 
 
 
-            next_wps = (
-
-                current.next(
-                    step
-                )
-
-            )
+            next_wps = getattr(current, direction)(step)
 
 
 
@@ -97,7 +102,7 @@ class RoadFinder:
 
             yaw_diff = self.angle_difference(
 
-                current.transform.rotation.yaw,
+                reference_yaw,
 
                 next_wp.transform.rotation.yaw
 
@@ -132,7 +137,8 @@ class RoadFinder:
 
     def find_straight_road(
         self,
-        min_length=100
+        min_length=100,
+        backward_length=0
     ):
 
 
@@ -188,6 +194,20 @@ class RoadFinder:
                 wp,
 
                 min_length
+
+            ) and (
+
+                backward_length <= 0
+
+                or self.check_straight_lane(
+
+                    wp,
+
+                    backward_length,
+
+                    direction="previous"
+
+                )
 
             ):
 

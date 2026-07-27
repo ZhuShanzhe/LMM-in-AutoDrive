@@ -24,7 +24,11 @@ from evaluation.events import EventMonitor
 from evaluation.camera import ExperimentCamera
 from evaluation.logger import ExperimentLogger
 from evaluation.metrics import summarize
+from map_utils import resolve_carla_map_name
 from perception.world_state import WorldState
+from scene_event_adapter import scene_sensor_events
+from scene_understanding_capture import SceneUnderstandingCapture
+from scene_understanding.core.carla_world_state import CarlaWorldStateCollector
 from scenarios.basic.straight_driving import StraightDrivingScenario
 from scenarios.basic.voice_control_5km import BasicVoiceControl5KmScenario
 from scenarios.continuous.basic_track_5km import BasicTrack5KmScenario
@@ -49,6 +53,8 @@ class RuleDecisionPolicy:
     def __init__(self, scenario_name, cruise_speed_kmh):
         self.scenario_name = scenario_name
         self.cruise_speed_kmh = cruise_speed_kmh
+        self._emergency_latched = False
+        self._emergency_reason = None
 
     def decide(self, world_state):
         nearby_vehicles = world_state.get("vehicles", [])
@@ -62,17 +68,49 @@ class RuleDecisionPolicy:
         front_vehicle = min(front_vehicles, key=lambda item: item["distance"], default=None)
         front_distance = front_vehicle["distance"] if front_vehicle is not None else float("inf")
         pedestrian_distance = min([item["distance"] for item in nearby_pedestrians] or [float("inf")])
-        front_braking = (
-            front_vehicle is not None
-            and front_distance < 30.0
-            and ego_speed_kmh - front_vehicle.get("speed_kmh", ego_speed_kmh) > 5.0
+        front_speed_kmh = (
+            float(front_vehicle.get("speed_kmh", ego_speed_kmh))
+            if front_vehicle is not None
+            else ego_speed_kmh
         )
-        if front_distance < 12.0 or pedestrian_distance < 10.0 or front_braking:
+        closing_speed_kmh = max(0.0, ego_speed_kmh - front_speed_kmh)
+        closing_speed_mps = closing_speed_kmh / 3.6
+        front_ttc_s = (
+            front_distance / closing_speed_mps
+            if closing_speed_mps > 0.1
+            else float("inf")
+        )
+        imminent_front_risk = (
+            front_vehicle is not None
+            and (
+                front_distance < 10.0
+                or (front_distance < 25.0 and front_ttc_s < 3.0)
+            )
+        )
+        if pedestrian_distance < 10.0 or imminent_front_risk:
+            self._emergency_latched = True
+            self._emergency_reason = (
+                "front_vehicle_braking"
+                if imminent_front_risk
+                else "rule_safety_distance"
+            )
+        if self._emergency_latched:
             return {
                 "action": "emergency_brake",
                 "target_speed_kmh": 0.0,
                 "emergency": True,
-                "reason": "front_vehicle_braking" if front_braking else "rule_safety_distance",
+                "reason": self._emergency_reason,
+            }
+        if (
+            front_vehicle is not None
+            and front_distance < 35.0
+            and closing_speed_kmh > 3.0
+        ):
+            return {
+                "action": "decelerate",
+                "target_speed_kmh": max(0.0, front_speed_kmh),
+                "emergency": False,
+                "reason": "closing_front_vehicle",
             }
         return {
             "action": "keep_lane",
@@ -148,6 +186,21 @@ def write_json_atomically(path, document):
         if temporary_path and os.path.exists(temporary_path):
             os.remove(temporary_path)
         raise
+
+
+def decide_with_optional_wait(policy, state, wait_ms):
+    """Wait for an exact-frame external decision without weakening fail-safe behavior."""
+
+    intent = policy.decide(state)
+    if wait_ms <= 0:
+        return intent
+    deadline = time.perf_counter() + wait_ms / 1000.0
+    while policy.telemetry().get("status") != "accepted":
+        if time.perf_counter() >= deadline:
+            break
+        time.sleep(0.001)
+        intent = policy.decide(state)
+    return intent
 
 
 def make_video_overlay(record):
@@ -230,6 +283,11 @@ def parse_args():
     parser.add_argument("scenario", choices=sorted(SCENARIOS))
     parser.add_argument("--host", default="localhost")
     parser.add_argument("--port", type=int, default=2000)
+    parser.add_argument(
+        "--files-base-folder",
+        default=None,
+        help="Optional local directory for CARLA map and navigation cache files",
+    )
     parser.add_argument("--map", default=None, help="Optional CARLA map name to load before setup")
     parser.add_argument("--scenario-config", default=None, help="Optional JSON configuration for a configurable scenario")
     parser.add_argument("--duration-s", type=float, default=None)
@@ -248,9 +306,26 @@ def parse_args():
         help="DrivingIntent or ControlDecision JSON path for --decision-source json_file",
     )
     parser.add_argument(
+        "--decision-max-age-frames",
+        type=int,
+        default=None,
+        help="Optional maximum accepted age for a JSON ControlDecision; stale decisions stop safely",
+    )
+    parser.add_argument(
+        "--decision-wait-ms",
+        type=float,
+        default=0.0,
+        help="Optional wait for an exact-frame external JSON decision before safe fallback",
+    )
+    parser.add_argument(
         "--world-state-output",
         default=None,
         help="Optional per-tick world-state JSON path for an external decision process",
+    )
+    parser.add_argument(
+        "--scene-world-state-output",
+        default=None,
+        help="Optional per-tick schema-valid WorldState JSON path for the decision bridge",
     )
     parser.add_argument("--goal-distance-m", type=float, default=None)
     parser.add_argument("--stop-when-goal-reached", action="store_true")
@@ -277,9 +352,35 @@ def parse_args():
     parser.add_argument("--ffmpeg", default=None, help="Path to ffmpeg for --video-output")
     parser.add_argument("--video-overlay", action="store_true", help="Overlay per-frame run telemetry on direct video")
     parser.add_argument("--terminal-hold-s", type=float, default=2.0, help="Seconds to hold SUCCESS/FAILURE video frame")
+    parser.add_argument(
+        "--scene-capture",
+        action="store_true",
+        help="Write frame-aligned scene-understanding capture bundles",
+    )
+    parser.add_argument(
+        "--scene-capture-every-n",
+        type=int,
+        default=10,
+        help="Capture one scene-understanding bundle every N simulation frames",
+    )
+    parser.add_argument("--scene-camera-width", type=int, default=800)
+    parser.add_argument("--scene-camera-height", type=int, default=600)
+    parser.add_argument("--scene-camera-timeout-s", type=float, default=1.0)
     args = parser.parse_args()
     if args.decision_source == "json_file" and not args.decision_json:
         parser.error("--decision-json is required when --decision-source json_file")
+    if args.decision_max_age_frames is not None and args.decision_max_age_frames < 0:
+        parser.error("--decision-max-age-frames must be non-negative")
+    if args.decision_wait_ms < 0:
+        parser.error("--decision-wait-ms must be non-negative")
+    if args.decision_wait_ms > 0:
+        if args.decision_source != "json_file":
+            parser.error("--decision-wait-ms requires --decision-source json_file")
+        if args.decision_max_age_frames != 0:
+            parser.error(
+                "--decision-wait-ms requires --decision-max-age-frames 0 "
+                "to enforce current-frame decisions"
+            )
     if args.resume_route_progress_m is not None and args.scenario_config is None:
         parser.error("--resume-route-progress-m requires --scenario-config")
     if args.resume_route_progress_m is not None and args.resume_route_progress_m < 0.0:
@@ -297,6 +398,10 @@ def main():
     )
     client = carla.Client(args.host, args.port)
     client.set_timeout(15.0)
+    if args.files_base_folder:
+        cache_dir = os.path.abspath(args.files_base_folder)
+        os.makedirs(cache_dir, exist_ok=True)
+        client.set_files_base_folder(cache_dir)
     world = client.get_world()
     scenario_class = SCENARIOS[args.scenario]
     config_map = None
@@ -304,6 +409,8 @@ def main():
         with open(scenario_config_path, "r", encoding="utf-8") as handle:
             config_map = json.load(handle).get("map")
     target_map = args.map or config_map or getattr(scenario_class, "default_map", None)
+    if target_map:
+        target_map = resolve_carla_map_name(target_map, client.get_available_maps())
     if target_map and not world.get_map().name.endswith(target_map):
         world = client.load_world(target_map)
     original_settings = world.get_settings()
@@ -326,12 +433,16 @@ def main():
     scenario.fixed_delta_s = args.fixed_delta_s
     monitor = None
     camera = None
+    scene_capture = None
+    scene_world_state_collector = None
     logger = None
     records = []
     try:
         scenario.setup()
         world.tick()
         ego = scenario.get_ego_vehicle()
+        if args.scene_world_state_output:
+            scene_world_state_collector = CarlaWorldStateCollector(world, ego)
         monitor = EventMonitor(world, ego)
         monitor.start()
         if args.record_images or args.video_output:
@@ -351,6 +462,17 @@ def main():
                 args.camera_view,
             )
             camera.start()
+        if args.scene_capture:
+            scene_capture = SceneUnderstandingCapture(
+                world,
+                ego,
+                output_dir=os.path.join(output_dir, "scene_understanding"),
+                every_n_frames=args.scene_capture_every_n,
+                image_width=args.scene_camera_width,
+                image_height=args.scene_camera_height,
+                camera_timeout_s=args.scene_camera_timeout_s,
+            )
+            scene_capture.setup()
         controller = build_controller(
             args.controller,
             ego,
@@ -361,7 +483,11 @@ def main():
         controller_name = type(controller).__name__
         effective_decision_source = args.decision_source
         if args.decision_source == "json_file":
-            policy = JsonFileDecisionPolicy(args.decision_json, args.target_speed_kmh)
+            policy = JsonFileDecisionPolicy(
+                args.decision_json,
+                args.target_speed_kmh,
+                args.decision_max_age_frames,
+            )
         elif args.decision_source == "voice_schedule" or args.scenario == "basic_voice_control_5km":
             create_policy = getattr(scenario, "create_temporary_policy", None)
             if create_policy is None:
@@ -383,7 +509,10 @@ def main():
             "controller": controller_name,
             "decision_source": effective_decision_source,
             "decision_json": args.decision_json,
+            "decision_max_age_frames": args.decision_max_age_frames,
+            "decision_wait_ms": args.decision_wait_ms,
             "world_state_output": args.world_state_output,
+            "scene_world_state_output": args.scene_world_state_output,
             "scenario_config": scenario_config_path,
             "resume_route_progress_m": args.resume_route_progress_m,
             "target_speed_kmh": args.target_speed_kmh,
@@ -401,6 +530,12 @@ def main():
                 "video_fps": args.video_fps if args.video_output else None,
                 "video_overlay": bool(args.video_overlay and args.video_output),
             },
+            "scene_understanding_capture": {
+                "enabled": bool(args.scene_capture),
+                "every_n_frames": args.scene_capture_every_n if args.scene_capture else None,
+                "width": args.scene_camera_width if args.scene_capture else None,
+                "height": args.scene_camera_height if args.scene_capture else None,
+            },
         })
         logger.log_event({
             "type": "scenario_initialized",
@@ -415,21 +550,32 @@ def main():
         start_sim_time = world.get_snapshot().timestamp.elapsed_seconds
         max_ticks = int(duration_s / args.fixed_delta_s)
         runner_stop_reason = "duration_limit"
+        latest_scene_sensor_events = scene_sensor_events(None)
 
         for _ in range(max_ticks):
             scenario.tick()
             state = WorldState(world, ego).get_state()
+            decision_snapshot = world.get_snapshot()
+            state["simulation_frame"] = int(decision_snapshot.frame)
+            state["frame_id"] = "carla_{0}".format(int(decision_snapshot.frame))
             if args.world_state_output:
-                snapshot = world.get_snapshot()
                 write_json_atomically(args.world_state_output, {
-                    "frame_id": "carla_{0}".format(int(snapshot.frame)),
+                    "frame_id": state["frame_id"],
+                    "simulation_frame": state["simulation_frame"],
                     "world_state": json_safe(state),
                 })
+            if scene_world_state_collector is not None:
+                write_json_atomically(
+                    args.scene_world_state_output,
+                    scene_world_state_collector.collect(
+                        sensor_events=latest_scene_sensor_events
+                    ),
+                )
             set_context = getattr(policy, "set_context", None)
             if set_context is not None:
                 set_context(call_scenario_method(scenario, "get_policy_context", {}))
             decision_start = time.perf_counter()
-            intent = policy.decide(state)
+            intent = decide_with_optional_wait(policy, state, args.decision_wait_ms)
             decision_latency_ms = (time.perf_counter() - decision_start) * 1000.0
             control_start = time.perf_counter()
             control, normalized_intent = controller.run_step(intent, args.fixed_delta_s)
@@ -444,6 +590,7 @@ def main():
             travelled_distance_m += previous_location.distance(location)
             previous_location = location
             events = monitor.snapshot(int(snapshot.frame))
+            latest_scene_sensor_events = scene_sensor_events(events)
             call_scenario_method(scenario, "report_events", None, events)
             scenario_status = call_scenario_method(scenario, "get_status", {})
             scenario_metrics = scenario_status.get("metrics", {})
@@ -478,6 +625,10 @@ def main():
                     "end_to_end": round(decision_latency_ms + control_latency_ms, 4),
                 },
             }
+            if scene_capture is not None:
+                capture_result = scene_capture.capture_current_frame()
+                if capture_result is not None:
+                    record["scene_capture"] = capture_result
             if camera is not None:
                 camera.save_frame(
                     snapshot.frame,
@@ -515,6 +666,8 @@ def main():
             )
         metrics["scenario_status"] = final_status
         metrics["runner_stop_reason"] = runner_stop_reason
+        if scene_capture is not None:
+            metrics["scene_understanding_capture"] = scene_capture.stats()
         if final_status.get("status") in ("SUCCESS", "FAILURE"):
             metrics["task_completed"] = (
                 final_status["status"] == "SUCCESS"
@@ -532,6 +685,8 @@ def main():
             logger.close()
         if monitor is not None:
             monitor.destroy()
+        if scene_capture is not None:
+            scene_capture.destroy()
         if camera is not None:
             camera.destroy()
         scenario.destroy()
