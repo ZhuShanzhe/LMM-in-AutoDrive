@@ -8,12 +8,13 @@ import threading
 
 
 class FfmpegVideoWriter:
-    def __init__(self, output_path, width, height, fps, ffmpeg_path=None):
+    def __init__(self, output_path, width, height, fps, ffmpeg_path=None, profile="quality"):
         self.output_path = output_path
         self.width = int(width)
         self.height = int(height)
         self.fps = float(fps)
         self.ffmpeg_path = self._find_ffmpeg(ffmpeg_path)
+        self.profile = str(profile).lower()
         self.process = None
         self.frame_count = 0
         self.dropped_frames = 0
@@ -24,6 +25,13 @@ class FfmpegVideoWriter:
     def start(self):
         output_dir = os.path.dirname(os.path.abspath(self.output_path))
         os.makedirs(output_dir, exist_ok=True)
+        encoding = {
+            "realtime": ("ultrafast", "21"),
+            "quality": ("medium", "18"),
+        }
+        if self.profile not in encoding:
+            raise ValueError("video profile must be 'realtime' or 'quality'")
+        preset, crf = encoding[self.profile]
         command = [
             self.ffmpeg_path,
             "-y",
@@ -34,8 +42,8 @@ class FfmpegVideoWriter:
             "-i", "-",
             "-an",
             "-c:v", "libx264",
-            "-preset", "ultrafast",
-            "-crf", "21",
+            "-preset", preset,
+            "-crf", crf,
             "-pix_fmt", "yuv420p",
             self.output_path,
         ]

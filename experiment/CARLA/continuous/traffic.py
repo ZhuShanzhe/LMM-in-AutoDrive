@@ -161,7 +161,8 @@ class TrafficFlowManager:
             spawned_random += 1
         return list(self.actors)
 
-    def tick(self, route_manager):
+    def tick(self, route_manager, ego_vehicle=None):
+        self._despawn_behind_ego(ego_vehicle)
         interval_m = float(self.config.get("route_replenish_every_m", 0.0))
         if interval_m <= 0.0 or route_manager.progress_m - self._last_replenish_progress_m < interval_m:
             return
@@ -237,6 +238,8 @@ class TrafficFlowManager:
                 ),
                 waypoint.transform.rotation,
             )
+            if not self._has_spawn_clearance(transform.location):
+                continue
             actor = self.world.try_spawn_actor(blueprint, transform)
             if actor is None:
                 continue
@@ -244,6 +247,37 @@ class TrafficFlowManager:
             self.actors.append(actor)
             spawned += 1
         return spawned
+
+    def _has_spawn_clearance(self, location):
+        """Avoid spawning a route vehicle into an occupied traffic gap."""
+        clearance_m = float(self.config.get("spawn_clearance_m", 16.0))
+        for actor in self.world.get_actors().filter("vehicle.*"):
+            if actor is None or not actor.is_alive:
+                continue
+            if actor.get_location().distance(location) < clearance_m:
+                return False
+        return True
+
+    def _despawn_behind_ego(self, ego_vehicle):
+        """Recycle passed background vehicles so replenishment stays visually stable."""
+        if ego_vehicle is None or not ego_vehicle.is_alive:
+            return
+        behind_m = float(self.config.get("despawn_behind_m", 120.0))
+        ego_transform = ego_vehicle.get_transform()
+        ego_location = ego_transform.location
+        forward = ego_transform.get_forward_vector()
+        kept = []
+        for actor in self.actors:
+            if actor is None or not actor.is_alive:
+                continue
+            delta_x = actor.get_location().x - ego_location.x
+            delta_y = actor.get_location().y - ego_location.y
+            longitudinal_m = delta_x * forward.x + delta_y * forward.y
+            if longitudinal_m < -behind_m:
+                actor.destroy()
+                continue
+            kept.append(actor)
+        self.actors = kept
 
     def _start_actor(self, actor, desired_speed_kmh=None):
         actor.set_autopilot(True, self.traffic_manager.get_port())
@@ -395,7 +429,8 @@ class PedestrianFlowManager:
             spawned += 1
         return spawned
 
-    def tick(self, route_manager, fixed_delta_s=0.1):
+    def tick(self, route_manager, fixed_delta_s=0.1, ego_vehicle=None):
+        self._despawn_behind_ego(ego_vehicle)
         for item in self.walkers:
             actor = item["actor"]
             if actor is not None and actor.is_alive:
@@ -427,11 +462,35 @@ class PedestrianFlowManager:
         offsets = list(self.config.get("route_replenish_offsets_m", []))
         if not offsets:
             return
-        active_count = sum(1 for item in self.walkers if item["actor"].is_alive)
+        active_count = sum(
+            1 for item in self.walkers
+            if item["actor"] is not None and item["actor"].is_alive
+        )
         available = max(0, int(self.config.get("max_walker_count", active_count + len(offsets))) - active_count)
         if available > 0:
             self._spawn_offsets(route_manager, offsets, available)
         self._last_replenish_progress_m = route_manager.progress_m
+
+    def _despawn_behind_ego(self, ego_vehicle):
+        if ego_vehicle is None or not ego_vehicle.is_alive:
+            return
+        behind_m = float(self.config.get("despawn_behind_m", 90.0))
+        ego_transform = ego_vehicle.get_transform()
+        ego_location = ego_transform.location
+        forward = ego_transform.get_forward_vector()
+        kept = []
+        for item in self.walkers:
+            actor = item["actor"]
+            if actor is None or not actor.is_alive:
+                continue
+            delta_x = actor.get_location().x - ego_location.x
+            delta_y = actor.get_location().y - ego_location.y
+            longitudinal_m = delta_x * forward.x + delta_y * forward.y
+            if longitudinal_m < -behind_m:
+                actor.destroy()
+                continue
+            kept.append(item)
+        self.walkers = kept
 
     def snapshot(self):
         active = [item["actor"].id for item in self.walkers if item["actor"].is_alive]

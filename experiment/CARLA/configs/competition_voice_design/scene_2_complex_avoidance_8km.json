@@ -8,92 +8,518 @@
     "weather": "CloudySunset",
     "road_form": "urban secondary roads, signalized cross intersections, bus stops, and a legal median U-turn node",
     "visibility": "low light but usable",
-    "traffic_mix": ["private_cars", "city_buses", "bicycles", "pedestrians"],
-    "sensors": ["front_rgb_camera", "left_rgb_camera", "right_rgb_camera", "rear_rgb_camera", "lidar", "vehicle_state"]
+    "traffic_mix": [
+      "private_cars",
+      "city_buses",
+      "bicycles",
+      "pedestrians"
+    ],
+    "sensors": [
+      "front_rgb_camera",
+      "left_rgb_camera",
+      "right_rgb_camera",
+      "rear_rgb_camera",
+      "lidar",
+      "vehicle_state"
+    ]
   },
   "route_design": {
     "total_length_m": 8000,
     "map_binding_status": "topology requirements only; concrete CARLA waypoints and traffic-light phases must be bound during implementation",
     "segments": [
-      {"id": "S2-01", "range_m": [0, 1100], "length_m": 1100, "topology": "two-lane-per-direction secondary road with crosswalk", "purpose": "pedestrian yield and slow-vehicle overtake"},
-      {"id": "S2-02", "range_m": [1100, 2300], "length_m": 1200, "topology": "curbside bus stop and protected bicycle lane", "purpose": "bus-stop passenger interaction"},
-      {"id": "S2-03", "range_m": [2300, 3600], "length_m": 1300, "topology": "four-way intersection and left-turn exit", "purpose": "turn plus lane selection"},
-      {"id": "S2-04", "range_m": [3600, 5200], "length_m": 1600, "topology": "mixed-flow commercial road", "purpose": "cyclist avoidance and conditional overtaking"},
-      {"id": "S2-05", "range_m": [5200, 6800], "length_m": 1600, "topology": "signalized junction and bus corridor", "purpose": "traffic-light and speed-control interaction"},
-      {"id": "S2-06", "range_m": [6800, 8000], "length_m": 1200, "topology": "right-turn junction followed by legal U-turn opening", "purpose": "final navigation action"}
+      {
+        "id": "S2-01",
+        "range_m": [
+          0,
+          1100
+        ],
+        "length_m": 1100,
+        "topology": "two-lane-per-direction secondary road with crosswalk",
+        "purpose": "pedestrian yield and slow-vehicle overtake"
+      },
+      {
+        "id": "S2-02",
+        "range_m": [
+          1100,
+          2300
+        ],
+        "length_m": 1200,
+        "topology": "curbside bus stop and protected bicycle lane",
+        "purpose": "bus-stop passenger interaction"
+      },
+      {
+        "id": "S2-03",
+        "range_m": [
+          2300,
+          3600
+        ],
+        "length_m": 1300,
+        "topology": "four-way intersection and left-turn exit",
+        "purpose": "turn plus lane selection"
+      },
+      {
+        "id": "S2-04",
+        "range_m": [
+          3600,
+          5200
+        ],
+        "length_m": 1600,
+        "topology": "mixed-flow commercial road",
+        "purpose": "cyclist avoidance and conditional overtaking"
+      },
+      {
+        "id": "S2-05",
+        "range_m": [
+          5200,
+          6800
+        ],
+        "length_m": 1600,
+        "topology": "signalized junction and bus corridor",
+        "purpose": "traffic-light and speed-control interaction"
+      },
+      {
+        "id": "S2-06",
+        "range_m": [
+          6800,
+          8000
+        ],
+        "length_m": 1200,
+        "topology": "right-turn junction followed by legal U-turn opening",
+        "purpose": "final navigation action"
+      }
     ],
-    "traffic_flow": {"private_cars": 24, "city_buses": 3, "bicycles": 6, "sidewalk_pedestrians": 18, "replenish_by_route_progress": true}
+    "traffic_flow": {
+      "private_cars": 24,
+      "city_buses": 3,
+      "bicycles": 6,
+      "sidewalk_pedestrians": 18,
+      "replenish_by_route_progress": true
+    }
   },
   "voice_command_schedule": [
     {
       "id": "s2_cmd_01_straight_through_45",
       "announce_at_m": 0,
       "spoken_text": "保持当前车道，减速至45公里每小时，通过前方路口后继续直行。",
-      "expected_parse": {"category": "NAVIGATION", "urgency": "NORMAL", "steps": ["KEEP_LANE", "SET_SPEED:12.50mps", "PROCEED:STRAIGHT_THROUGH_JUNCTION"]},
-      "scene_binding": {"route_segment": "S2-01", "visible_cues": ["secondary_road", "traffic_light", "forward_junction"], "completion": "JUNCTION_EXITED"}
+      "expected_parse": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          "KEEP_LANE",
+          "SET_SPEED:12.50mps",
+          "PROCEED:STRAIGHT_THROUGH_JUNCTION"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-01",
+        "visible_cues": [
+          "secondary_road",
+          "traffic_light",
+          "forward_junction"
+        ],
+        "completion": "JUNCTION_EXITED"
+      }
+    },
+    {
+      "id": "s2_cmd_09_junction_resume_right",
+      "announce_at_m": 350,
+      "spoken_text": "?????????????????50??????????",
+      "expected_parse": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          "PROCEED:STRAIGHT_THROUGH_JUNCTION",
+          "KEEP_LANE:RIGHT",
+          "SET_SPEED:13.89mps"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-01",
+        "visible_cues": [
+          "forward_junction",
+          "right_lane_markings"
+        ],
+        "completion": "TARGET_SPEED_REACHED"
+      }
     },
     {
       "id": "s2_cmd_02_yield_pedestrian_overtake_slow_car",
       "announce_at_m": 760,
       "spoken_text": "看到前方横穿马路的行人，减速避让后向左变道超越慢车。",
-      "expected_parse": {"category": "COMPLEX_OBSTACLE_AVOIDANCE", "urgency": "URGENT", "steps": ["YIELD:PEDESTRIAN", "SET_SPEED:6.94mps", "CHANGE_LANE:LEFT_WHEN_SAFE", "OVERTAKE:SLOW_VEHICLE"]},
-      "scene_binding": {"route_segment": "S2-01", "visible_cues": ["crosswalk", "pedestrian_entering_crosswalk", "slow_vehicle_ahead"], "event_sequence": "Pedestrian clears before the left lane safe gap is opened.", "completion": "TARGET_CLEARED"}
+      "expected_parse": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "URGENT",
+        "steps": [
+          "YIELD:PEDESTRIAN",
+          "SET_SPEED:6.94mps",
+          "CHANGE_LANE:LEFT_WHEN_SAFE",
+          "OVERTAKE:SLOW_VEHICLE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-01",
+        "visible_cues": [
+          "crosswalk",
+          "pedestrian_entering_crosswalk",
+          "slow_vehicle_ahead"
+        ],
+        "event_sequence": "Pedestrian clears before the left lane safe gap is opened.",
+        "completion": "TARGET_CLEARED"
+      }
+    },
+    {
+      "id": "s2_cmd_10_pedestrian_clear_return",
+      "announce_at_m": 1200,
+      "spoken_text": "???????????????????????45??????",
+      "expected_parse": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          "WAIT:PEDESTRIAN_CLEAR",
+          "CHANGE_LANE:RETURN_WHEN_SAFE",
+          "SET_SPEED:12.50mps"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-01",
+        "visible_cues": [
+          "cleared_crosswalk",
+          "safe_lane_gap"
+        ],
+        "completion": "RETURNED_TO_ORIGINAL_LANE"
+      }
     },
     {
       "id": "s2_cmd_03_bus_stop_passengers",
       "announce_at_m": 1650,
       "spoken_text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续行驶。",
-      "expected_parse": {"category": "COMPLEX_OBSTACLE_AVOIDANCE", "urgency": "NORMAL", "steps": ["PULL_OVER:RIGHT", "SET_SPEED:8.33mps", "WAIT:PASSENGERS_CLEAR", "PROCEED"]},
-      "scene_binding": {"route_segment": "S2-02", "visible_cues": ["stopped_city_bus", "bus_stop_sign", "passengers_alighting", "passenger_boarding"], "completion": "WAIT_CONDITION_MET"}
+      "expected_parse": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          "PULL_OVER:RIGHT",
+          "SET_SPEED:8.33mps",
+          "WAIT:PASSENGERS_CLEAR",
+          "PROCEED"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-02",
+        "visible_cues": [
+          "stopped_city_bus",
+          "bus_stop_sign",
+          "passengers_alighting",
+          "passenger_boarding"
+        ],
+        "completion": "WAIT_CONDITION_MET"
+      }
+    },
+    {
+      "id": "s2_cmd_11_bus_stop_follow",
+      "announce_at_m": 2150,
+      "spoken_text": "??????????????????????????????",
+      "expected_parse": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          "WAIT:PASSENGERS_CLEAR",
+          "CHECK:PATH_CLEAR",
+          "KEEP_LANE:RIGHT",
+          "PROCEED"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-02",
+        "visible_cues": [
+          "bus_stop_sign",
+          "passengers_clear",
+          "right_lane_markings"
+        ],
+        "completion": "WAIT_CONDITION_MET"
+      }
     },
     {
       "id": "s2_cmd_04_left_turn_second_lane",
       "announce_at_m": 2750,
       "spoken_text": "前方十字路口左转，进入左侧第二车道并保持40公里每小时。",
-      "expected_parse": {"category": "NAVIGATION", "urgency": "NORMAL", "steps": ["TURN:LEFT", "CHANGE_LANE:LEFT_LANE_INDEX_2", "SET_SPEED:11.11mps"]},
-      "scene_binding": {"route_segment": "S2-03", "visible_cues": ["signalized_cross_intersection", "left_turn_arrow"], "completion": "JUNCTION_EXITED"}
+      "expected_parse": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          "TURN:LEFT",
+          "CHANGE_LANE:LEFT_LANE_INDEX_2",
+          "SET_SPEED:11.11mps"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-03",
+        "visible_cues": [
+          "signalized_cross_intersection",
+          "left_turn_arrow"
+        ],
+        "completion": "JUNCTION_EXITED"
+      }
+    },
+    {
+      "id": "s2_cmd_12_left_turn_stabilize",
+      "announce_at_m": 3400,
+      "spoken_text": "????????????????????45??????",
+      "expected_parse": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          "TURN:LEFT",
+          "KEEP_LANE:LEFT_LANE_INDEX_2",
+          "CHECK:PATH_CLEAR",
+          "SET_SPEED:12.50mps"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-03",
+        "visible_cues": [
+          "left_turn_exit",
+          "lane_markings"
+        ],
+        "completion": "TARGET_SPEED_REACHED"
+      }
     },
     {
       "id": "s2_cmd_05_pass_cyclist_return_right",
       "announce_at_m": 3850,
       "spoken_text": "右侧有自行车，减速并向左避让，超过后回到右侧车道。",
-      "expected_parse": {"category": "COMPLEX_OBSTACLE_AVOIDANCE", "urgency": "NORMAL", "steps": ["ADJUST_SPEED:DECREASE", "CHANGE_LANE:LEFT_WHEN_SAFE", "PASS_BY:CYCLIST", "CHANGE_LANE:RIGHT_WHEN_SAFE"]},
-      "scene_binding": {"route_segment": "S2-04", "visible_cues": ["cyclist_on_right", "right_side_lane_markings"], "completion": "LANE_CHANGE_COMPLETED"}
+      "expected_parse": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          "ADJUST_SPEED:DECREASE",
+          "CHANGE_LANE:LEFT_WHEN_SAFE",
+          "PASS_BY:CYCLIST",
+          "CHANGE_LANE:RIGHT_WHEN_SAFE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-04",
+        "visible_cues": [
+          "cyclist_on_right",
+          "right_side_lane_markings"
+        ],
+        "completion": "LANE_CHANGE_COMPLETED"
+      }
+    },
+    {
+      "id": "s2_cmd_13_cyclist_safe_pass",
+      "announce_at_m": 4450,
+      "spoken_text": "?????????????????????????????????",
+      "expected_parse": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          "ADJUST_SPEED:DECREASE",
+          "CHECK:LEFT_LANE_SAFE",
+          "CHANGE_LANE:LEFT",
+          "PASS_BY:CYCLIST",
+          "KEEP_LANE:LEFT"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-04",
+        "visible_cues": [
+          "cyclist_on_right",
+          "safe_left_gap"
+        ],
+        "completion": "LANE_CHANGE_COMPLETED"
+      }
     },
     {
       "id": "s2_cmd_06_overtake_slow_vehicle",
       "announce_at_m": 5050,
       "spoken_text": "前方慢车，确认左侧安全后变道超越，超过后回到原车道。",
-      "expected_parse": {"category": "COMPLEX_OBSTACLE_AVOIDANCE", "urgency": "NORMAL", "steps": ["CHANGE_LANE:LEFT_WHEN_SAFE", "PASS_BY:SLOW_VEHICLE", "CHANGE_LANE:RETURN_TO_ORIGINAL_WHEN_SAFE"]},
-      "scene_binding": {"route_segment": "S2-04", "visible_cues": ["slow_vehicle_ahead", "safe_left_gap"], "completion": "RETURNED_TO_ORIGINAL_LANE"}
+      "expected_parse": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          "CHANGE_LANE:LEFT_WHEN_SAFE",
+          "PASS_BY:SLOW_VEHICLE",
+          "CHANGE_LANE:RETURN_TO_ORIGINAL_WHEN_SAFE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-04",
+        "visible_cues": [
+          "slow_vehicle_ahead",
+          "safe_left_gap"
+        ],
+        "completion": "RETURNED_TO_ORIGINAL_LANE"
+      }
+    },
+    {
+      "id": "s2_cmd_14_slow_vehicle_follow",
+      "announce_at_m": 5750,
+      "spoken_text": "???????????????????????????????????",
+      "expected_parse": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          "FOLLOW:SLOW_VEHICLE",
+          "KEEP_SAFE_DISTANCE",
+          "CHANGE_LANE:LEFT_WHEN_SAFE",
+          "PASS_BY:SLOW_VEHICLE",
+          "CHANGE_LANE:RETURN_WHEN_SAFE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-04",
+        "visible_cues": [
+          "slow_vehicle_ahead",
+          "safe_left_gap"
+        ],
+        "completion": "RETURNED_TO_ORIGINAL_LANE"
+      }
     },
     {
       "id": "s2_cmd_07_right_turn_speed_30",
       "announce_at_m": 6450,
       "spoken_text": "前方路口右转前减速至30公里每小时，右转后保持当前车道继续行驶。",
-      "expected_parse": {"category": "NAVIGATION", "urgency": "NORMAL", "steps": ["SET_SPEED:8.33mps", "TURN:RIGHT", "KEEP_LANE", "PROCEED"]},
-      "scene_binding": {"route_segment": "S2-05", "visible_cues": ["traffic_light", "right_turn_junction"], "completion": "JUNCTION_EXITED"}
+      "expected_parse": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          "SET_SPEED:8.33mps",
+          "TURN:RIGHT",
+          "KEEP_LANE",
+          "PROCEED"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-05",
+        "visible_cues": [
+          "traffic_light",
+          "right_turn_junction"
+        ],
+        "completion": "JUNCTION_EXITED"
+      }
+    },
+    {
+      "id": "s2_cmd_15_right_turn_exit",
+      "announce_at_m": 6850,
+      "spoken_text": "??????30???????????????????????",
+      "expected_parse": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          "SET_SPEED:8.33mps",
+          "YIELD:PEDESTRIAN",
+          "TURN:RIGHT",
+          "KEEP_LANE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-05",
+        "visible_cues": [
+          "right_turn_junction",
+          "crosswalk",
+          "traffic_light"
+        ],
+        "completion": "JUNCTION_EXITED"
+      }
     },
     {
       "id": "s2_cmd_08_legal_u_turn",
       "announce_at_m": 7250,
       "spoken_text": "在前方允许掉头处减速，确认对向车流安全后掉头驶向终点。",
-      "expected_parse": {"category": "NAVIGATION", "urgency": "NORMAL", "steps": ["ADJUST_SPEED:DECREASE", "YIELD:ONCOMING_TRAFFIC", "U_TURN:LEGAL_MEDIAN_OPENING", "PROCEED"]},
-      "scene_binding": {"route_segment": "S2-06", "visible_cues": ["legal_u_turn_sign", "median_opening"], "completion": "ROUTE_COMPLETED"}
+      "expected_parse": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          "ADJUST_SPEED:DECREASE",
+          "YIELD:ONCOMING_TRAFFIC",
+          "U_TURN:LEGAL_MEDIAN_OPENING",
+          "PROCEED"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S2-06",
+        "visible_cues": [
+          "legal_u_turn_sign",
+          "median_opening"
+        ],
+        "completion": "ROUTE_COMPLETED"
+      }
     }
   ],
   "special_events": [
-    {"id": "s2_evt_crosswalk_pedestrian", "at_m": 880, "actors": ["crossing_pedestrian", "slow_vehicle"], "behavior": "Pedestrian enters the crosswalk first; the slow vehicle remains ahead until the pedestrian has cleared."},
-    {"id": "s2_evt_bus_stop_alighting", "at_m": 1770, "actors": ["city_bus", "alighting_pedestrian_1", "alighting_pedestrian_2", "boarding_pedestrian"], "behavior": "Bus stops in curb lane. Alighting actors move from the door proxy to the sidewalk; boarding actor moves from sidewalk to door proxy. Door animation is optional and must not be used as the only visual cue."},
-    {"id": "s2_evt_left_turn_signal", "at_m": 3000, "actors": ["traffic_light", "oncoming_traffic"], "behavior": "Provide a protected left-turn phase; oncoming traffic is held while the command is executed."},
-    {"id": "s2_evt_cyclist_pass", "at_m": 3950, "actors": ["cyclist"], "behavior": "Cyclist travels steadily in the right-side lane or bicycle lane with visible lateral separation."},
-    {"id": "s2_evt_overtake_gap", "at_m": 5150, "actors": ["slow_vehicle", "left_lane_trailing_vehicle"], "behavior": "A left-lane gap opens only after the slow vehicle and its relation to the ego are visible."},
-    {"id": "s2_evt_final_u_turn", "at_m": 7400, "actors": ["u_turn_signal", "cross_traffic"], "behavior": "Cross traffic receives a red phase during the legal U-turn window."}
+    {
+      "id": "s2_evt_crosswalk_pedestrian",
+      "at_m": 880,
+      "actors": [
+        "crossing_pedestrian",
+        "slow_vehicle"
+      ],
+      "behavior": "Pedestrian enters the crosswalk first; the slow vehicle remains ahead until the pedestrian has cleared."
+    },
+    {
+      "id": "s2_evt_bus_stop_alighting",
+      "at_m": 1770,
+      "actors": [
+        "city_bus",
+        "alighting_pedestrian_1",
+        "alighting_pedestrian_2",
+        "boarding_pedestrian"
+      ],
+      "behavior": "Bus stops in curb lane. Alighting actors move from the door proxy to the sidewalk; boarding actor moves from sidewalk to door proxy. Door animation is optional and must not be used as the only visual cue."
+    },
+    {
+      "id": "s2_evt_left_turn_signal",
+      "at_m": 3000,
+      "actors": [
+        "traffic_light",
+        "oncoming_traffic"
+      ],
+      "behavior": "Provide a protected left-turn phase; oncoming traffic is held while the command is executed."
+    },
+    {
+      "id": "s2_evt_cyclist_pass",
+      "at_m": 3950,
+      "actors": [
+        "cyclist"
+      ],
+      "behavior": "Cyclist travels steadily in the right-side lane or bicycle lane with visible lateral separation."
+    },
+    {
+      "id": "s2_evt_overtake_gap",
+      "at_m": 5150,
+      "actors": [
+        "slow_vehicle",
+        "left_lane_trailing_vehicle"
+      ],
+      "behavior": "A left-lane gap opens only after the slow vehicle and its relation to the ego are visible."
+    },
+    {
+      "id": "s2_evt_final_u_turn",
+      "at_m": 7400,
+      "actors": [
+        "u_turn_signal",
+        "cross_traffic"
+      ],
+      "behavior": "Cross traffic receives a red phase during the legal U-turn window."
+    }
   ],
   "evaluation_protocol": {
-    "online_demo_commands": 8,
+    "online_demo_commands": 15,
     "offline_utterance_set": "At least 12 paraphrases per composite template, with explicit checks that every ordered step, target, direction, speed, trigger, and blocked-action policy is retained.",
-    "success_conditions": ["route_completed", "collision_count_equals_0", "violation_count_at_most_1", "all_command_steps_completed"],
-    "required_metrics": ["asr_accuracy", "ordered_step_recall", "semantic_alignment_accuracy", "perception_to_action_latency_ms", "collision_count", "violation_count"]
+    "success_conditions": [
+      "route_completed",
+      "collision_count_equals_0",
+      "violation_count_at_most_1",
+      "all_command_steps_completed"
+    ],
+    "required_metrics": [
+      "asr_accuracy",
+      "ordered_step_recall",
+      "semantic_alignment_accuracy",
+      "perception_to_action_latency_ms",
+      "collision_count",
+      "violation_count"
+    ]
   }
 }

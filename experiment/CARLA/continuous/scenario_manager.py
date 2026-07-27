@@ -40,7 +40,10 @@ class ScenarioManager:
         progress_m = self.route_manager.update(ego_vehicle)
         active_before_tick = list(self.active)
         for event in self.events:
-            if not event["triggered"] and progress_m >= float(event["distance_m"]):
+            activation_distance_m = float(
+                event.get("activate_at_m", event["distance_m"])
+            )
+            if not event["triggered"] and progress_m >= activation_distance_m:
                 self._activate(event, ego_vehicle, progress_m)
                 event["triggered"] = True
         for active in active_before_tick:

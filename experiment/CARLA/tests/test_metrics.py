@@ -38,6 +38,16 @@ class MetricsResultSemanticsTest(unittest.TestCase):
         self.assertEqual(metrics["speeding_frames"], 0)
         self.assertTrue(metrics["violation_free"])
 
+    def test_turn_speed_reduction_is_not_a_speeding_violation(self):
+        records = [
+            make_record(1, 0.0, speed_kmh=45.0),
+            make_record(2, 1.0, speed_kmh=35.0),
+        ]
+        for record in records:
+            record["intent"] = {"action": "turn_right", "target_speed_kmh": 20.0}
+        metrics = summarize(records, "basic_voice_control_5km", goal_distance_m=1.0)
+        self.assertEqual(metrics["speeding_frames"], 0)
+
     def test_non_illegal_lane_observations_do_not_fail_a_run(self):
         records = [make_record(1, 0.0), make_record(2, 1.0)]
         for record in records:

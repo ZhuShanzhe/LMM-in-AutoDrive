@@ -12,7 +12,8 @@ from evaluation.video import FfmpegVideoWriter
 class ExperimentCamera:
     def __init__(self, world, ego_vehicle, output_dir, every_n_frames=1, width=1920, height=1080,
                  save_images=True, video_output=None, video_fps=30.0, ffmpeg_path=None,
-                 video_overlay=False, sensor_tick=None, camera_view="hood"):
+                 video_overlay=False, sensor_tick=None, camera_view="hood",
+                 video_profile="quality"):
         self.world = world
         self.ego_vehicle = ego_vehicle
         self.output_dir = output_dir
@@ -26,6 +27,7 @@ class ExperimentCamera:
         self.video_overlay = bool(video_overlay)
         self.sensor_tick = None if sensor_tick is None else max(0.0, float(sensor_tick))
         self.camera_view = str(camera_view).lower()
+        self.video_profile = str(video_profile).lower()
         self.sensor = None
         self.video_writer = None
         self.saved_frames = 0
@@ -34,6 +36,7 @@ class ExperimentCamera:
         self._speed_history = deque()
         self._font_cache = {}
         self._last_source_frame = None
+        self._video_frame_remainder = 0.0
 
     def start(self):
         import carla
@@ -43,18 +46,35 @@ class ExperimentCamera:
         blueprint = self.world.get_blueprint_library().find("sensor.camera.rgb")
         blueprint.set_attribute("image_size_x", str(self.width))
         blueprint.set_attribute("image_size_y", str(self.height))
-        blueprint.set_attribute("fov", "90")
+        blueprint.set_attribute("fov", "100" if self.camera_view == "chase" else "90")
+        # Use a fixed exposure for repeatable evidence video on the unshaded
+        # generated road. Histogram exposure overreacts to the bright sky and
+        # lane markings, washing out the ego vehicle during lane changes.
+        self._set_camera_attribute(blueprint, "enable_postprocess_effects", "true")
+        self._set_camera_attribute(blueprint, "exposure_mode", "manual")
+        self._set_camera_attribute(blueprint, "iso", "50")
+        self._set_camera_attribute(blueprint, "shutter_speed", "200")
+        self._set_camera_attribute(blueprint, "fstop", "2.8")
+        self._set_camera_attribute(blueprint, "exposure_compensation", "0.0")
+        self._set_camera_attribute(blueprint, "bloom_intensity", "0.0")
+        self._set_camera_attribute(blueprint, "motion_blur_intensity", "0.12")
+        self._set_camera_attribute(blueprint, "lens_flare_intensity", "0.0")
+        self._set_camera_attribute(blueprint, "gamma", "2.2")
         if self.sensor_tick is not None:
             blueprint.set_attribute("sensor_tick", str(self.sensor_tick))
-        elif self.video_output is not None:
-            blueprint.set_attribute("sensor_tick", str(1.0 / self.video_fps))
         if self.camera_view == "chase":
             transform = carla.Transform(
-                carla.Location(x=-8.0, z=4.2), carla.Rotation(pitch=-16.0)
+                carla.Location(x=-10.0, z=3.0), carla.Rotation(pitch=-8.0)
             )
         else:
             transform = carla.Transform(carla.Location(x=1.5, z=2.4))
-        self.sensor = self.world.spawn_actor(blueprint, transform, attach_to=self.ego_vehicle)
+        attachment_type = None
+        if self.camera_view == "chase":
+            attachment_type = carla.AttachmentType.SpringArmGhost
+        spawn_kwargs = {"attach_to": self.ego_vehicle}
+        if attachment_type is not None:
+            spawn_kwargs["attachment_type"] = attachment_type
+        self.sensor = self.world.spawn_actor(blueprint, transform, **spawn_kwargs)
         if self.video_output is not None:
             self.video_writer = FfmpegVideoWriter(
                 self.video_output,
@@ -62,15 +82,21 @@ class ExperimentCamera:
                 self.height,
                 self.video_fps,
                 self.ffmpeg_path,
+                self.video_profile,
             )
             self.video_writer.start()
         self.sensor.listen(self._on_image)
+
+    @staticmethod
+    def _set_camera_attribute(blueprint, name, value):
+        if blueprint.has_attribute(name):
+            blueprint.set_attribute(name, str(value))
 
     def _on_image(self, image):
         if self.save_images or self.video_writer is not None:
             self._images.put(image)
 
-    def save_frame(self, frame, overlay=None, timeout_s=1.0):
+    def save_frame(self, frame, overlay=None, timeout_s=1.0, sample_period_s=None):
         """Persist the latest camera image available for a completed world tick."""
         if not self.save_images and self.video_writer is None:
             return False
@@ -110,8 +136,21 @@ class ExperimentCamera:
                 rendered.save(path)
             self.saved_frames += 1
         if self.video_writer is not None:
-            self.video_writer.write_raw(raw_frame)
+            for _ in range(self._video_repeat_count(sample_period_s)):
+                self.video_writer.write_raw(raw_frame)
         return True
+
+    def _video_repeat_count(self, sample_period_s=None):
+        """Resample fixed-step camera output to the requested video frame rate."""
+        sample_period = sample_period_s
+        if sample_period is None:
+            sample_period = self.sensor_tick
+        if sample_period is None:
+            sample_period = 1.0 / self.video_fps
+        self._video_frame_remainder += sample_period * self.video_fps
+        frame_count = int(self._video_frame_remainder)
+        self._video_frame_remainder -= frame_count
+        return frame_count
 
     def _latest_pending_image(self, frame):
         eligible = [candidate_frame for candidate_frame in self._pending_images if candidate_frame <= frame]
@@ -165,104 +204,97 @@ class ExperimentCamera:
             return loaded
 
         status = str(overlay.get("status", "RUNNING")).upper()
-        status_color = {
-            "RUNNING": (255, 211, 54, 255),
-            "SUCCESS": (72, 208, 113, 255),
-            "FAILURE": (244, 80, 80, 255),
-            "INCOMPLETE": (255, 153, 51, 255),
-        }.get(status, (230, 230, 230, 255))
-        text_color = (244, 247, 250, 255)
-        muted_color = (182, 192, 204, 255)
+        text_color = (255, 255, 255, 255)
+        muted_color = (218, 222, 228, 255)
+        accent_color = (255, 255, 255, 255)
         speed_kmh = float(overlay.get("speed_kmh", 0.0))
         target_speed_kmh = float(overlay.get("target_speed_kmh", 0.0))
-
-        left_panel = (24, 24, 322, 264)
-        right_panel = (self.width - 720, 24, self.width - 24, 296)
-        for panel in (left_panel, right_panel):
-            draw.rounded_rectangle(panel, radius=10, fill=(62, 68, 78, 170), outline=(183, 190, 200, 140), width=2)
-
-        badge = (57, 40, 290, 99)
-        draw.rounded_rectangle(badge, radius=9, fill=(70, 76, 86, 205), outline=status_color, width=3)
-        badge_font = font(29, bold=True)
-        box = draw.textbbox((0, 0), status, font=badge_font)
-        badge_x = badge[0] + (badge[2] - badge[0] - (box[2] - box[0])) / 2
-        draw.text((badge_x, 54), status, font=badge_font, fill=status_color)
-
-        gauge_center = (173, 180)
-        gauge_radius = 76
-        gauge_box = (
-            gauge_center[0] - gauge_radius,
-            gauge_center[1] - gauge_radius,
-            gauge_center[0] + gauge_radius,
-            gauge_center[1] + gauge_radius,
-        )
-        gauge_max = max(40.0, (int(max(speed_kmh, target_speed_kmh, 1.0) / 10.0) + 1) * 10.0)
-        draw.arc(gauge_box, 135, 405, fill=(58, 69, 82, 255), width=13)
-        for tick in range(6):
-            angle = math.radians(135 + 270 * tick / 5.0)
-            outer = (gauge_center[0] + math.cos(angle) * (gauge_radius - 1), gauge_center[1] + math.sin(angle) * (gauge_radius - 1))
-            inner = (gauge_center[0] + math.cos(angle) * (gauge_radius - 14), gauge_center[1] + math.sin(angle) * (gauge_radius - 14))
-            draw.line((outer, inner), fill=muted_color, width=2)
-        needle_angle = math.radians(135 + 270 * min(speed_kmh, gauge_max) / gauge_max)
-        needle_end = (gauge_center[0] + math.cos(needle_angle) * (gauge_radius - 20), gauge_center[1] + math.sin(needle_angle) * (gauge_radius - 20))
-        draw.line((gauge_center, needle_end), fill=(91, 211, 255, 255), width=6)
-        draw.ellipse((gauge_center[0] - 8, gauge_center[1] - 8, gauge_center[0] + 8, gauge_center[1] + 8), fill=(91, 211, 255, 255))
-        draw.text((125, 142), "{0:.0f}".format(speed_kmh), font=font(38, bold=True), fill=text_color)
-        draw.text((128, 190), "km/h", font=font(19), fill=muted_color)
-
-        rx = right_panel[0] + 20
-        draw.text((rx, 42), "RUN TELEMETRY", font=font(16, bold=True), fill=muted_color)
-        draw.text((rx, 62), str(overlay.get("scenario", ""))[:42].upper(), font=font(21, bold=True), fill=text_color)
-        source = str(overlay.get("decision_source", "rule")).upper()
-        draw.text((rx, 95), "CONTROL={0}".format(source), font=font(16, bold=True), fill=muted_color)
         progress_m = overlay.get("route_progress_m")
         route_length_m = overlay.get("route_length_m")
-        if progress_m is not None and route_length_m is not None:
-            route_text = "route={0:.0f}/{1:.0f} m  traffic={2}  ped={3}".format(
-                float(progress_m),
-                float(route_length_m),
+        progress_ratio = 0.0
+        if progress_m is not None and route_length_m:
+            progress_ratio = max(0.0, min(1.0, float(progress_m) / float(route_length_m)))
+
+        panel = (0, 0, self.width, 200)
+        draw.rectangle(panel, fill=(40, 44, 50, 158))
+        margin = 54
+        line_y = 28
+        draw.line((margin, line_y, self.width - margin, line_y), fill=(255, 255, 255, 105), width=2)
+        progress_x = margin + progress_ratio * (self.width - 2 * margin)
+        draw.line((margin, line_y, progress_x, line_y), fill=accent_color, width=5)
+        draw.ellipse((progress_x - 6, line_y - 6, progress_x + 6, line_y + 6), fill=accent_color)
+        draw.text(
+            (margin, 38),
+            "BASIC VOICE CONTROL  |  {0:.2f} / {1:.2f} km".format(
+                float(progress_m or 0.0) / 1000.0,
+                float(route_length_m or 5000.0) / 1000.0,
+            ),
+            font=font(19, bold=True),
+            fill=text_color,
+        )
+        status_box = draw.textbbox((0, 0), status, font=font(20, bold=True))
+        draw.text(
+            (self.width - margin - (status_box[2] - status_box[0]), 38),
+            status,
+            font=font(20, bold=True),
+            fill=text_color,
+        )
+
+        columns = [margin, int(self.width * 0.29), int(self.width * 0.53), int(self.width * 0.72)]
+        labels = [
+            ("VOICE / TEXT", str(overlay.get("asr_text", ""))[:32]),
+            ("DRIVING INTENT", "{0}  {1}".format(
+                str(overlay.get("source_step_action") or overlay.get("action", "")).upper(),
+                str(overlay.get("parse_status") or "CONFIGURED"),
+            )),
+            ("SCENE / RISK", "{0}  TRAFFIC {1}  PED {2}".format(
+                str(overlay.get("risk_level", "LOW")),
                 int(overlay.get("traffic_count", 0)),
                 int(overlay.get("pedestrian_count", 0)),
-            )
-        else:
-            route_text = "action={0}  target={1:.0f} km/h".format(
-                str(overlay.get("action", "")).upper(), target_speed_kmh
-            )
-        draw.text((rx, 115), route_text, font=font(20), fill=text_color)
+            )),
+            ("CONTROL", "{0:.0f} / {1:.0f} km/h".format(speed_kmh, target_speed_kmh)),
+        ]
+        for x, (label, value) in zip(columns, labels):
+            draw.text((x, 77), label, font=font(15, bold=True), fill=muted_color)
+            draw.text((x, 101), value, font=font(19, bold=True), fill=text_color)
 
-        def chip(label, value, x, y, color):
-            draw.text((x, y), label, font=font(15, bold=True), fill=muted_color)
-            box = (x, y + 20, x + 170, y + 50)
-            width = 210 if label == "POLICY STATE" else 170
-            box = (x, y + 20, x + width, y + 50)
-            draw.rounded_rectangle(box, radius=6, fill=(70, 76, 86, 205), outline=color, width=2)
-            draw.text((x + 10, y + 24), value, font=font(17, bold=True), fill=color)
-
-        risk_level = str(overlay.get("risk_level", "LOW"))
-        risk_color = {"HIGH": (244, 80, 80, 255), "MEDIUM": (255, 153, 51, 255), "LOW": (72, 208, 113, 255)}.get(risk_level, muted_color)
-        active_events = overlay.get("active_events", [])
-        event_state = active_events[0] if active_events else "NONE"
-        chip("RISK", risk_level, rx, 150, risk_color)
-        chip("EVENT", str(event_state).upper(), rx + 188, 150, status_color)
-
-        def bar(label, value, y, color, centered=False):
-            left = rx + 48
-            right = rx + 250
-            draw.text((rx, y - 2), label, font=font(18, bold=True), fill=text_color)
-            draw.rounded_rectangle((left, y, right, y + 18), radius=5, fill=(45, 55, 67, 245))
-            if centered:
-                middle = (left + right) / 2.0
-                draw.line((middle, y - 3, middle, y + 21), fill=muted_color, width=1)
-                end = middle + max(-1.0, min(1.0, value)) * (right - left) / 2.0
-                draw.rectangle((min(middle, end), y + 3, max(middle, end), y + 15), fill=color)
-            else:
-                end = left + max(0.0, min(1.0, value)) * (right - left)
-                draw.rounded_rectangle((left, y, end, y + 18), radius=5, fill=color)
-
-        bar("T", float(overlay.get("throttle", 0.0)), 224, (72, 208, 113, 255))
-        bar("B", float(overlay.get("brake", 0.0)), 248, (244, 80, 80, 255))
-        bar("S", float(overlay.get("steer", 0.0)), 272, (255, 211, 54, 255), centered=True)
-        self._draw_speed_chart(draw, overlay, font, muted_color, (right_panel[0] + 420, 160, right_panel[2] - 18, 242))
+        source = str(overlay.get("decision_source", "rule")).upper()
+        confidence = overlay.get("parse_confidence")
+        detail = "PIPELINE  TEXT > DRIVINGINTENT > SCENE RULES > {0} > PID".format(
+            str(overlay.get("action", "")).upper()
+        )
+        if confidence is not None:
+            detail += "   CONF {0:.3f}".format(float(confidence))
+        draw.text((margin, 137), detail, font=font(16, bold=True), fill=text_color)
+        draw.text(
+            (margin, 161),
+            "SOURCE {0}   FRAME {1}   SIM {2:.1f}s   PARSE {3}".format(
+                source,
+                int(overlay.get("frame", 0)),
+                float(overlay.get("sim_time_s", 0.0)),
+                "{0:.1f}ms".format(float(overlay["parse_latency_ms"]))
+                if overlay.get("parse_latency_ms") is not None else "n/a",
+            ),
+            font=font(14),
+            fill=muted_color,
+        )
+        draw.text(
+            (margin, 181),
+            "E2E {0:.1f}ms   COLL {1}   LANE {2}".format(
+                float(overlay.get("end_to_end_ms", 0.0)),
+                int(overlay.get("collisions", 0)),
+                int(overlay.get("lane_events", 0)),
+            ),
+            font=font(14),
+            fill=muted_color,
+        )
+        self._draw_speed_chart(
+            draw,
+            overlay,
+            font,
+            muted_color,
+            (int(self.width * 0.58), 143, self.width - margin, 190),
+        )
         return image.tobytes("raw", "BGRA")
 
     def _draw_speed_chart(self, draw, overlay, font, muted_color, plot):

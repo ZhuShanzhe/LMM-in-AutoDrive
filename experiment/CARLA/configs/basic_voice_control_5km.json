@@ -9,7 +9,11 @@
     "length_m": 5000,
     "step_m": 5,
     "goal_tolerance_m": 15,
-    "minimum_same_direction_lanes": 3
+    "minimum_same_direction_lanes": 3,
+    "start_spawn_index": 36,
+    "max_uncommanded_heading_delta_deg": 50,
+    "directive_turn_tolerance_m": 80,
+    "route_continuity_horizon_m": 1000
   },
   "commands": [
     {
@@ -18,33 +22,190 @@
       "action": "keep_lane",
       "target_speed_kmh": 60,
       "voice_text": "保持当前车道，提速至60公里每小时",
-      "structured_command": {"action": "SET_SPEED", "target_speed_kmh": 60}
+      "parser_text_en": "Keep the current lane and set the speed to 60 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 60
+      }
     },
     {
       "id": "right_turn_ahead",
-      "announce_at_m": 900,
+      "announce_at_m": 100,
+      "activate_at_m": 260,
       "action": "turn_right",
-      "target_speed_kmh": 50,
+      "target_speed_kmh": 20,
       "voice_text": "前方300米路口右转",
-      "structured_command": {"action": "TURN", "direction": "RIGHT", "distance_m": 300},
-      "route_directive": {"distance_m": 1200, "action": "turn_right"}
+      "parser_text_en": "Turn right at the intersection 300 meters ahead.",
+      "structured_command": {
+        "action": "TURN",
+        "direction": "RIGHT",
+        "distance_m": 300
+      },
+      "route_directive": {
+        "distance_m": 400,
+        "action": "turn_right"
+      }
+    },
+    {
+      "id": "maintain_lane_60",
+      "announce_at_m": 250,
+      "action": "keep_lane",
+      "target_speed_kmh": 60,
+      "voice_text": "保持当前车道，以60公里每小时行驶",
+      "parser_text_en": "Maintain the current lane at 60 km/h.",
+      "structured_command": {
+        "action": "KEEP_LANE",
+        "target_speed_kmh": 60
+      }
+    },
+    {
+      "id": "decelerate_to_50",
+      "announce_at_m": 620,
+      "action": "keep_lane",
+      "target_speed_kmh": 50,
+      "voice_text": "前方路段限速，减速至50公里每小时",
+      "parser_text_en": "Reduce speed to 50 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 50
+      }
+    },
+    {
+      "id": "maintain_lane_after_right_turn",
+      "announce_at_m": 800,
+      "action": "keep_lane",
+      "target_speed_kmh": 50,
+      "voice_text": "右转完成后保持车道，以50公里每小时行驶",
+      "parser_text_en": "Keep the current lane at 50 km/h.",
+      "structured_command": {
+        "action": "KEEP_LANE",
+        "target_speed_kmh": 50
+      }
+    },
+    {
+      "id": "accelerate_to_55",
+      "announce_at_m": 1050,
+      "action": "keep_lane",
+      "target_speed_kmh": 55,
+      "voice_text": "前方道路畅通，提速至55公里每小时",
+      "parser_text_en": "Increase speed to 55 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 55
+      }
     },
     {
       "id": "lane_change_left",
-      "announce_at_m": 2300,
+      "announce_at_m": 1500,
+      "activate_at_m": 2055,
       "action": "lane_change_left",
       "target_speed_kmh": 50,
       "voice_text": "向左变道",
-      "structured_command": {"action": "CHANGE_LANE", "direction": "LEFT"},
-      "route_directive": {"distance_m": 2300, "action": "lane_change_left"}
+      "parser_text_en": "Change to the left lane.",
+      "structured_command": {
+        "action": "CHANGE_LANE",
+        "direction": "LEFT"
+      },
+      "route_directive": {
+        "distance_m": 1500,
+        "action": "lane_change_left"
+      }
+    },
+    {
+      "id": "maintain_lane_after_left_change",
+      "announce_at_m": 1800,
+      "action": "keep_lane",
+      "target_speed_kmh": 50,
+      "voice_text": "变道完成，保持当前车道和50公里每小时",
+      "parser_text_en": "Keep the current lane at 50 km/h.",
+      "structured_command": {
+        "action": "KEEP_LANE",
+        "target_speed_kmh": 50
+      }
+    },
+    {
+      "id": "change_lane_right",
+      "announce_at_m": 2250,
+      "action": "keep_lane",
+      "target_speed_kmh": 45,
+      "voice_text": "保持当前车道，减速至45公里每小时",
+      "parser_text_en": "Keep the current lane and reduce speed to 45 km/h.",
+      "structured_command": {
+        "action": "KEEP_LANE",
+        "target_speed_kmh": 45
+      }
+    },
+    {
+      "id": "maintain_lane_45",
+      "announce_at_m": 2700,
+      "action": "keep_lane",
+      "target_speed_kmh": 45,
+      "voice_text": "保持当前车道，以45公里每小时行驶",
+      "parser_text_en": "Maintain the current lane at 45 km/h.",
+      "structured_command": {
+        "action": "KEEP_LANE",
+        "target_speed_kmh": 45
+      }
     },
     {
       "id": "decelerate_to_40",
-      "announce_at_m": 3600,
-      "action": "decelerate",
+      "announce_at_m": 3200,
+      "action": "keep_lane",
       "target_speed_kmh": 40,
       "voice_text": "减速至40公里每小时",
-      "structured_command": {"action": "ADJUST_SPEED", "target_speed_kmh": 40}
+      "parser_text_en": "Reduce speed to 40 km/h.",
+      "structured_command": {
+        "action": "ADJUST_SPEED",
+        "target_speed_kmh": 40
+      }
+    },
+    {
+      "id": "accelerate_to_50",
+      "announce_at_m": 3600,
+      "action": "keep_lane",
+      "target_speed_kmh": 50,
+      "voice_text": "前方道路畅通，提速至50公里每小时",
+      "parser_text_en": "Increase speed to 50 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 50
+      }
+    },
+    {
+      "id": "change_lane_left_final",
+      "announce_at_m": 4100,
+      "action": "keep_lane",
+      "target_speed_kmh": 50,
+      "voice_text": "保持当前车道，以50公里每小时行驶",
+      "parser_text_en": "Keep the current lane at 50 km/h.",
+      "structured_command": {
+        "action": "KEEP_LANE",
+        "target_speed_kmh": 50
+      }
+    },
+    {
+      "id": "decelerate_to_40_final",
+      "announce_at_m": 4500,
+      "action": "keep_lane",
+      "target_speed_kmh": 40,
+      "voice_text": "接近终点，减速至40公里每小时并保持车道",
+      "parser_text_en": "Reduce speed to 40 km/h and keep the current lane.",
+      "structured_command": {
+        "action": "ADJUST_SPEED",
+        "target_speed_kmh": 40
+      }
+    },
+    {
+      "id": "maintain_lane_to_goal",
+      "announce_at_m": 4800,
+      "action": "keep_lane",
+      "target_speed_kmh": 40,
+      "voice_text": "保持当前车道行驶至终点",
+      "parser_text_en": "Keep the current lane and continue to the destination.",
+      "structured_command": {
+        "action": "KEEP_LANE",
+        "target_speed_kmh": 40
+      }
     }
   ],
   "success": {

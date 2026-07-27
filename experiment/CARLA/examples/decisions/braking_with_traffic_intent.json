@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.2.0",
+  "request_id": "braking-traffic-validation-0001",
+  "input": {
+    "modality": "TEXT",
+    "language": "en-US",
+    "raw_text": "Keep the current lane and drive at 42 km/h.",
+    "normalized_text": "Keep the current lane and drive at 42 km/h."
+  },
+  "intent": {
+    "category": "BASIC_CONTROL",
+    "urgency": "NORMAL",
+    "entities": [],
+    "suppressed_intents": [],
+    "steps": [
+      {
+        "step_id": "step_1",
+        "action": "SET_SPEED",
+        "parameters": {
+          "target_speed_mps": 11.666667,
+          "source_value": 42,
+          "source_unit": "km/h"
+        },
+        "trigger": {"type": "IMMEDIATE"},
+        "completion": {"type": "TARGET_SPEED_REACHED"},
+        "depends_on": [],
+        "preconditions": ["PATH_CLEAR"],
+        "on_blocked": "WAIT_FOR_SAFE"
+      }
+    ],
+    "constraints": {
+      "safety_first": true,
+      "obey_traffic_rules": true,
+      "driving_style": "NORMAL"
+    }
+  },
+  "parse_result": {
+    "status": "VALID",
+    "method": "TEST_FIXTURE",
+    "model": null,
+    "confidence": 1.0,
+    "missing_slots": [],
+    "warnings": [],
+    "latency_ms": 0.0
+  }
+}

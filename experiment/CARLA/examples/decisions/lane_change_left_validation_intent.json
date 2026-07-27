@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.2.0",
+  "request_id": "lane-change-validation-0001",
+  "input": {"modality": "TEXT", "language": "en-US", "raw_text": "Change to the left lane.", "normalized_text": "Change to the left lane."},
+  "intent": {
+    "category": "BASIC_CONTROL",
+    "urgency": "NORMAL",
+    "entities": [],
+    "suppressed_intents": [],
+    "steps": [{"step_id": "step_1", "action": "CHANGE_LANE", "parameters": {"direction": "LEFT"}, "trigger": {"type": "IMMEDIATE"}, "completion": {"type": "LANE_CHANGE_COMPLETED"}, "depends_on": [], "preconditions": ["TARGET_LANE_SAFE"], "on_blocked": "WAIT_FOR_SAFE"}],
+    "constraints": {"safety_first": true, "obey_traffic_rules": true, "driving_style": "NORMAL"}
+  },
+  "parse_result": {"status": "VALID", "method": "TEST_FIXTURE", "model": null, "confidence": 1.0, "missing_slots": [], "warnings": [], "latency_ms": 0.0}
+}

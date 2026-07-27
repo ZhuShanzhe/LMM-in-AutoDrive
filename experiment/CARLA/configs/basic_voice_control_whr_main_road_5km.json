@@ -1,0 +1,33 @@
+{
+  "scenario_id": "basic_voice_control_whr_main_road_5km",
+  "environment": {
+    "weather": "ClearNoon",
+    "road_requirement": "straight_six_lane_urban_arterial",
+    "dynamic_traffic": false
+  },
+  "route": {
+    "length_m": 5000,
+    "spawn_backoff_m": 10,
+    "step_m": 5,
+    "goal_tolerance_m": 15,
+    "minimum_same_direction_lanes": 3,
+    "max_uncommanded_heading_delta_deg": 8,
+    "route_continuity_horizon_m": 5000
+  },
+  "commands": [
+    {"id": "set_speed_50", "announce_at_m": 0, "action": "keep_lane", "target_speed_kmh": 50, "voice_text": "Set speed to 50 km/h and keep the lane.", "parser_text_en": "Keep the current lane and set the speed to 50 km/h.", "structured_command": {"action": "SET_SPEED", "target_speed_kmh": 50}},
+    {"id": "accelerate_60", "announce_at_m": 500, "action": "accelerate", "target_speed_kmh": 60, "voice_text": "Increase speed to 60 km/h.", "parser_text_en": "Increase speed to 60 km/h.", "structured_command": {"action": "SET_SPEED", "target_speed_kmh": 60}},
+    {"id": "decelerate_45", "announce_at_m": 1100, "action": "decelerate", "target_speed_kmh": 45, "voice_text": "Reduce speed to 45 km/h.", "parser_text_en": "Reduce speed to 45 km/h.", "structured_command": {"action": "SET_SPEED", "target_speed_kmh": 45}},
+    {"id": "change_lane_right", "announce_at_m": 1700, "action": "lane_change_right", "target_speed_kmh": 45, "voice_text": "Change to the right lane.", "parser_text_en": "Change to the right lane.", "structured_command": {"action": "CHANGE_LANE", "direction": "RIGHT"}},
+    {"id": "maintain_right_lane", "announce_at_m": 2200, "action": "keep_lane", "target_speed_kmh": 50, "voice_text": "Keep the current lane at 50 km/h.", "parser_text_en": "Maintain the current lane at 50 km/h.", "structured_command": {"action": "KEEP_LANE", "target_speed_kmh": 50}},
+    {"id": "change_lane_left", "announce_at_m": 3000, "action": "lane_change_left", "target_speed_kmh": 50, "voice_text": "Change to the left lane.", "parser_text_en": "Change to the left lane.", "structured_command": {"action": "CHANGE_LANE", "direction": "LEFT"}},
+    {"id": "decelerate_40", "announce_at_m": 3900, "action": "decelerate", "target_speed_kmh": 40, "voice_text": "Reduce speed to 40 km/h.", "parser_text_en": "Reduce speed to 40 km/h.", "structured_command": {"action": "SET_SPEED", "target_speed_kmh": 40}},
+    {"id": "continue_to_goal", "announce_at_m": 4550, "action": "keep_lane", "target_speed_kmh": 40, "voice_text": "Keep the current lane and continue to the destination.", "parser_text_en": "Keep the current lane and continue to the destination.", "structured_command": {"action": "KEEP_LANE"}}
+  ],
+  "success": {
+    "route_completed": true,
+    "all_commands_emitted": true,
+    "no_collision": true,
+    "no_illegal_lane_invasion": true
+  }
+}

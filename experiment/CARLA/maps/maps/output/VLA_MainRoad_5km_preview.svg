@@ -1,0 +1,571 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420">
+<style>
+svg{background:#222;font-family:Arial,sans-serif}
+.asphalt{fill:#303030}
+.sidewalk{fill:#686862}
+.building{fill:#8f969b;stroke:#b7bdc1;stroke-width:1}
+.building2{fill:#747b80;stroke:#a7adb1;stroke-width:1}
+.lane{stroke:#d8d8cf;stroke-width:1.2;stroke-dasharray:9 13}
+.edge{stroke:#c8c8bf;stroke-width:1.4}
+.yellow{stroke:#e4bd43;stroke-width:1.5}
+.crosswalk{stroke:#e6e6dc;stroke-width:2}
+.stop{stroke:#eeeeea;stroke-width:3}
+.curb{stroke:#8b8b86;stroke-width:2}
+.label{fill:#f0f0e8;font-size:15px}
+.small{fill:#d0d0c8;font-size:11px}
+</style>
+<rect x="80.0" y="102.0" width="800.0" height="216.0" class="sidewalk" />
+<rect x="80.0" y="118.0" width="800.0" height="184.0" class="asphalt" />
+<line x1="80.0" y1="302.0" x2="880.0" y2="302.0" class="curb" />
+<line x1="80.0" y1="118.0" x2="880.0" y2="118.0" class="curb" />
+<line x1="80.0" y1="294.0" x2="880.0" y2="294.0" class="edge" />
+<line x1="80.0" y1="126.0" x2="880.0" y2="126.0" class="edge" />
+<line x1="80.0" y1="211.4" x2="880.0" y2="211.4" class="yellow" />
+<line x1="80.0" y1="208.6" x2="880.0" y2="208.6" class="yellow" />
+<line x1="80.0" y1="238.0" x2="880.0" y2="238.0" class="lane" />
+<line x1="80.0" y1="266.0" x2="880.0" y2="266.0" class="lane" />
+<line x1="80.0" y1="182.0" x2="880.0" y2="182.0" class="lane" />
+<line x1="80.0" y1="154.0" x2="880.0" y2="154.0" class="lane" />
+<rect x="254.0" y="102.0" width="36.0" height="216.0" class="asphalt" opacity="0.95"/>
+<line x1="262.0" y1="294.0" x2="262.0" y2="126.0" class="crosswalk" />
+<line x1="266.0" y1="294.0" x2="266.0" y2="126.0" class="crosswalk" />
+<line x1="270.0" y1="294.0" x2="270.0" y2="126.0" class="crosswalk" />
+<line x1="274.0" y1="294.0" x2="274.0" y2="126.0" class="crosswalk" />
+<line x1="278.0" y1="294.0" x2="278.0" y2="126.0" class="crosswalk" />
+<line x1="282.0" y1="294.0" x2="282.0" y2="126.0" class="crosswalk" />
+<line x1="248.0" y1="294.0" x2="248.0" y2="210.0" class="stop" />
+<line x1="248.0" y1="210.0" x2="248.0" y2="126.0" class="stop" />
+<rect x="88.3" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="93.8" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="100.8" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="106.7" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="88.3" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="93.8" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="100.8" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="106.7" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="88.3" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="93.8" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="100.8" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="106.7" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="88.3" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="93.8" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="100.8" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="106.7" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="117.1" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="122.6" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="129.6" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="135.5" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="117.1" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="122.6" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="129.6" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="135.5" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="117.1" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="122.6" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="129.6" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="135.5" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="117.1" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="122.6" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="129.6" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="135.5" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="145.9" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="151.4" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="158.4" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="164.3" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="145.9" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="151.4" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="158.4" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="164.3" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="145.9" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="151.4" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="158.4" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="164.3" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="145.9" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="151.4" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="158.4" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="164.3" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="174.7" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="180.2" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="187.2" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="193.1" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="174.7" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="180.2" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="187.2" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="193.1" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="174.7" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="180.2" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="187.2" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="193.1" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="174.7" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="180.2" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="187.2" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="193.1" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="203.5" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="209.0" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="216.0" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="221.9" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="203.5" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="209.0" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="216.0" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="221.9" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="203.5" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="209.0" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="216.0" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="221.9" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="203.5" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="209.0" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="216.0" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="221.9" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="232.3" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="237.8" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="244.8" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="250.7" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="232.3" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="237.8" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="244.8" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="250.7" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="232.3" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="237.8" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="244.8" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="250.7" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="232.3" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="237.8" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="244.8" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="250.7" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="261.1" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="266.6" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="273.6" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="279.5" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="261.1" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="266.6" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="273.6" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="279.5" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="261.1" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="266.6" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="273.6" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="279.5" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="261.1" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="266.6" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="273.6" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="279.5" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="289.9" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="295.4" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="302.4" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="308.3" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="289.9" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="295.4" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="302.4" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="308.3" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="289.9" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="295.4" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="302.4" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="308.3" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="289.9" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="295.4" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="302.4" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="308.3" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="318.7" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="324.2" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="331.2" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="337.1" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="318.7" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="324.2" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="331.2" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="337.1" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="318.7" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="324.2" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="331.2" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="337.1" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="318.7" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="324.2" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="331.2" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="337.1" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="347.5" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="353.0" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="360.0" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="365.9" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="347.5" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="353.0" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="360.0" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="365.9" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="347.5" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="353.0" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="360.0" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="365.9" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="347.5" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="353.0" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="360.0" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="365.9" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="376.3" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="381.8" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="388.8" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="394.7" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="376.3" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="381.8" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="388.8" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="394.7" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="376.3" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="381.8" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="388.8" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="394.7" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="376.3" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="381.8" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="388.8" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="394.7" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="405.1" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="410.6" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="417.6" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="423.5" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="405.1" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="410.6" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="417.6" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="423.5" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="405.1" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="410.6" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="417.6" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="423.5" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="405.1" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="410.6" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="417.6" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="423.5" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="433.9" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="439.4" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="446.4" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="452.3" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="433.9" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="439.4" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="446.4" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="452.3" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="433.9" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="439.4" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="446.4" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="452.3" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="433.9" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="439.4" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="446.4" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="452.3" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="462.7" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="468.2" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="475.2" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="481.1" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="462.7" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="468.2" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="475.2" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="481.1" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="462.7" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="468.2" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="475.2" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="481.1" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="462.7" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="468.2" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="475.2" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="481.1" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="491.5" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="497.0" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="504.0" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="509.9" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="491.5" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="497.0" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="504.0" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="509.9" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="491.5" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="497.0" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="504.0" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="509.9" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="491.5" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="497.0" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="504.0" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="509.9" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="520.3" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="525.8" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="532.8" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="538.7" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="520.3" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="525.8" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="532.8" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="538.7" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="520.3" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="525.8" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="532.8" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="538.7" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="520.3" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="525.8" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="532.8" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="538.7" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="549.1" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="554.6" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="561.6" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="567.5" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="549.1" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="554.6" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="561.6" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="567.5" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="549.1" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="554.6" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="561.6" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="567.5" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="549.1" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="554.6" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="561.6" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="567.5" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="577.9" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="583.4" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="590.4" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="596.3" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="577.9" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="583.4" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="590.4" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="596.3" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="577.9" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="583.4" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="590.4" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="596.3" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="577.9" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="583.4" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="590.4" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="596.3" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="606.7" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="612.2" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="619.2" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="625.1" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="606.7" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="612.2" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="619.2" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="625.1" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="606.7" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="612.2" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="619.2" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="625.1" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="606.7" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="612.2" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="619.2" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="625.1" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="635.5" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="641.0" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="648.0" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="653.9" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="635.5" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="641.0" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="648.0" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="653.9" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="635.5" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="641.0" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="648.0" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="653.9" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="635.5" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="641.0" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="648.0" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="653.9" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="664.3" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="669.8" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="676.8" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="682.7" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="664.3" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="669.8" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="676.8" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="682.7" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="664.3" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="669.8" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="676.8" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="682.7" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="664.3" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="669.8" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="676.8" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="682.7" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="693.1" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="698.6" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="705.6" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="711.5" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="693.1" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="698.6" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="705.6" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="711.5" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="693.1" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="698.6" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="705.6" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="711.5" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="693.1" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="698.6" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="705.6" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="711.5" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="721.9" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="727.4" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="734.4" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="740.3" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="721.9" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="727.4" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="734.4" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="740.3" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="721.9" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="727.4" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="734.4" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="740.3" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="721.9" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="727.4" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="734.4" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="740.3" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="750.7" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="756.2" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="763.2" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="769.1" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="750.7" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="756.2" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="763.2" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="769.1" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="750.7" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="756.2" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="763.2" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="769.1" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="750.7" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="756.2" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="763.2" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="769.1" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="779.5" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="785.0" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="792.0" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="797.9" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="779.5" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="785.0" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="792.0" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="797.9" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="779.5" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="785.0" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="792.0" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="797.9" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="779.5" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="785.0" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="792.0" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="797.9" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="808.3" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="813.8" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="820.8" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="826.7" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="808.3" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="813.8" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="820.8" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="826.7" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="808.3" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="813.8" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="820.8" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="826.7" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="808.3" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="813.8" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="820.8" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="826.7" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="837.1" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="842.6" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="849.6" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="855.5" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="837.1" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="842.6" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="849.6" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="855.5" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="837.1" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="842.6" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="849.6" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="855.5" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="837.1" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="842.6" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="849.6" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="855.5" y="-38.0" width="3.5" height="56.0" class="building" />
+<rect x="865.9" y="346.0" width="4.2" height="56.0" class="building" />
+<rect x="871.4" y="342.0" width="5.1" height="64.0" class="building2" />
+<rect x="877.8" y="346.0" width="4.5" height="56.0" class="building" />
+<rect x="878.2" y="346.0" width="3.5" height="56.0" class="building2" />
+<rect x="865.9" y="402.0" width="4.2" height="56.0" class="building2" />
+<rect x="871.4" y="398.0" width="5.1" height="64.0" class="building" />
+<rect x="877.8" y="402.0" width="4.5" height="56.0" class="building2" />
+<rect x="878.2" y="402.0" width="3.5" height="56.0" class="building" />
+<rect x="865.9" y="18.0" width="4.2" height="56.0" class="building" />
+<rect x="871.4" y="14.0" width="5.1" height="64.0" class="building2" />
+<rect x="877.8" y="18.0" width="4.5" height="56.0" class="building" />
+<rect x="878.2" y="18.0" width="3.5" height="56.0" class="building2" />
+<rect x="865.9" y="-38.0" width="4.2" height="56.0" class="building2" />
+<rect x="871.4" y="-42.0" width="5.1" height="64.0" class="building" />
+<rect x="877.8" y="-38.0" width="4.5" height="56.0" class="building2" />
+<rect x="878.2" y="-38.0" width="3.5" height="56.0" class="building" />
+<circle cx="99.2" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="99.2" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="118.4" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="118.4" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="137.6" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="137.6" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="156.8" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="156.8" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="176.0" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="176.0" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="195.2" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="195.2" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="214.4" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="214.4" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="233.6" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="233.6" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="252.8" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="252.8" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="272.0" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="272.0" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="291.2" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="291.2" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="310.4" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="310.4" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="329.6" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="329.6" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="348.8" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="348.8" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="368.0" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="368.0" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="387.2" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="387.2" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="406.4" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="406.4" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="425.6" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="425.6" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="444.8" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="444.8" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="464.0" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="464.0" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="483.2" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="483.2" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="502.4" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="502.4" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="521.6" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="521.6" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="540.8" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="540.8" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="560.0" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="560.0" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="579.2" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="579.2" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="598.4" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="598.4" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="617.6" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="617.6" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="636.8" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="636.8" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="656.0" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="656.0" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="675.2" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="675.2" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="694.4" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="694.4" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="713.6" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="713.6" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="732.8" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="732.8" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="752.0" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="752.0" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="771.2" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="771.2" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="790.4" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="790.4" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="809.6" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="809.6" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="828.8" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="828.8" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="848.0" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="848.0" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<circle cx="867.2" cy="95.6" r="2.0" fill="#d6cf9c"/>
+<circle cx="867.2" cy="324.4" r="2.0" fill="#d6cf9c"/>
+<text x="28.0" y="34.0" class="label">VLA_MainRoad_5km - top-down preview</text>
+<text x="28.0" y="54.0" class="small">Straight 5 km urban arterial, bidirectional 6 lanes, visual intersection at 1200 m</text>
+<text x="242.0" y="88.0" class="small">1200 m intersection</text>
+</svg>

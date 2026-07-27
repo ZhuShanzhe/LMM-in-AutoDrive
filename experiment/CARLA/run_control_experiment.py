@@ -8,8 +8,13 @@ import argparse
 import json
 import math
 import os
+import sys
 import tempfile
 import time
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 from carla_bootstrap import setup_carla_api
 
@@ -19,6 +24,8 @@ import carla
 
 from control.agents import CarlaAgentController
 from control.decision_provider import JsonFileDecisionPolicy
+from control.scene_bridge_policy import SceneBridgeDecisionPolicy
+from control.scheduled_scene_bridge_policy import ScheduledSceneBridgePolicy
 from control.pid_controller import EgoPIDController
 from evaluation.events import EventMonitor
 from evaluation.camera import ExperimentCamera
@@ -34,6 +41,8 @@ from scenarios.basic.voice_control_5km import BasicVoiceControl5KmScenario
 from scenarios.continuous.basic_track_5km import BasicTrack5KmScenario
 from scenarios.emergency.emergency_brake import EmergencyBrakeScenario
 from scenarios.pedestrian.pedestrian_crossing import PedestrianCrossingScenario
+from scenarios.validation.braking_with_traffic import BrakingWithTrafficValidationScenario
+from scenarios.validation.lane_change_with_traffic import LaneChangeWithTrafficValidationScenario
 
 
 SCENARIOS = {
@@ -41,6 +50,8 @@ SCENARIOS = {
     "basic_voice_control_5km": BasicVoiceControl5KmScenario,
     "basic_track_5km": BasicTrack5KmScenario,
     "emergency_brake": EmergencyBrakeScenario,
+    "braking_with_traffic_validation": BrakingWithTrafficValidationScenario,
+    "lane_change_with_traffic_validation": LaneChangeWithTrafficValidationScenario,
     "pedestrian_crossing": PedestrianCrossingScenario,
 }
 
@@ -119,9 +130,9 @@ class RuleDecisionPolicy:
         }
 
 
-def build_controller(name, vehicle, world_map, target_speed_kmh, scenario=None):
+def build_controller(name, vehicle, world_map, target_speed_kmh, scenario=None, force_low_level=False):
     custom_factory = getattr(scenario, "create_controller", None)
-    if custom_factory is not None:
+    if custom_factory is not None and not force_low_level:
         return custom_factory()
     if name == "pid":
         return EgoPIDController(vehicle, world_map, target_speed_kmh)
@@ -131,6 +142,31 @@ def build_controller(name, vehicle, world_map, target_speed_kmh, scenario=None):
 def get_speed_kmh(vehicle):
     velocity = vehicle.get_velocity()
     return 3.6 * math.sqrt(velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2)
+
+
+def draw_main_road_visual_markings(world, road_length_m=5000.0):
+    """Draw persistent camera-visible markings for the generated six-lane road."""
+    # Debug lines bypass the road material and otherwise clip to white in the
+    # camera post-process pass. Keep them deliberately subdued.
+    white = carla.Color(128, 128, 120)
+    yellow = carla.Color(115, 82, 10)
+
+    def line(start_x, end_x, y, color, width):
+        world.debug.draw_line(
+            carla.Location(x=start_x, y=y, z=0.08),
+            carla.Location(x=end_x, y=y, z=0.08),
+            thickness=width,
+            color=color,
+            life_time=3600.0,
+        )
+
+    line(0.0, road_length_m, -0.16, yellow, 0.06)
+    line(0.0, road_length_m, 0.16, yellow, 0.06)
+    for y in (-10.5, 10.5):
+        line(0.0, road_length_m, y, white, 0.06)
+    for y in (-3.5, -7.0, 3.5, 7.0):
+        for start_x in range(0, int(road_length_m), 14):
+            line(float(start_x), float(min(start_x + 6, road_length_m)), y, white, 0.05)
 
 
 def json_safe(value):
@@ -209,6 +245,7 @@ def make_video_overlay(record):
     intent = record.get("intent", {})
     control = record.get("control", {})
     ego = record.get("ego", {})
+    parser_telemetry = record.get("policy", {}).get("parser", {})
     scenario_name = record.get("scenario", "")
     decision_source = record.get("decision_source", "rule")
     action = intent.get("action", "")
@@ -248,6 +285,12 @@ def make_video_overlay(record):
         "emergency": emergency,
         "risk_level": risk_level,
         "policy_state": policy_state,
+        "parse_status": intent.get("parse_status"),
+        "parse_confidence": intent.get("parse_confidence"),
+        "parse_latency_ms": parser_telemetry.get("latency_ms"),
+        "parser_model": parser_telemetry.get("model"),
+        "end_to_end_ms": record.get("latency_ms", {}).get("end_to_end", 0.0),
+        "source_step_action": intent.get("source_step_action"),
         "speed_kmh": ego.get("speed_kmh", 0.0),
         "throttle": control.get("throttle", 0.0),
         "brake": control.get("brake", 0.0),
@@ -289,6 +332,16 @@ def parse_args():
         help="Optional local directory for CARLA map and navigation cache files",
     )
     parser.add_argument("--map", default=None, help="Optional CARLA map name to load before setup")
+    parser.add_argument(
+        "--opendrive-map",
+        default=None,
+        help="Optional OpenDRIVE .xodr map to generate before scenario setup",
+    )
+    parser.add_argument(
+        "--opendrive-visual-markings",
+        action="store_true",
+        help="Draw persistent six-lane road markings after OpenDRIVE generation",
+    )
     parser.add_argument("--scenario-config", default=None, help="Optional JSON configuration for a configurable scenario")
     parser.add_argument("--duration-s", type=float, default=None)
     parser.add_argument("--fixed-delta-s", type=float, default=0.05)
@@ -296,7 +349,7 @@ def parse_args():
     parser.add_argument("--controller", choices=["pid", "basic", "behavior"], default="pid")
     parser.add_argument(
         "--decision-source",
-        choices=["rule", "json_file", "voice_schedule"],
+        choices=["rule", "json_file", "scene_bridge", "voice_schedule", "voice_scene_bridge"],
         default="rule",
         help="Use built-in rules or a per-tick external decision JSON file",
     )
@@ -304,6 +357,22 @@ def parse_args():
         "--decision-json",
         default=None,
         help="DrivingIntent or ControlDecision JSON path for --decision-source json_file",
+    )
+    parser.add_argument(
+        "--command-parser-model",
+        default=None,
+        help="ModernBERT model directory for text-to-DrivingIntent voice schedule parsing",
+    )
+    parser.add_argument("--command-parser-device", default="cuda")
+    parser.add_argument(
+        "--driving-intent-json",
+        default=None,
+        help="DrivingIntent JSON path for --decision-source scene_bridge",
+    )
+    parser.add_argument(
+        "--bridge-output-dir",
+        default=None,
+        help="Directory for per-tick scene-bridge artifacts",
     )
     parser.add_argument(
         "--decision-max-age-frames",
@@ -350,6 +419,12 @@ def parse_args():
     parser.add_argument("--video-output", default=None, help="Optional direct H.264 output path")
     parser.add_argument("--video-fps", type=float, default=30.0)
     parser.add_argument("--ffmpeg", default=None, help="Path to ffmpeg for --video-output")
+    parser.add_argument(
+        "--video-profile",
+        choices=["realtime", "quality"],
+        default="quality",
+        help="H.264 profile; quality uses slower, higher-fidelity encoding",
+    )
     parser.add_argument("--video-overlay", action="store_true", help="Overlay per-frame run telemetry on direct video")
     parser.add_argument("--terminal-hold-s", type=float, default=2.0, help="Seconds to hold SUCCESS/FAILURE video frame")
     parser.add_argument(
@@ -369,6 +444,8 @@ def parse_args():
     args = parser.parse_args()
     if args.decision_source == "json_file" and not args.decision_json:
         parser.error("--decision-json is required when --decision-source json_file")
+    if args.decision_source == "scene_bridge" and not args.driving_intent_json:
+        parser.error("--driving-intent-json is required when --decision-source scene_bridge")
     if args.decision_max_age_frames is not None and args.decision_max_age_frames < 0:
         parser.error("--decision-max-age-frames must be non-negative")
     if args.decision_wait_ms < 0:
@@ -403,6 +480,11 @@ def main():
         os.makedirs(cache_dir, exist_ok=True)
         client.set_files_base_folder(cache_dir)
     world = client.get_world()
+    if args.opendrive_map:
+        with open(args.opendrive_map, "r", encoding="utf-8") as handle:
+            world = client.generate_opendrive_world(handle.read())
+        if args.opendrive_visual_markings:
+            draw_main_road_visual_markings(world)
     scenario_class = SCENARIOS[args.scenario]
     config_map = None
     if scenario_config_path is not None:
@@ -411,7 +493,7 @@ def main():
     target_map = args.map or config_map or getattr(scenario_class, "default_map", None)
     if target_map:
         target_map = resolve_carla_map_name(target_map, client.get_available_maps())
-    if target_map and not world.get_map().name.endswith(target_map):
+    if not args.opendrive_map and target_map and not world.get_map().name.endswith(target_map):
         world = client.load_world(target_map)
     original_settings = world.get_settings()
     settings = world.get_settings()
@@ -441,7 +523,7 @@ def main():
         scenario.setup()
         world.tick()
         ego = scenario.get_ego_vehicle()
-        if args.scene_world_state_output:
+        if args.scene_world_state_output or args.decision_source in {"scene_bridge", "voice_scene_bridge"}:
             scene_world_state_collector = CarlaWorldStateCollector(world, ego)
         monitor = EventMonitor(world, ego)
         monitor.start()
@@ -458,8 +540,9 @@ def main():
                 args.video_fps,
                 args.ffmpeg,
                 args.video_overlay,
-                args.fixed_delta_s * args.record_every_n,
+                args.fixed_delta_s * args.record_every_n if args.record_images else None,
                 args.camera_view,
+                args.video_profile,
             )
             camera.start()
         if args.scene_capture:
@@ -479,6 +562,7 @@ def main():
             world.get_map(),
             args.target_speed_kmh,
             scenario,
+            force_low_level=args.decision_source in {"scene_bridge", "voice_scene_bridge"},
         )
         controller_name = type(controller).__name__
         effective_decision_source = args.decision_source
@@ -488,12 +572,39 @@ def main():
                 args.target_speed_kmh,
                 args.decision_max_age_frames,
             )
-        elif args.decision_source == "voice_schedule" or args.scenario == "basic_voice_control_5km":
+        elif args.decision_source == "scene_bridge":
+            policy = SceneBridgeDecisionPolicy(
+                args.driving_intent_json,
+                args.bridge_output_dir or os.path.join(output_dir, "scene_bridge"),
+            )
+        elif args.decision_source in {"voice_schedule", "voice_scene_bridge"} or args.scenario == "basic_voice_control_5km":
             create_policy = getattr(scenario, "create_temporary_policy", None)
             if create_policy is None:
                 raise ValueError("voice_schedule requires a scenario with a temporary policy")
-            policy = create_policy(args.target_speed_kmh)
-            effective_decision_source = "temporary_voice_schedule"
+            schedule_policy = create_policy(
+                args.target_speed_kmh,
+                args.command_parser_model,
+                args.command_parser_device,
+            )
+            if args.decision_source == "voice_scene_bridge":
+                policy = ScheduledSceneBridgePolicy(
+                    schedule_policy,
+                    args.bridge_output_dir or os.path.join(output_dir, "scene_bridge"),
+                )
+            else:
+                policy = schedule_policy
+            warmup = getattr(policy, "warmup", None)
+            if callable(warmup):
+                warmup()
+            effective_decision_source = (
+                "modernbert_voice_scene_bridge"
+                if args.decision_source == "voice_scene_bridge" and args.command_parser_model
+                else "voice_scene_bridge"
+                if args.decision_source == "voice_scene_bridge"
+                else "modernbert_voice_closed_loop"
+                if args.command_parser_model
+                else "configured_voice_schedule"
+            )
         elif getattr(scenario, "create_decision_policy", None) is not None:
             policy = scenario.create_decision_policy()
             effective_decision_source = "scenario_route_policy"
@@ -508,7 +619,10 @@ def main():
             "scenario_info": scenario_info,
             "controller": controller_name,
             "decision_source": effective_decision_source,
+            "command_parser_model": args.command_parser_model,
             "decision_json": args.decision_json,
+            "driving_intent_json": args.driving_intent_json,
+            "bridge_output_dir": args.bridge_output_dir,
             "decision_max_age_frames": args.decision_max_age_frames,
             "decision_wait_ms": args.decision_wait_ms,
             "world_state_output": args.world_state_output,
@@ -528,6 +642,7 @@ def main():
                 "every_n_frames": args.record_every_n if args.record_images else None,
                 "direct_video": args.video_output,
                 "video_fps": args.video_fps if args.video_output else None,
+                "video_profile": args.video_profile if args.video_output else None,
                 "video_overlay": bool(args.video_overlay and args.video_output),
             },
             "scene_understanding_capture": {
@@ -548,11 +663,13 @@ def main():
         previous_location = start_location
         travelled_distance_m = 0.0
         start_sim_time = world.get_snapshot().timestamp.elapsed_seconds
-        max_ticks = int(duration_s / args.fixed_delta_s)
         runner_stop_reason = "duration_limit"
         latest_scene_sensor_events = scene_sensor_events(None)
+        previous_snapshot_time = start_sim_time
+        control_delta_s = float(args.fixed_delta_s)
 
-        for _ in range(max_ticks):
+        while previous_snapshot_time - start_sim_time < duration_s:
+            scenario.fixed_delta_s = control_delta_s
             scenario.tick()
             state = WorldState(world, ego).get_state()
             decision_snapshot = world.get_snapshot()
@@ -564,13 +681,16 @@ def main():
                     "simulation_frame": state["simulation_frame"],
                     "world_state": json_safe(state),
                 })
+            scene_world_state = None
             if scene_world_state_collector is not None:
-                write_json_atomically(
-                    args.scene_world_state_output,
-                    scene_world_state_collector.collect(
-                        sensor_events=latest_scene_sensor_events
-                    ),
+                scene_world_state = scene_world_state_collector.collect(
+                    sensor_events=latest_scene_sensor_events
                 )
+                if args.scene_world_state_output:
+                    write_json_atomically(args.scene_world_state_output, scene_world_state)
+                set_scene_world_state = getattr(policy, "set_scene_world_state", None)
+                if set_scene_world_state is not None:
+                    set_scene_world_state(scene_world_state)
             set_context = getattr(policy, "set_context", None)
             if set_context is not None:
                 set_context(call_scenario_method(scenario, "get_policy_context", {}))
@@ -578,7 +698,7 @@ def main():
             intent = decide_with_optional_wait(policy, state, args.decision_wait_ms)
             decision_latency_ms = (time.perf_counter() - decision_start) * 1000.0
             control_start = time.perf_counter()
-            control, normalized_intent = controller.run_step(intent, args.fixed_delta_s)
+            control, normalized_intent = controller.run_step(intent, control_delta_s)
             control_latency_ms = (time.perf_counter() - control_start) * 1000.0
             call_scenario_method(scenario, "report_intent", None, normalized_intent)
             if control is not None:
@@ -586,12 +706,25 @@ def main():
             world.tick()
             snapshot = world.get_snapshot()
             sim_time = snapshot.timestamp.elapsed_seconds - start_sim_time
+            observed_delta_s = max(
+                1e-6, snapshot.timestamp.elapsed_seconds - previous_snapshot_time
+            )
+            previous_snapshot_time = snapshot.timestamp.elapsed_seconds
+            control_delta_s = observed_delta_s
             location = ego.get_location()
             travelled_distance_m += previous_location.distance(location)
             previous_location = location
             events = monitor.snapshot(int(snapshot.frame))
             latest_scene_sensor_events = scene_sensor_events(events)
             call_scenario_method(scenario, "report_events", None, events)
+            step_feedback = None
+            report_execution = getattr(policy, "report_execution", None)
+            if report_execution is not None and scene_world_state_collector is not None:
+                step_feedback = report_execution(
+                    scene_world_state_collector.collect(sensor_events=latest_scene_sensor_events),
+                    normalized_intent,
+                    controller,
+                )
             scenario_status = call_scenario_method(scenario, "get_status", {})
             scenario_metrics = scenario_status.get("metrics", {})
             events["illegal_lane_invasion_count"] = int(
@@ -625,6 +758,8 @@ def main():
                     "end_to_end": round(decision_latency_ms + control_latency_ms, 4),
                 },
             }
+            if step_feedback is not None:
+                record["step_feedback"] = step_feedback
             if scene_capture is not None:
                 capture_result = scene_capture.capture_current_frame()
                 if capture_result is not None:
@@ -633,6 +768,7 @@ def main():
                 camera.save_frame(
                     snapshot.frame,
                     overlay=make_video_overlay(record) if args.video_overlay else None,
+                    sample_period_s=observed_delta_s,
                 )
             logger.log_frame(record)
             for event in call_scenario_method(scenario, "drain_event_log", []):

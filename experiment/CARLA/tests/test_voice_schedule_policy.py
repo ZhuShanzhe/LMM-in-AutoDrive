@@ -88,6 +88,31 @@ class VoiceSchedulePolicyTest(unittest.TestCase):
         self.assertEqual(intent["action"], "lane_change_left")
         self.assertNotIn("target_location", intent)
 
+    def test_future_navigation_command_activates_after_its_announcement(self):
+        commands = [
+            {"id": "keep", "announce_at_m": 0, "action": "keep_lane", "target_speed_kmh": 60},
+            {
+                "id": "right", "announce_at_m": 100, "activate_at_m": 330,
+                "action": "turn_right", "target_speed_kmh": 35,
+            },
+            {"id": "resume", "announce_at_m": 620, "action": "keep_lane", "target_speed_kmh": 50},
+        ]
+        policy = VoiceSchedulePolicy(commands, default_speed_kmh=40)
+        policy.set_context({
+            "progress_m": 250,
+            "route_target": {"x": 1, "y": 2, "z": 0},
+            "turn_route_target": {"x": 3, "y": 4, "z": 0},
+        })
+        self.assertEqual(policy.decide({})["command_id"], "keep")
+        policy.set_context({
+            "progress_m": 360,
+            "route_target": {"x": 1, "y": 2, "z": 0},
+            "turn_route_target": {"x": 3, "y": 4, "z": 0},
+        })
+        intent = policy.decide({})
+        self.assertEqual(intent["command_id"], "right")
+        self.assertEqual(intent["target_location"], {"x": 3, "y": 4, "z": 0})
+
 
 class RouteDirectiveTest(unittest.TestCase):
     def test_turn_directive_selects_the_rightmost_branch(self):
