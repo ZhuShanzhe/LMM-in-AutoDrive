@@ -114,6 +114,9 @@ def _flatten_driving_intent(driving_intent, default_speed_kmh):
 
     if action is None:
         action = "stop"
+        reason = "unsupported_parser_action_{0}".format(parser_action.lower())
+    else:
+        reason = "driving_intent_{0}".format(parser_action.lower())
 
     emergency = (
         action == "emergency_brake"
@@ -128,7 +131,7 @@ def _flatten_driving_intent(driving_intent, default_speed_kmh):
         "target_lane": None,
         "target_location": None,
         "emergency": emergency,
-        "reason": "driving_intent_{0}".format(parser_action.lower()),
+        "reason": reason,
         "request_id": request_id,
         "parse_status": status,
         "parse_confidence": parse_result.get("confidence"),
@@ -184,4 +187,7 @@ def normalize_intent(intent, default_speed_kmh=25.0):
         "source_step_id": intent.get("source_step_id"),
         "source_step_action": intent.get("source_step_action"),
         "source_step_count": intent.get("source_step_count"),
+        "command_id": intent.get("command_id"),
+        "voice_text": intent.get("voice_text", ""),
+        "structured_command": intent.get("structured_command", {}),
     }

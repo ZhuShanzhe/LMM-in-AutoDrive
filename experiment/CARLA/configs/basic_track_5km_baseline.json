@@ -1,0 +1,28 @@
+{
+  "scenario_id": "basic_track_5km_baseline",
+  "scenario_name": "Basic Track 5km Baseline",
+  "map": "Town05_Opt",
+  "duration_s": 650,
+  "environment": {
+    "weather": "ClearNoon",
+    "road_requirement": "urban_arterial_six_lanes",
+    "visibility": "good",
+    "dynamic_interference": false
+  },
+  "route": {
+    "length_m": 5000,
+    "step_m": 5,
+    "goal_tolerance_m": 20,
+    "minimum_same_direction_lanes": 3,
+    "start_spawn_index": 32
+  },
+  "ego": {
+    "target_speed_kmh": 45
+  },
+  "traffic": {
+    "enabled": false,
+    "traffic_manager_port": 8000,
+    "seed": 20260724
+  },
+  "events": []
+}

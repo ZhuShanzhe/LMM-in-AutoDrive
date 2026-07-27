@@ -1,0 +1,24 @@
+{
+  "route": {
+    "length_m": 8000,
+    "step_m": 5
+  },
+  "events": [
+    {
+      "distance_m": 1000,
+      "scenario": "static_obstacle"
+    },
+    {
+      "distance_m": 2500,
+      "scenario": "pedestrian_crossing"
+    },
+    {
+      "distance_m": 4500,
+      "scenario": "cut_in_vehicle"
+    },
+    {
+      "distance_m": 6500,
+      "scenario": "static_obstacle"
+    }
+  ]
+}

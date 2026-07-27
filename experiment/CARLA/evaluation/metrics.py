@@ -22,10 +22,7 @@ def summarize(records, scenario, goal_distance_m=None):
     collisions = max(record["events"]["collision_count"] for record in records)
     lane_invasions = max(record["events"]["lane_invasion_count"] for record in records)
     illegal_lane_invasions = max(
-        record["events"].get(
-            "illegal_lane_invasion_count",
-            record["events"]["lane_invasion_count"],
-        )
+        record["events"].get("illegal_lane_invasion_count", record["events"]["lane_invasion_count"])
         for record in records
     )
     speeds = [float(record["ego"]["speed_kmh"]) for record in records]
@@ -34,20 +31,12 @@ def summarize(records, scenario, goal_distance_m=None):
     speeding_frames = sum(
         1
         for record in records
-        if record["intent"]["action"] not in (
-            "stop",
-            "decelerate",
-            "emergency_brake",
-        )
+        if record["intent"]["action"] not in ("stop", "decelerate", "emergency_brake")
         and record["ego"]["speed_kmh"] > record["intent"]["target_speed_kmh"] + 5.0
     )
 
     goal_reached = False if goal_distance_m is None else distance_m >= float(goal_distance_m)
-    violation_free = (
-        collisions == 0
-        and illegal_lane_invasions == 0
-        and speeding_frames == 0
-    )
+    violation_free = collisions == 0 and illegal_lane_invasions == 0 and speeding_frames == 0
     task_completed = bool(goal_reached and violation_free)
     return {
         "scenario": scenario,
