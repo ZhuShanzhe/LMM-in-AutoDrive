@@ -17,6 +17,8 @@ def make_step(
     on_blocked: str = "SAFE_STOP",
     purpose: str | None = None,
     target: dict[str, Any] | None = None,
+    target_ref: str | None = None,
+    goal_conditions: list[dict[str, Any]] | None = None,
     completion: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     step: dict[str, Any] = {
@@ -32,6 +34,10 @@ def make_step(
         step["purpose"] = purpose
     if target is not None:
         step["target"] = target
+    if target_ref is not None:
+        step["target_ref"] = target_ref
+    if goal_conditions:
+        step["goal_conditions"] = goal_conditions
     if completion is not None:
         step["completion"] = completion
     return step
@@ -57,6 +63,12 @@ def make_document(
     driving_style: str = "NORMAL",
     max_speed_mps: float | None = None,
     language: str = "zh-CN",
+    entities: list[dict[str, Any]] | None = None,
+    normalization_edits: list[dict[str, Any]] | None = None,
+    unresolved_references: list[str] | None = None,
+    suppressed_intents: list[dict[str, Any]] | None = None,
+    translated_text: str | None = None,
+    source_language: str | None = None,
 ) -> dict[str, Any]:
     constraints: dict[str, Any] = {
         "safety_first": True,
@@ -79,7 +91,7 @@ def make_document(
         parse_result["clarification_question"] = clarification_question
 
     document = {
-        "schema_version": "1.1.0",
+        "schema_version": "1.2.0",
         "request_id": request_id or f"cmd-{uuid4().hex[:16]}",
         "input": {
             "modality": modality,
@@ -87,13 +99,23 @@ def make_document(
             "raw_text": raw_text,
             "normalized_text": normalized_text,
         },
+        "normalization": {
+            "edits": normalization_edits or [],
+            "unresolved_references": unresolved_references or [],
+        },
         "intent": {
             "category": category,
             "urgency": urgency,
+            "entities": entities or [],
+            "suppressed_intents": suppressed_intents or [],
             "steps": steps,
             "constraints": constraints,
         },
         "parse_result": parse_result,
     }
+    if translated_text is not None:
+        document["input"]["translated_text"] = translated_text
+    if source_language is not None:
+        document["input"]["source_language"] = source_language
     validate_document(document)
     return document

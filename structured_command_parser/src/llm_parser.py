@@ -142,6 +142,10 @@ class QwenIntentParser:
                     "target_type",
                     "target_relation",
                     "target_description",
+                    "target_ref",
+                    "target_attributes",
+                    "target_open_descriptors",
+                    "goal_conditions",
                 ):
                     if source_key in command:
                         overtake[source_key] = command[source_key]
@@ -181,11 +185,42 @@ class QwenIntentParser:
                 }
                 if command.get("target_description"):
                     target["description"] = command["target_description"]
+                if isinstance(command.get("target_attributes"), dict):
+                    target["canonical_attributes"] = command[
+                        "target_attributes"
+                    ]
+                if isinstance(command.get("target_open_descriptors"), list):
+                    target["open_descriptors"] = command[
+                        "target_open_descriptors"
+                    ]
                 if isinstance(command.get("target_coordinates"), dict):
                     target["coordinates"] = command["target_coordinates"]
 
             trigger: dict[str, Any] = {"type": "IMMEDIATE"}
-            if action == "WAIT" and command.get("condition"):
+            condition_predicates = {
+                item.get("predicate")
+                for item in command.get("goal_conditions", [])
+                if isinstance(item, dict)
+            }
+            condition_entity_ref = next(
+                (
+                    item.get("object")
+                    for item in command.get("goal_conditions", [])
+                    if isinstance(item, dict) and item.get("object")
+                ),
+                command.get("target_ref"),
+            )
+            if "VISIBLE" in condition_predicates:
+                trigger = {
+                    "type": "ON_ENTITY_VISIBLE",
+                    "entity_ref": condition_entity_ref,
+                }
+            elif "AFTER" in condition_predicates:
+                trigger = {
+                    "type": "AFTER_ENTITY",
+                    "entity_ref": condition_entity_ref,
+                }
+            elif action == "WAIT" and command.get("condition"):
                 trigger = {
                     "type": "CONDITION",
                     "description": command["condition"],
@@ -283,7 +318,18 @@ class QwenIntentParser:
                     "type": "AREA_ENTERED" if action == "ENTER_AREA" else "AREA_EXITED"
                 }
             elif action == "STOP" or action == "EMERGENCY_BRAKE":
-                completion = {"type": "VEHICLE_STOPPED"}
+                predicates = {
+                    item.get("predicate")
+                    for item in command.get("goal_conditions", [])
+                    if isinstance(item, dict)
+                }
+                completion = {
+                    "type": (
+                        "STOPPED_BEFORE_TARGET"
+                        if "BEFORE" in predicates
+                        else "VEHICLE_STOPPED"
+                    )
+                }
             elif action in {"PROCEED", "RESUME"}:
                 preconditions = ["PATH_CLEAR"]
                 on_blocked = "WAIT_FOR_SAFE"
@@ -299,6 +345,8 @@ class QwenIntentParser:
                     on_blocked=on_blocked,
                     purpose=command.get("purpose"),
                     target=target,
+                    target_ref=command.get("target_ref"),
+                    goal_conditions=command.get("goal_conditions"),
                     completion=completion,
                 )
             )

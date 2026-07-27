@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0.0",
+  "request_id": "complex-0001",
+  "frame_id": "carla_00944910",
+  "step_id": "step_1",
+  "outcome": "COMPLETED",
+  "reason_codes": ["pedestrian_clear"]
+}
