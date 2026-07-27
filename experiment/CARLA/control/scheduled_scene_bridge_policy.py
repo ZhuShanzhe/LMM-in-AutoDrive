@@ -112,3 +112,6 @@ class ScheduledSceneBridgePolicy:
         bridge = self._bridge.telemetry() if self._bridge is not None else {}
         telemetry["scene_bridge"] = bridge
         return telemetry
+
+    def trace(self):
+        return self._bridge.trace() if self._bridge is not None else {}

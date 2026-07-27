@@ -24,6 +24,7 @@ import carla
 
 from control.agents import CarlaAgentController
 from control.decision_provider import JsonFileDecisionPolicy
+from control.live_perception_bridge import LivePerceptionBridge
 from control.scene_bridge_policy import SceneBridgeDecisionPolicy
 from control.scheduled_scene_bridge_policy import ScheduledSceneBridgePolicy
 from control.pid_controller import EgoPIDController
@@ -441,6 +442,14 @@ def parse_args():
     parser.add_argument("--scene-camera-width", type=int, default=800)
     parser.add_argument("--scene-camera-height", type=int, default=600)
     parser.add_argument("--scene-camera-timeout-s", type=float, default=1.0)
+    parser.add_argument("--live-perception", action="store_true")
+    parser.add_argument("--perception-yolop-root", default=None)
+    parser.add_argument("--perception-yolo11-weights", default=None)
+    parser.add_argument("--perception-device", default="cuda")
+    parser.add_argument("--perception-image-size", type=int, choices=(320, 640), default=640)
+    parser.add_argument("--perception-object-image-size", type=int, choices=(320, 640, 768, 960))
+    parser.add_argument("--perception-score-threshold", type=float, default=0.10)
+    parser.add_argument("--perception-min-iou", type=float, default=0.05)
     args = parser.parse_args()
     if args.decision_source == "json_file" and not args.decision_json:
         parser.error("--decision-json is required when --decision-source json_file")
@@ -462,6 +471,13 @@ def parse_args():
         parser.error("--resume-route-progress-m requires --scenario-config")
     if args.resume_route_progress_m is not None and args.resume_route_progress_m < 0.0:
         parser.error("--resume-route-progress-m must be non-negative")
+    if args.live_perception and (
+        not args.perception_yolop_root or not args.perception_yolo11_weights
+    ):
+        parser.error(
+            "--live-perception requires --perception-yolop-root and "
+            "--perception-yolo11-weights"
+        )
     return args
 
 
@@ -516,6 +532,7 @@ def main():
     monitor = None
     camera = None
     scene_capture = None
+    live_perception = None
     scene_world_state_collector = None
     logger = None
     records = []
@@ -523,7 +540,11 @@ def main():
         scenario.setup()
         world.tick()
         ego = scenario.get_ego_vehicle()
-        if args.scene_world_state_output or args.decision_source in {"scene_bridge", "voice_scene_bridge"}:
+        if (
+            args.scene_world_state_output
+            or args.live_perception
+            or args.decision_source in {"scene_bridge", "voice_scene_bridge"}
+        ):
             scene_world_state_collector = CarlaWorldStateCollector(world, ego)
         monitor = EventMonitor(world, ego)
         monitor.start()
@@ -545,7 +566,7 @@ def main():
                 args.video_profile,
             )
             camera.start()
-        if args.scene_capture:
+        if args.scene_capture or args.live_perception:
             scene_capture = SceneUnderstandingCapture(
                 world,
                 ego,
@@ -556,6 +577,18 @@ def main():
                 camera_timeout_s=args.scene_camera_timeout_s,
             )
             scene_capture.setup()
+        if args.live_perception:
+            live_perception = LivePerceptionBridge(
+                os.path.join(output_dir, "scene_understanding"),
+                yolop_root=args.perception_yolop_root,
+                yolo11_weights=args.perception_yolo11_weights,
+                device=args.perception_device,
+                image_size=args.perception_image_size,
+                object_image_size=args.perception_object_image_size,
+                score_threshold=args.perception_score_threshold,
+                frame_rate=max(1, round(1.0 / (args.fixed_delta_s * args.scene_capture_every_n))),
+                min_iou=args.perception_min_iou,
+            )
         controller = build_controller(
             args.controller,
             ego,
@@ -646,10 +679,15 @@ def main():
                 "video_overlay": bool(args.video_overlay and args.video_output),
             },
             "scene_understanding_capture": {
-                "enabled": bool(args.scene_capture),
-                "every_n_frames": args.scene_capture_every_n if args.scene_capture else None,
-                "width": args.scene_camera_width if args.scene_capture else None,
-                "height": args.scene_camera_height if args.scene_capture else None,
+                "enabled": bool(args.scene_capture or args.live_perception),
+                "every_n_frames": args.scene_capture_every_n if (args.scene_capture or args.live_perception) else None,
+                "width": args.scene_camera_width if (args.scene_capture or args.live_perception) else None,
+                "height": args.scene_camera_height if (args.scene_capture or args.live_perception) else None,
+            },
+            "live_perception": {
+                "enabled": bool(args.live_perception),
+                "device": args.perception_device if args.live_perception else None,
+                "image_size": args.perception_image_size if args.live_perception else None,
             },
         })
         logger.log_event({
@@ -682,10 +720,21 @@ def main():
                     "world_state": json_safe(state),
                 })
             scene_world_state = None
+            scene_capture_result = None
+            live_perception_result = None
             if scene_world_state_collector is not None:
                 scene_world_state = scene_world_state_collector.collect(
                     sensor_events=latest_scene_sensor_events
                 )
+                if scene_capture is not None:
+                    # This runs before policy.decide(), so a successful visual
+                    # match is available to the same decision tick.
+                    scene_capture_result = scene_capture.capture_current_frame()
+                if live_perception is not None and scene_capture_result is not None:
+                    live_perception_result = live_perception.process_capture(scene_capture_result)
+                    enriched = live_perception_result.get("world_state")
+                    if isinstance(enriched, dict):
+                        scene_world_state = enriched
                 if args.scene_world_state_output:
                     write_json_atomically(args.scene_world_state_output, scene_world_state)
                 set_scene_world_state = getattr(policy, "set_scene_world_state", None)
@@ -733,6 +782,13 @@ def main():
                 )
             )
             applied_control = ego.get_control()
+            policy_telemetry = call_scenario_method(policy, "telemetry", {})
+            policy_trace = call_scenario_method(policy, "trace", {})
+            bridge_telemetry = policy_telemetry.get("scene_bridge", policy_telemetry)
+            scene_decision_latency_ms = bridge_telemetry.get("scene_decision_latency_ms")
+            perception_latency_ms = None
+            if live_perception_result is not None:
+                perception_latency_ms = live_perception_result.get("latency_ms", {}).get("total")
             record = {
                 "frame": int(snapshot.frame),
                 "sim_time_s": round(sim_time, 4),
@@ -751,19 +807,22 @@ def main():
                 },
                 "distance_m": round(travelled_distance_m, 4),
                 "events": events,
-                "policy": call_scenario_method(policy, "telemetry", {}),
+                "policy": policy_telemetry,
+                "scene_decision": policy_trace,
                 "latency_ms": {
                     "decision": round(decision_latency_ms, 4),
                     "control": round(control_latency_ms, 4),
                     "end_to_end": round(decision_latency_ms + control_latency_ms, 4),
+                    "scene_decision": scene_decision_latency_ms,
+                    "perception": perception_latency_ms,
                 },
             }
             if step_feedback is not None:
                 record["step_feedback"] = step_feedback
-            if scene_capture is not None:
-                capture_result = scene_capture.capture_current_frame()
-                if capture_result is not None:
-                    record["scene_capture"] = capture_result
+            if scene_capture_result is not None:
+                record["scene_capture"] = scene_capture_result
+            if live_perception_result is not None:
+                record["scene_understanding"] = live_perception_result
             if camera is not None:
                 camera.save_frame(
                     snapshot.frame,

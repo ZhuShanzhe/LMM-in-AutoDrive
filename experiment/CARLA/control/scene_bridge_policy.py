@@ -4,6 +4,7 @@ import copy
 import json
 import os
 import sys
+import time
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 if PROJECT_ROOT not in sys.path:
@@ -51,12 +52,14 @@ class SceneBridgeDecisionPolicy:
         try:
             intent = self._load_driving_intent()
             prepared_intent = self._with_route_target(intent)
+            decision_started = time.perf_counter()
             plan_state, decision, alignment, risk = build_decision(
                 prepared_intent,
                 self._scene_world_state,
                 prior_plan_state=self._plan_state,
                 feedback=self._pending_feedback,
             )
+            scene_decision_latency_ms = (time.perf_counter() - decision_started) * 1000.0
         except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
             return self._safe_stop("scene_bridge_{0}".format(type(exc).__name__.lower()))
 
@@ -78,6 +81,7 @@ class SceneBridgeDecisionPolicy:
             "active_step_id": plan_state["active_step_id"],
             "decision_status": decision["decision_status"],
             "risk_level": risk["risk_level"],
+            "scene_decision_latency_ms": round(scene_decision_latency_ms, 3),
         }
         result = dict(self._decision)
         result["voice_text"] = prepared_intent.get("input", {}).get("raw_text", "")
@@ -121,6 +125,15 @@ class SceneBridgeDecisionPolicy:
 
     def telemetry(self):
         return dict(self._last_telemetry)
+
+    def trace(self):
+        """Return the exact artefacts used for the current control decision."""
+        return {
+            "plan_state": copy.deepcopy(self._plan_state),
+            "control_decision": copy.deepcopy(self._decision),
+            "semantic_alignment": copy.deepcopy(self._alignment),
+            "risk_assessment": copy.deepcopy(self._risk),
+        }
 
     def _load_driving_intent(self):
         if self._inline_driving_intent is not None:
