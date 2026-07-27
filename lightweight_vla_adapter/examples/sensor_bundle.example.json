@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "frame_id": "carla_100",
+  "timestamp_s": 5.0,
+  "cameras": [
+    {
+      "name": "front",
+      "timestamp_s": 5.0,
+      "image_path": "front/000100.png"
+    },
+    {
+      "name": "left",
+      "timestamp_s": 5.0,
+      "image_path": "left/000100.png"
+    },
+    {
+      "name": "right",
+      "timestamp_s": 5.0,
+      "image_path": "right/000100.png"
+    }
+  ],
+  "lidar": {
+    "timestamp_s": 5.0,
+    "points_path": "lidar/000100.bin"
+  },
+  "ego_state": {
+    "speed_mps": 5.0,
+    "acceleration_mps2": 0.0,
+    "yaw_rate_rps": 0.0
+  },
+  "candidate_entities": [
+    {"entity_id": "vehicle_front"}
+  ],
+  "feature_refs": {
+    "camera_bev": "features/camera/000100.pt",
+    "lidar_bev": "features/lidar/000100.pt"
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sensor_bundle.schema.json",
+  "title": "SensorBundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "frame_id",
+    "timestamp_s",
+    "cameras",
+    "lidar",
+    "ego_state",
+    "candidate_entities",
+    "feature_refs"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "frame_id": {"type": "string", "minLength": 1},
+    "timestamp_s": {"type": "number", "minimum": 0},
+    "cameras": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "timestamp_s", "image_path"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "timestamp_s": {"type": "number", "minimum": 0},
+          "image_path": {"type": "string", "minLength": 1},
+          "calibration": {"type": ["object", "null"]}
+        }
+      }
+    },
+    "lidar": {
+      "type": "object",
+      "required": ["timestamp_s", "points_path"],
+      "properties": {
+        "timestamp_s": {"type": "number", "minimum": 0},
+        "points_path": {"type": "string", "minLength": 1},
+        "calibration": {"type": ["object", "null"]}
+      }
+    },
+    "ego_state": {
+      "type": "object",
+      "required": ["speed_mps", "acceleration_mps2", "yaw_rate_rps"],
+      "properties": {
+        "speed_mps": {"type": "number"},
+        "acceleration_mps2": {"type": "number"},
+        "yaw_rate_rps": {"type": "number"}
+      }
+    },
+    "candidate_entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["entity_id"],
+        "properties": {
+          "entity_id": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "feature_refs": {
+      "type": "object",
+      "required": ["camera_bev", "lidar_bev"],
+      "properties": {
+        "camera_bev": {"type": ["string", "null"]},
+        "lidar_bev": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
