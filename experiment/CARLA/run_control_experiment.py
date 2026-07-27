@@ -23,6 +23,7 @@ setup_carla_api()
 import carla
 
 from control.agents import CarlaAgentController
+from control.async_qwen_bridge import AsyncQwenBridge
 from control.decision_provider import JsonFileDecisionPolicy
 from control.live_perception_bridge import LivePerceptionBridge
 from control.scene_bridge_policy import SceneBridgeDecisionPolicy
@@ -450,6 +451,16 @@ def parse_args():
     parser.add_argument("--perception-object-image-size", type=int, choices=(320, 640, 768, 960))
     parser.add_argument("--perception-score-threshold", type=float, default=0.10)
     parser.add_argument("--perception-min-iou", type=float, default=0.05)
+    parser.add_argument("--async-qwen", action="store_true")
+    parser.add_argument("--qwen-model-path", default=None)
+    parser.add_argument(
+        "--qwen-prompt",
+        default=os.path.join(PROJECT_ROOT, "scene_understanding", "prompts", "scene_understanding.txt"),
+    )
+    parser.add_argument("--qwen-max-age-s", type=float, default=15.0)
+    parser.add_argument("--qwen-max-new-tokens", type=int, default=768)
+    parser.add_argument("--qwen-min-visual-tokens", type=int, default=256)
+    parser.add_argument("--qwen-max-visual-tokens", type=int, default=512)
     args = parser.parse_args()
     if args.decision_source == "json_file" and not args.decision_json:
         parser.error("--decision-json is required when --decision-source json_file")
@@ -478,6 +489,8 @@ def parse_args():
             "--live-perception requires --perception-yolop-root and "
             "--perception-yolo11-weights"
         )
+    if args.async_qwen and not args.qwen_model_path:
+        parser.error("--async-qwen requires --qwen-model-path")
     return args
 
 
@@ -533,6 +546,7 @@ def main():
     camera = None
     scene_capture = None
     live_perception = None
+    async_qwen = None
     scene_world_state_collector = None
     logger = None
     records = []
@@ -543,6 +557,7 @@ def main():
         if (
             args.scene_world_state_output
             or args.live_perception
+            or args.async_qwen
             or args.decision_source in {"scene_bridge", "voice_scene_bridge"}
         ):
             scene_world_state_collector = CarlaWorldStateCollector(world, ego)
@@ -566,7 +581,7 @@ def main():
                 args.video_profile,
             )
             camera.start()
-        if args.scene_capture or args.live_perception:
+        if args.scene_capture or args.live_perception or args.async_qwen:
             scene_capture = SceneUnderstandingCapture(
                 world,
                 ego,
@@ -588,6 +603,16 @@ def main():
                 score_threshold=args.perception_score_threshold,
                 frame_rate=max(1, round(1.0 / (args.fixed_delta_s * args.scene_capture_every_n))),
                 min_iou=args.perception_min_iou,
+            )
+        if args.async_qwen:
+            async_qwen = AsyncQwenBridge(
+                os.path.join(output_dir, "scene_understanding"),
+                model_path=args.qwen_model_path,
+                prompt_path=args.qwen_prompt,
+                max_age_s=args.qwen_max_age_s,
+                max_new_tokens=args.qwen_max_new_tokens,
+                min_visual_tokens=args.qwen_min_visual_tokens,
+                max_visual_tokens=args.qwen_max_visual_tokens,
             )
         controller = build_controller(
             args.controller,
@@ -679,15 +704,20 @@ def main():
                 "video_overlay": bool(args.video_overlay and args.video_output),
             },
             "scene_understanding_capture": {
-                "enabled": bool(args.scene_capture or args.live_perception),
-                "every_n_frames": args.scene_capture_every_n if (args.scene_capture or args.live_perception) else None,
-                "width": args.scene_camera_width if (args.scene_capture or args.live_perception) else None,
-                "height": args.scene_camera_height if (args.scene_capture or args.live_perception) else None,
+                "enabled": bool(args.scene_capture or args.live_perception or args.async_qwen),
+                "every_n_frames": args.scene_capture_every_n if (args.scene_capture or args.live_perception or args.async_qwen) else None,
+                "width": args.scene_camera_width if (args.scene_capture or args.live_perception or args.async_qwen) else None,
+                "height": args.scene_camera_height if (args.scene_capture or args.live_perception or args.async_qwen) else None,
             },
             "live_perception": {
                 "enabled": bool(args.live_perception),
                 "device": args.perception_device if args.live_perception else None,
                 "image_size": args.perception_image_size if args.live_perception else None,
+            },
+            "async_qwen": {
+                "enabled": bool(args.async_qwen),
+                "model_path": args.qwen_model_path if args.async_qwen else None,
+                "max_age_s": args.qwen_max_age_s if args.async_qwen else None,
             },
         })
         logger.log_event({
@@ -722,6 +752,8 @@ def main():
             scene_world_state = None
             scene_capture_result = None
             live_perception_result = None
+            async_qwen_submission = None
+            async_qwen_result = None
             if scene_world_state_collector is not None:
                 scene_world_state = scene_world_state_collector.collect(
                     sensor_events=latest_scene_sensor_events
@@ -735,6 +767,20 @@ def main():
                     enriched = live_perception_result.get("world_state")
                     if isinstance(enriched, dict):
                         scene_world_state = enriched
+                if async_qwen is not None:
+                    if scene_capture_result is not None:
+                        async_qwen_submission = async_qwen.submit_capture(scene_capture_result)
+                    async_qwen_result = async_qwen.poll()
+                    # A Qwen result may enrich only its own capture frame. In
+                    # normal operation it completes later and is logged for
+                    # asynchronous semantics; it is never applied to a newer
+                    # control frame.
+                    if (
+                        isinstance(async_qwen_result, dict)
+                        and async_qwen_result.get("frame_id") == scene_world_state.get("frame_id")
+                        and isinstance(async_qwen_result.get("world_state"), dict)
+                    ):
+                        scene_world_state = async_qwen_result["world_state"]
                 if args.scene_world_state_output:
                     write_json_atomically(args.scene_world_state_output, scene_world_state)
                 set_scene_world_state = getattr(policy, "set_scene_world_state", None)
@@ -823,6 +869,12 @@ def main():
                 record["scene_capture"] = scene_capture_result
             if live_perception_result is not None:
                 record["scene_understanding"] = live_perception_result
+            if async_qwen_submission is not None or async_qwen_result is not None:
+                record["async_qwen"] = {
+                    "submission": async_qwen_submission,
+                    "result": async_qwen_result,
+                    "worker": async_qwen.stats() if async_qwen is not None else None,
+                }
             if camera is not None:
                 camera.save_frame(
                     snapshot.frame,
@@ -863,6 +915,8 @@ def main():
         metrics["runner_stop_reason"] = runner_stop_reason
         if scene_capture is not None:
             metrics["scene_understanding_capture"] = scene_capture.stats()
+        if async_qwen is not None:
+            metrics["async_qwen"] = async_qwen.stats()
         if final_status.get("status") in ("SUCCESS", "FAILURE"):
             metrics["task_completed"] = (
                 final_status["status"] == "SUCCESS"
@@ -882,6 +936,8 @@ def main():
             monitor.destroy()
         if scene_capture is not None:
             scene_capture.destroy()
+        if async_qwen is not None:
+            async_qwen.close()
         if camera is not None:
             camera.destroy()
         scenario.destroy()
