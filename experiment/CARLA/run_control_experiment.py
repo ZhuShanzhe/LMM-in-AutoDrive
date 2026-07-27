@@ -247,52 +247,58 @@ def make_video_overlay(record):
     intent = record.get("intent", {})
     control = record.get("control", {})
     ego = record.get("ego", {})
-    parser_telemetry = record.get("policy", {}).get("parser", {})
-    scenario_name = record.get("scenario", "")
-    decision_source = record.get("decision_source", "rule")
+    policy_telemetry = record.get("policy", {})
+    parser_telemetry = policy_telemetry.get("parser", {})
+    scene_trace = record.get("scene_decision", {})
+    plan_state = scene_trace.get("plan_state") or {}
+    control_decision = scene_trace.get("control_decision") or {}
+    risk_assessment = scene_trace.get("risk_assessment") or {}
     action = intent.get("action", "")
-    emergency = bool(intent.get("emergency", False))
+    decision_action = control_decision.get("action") or action
+    emergency = bool(intent.get("emergency", False)) or decision_action == "emergency_brake"
     if intent.get("voice_text"):
         asr_text = intent["voice_text"]
-    elif decision_source == "json_file":
-        asr_text = "保持安全车距行驶"
-    elif scenario_name == "pedestrian_crossing":
-        asr_text = "前方行人横穿，减速避让"
-    elif scenario_name == "emergency_brake":
-        asr_text = "前车紧急制动，立即刹车" if emergency else "保持车距，正常行驶"
     else:
-        asr_text = "保持当前车道，匀速前进至终点"
-    if emergency:
-        risk_level = "HIGH"
-        policy_state = "EMERGENCY_BRAKING"
-    elif action in ("decelerate", "stop"):
-        risk_level = "MEDIUM"
-        policy_state = "DECELERATING"
-    else:
-        risk_level = "LOW"
-        policy_state = "NORMAL_DRIVING"
+        asr_text = "No active command"
+    risk_level = str(risk_assessment.get("risk_level") or "unknown").upper()
+    policy_state = str(
+        control_decision.get("decision_status")
+        or plan_state.get("plan_status")
+        or policy_telemetry.get("status")
+        or "RUNNING"
+    ).upper()
     if status.get("status") == "SUCCESS":
         policy_state = "COMPLETED"
     elif status.get("status") == "FAILURE":
         policy_state = "FAILED"
+    async_qwen = record.get("async_qwen") or {}
+    qwen_result = async_qwen.get("result") or {}
+    qwen_submission = async_qwen.get("submission") or {}
+    qwen_worker = async_qwen.get("worker") or {}
     return {
-        "scenario": scenario_name,
         "frame": record.get("frame", 0),
         "sim_time_s": record.get("sim_time_s", 0.0),
         "asr_text": asr_text,
-        "decision_source": decision_source,
-        "action": action,
-        "reason": intent.get("reason", "") or status.get("reason", ""),
-        "target_speed_kmh": intent.get("target_speed_kmh", 0.0),
+        "action": decision_action,
+        "active_step_id": plan_state.get("active_step_id"),
+        "reason": control_decision.get("reason") or intent.get("reason") or status.get("reason", ""),
+        "target_speed_kmh": control_decision.get(
+            "target_speed_kmh", intent.get("target_speed_kmh", 0.0)
+        ),
         "emergency": emergency,
         "risk_level": risk_level,
         "policy_state": policy_state,
-        "parse_status": intent.get("parse_status"),
-        "parse_confidence": intent.get("parse_confidence"),
+        "parse_status": control_decision.get("parse_status") or intent.get("parse_status"),
+        "parse_confidence": control_decision.get("parse_confidence", intent.get("parse_confidence")),
         "parse_latency_ms": parser_telemetry.get("latency_ms"),
-        "parser_model": parser_telemetry.get("model"),
+        "perception_latency_ms": record.get("latency_ms", {}).get("perception"),
+        "scene_decision_latency_ms": record.get("latency_ms", {}).get("scene_decision"),
         "end_to_end_ms": record.get("latency_ms", {}).get("end_to_end", 0.0),
-        "source_step_action": intent.get("source_step_action"),
+        "source_step_action": (
+            control_decision.get("source_step_action")
+            or intent.get("source_step_action")
+            or decision_action
+        ),
         "speed_kmh": ego.get("speed_kmh", 0.0),
         "throttle": control.get("throttle", 0.0),
         "brake": control.get("brake", 0.0),
@@ -305,6 +311,9 @@ def make_video_overlay(record):
         "traffic_count": status.get("traffic", {}).get("background_actor_count", 0),
         "pedestrian_count": status.get("pedestrians", {}).get("walker_count", 0),
         "active_events": status.get("scenario_events", {}).get("active", []),
+        "qwen_status": qwen_result.get("status") or qwen_submission.get("status"),
+        "qwen_latency_s": qwen_result.get("service_elapsed_seconds"),
+        "qwen_worker": qwen_worker,
     }
 
 

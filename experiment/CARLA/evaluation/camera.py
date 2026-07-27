@@ -215,77 +215,95 @@ class ExperimentCamera:
         if progress_m is not None and route_length_m:
             progress_ratio = max(0.0, min(1.0, float(progress_m) / float(route_length_m)))
 
-        panel = (0, 0, self.width, 200)
+        panel_height = max(120, min(200, round(self.height * 0.185)))
+        panel = (0, 0, self.width, panel_height)
         draw.rectangle(panel, fill=(40, 44, 50, 158))
         margin = 54
-        line_y = 28
+        layout_scale = panel_height / 200.0
+
+        def y(value):
+            return round(value * layout_scale)
+
+        def sized(value):
+            return max(10, round(value * layout_scale))
+
+        line_y = y(28)
         draw.line((margin, line_y, self.width - margin, line_y), fill=(255, 255, 255, 105), width=2)
         progress_x = margin + progress_ratio * (self.width - 2 * margin)
         draw.line((margin, line_y, progress_x, line_y), fill=accent_color, width=5)
         draw.ellipse((progress_x - 6, line_y - 6, progress_x + 6, line_y + 6), fill=accent_color)
         draw.text(
-            (margin, 38),
-            "BASIC VOICE CONTROL  |  {0:.2f} / {1:.2f} km".format(
+            (margin, y(38)),
+            "ROUTE  {0:.2f} / {1:.2f} km".format(
                 float(progress_m or 0.0) / 1000.0,
                 float(route_length_m or 5000.0) / 1000.0,
             ),
-            font=font(19, bold=True),
+            font=font(sized(19), bold=True),
             fill=text_color,
         )
-        status_box = draw.textbbox((0, 0), status, font=font(20, bold=True))
+        status_box = draw.textbbox((0, 0), status, font=font(sized(20), bold=True))
         draw.text(
-            (self.width - margin - (status_box[2] - status_box[0]), 38),
+            (self.width - margin - (status_box[2] - status_box[0]), y(38)),
             status,
-            font=font(20, bold=True),
+            font=font(sized(20), bold=True),
             fill=text_color,
         )
 
         columns = [margin, int(self.width * 0.29), int(self.width * 0.53), int(self.width * 0.72)]
         labels = [
-            ("VOICE / TEXT", str(overlay.get("asr_text", ""))[:32]),
+            ("COMMAND", str(overlay.get("asr_text", ""))[:32]),
             ("DRIVING INTENT", "{0}  {1}".format(
                 str(overlay.get("source_step_action") or overlay.get("action", "")).upper(),
-                str(overlay.get("parse_status") or "CONFIGURED"),
+                str(overlay.get("active_step_id") or overlay.get("parse_status") or "PENDING"),
             )),
             ("SCENE / RISK", "{0}  TRAFFIC {1}  PED {2}".format(
                 str(overlay.get("risk_level", "LOW")),
                 int(overlay.get("traffic_count", 0)),
                 int(overlay.get("pedestrian_count", 0)),
             )),
-            ("CONTROL", "{0:.0f} / {1:.0f} km/h".format(speed_kmh, target_speed_kmh)),
+            ("CONTROL  {0}".format(str(overlay.get("policy_state", "RUNNING"))),
+             "{0:.0f} / {1:.0f} km/h".format(speed_kmh, target_speed_kmh)),
         ]
         for x, (label, value) in zip(columns, labels):
-            draw.text((x, 77), label, font=font(15, bold=True), fill=muted_color)
-            draw.text((x, 101), value, font=font(19, bold=True), fill=text_color)
+            draw.text((x, y(77)), label, font=font(sized(15), bold=True), fill=muted_color)
+            draw.text((x, y(101)), value, font=font(sized(19), bold=True), fill=text_color)
 
-        source = str(overlay.get("decision_source", "rule")).upper()
-        confidence = overlay.get("parse_confidence")
-        detail = "PIPELINE  TEXT > DRIVINGINTENT > SCENE RULES > {0} > PID".format(
-            str(overlay.get("action", "")).upper()
+        def ms(value):
+            return "n/a" if value is None else "{0:.1f}ms".format(float(value))
+
+        detail = "LATENCY  PARSE {0}  PERCEPTION {1}  SCENE {2}  E2E {3}".format(
+            ms(overlay.get("parse_latency_ms")),
+            ms(overlay.get("perception_latency_ms")),
+            ms(overlay.get("scene_decision_latency_ms")),
+            ms(overlay.get("end_to_end_ms")),
         )
-        if confidence is not None:
-            detail += "   CONF {0:.3f}".format(float(confidence))
-        draw.text((margin, 137), detail, font=font(16, bold=True), fill=text_color)
+        draw.text((margin, y(137)), detail, font=font(sized(16), bold=True), fill=text_color)
+        qwen_status = overlay.get("qwen_status")
+        qwen_worker = overlay.get("qwen_worker") or {}
+        qwen_detail = "QWEN OFF"
+        if qwen_status or qwen_worker:
+            qwen_detail = "QWEN {0}".format(str(qwen_status or "WAITING").upper())
+            if overlay.get("qwen_latency_s") is not None:
+                qwen_detail += " {0:.1f}s".format(float(overlay["qwen_latency_s"]))
+            if qwen_worker:
+                qwen_detail += "  DONE {0}  DROP {1}".format(
+                    int(qwen_worker.get("completed", 0)),
+                    int(qwen_worker.get("dropped", 0)),
+                )
         draw.text(
-            (margin, 161),
-            "SOURCE {0}   FRAME {1}   SIM {2:.1f}s   PARSE {3}".format(
-                source,
-                int(overlay.get("frame", 0)),
-                float(overlay.get("sim_time_s", 0.0)),
-                "{0:.1f}ms".format(float(overlay["parse_latency_ms"]))
-                if overlay.get("parse_latency_ms") is not None else "n/a",
-            ),
-            font=font(14),
+            (margin, y(161)),
+            qwen_detail,
+            font=font(sized(14)),
             fill=muted_color,
         )
         draw.text(
-            (margin, 181),
-            "E2E {0:.1f}ms   COLL {1}   LANE {2}".format(
-                float(overlay.get("end_to_end_ms", 0.0)),
+            (margin, y(181)),
+            "SIM {0:.1f}s   COLL {1}   LANE {2}".format(
+                float(overlay.get("sim_time_s", 0.0)),
                 int(overlay.get("collisions", 0)),
                 int(overlay.get("lane_events", 0)),
             ),
-            font=font(14),
+            font=font(sized(14)),
             fill=muted_color,
         )
         self._draw_speed_chart(
@@ -293,7 +311,7 @@ class ExperimentCamera:
             overlay,
             font,
             muted_color,
-            (int(self.width * 0.58), 143, self.width - margin, 190),
+            (int(self.width * 0.58), y(143), self.width - margin, y(190)),
         )
         return image.tobytes("raw", "BGRA")
 
