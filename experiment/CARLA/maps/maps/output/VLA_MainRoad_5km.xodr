@@ -1,0 +1,219 @@
+<?xml version="1.0" standalone="yes"?>
+<OpenDRIVE>
+  <header revMajor="1" revMinor="4" name="VLA_MainRoad" version="1.00" date="2026">
+    <geoReference><![CDATA[]]></geoReference>
+  </header>
+
+  <road name="VLA_MainRoad" length="5000" id="1" junction="-1">
+    <type s="0" type="town">
+      <speed max="16.666667" unit="m/s"/>
+    </type>
+
+  <planView>
+    <geometry s="0" x="0" y="0" hdg="0" length="5000">
+      <line/>
+    </geometry>
+  </planView>
+
+    <lanes>
+      <laneSection s="0">
+        <center>
+          <lane id="0" type="none" level="false">
+            <roadMark sOffset="0" type="solid solid" weight="bold" color="yellow" width="0.3"/>
+          </lane>
+        </center>
+    <left>
+      <lane id="5" type="sidewalk" level="false">
+        <width sOffset="0" a="2" b="0" c="0" d="0"/>
+        <roadMark sOffset="0" type="solid" weight="standard" color="standard" width="0.15"/>
+      </lane>
+      <lane id="4" type="shoulder" level="false">
+        <width sOffset="0" a="1" b="0" c="0" d="0"/>
+        <roadMark sOffset="0" type="solid" weight="standard" color="standard" width="0.15"/>
+      </lane>
+      <lane id="3" type="driving" level="false">
+        <width sOffset="0" a="3.5" b="0" c="0" d="0"/>
+        <roadMark sOffset="0" type="solid" weight="standard" color="standard" width="0.15"/>
+        <speed max="16.666667" unit="m/s"/>
+      </lane>
+      <lane id="2" type="driving" level="false">
+        <width sOffset="0" a="3.5" b="0" c="0" d="0"/>
+        <roadMark sOffset="0" type="broken" weight="standard" color="standard" width="0.15"/>
+        <speed max="16.666667" unit="m/s"/>
+      </lane>
+      <lane id="1" type="driving" level="false">
+        <width sOffset="0" a="3.5" b="0" c="0" d="0"/>
+        <roadMark sOffset="0" type="broken" weight="standard" color="standard" width="0.15"/>
+        <speed max="16.666667" unit="m/s"/>
+      </lane>
+    </left>
+    <right>
+      <lane id="-1" type="driving" level="false">
+        <width sOffset="0" a="3.5" b="0" c="0" d="0"/>
+        <roadMark sOffset="0" type="broken" weight="standard" color="standard" width="0.15"/>
+        <speed max="16.666667" unit="m/s"/>
+      </lane>
+      <lane id="-2" type="driving" level="false">
+        <width sOffset="0" a="3.5" b="0" c="0" d="0"/>
+        <roadMark sOffset="0" type="broken" weight="standard" color="standard" width="0.15"/>
+        <speed max="16.666667" unit="m/s"/>
+      </lane>
+      <lane id="-3" type="driving" level="false">
+        <width sOffset="0" a="3.5" b="0" c="0" d="0"/>
+        <roadMark sOffset="0" type="solid" weight="standard" color="standard" width="0.15"/>
+        <speed max="16.666667" unit="m/s"/>
+      </lane>
+      <lane id="-4" type="shoulder" level="false">
+        <width sOffset="0" a="1" b="0" c="0" d="0"/>
+        <roadMark sOffset="0" type="solid" weight="standard" color="standard" width="0.15"/>
+      </lane>
+      <lane id="-5" type="sidewalk" level="false">
+        <width sOffset="0" a="2" b="0" c="0" d="0"/>
+        <roadMark sOffset="0" type="solid" weight="standard" color="standard" width="0.15"/>
+      </lane>
+    </right>
+      </laneSection>
+    </lanes>
+
+  <objects>
+    <object id="1" name="intersection_crosswalk_bar" type="crosswalk" s="1187" t="-5.25" zOffset="0.02" validLength="0" orientation="none" length="0.7" width="10.5" height="0.02" hdg="1.570796" pitch="0" roll="0"/>
+    <object id="2" name="intersection_crosswalk_bar" type="crosswalk" s="1189.5" t="-5.25" zOffset="0.02" validLength="0" orientation="none" length="0.7" width="10.5" height="0.02" hdg="1.570796" pitch="0" roll="0"/>
+    <object id="3" name="intersection_crosswalk_bar" type="crosswalk" s="1192" t="-5.25" zOffset="0.02" validLength="0" orientation="none" length="0.7" width="10.5" height="0.02" hdg="1.570796" pitch="0" roll="0"/>
+    <object id="4" name="intersection_crosswalk_bar" type="crosswalk" s="1194.5" t="-5.25" zOffset="0.02" validLength="0" orientation="none" length="0.7" width="10.5" height="0.02" hdg="1.570796" pitch="0" roll="0"/>
+    <object id="5" name="intersection_crosswalk_bar" type="crosswalk" s="1197" t="-5.25" zOffset="0.02" validLength="0" orientation="none" length="0.7" width="10.5" height="0.02" hdg="1.570796" pitch="0" roll="0"/>
+    <object id="6" name="intersection_stop_line" type="roadMark" s="1182" t="-5.25" zOffset="0.02" validLength="0" orientation="none" length="0.6" width="10.5" height="0.02" hdg="1.570796" pitch="0" roll="0"/>
+    <object id="7" name="intersection_stop_line" type="roadMark" s="1182" t="5.25" zOffset="0.02" validLength="0" orientation="none" length="0.6" width="10.5" height="0.02" hdg="1.570796" pitch="0" roll="0"/>
+    <object id="8" name="left_street_light" type="pole" s="100" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="9" name="right_street_light" type="pole" s="100" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="10" name="left_street_light" type="pole" s="200" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="11" name="right_street_light" type="pole" s="200" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="12" name="left_street_light" type="pole" s="300" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="13" name="right_street_light" type="pole" s="300" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="14" name="left_street_light" type="pole" s="400" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="15" name="right_street_light" type="pole" s="400" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="16" name="left_street_light" type="pole" s="500" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="17" name="right_street_light" type="pole" s="500" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="18" name="left_street_light" type="pole" s="600" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="19" name="right_street_light" type="pole" s="600" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="20" name="left_street_light" type="pole" s="700" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="21" name="right_street_light" type="pole" s="700" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="22" name="left_street_light" type="pole" s="800" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="23" name="right_street_light" type="pole" s="800" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="24" name="left_street_light" type="pole" s="900" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="25" name="right_street_light" type="pole" s="900" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="26" name="left_street_light" type="pole" s="1000" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="27" name="right_street_light" type="pole" s="1000" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="28" name="left_street_light" type="pole" s="1100" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="29" name="right_street_light" type="pole" s="1100" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="30" name="left_street_light" type="pole" s="1200" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="31" name="right_street_light" type="pole" s="1200" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="32" name="left_street_light" type="pole" s="1300" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="33" name="right_street_light" type="pole" s="1300" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="34" name="left_street_light" type="pole" s="1400" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="35" name="right_street_light" type="pole" s="1400" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="36" name="left_street_light" type="pole" s="1500" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="37" name="right_street_light" type="pole" s="1500" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="38" name="left_street_light" type="pole" s="1600" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="39" name="right_street_light" type="pole" s="1600" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="40" name="left_street_light" type="pole" s="1700" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="41" name="right_street_light" type="pole" s="1700" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="42" name="left_street_light" type="pole" s="1800" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="43" name="right_street_light" type="pole" s="1800" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="44" name="left_street_light" type="pole" s="1900" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="45" name="right_street_light" type="pole" s="1900" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="46" name="left_street_light" type="pole" s="2000" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="47" name="right_street_light" type="pole" s="2000" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="48" name="left_street_light" type="pole" s="2100" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="49" name="right_street_light" type="pole" s="2100" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="50" name="left_street_light" type="pole" s="2200" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="51" name="right_street_light" type="pole" s="2200" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="52" name="left_street_light" type="pole" s="2300" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="53" name="right_street_light" type="pole" s="2300" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="54" name="left_street_light" type="pole" s="2400" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="55" name="right_street_light" type="pole" s="2400" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="56" name="left_street_light" type="pole" s="2500" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="57" name="right_street_light" type="pole" s="2500" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="58" name="left_street_light" type="pole" s="2600" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="59" name="right_street_light" type="pole" s="2600" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="60" name="left_street_light" type="pole" s="2700" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="61" name="right_street_light" type="pole" s="2700" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="62" name="left_street_light" type="pole" s="2800" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="63" name="right_street_light" type="pole" s="2800" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="64" name="left_street_light" type="pole" s="2900" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="65" name="right_street_light" type="pole" s="2900" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="66" name="left_street_light" type="pole" s="3000" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="67" name="right_street_light" type="pole" s="3000" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="68" name="left_street_light" type="pole" s="3100" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="69" name="right_street_light" type="pole" s="3100" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="70" name="left_street_light" type="pole" s="3200" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="71" name="right_street_light" type="pole" s="3200" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="72" name="left_street_light" type="pole" s="3300" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="73" name="right_street_light" type="pole" s="3300" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="74" name="left_street_light" type="pole" s="3400" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="75" name="right_street_light" type="pole" s="3400" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="76" name="left_street_light" type="pole" s="3500" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="77" name="right_street_light" type="pole" s="3500" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="78" name="left_street_light" type="pole" s="3600" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="79" name="right_street_light" type="pole" s="3600" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="80" name="left_street_light" type="pole" s="3700" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="81" name="right_street_light" type="pole" s="3700" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="82" name="left_street_light" type="pole" s="3800" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="83" name="right_street_light" type="pole" s="3800" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="84" name="left_street_light" type="pole" s="3900" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="85" name="right_street_light" type="pole" s="3900" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="86" name="left_street_light" type="pole" s="4000" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="87" name="right_street_light" type="pole" s="4000" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="88" name="left_street_light" type="pole" s="4100" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="89" name="right_street_light" type="pole" s="4100" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="90" name="left_street_light" type="pole" s="4200" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="91" name="right_street_light" type="pole" s="4200" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="92" name="left_street_light" type="pole" s="4300" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="93" name="right_street_light" type="pole" s="4300" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="94" name="left_street_light" type="pole" s="4400" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="95" name="right_street_light" type="pole" s="4400" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="96" name="left_street_light" type="pole" s="4500" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="97" name="right_street_light" type="pole" s="4500" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="98" name="left_street_light" type="pole" s="4600" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="99" name="right_street_light" type="pole" s="4600" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="100" name="left_street_light" type="pole" s="4700" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="101" name="right_street_light" type="pole" s="4700" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="102" name="left_street_light" type="pole" s="4800" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="103" name="right_street_light" type="pole" s="4800" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="104" name="left_street_light" type="pole" s="4900" t="14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="105" name="right_street_light" type="pole" s="4900" t="-14.2" zOffset="0" validLength="0" orientation="none" length="0.25" width="0.25" height="6" hdg="0" pitch="0" roll="0"/>
+    <object id="106" name="left_urban_block" type="building" s="250" t="17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="107" name="right_urban_block" type="building" s="250" t="-17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="108" name="left_urban_block" type="building" s="750" t="17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="109" name="right_urban_block" type="building" s="750" t="-17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="110" name="left_urban_block" type="building" s="1250" t="17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="111" name="right_urban_block" type="building" s="1250" t="-17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="112" name="left_urban_block" type="building" s="1750" t="17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="113" name="right_urban_block" type="building" s="1750" t="-17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="114" name="left_urban_block" type="building" s="2250" t="17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="115" name="right_urban_block" type="building" s="2250" t="-17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="116" name="left_urban_block" type="building" s="2750" t="17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="117" name="right_urban_block" type="building" s="2750" t="-17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="118" name="left_urban_block" type="building" s="3250" t="17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="119" name="right_urban_block" type="building" s="3250" t="-17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="120" name="left_urban_block" type="building" s="3750" t="17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="121" name="right_urban_block" type="building" s="3750" t="-17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="122" name="left_urban_block" type="building" s="4250" t="17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="123" name="right_urban_block" type="building" s="4250" t="-17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="124" name="left_urban_block" type="building" s="4750" t="17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="125" name="right_urban_block" type="building" s="4750" t="-17.5" zOffset="0" validLength="0" orientation="none" length="42" width="10" height="18" hdg="0" pitch="0" roll="0"/>
+    <object id="126" name="left_speed_limit_60" type="trafficSign" s="300" t="13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+    <object id="127" name="right_speed_limit_60" type="trafficSign" s="300" t="-13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+    <object id="128" name="left_speed_limit_60" type="trafficSign" s="900" t="13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+    <object id="129" name="right_speed_limit_60" type="trafficSign" s="900" t="-13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+    <object id="130" name="left_speed_limit_60" type="trafficSign" s="1190" t="13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+    <object id="131" name="right_speed_limit_60" type="trafficSign" s="1190" t="-13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+    <object id="132" name="left_speed_limit_60" type="trafficSign" s="1800" t="13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+    <object id="133" name="right_speed_limit_60" type="trafficSign" s="1800" t="-13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+    <object id="134" name="left_speed_limit_60" type="trafficSign" s="3000" t="13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+    <object id="135" name="right_speed_limit_60" type="trafficSign" s="3000" t="-13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+    <object id="136" name="left_speed_limit_60" type="trafficSign" s="4200" t="13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+    <object id="137" name="right_speed_limit_60" type="trafficSign" s="4200" t="-13.9" zOffset="0" validLength="0" orientation="none" length="0.8" width="0.1" height="2.2" hdg="0" pitch="0" roll="0"/>
+  </objects>
+
+  </road>
+</OpenDRIVE>
