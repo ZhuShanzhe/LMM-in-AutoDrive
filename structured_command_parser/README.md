@@ -533,3 +533,38 @@ ModernBERT 默认后端、伪标签防泄漏切分、规则短路、模型服务
 - Conda 环境
 
 `.gitignore` 已按以上边界配置。模型权重通过 Hugging Face 分发，代码通过 GitHub 协作。
+
+## 语音批测问题修复（2026-07-29）
+
+针对 `voice_to_driving_intent_report` 中 6 条异常结果，本模块修复了以下两类解析问题：
+
+- 复合指令中的显式目标速度可能被规范化前的原子动作覆盖，导致
+  `SET_SPEED.parameters.target_speed_mps` 丢失；
+- 语义 token 头可能把 `to`、`of`、`current`、`next`、`km`、`h` 和
+  `40 km` 等功能词或单位片段误识别为 `UNKNOWN` 实体，并错误绑定到速度动作。
+
+本次采用确定性后处理修复，不重新训练 ModernBERT 权重：
+
+- 原子分解器将 `speed up to`、`accelerate to`、`slow down to`、
+  `decelerate to`、`reduce to` 和 `drive at a speed of` 加数值单位的表达统一识别为
+  `SET_SPEED`；
+- 同时接受 `km/h`、`m/s`、`kilometer(s) per hour` 和
+  `meter(s) per second`，统一换算并保留规范源单位；
+- 过滤纯数字、单位和非指代功能词实体；
+- 对 `the traffic light comes into view` 这类后置可见关系，让
+  `VISIBLE` 正确回指前置真实实体，避免依赖伪实体形成关系。
+
+真实 `modernbert-drive-command-compositional` 权重复测结果：
+
+| 范围 | 结果 |
+|---|---|
+| 报告中的 6 条异常英文指令 | 6/6 为 `VALID`，全部生成唯一 `SET_SPEED` 和正确 `target_speed_mps` |
+| 伪实体检查 | 6/6 的单位/功能词伪实体均被清除 |
+| 6 条常驻推理延时 | 平均 34.086ms，最大 85.300ms |
+| 指令解析单元与回归测试 | 117 passed，86 subtests passed |
+| 175 条组合挑战集 | 图完全匹配 100%，动作、方向、谓词、实体和否定均为 100% |
+| 175 条挑战集延时 | 平均 46.741ms，P95 86.793ms，最大 96.349ms |
+
+以上延时仅包含英文结构化指令解析，不包含 ASR、中文到英文翻译、视觉感知和车辆控制。
+报告中 `Road畅通` 等中英文混合翻译属于上游翻译输出质量问题，不在本模块修改范围；
+本模块仅保证收到可解析的英文速度表达后正确生成 `DrivingIntent`。
