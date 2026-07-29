@@ -36,7 +36,11 @@ from .semantic_normalizer import (
 
 ACTION_PATTERNS = {
     "KEEP_LANE": r"\b(?:keep|maintain|stay|remain).{0,20}\blane\b",
-    "SET_SPEED": r"\b(?:set|maintain|hold|drive at).{0,24}\b(?:km/h|m/s)\b",
+    "SET_SPEED": (
+        r"\b(?:set|maintain|hold|drive at|speed up to|accelerate to|"
+        r"slow down to|decelerate to|reduce(?: (?:the )?speed)? to)"
+        r".{0,24}\b(?:km/h|m/s)\b"
+    ),
     "ADJUST_SPEED": r"\b(?:accelerate|speed up|slow down|decelerate|brake|reduce speed)\b",
     "STOP": r"\b(?:stop|halt|standstill|cease all movement)\b",
     "WAIT": r"\b(?:wait|hold position|stay put)\b",

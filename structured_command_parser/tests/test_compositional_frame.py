@@ -4,6 +4,9 @@ from structured_command_parser.src.compositional_frame import (
     enrich_commands_with_frame,
     extract_semantic_frame,
 )
+from structured_command_parser.src.semantic_decomposer import (
+    decompose_atomic_actions,
+)
 from structured_command_parser.src.semantic_normalizer import (
     filter_suppressed_actions,
     normalize_semantics,
@@ -49,6 +52,103 @@ class SemanticNormalizerTests(unittest.TestCase):
 
 
 class CompositionalFrameTests(unittest.TestCase):
+    def test_compound_target_speed_survives_normalization_and_grounding(self):
+        cases = (
+            (
+                "Stay in the current lane and drive at a speed of "
+                "50 kilometers per hour.",
+                ["KEEP_LANE", "SET_SPEED"],
+                13.889,
+            ),
+            (
+                "Maintain current lane, speed up to 60 kilometers per hour.",
+                ["KEEP_LANE", "SET_SPEED"],
+                16.667,
+            ),
+            (
+                "Reduce to 40 kilometers per hour and keep in the current lane.",
+                ["SET_SPEED", "KEEP_LANE"],
+                11.111,
+            ),
+            (
+                "Road clear, speed up to 50 kilometers per hour.",
+                ["SET_SPEED"],
+                13.889,
+            ),
+        )
+        for text, expected_actions, expected_speed in cases:
+            with self.subTest(text=text):
+                commands = decompose_atomic_actions(text)
+                self.assertEqual(
+                    [command["action"] for command in commands],
+                    expected_actions,
+                )
+                speed_commands = [
+                    command
+                    for command in commands
+                    if command["action"] == "SET_SPEED"
+                ]
+                self.assertEqual(len(speed_commands), 1)
+                self.assertAlmostEqual(
+                    speed_commands[0]["target_speed_mps"],
+                    expected_speed,
+                    places=3,
+                )
+
+    def test_unit_and_function_token_predictions_are_not_entities(self):
+        text = "Maintain the current lane, speed up to 50 km/h."
+        surfaces = ("the current", "to", "50 km", "h")
+        predicted_spans = []
+        for surface in surfaces:
+            start = text.index(surface)
+            predicted_spans.append(
+                {
+                    "role": "ENTITY",
+                    "text": surface,
+                    "start": start,
+                    "end": start + len(surface),
+                    "confidence": 0.99,
+                }
+            )
+        frame = extract_semantic_frame(text, predicted_spans=predicted_spans)
+        self.assertEqual(frame["entities"], [])
+
+    def test_next_modifier_does_not_shadow_junction_entity(self):
+        text = "Turn left at the next intersection."
+        start = text.index("the next")
+        frame = extract_semantic_frame(
+            text,
+            predicted_spans=[
+                {
+                    "role": "ENTITY",
+                    "text": "the next",
+                    "start": start,
+                    "end": start + len("the next"),
+                    "confidence": 0.99,
+                }
+            ],
+        )
+        self.assertEqual(len(frame["entities"]), 1)
+        self.assertEqual(frame["entities"][0]["type"], "JUNCTION")
+
+    def test_visible_relation_may_follow_its_entity(self):
+        frame = extract_semantic_frame(
+            "When the traffic light comes into view, pull over on the right."
+        )
+        self.assertEqual(len(frame["entities"]), 1)
+        self.assertEqual(frame["entities"][0]["type"], "TRAFFIC_LIGHT")
+        self.assertEqual(
+            frame["goal_conditions"],
+            [
+                {
+                    "predicate": "VISIBLE",
+                    "subject": "EGO",
+                    "object": "target_1",
+                    "source_span": "comes into view",
+                }
+            ],
+        )
+
     def test_stop_before_red_truck_keeps_entity_and_goal(self):
         frame = extract_semantic_frame(
             "Slow down and stop before the red truck."
