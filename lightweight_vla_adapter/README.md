@@ -18,6 +18,9 @@ Candidate entities + Ego state
 VLADecisionProposal 1.0
         |
         v
+TemporalProposalSupervisor
+        |
+        v
 Deterministic safety gate + canonical fallback
         |
         v
@@ -159,6 +162,20 @@ turn_left
 turn_right
 ```
 
+## 时序稳定运行时
+
+v10 模型本身仍是单帧 Decision Adapter。运行时在原始 proposal 与最终安全门之间加入 `TemporalProposalSupervisor`，不修改权重或 JSON 协议：
+
+- 更保守的减速、停车和紧急制动立即生效；
+- 普通动作切换需连续 3 帧确认，重新加速需连续 5 帧确认；
+- 建议速度下降立即生效，上升默认限制为 `8 km/h/s`；
+- 同车道前车闭合且 TTC 不足时禁止继续建议加速；
+- `RiskAssessment` 要求减速或紧急制动时在 proposal 阶段立即约束；
+- 目标实体切换需连续 3 帧确认，旧目标离开候选集合后立即失效；
+- 时间戳倒退或帧间隔超过 2 秒时自动清理旧状态。
+
+该监督器是确定性进程内状态，不是经时序数据训练的 RNN/Transformer。最终安全门和 ControlPlan FSM 继续作为不可绕过的下游边界。
+
 ## 输入接口
 
 上游必须提供：
@@ -248,6 +265,20 @@ proposal, plan_state, control_decision = pipeline.decide(
 )
 ```
 
+`pipeline.decide()` 默认启用时序监督。新指令、路线结束或场景重置时清理对应状态：
+
+```python
+pipeline.reset_temporal_state(driving_intent["request_id"])
+```
+
+若调用方绕过 `decide()` 而直接调用 `predict_proposal()`，必须同时传入 `world_state`、`risk_assessment` 和稳定的 `stream_id`，否则返回的是原始单帧 proposal。最近一帧的监督原因可通过以下接口写入运行日志：
+
+```python
+diagnostics = pipeline.temporal_supervisor.diagnostics(
+    driving_intent["request_id"]
+)
+```
+
 在线服务必须先预热。随机初始化的 Pipeline 会拒绝在线推理。
 
 完整离线入口：
@@ -314,6 +345,17 @@ RTX 5090、FP16、batch size 1、预热后 500 次：
 
 该时延不包含 ASR、原始相机/LiDAR 感知、规划器和控制器。
 
+230 帧确定性连续压力序列用于单独验证时序监督层，不计作模型准确率：
+
+| 指标 | 原始逐帧 proposal | 时序监督后 |
+|---|---:|---:|
+| 动作切换次数 | 83 | 4 |
+| 目标实体切换次数 | 229 | 0 |
+| 危险帧错误加速 | 51 | 0 |
+| 紧急风险响应 | 不适用 | 同帧 |
+
+时序监督层 CPU 平均额外耗时 `0.023 ms`，P95 `0.026 ms`，最大 `0.102 ms`。
+
 ## 文件范围
 
 ```text
@@ -334,5 +376,6 @@ lightweight_vla_adapter/
 - v10 权重使用 SimLingo 数据，采用自定义非商业研究许可。
 - 仅用于非商业学术研究，不得用于真实车辆或机器人运行及高风险部署。
 - 模型不能绕过紧急制动、目标车道安全、语义失败或 FSM 安全兜底。
+- 时序监督层改善连续输出稳定性，但不改变单帧模型本身的分类准确率。
 - 当前相机 BEV 主要来自官方三维标注或结构代理，不能替代真实 BEV 感知验收。
 - 模型及当前实验结果不构成自动驾驶安全认证。
