@@ -86,3 +86,32 @@ Thumbs.db
 # 训练与实验跟踪目录
 wandb/
 runs/
+
+# 第一阶段 main：轻量 VLA 只提交运行时
+/lightweight_vla_adapter/data/
+/lightweight_vla_adapter/models/
+/lightweight_vla_adapter/checkpoints/
+/lightweight_vla_adapter/artifacts/
+/lightweight_vla_adapter/outputs/
+/lightweight_vla_adapter/results/
+/lightweight_vla_adapter/logs/
+/lightweight_vla_adapter/cache/
+/lightweight_vla_adapter/training/
+/lightweight_vla_adapter/evaluations/
+
+# ASR 大规模语音数据和逐样本测试输出
+/automatic_speech_recognition/data/*
+!/automatic_speech_recognition/data/README.md
+/automatic_speech_recognition/models/
+/automatic_speech_recognition/outputs/
+/automatic_speech_recognition/logs/
+
+# 场景理解与 CARLA 运行产物
+/scene_understanding/data/
+/scene_understanding/models/
+/scene_understanding/outputs/
+/scene_understanding/results/
+/experiment/CARLA/outputs/
+/experiment/CARLA/recordings/
+/experiment/CARLA/videos/
+/experiment/CARLA/saved/

@@ -1,12 +1,23 @@
 # CARLA 自动驾驶场景仿真平台
 
+## 第一阶段 main 范围与双链路
+
+本目录保存 Linux、CARLA 0.9.16、Python 3.12.13 下的场景构建、控制协议、日志和评估入口。数据集、传感器图片、视频、逐帧日志和运行输出不提交 Git。
+
+CARLA 控制端只消费稳定的 `ControlDecision 1.0`，因此同时兼容：
+
+1. 原规则链路：场景理解生成 canonical high-level action，经风险门控和 FSM 输出 `ControlDecision`；
+2. VLA 新链路：`lightweight_vla_adapter` 生成 `VLADecisionProposal`，经确定性安全门校验或回退后输出相同的 `ControlDecision`。
+
+VLA 没有安装、输入不完整或被安全门拒绝时，CARLA 自动继续使用原规则链路。两条链路不得在同一帧重复推进 FSM。
+
 一个基于 CARLA 的模块化自动驾驶仿真场景构建框架。本目录统一按
 Linux、CARLA 0.9.16、Python 3.12.13 维护，不再使用旧的 Windows
 CARLA 0.9.15 / Python 3.7 环境。
 
 ## 当前集成版本
 
-- 场景代码来源：`origin/lx`；当前副本用于 `zsz` 分支上的场景帧解释实验。
+- 场景代码由组员 CARLA 分支持续集成；当前 `main` 副本作为第一阶段统一控制和场景接口。
 - CARLA 服务端与 Python API：统一使用 `0.9.16`，二者版本必须一致。
 - 推荐 Python：`3.12.13`；当前 AutoDL 环境已验证 PyTorch 可识别 RTX 5090 的 `sm_120`。
 - 默认 CARLA 路径：`/root/autodl-tmp/CARLA_0.9.16`，也可通过 `CARLA_ROOT` 覆盖。
