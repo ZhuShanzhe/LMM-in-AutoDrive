@@ -20,6 +20,7 @@ def run_integration_test(
     language: str = "Chinese",
     enable_enhancement: bool = False,
     enable_dialect_mapping: bool = False,
+    ref_key: str = "translation",
 ) -> Dict[str, Any]:
     """
     Run ASR pipeline on all samples in dataset and evaluate.
@@ -39,7 +40,7 @@ def run_integration_test(
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    samples = load_test_json(dataset_json)
+    samples = load_test_json(dataset_json, ref_key=ref_key)
     logger.info(f"Loaded {len(samples)} samples from {dataset_json}")
 
     config = Qwen3PipelineConfig(

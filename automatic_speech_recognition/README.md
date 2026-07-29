@@ -25,9 +25,7 @@ automatic_speech_recognition/
 ├── example/                    # 示例脚本（各模块的用法演示）
 │   ├── asr_example.py
 │   ├── asr2_example.py
-│   ├── translation_example.py
-│   ├── tts_example.py
-│   └── pipeline_example.py
+│   └── denoiser_example.py
 │
 ├── src/                        # 核心源代码
 │   ├── asr/                    # FunASR 语音识别
@@ -71,54 +69,58 @@ automatic_speech_recognition/
 │   │
 │   ├── pipeline.py             # ASR + 翻译（FunASR 后端）
 │   ├── pipeline2.py            # ASR + 翻译（Qwen3-ASR 后端，推荐）
-│   ├── config.py               # 顶层配置
+│   ├── config.py
 │   ├── __init__.py
 │   └── README.md
 |
 ├── optimization/               # 噪声与方言优化模块
-│   ├── __init__.py
-│   ├── config.py
-│   ├── optimizer.py
-│   ├── audio_augmenter.py
-│   ├── utils.py
-│   └── README.md
+|   ├── __init__.py 
+|   ├── config.py
+|   ├── audio_processor.py
+|   ├── noise_generator.py
+|   ├── utils.py     
+|   ├── DeepFilterNet/          
+|   │   ├── __init__.py
+|   │   ├── config.py    
+|   │   ├── denoiser.py         
+|   │   ├── service.py            
+|   │   └── README.md           
+|   ├── build_noisy_subset.py
+|   ├── example.py
+|   ├── requirements.txt     
+|   └── README.md
 |
 ├── tests/                      # 测试与评估脚本
-│   ├── utils/                  # 测试工具
-│   │   ├── data_loader.py
-│   │   ├── evaluator.py
-│   │   └── metrics.py
-│   ├── asr_test.py             # FunASR 测试
-│   ├── qwen_test.py            # Qwen3-ASR 测试
-│   ├── commands.py             # 翻译文本指令
-│   ├── wav_commands.py         # 生成语音指令
-│   ├── noise_commands.py       # 生成带噪语音指令
-│   └── README.md
+|   ├── utils/                     
+|   │   ├── data_loader.py
+|   │   ├── evaluator.py 
+|   │   └── metrics.py
+|   ├── asr_test.py
+|   ├── qwen_test.py
+|   ├── denoise_test.py
+|   ├── accent_test.py
+|   ├── commands.py
+|   ├── wav_commands.py
+|   ├── noise_commands.py
+|   └── README.md
 │
-├── data/                       # 数据集与输出
-│   ├── commands.json           # 原始英文指令集
-│   ├── translated_commands.json# 中文翻译指令集
-│   ├── wav_files/              # 无噪声语音指令（8349条）
+├── data/                       # 数据集与输出文件
+│   ├── commands.json          
+│   ├── translated_commands.json
+│   ├── wav_files/           
 │   │   ├── file_mapping.json
-│   │   └── command_0001.wav ~ command_8349.wav
-│   ├── wav_files_noise/        # 噪声语音指令（500条）
+│   │   └── command.wav......
+│   ├── wav_files_noise/     
 │   │   ├── wav_files_with_noise/
 │   │   │   ├── file_mapping_noise.json
-│   │   │   └── command_1_noise.wav ~ command_500_noise.wav
+│   │   │   └── command_noise.wav......
 │   │   └── wav_files_without_noise/
 │   │       └── file_mapping_without_noise.json
-│   ├── test_results/           # FunASR 测试结果
-│   │   ├── ASR_result.json
-│   │   └── test_summary.json
-│   ├── test_results_qwen3/     # Qwen3-ASR 测试结果
-│   │   ├── ASR_result_qwen3.json
-│   │   └── test_summary_qwen3.json
-│   ├── test_results_noise/     # 噪声对比测试结果
-│   │   ├── normal/             # 无噪声
-│   │   │   └── test_summary_qwen3.json
-│   │   └── noise/              # 含噪声
-│   │       └── test_summary_qwen3.json
-│   └── logging/                # 日志文件
+│   ├── wav_files_accent/
+│   │   ├── Dongbei Dialect Speech Corpus for TTS/
+│   │   ├── ... 
+│   │   └── Sichuan Dialect Speech Corpus for TTS/
+│   └── logging/
 │
 ├── requirements.txt
 └── README.md 
@@ -232,6 +234,29 @@ def process(
     ...
 ```
 
+### 噪声优化接口
+
++ `optimization` 模块提供了完整的噪声处理工具链，包含噪声增强（Augmentation）和语音增强（Denoising）两大核心功能，用于构建带噪测试集和提升 ASR 在噪声环境下的鲁棒性。
+```python
+from optimization import DenoiseService, DenoiserConfig
+
+config = DenoiserConfig(model_name="DeepFilterNet3", output_sr=16000)
+service = DenoiseService(config)
+output = service.denoise("noisy.wav", output_path="clean.wav", output_json="result.json")
+print(f"Time: {output['processing_time_seconds']:.3f}s")
+
+files = ["noisy1.wav", "noisy2.wav"]
+outputs = service.denoise(files, output_json="batch.json")
+```
+
++ 或者使用命令行调用（`DeepFilterNet` 官方工具），下面提供两种可行的方案：
+```shell
+python -m df.enhance -m DeepFilterNet3 noisy_audio.wav -o output_dir/
+```
+```shell
+deepFilter --model DeepFilterNet3 noisy_audio.wav -o output_dir/
+```
+
 ### 数据格式
 + 音频输入：本项目的 ASR 模块接受 16kHz 采样率、单声道 WAV 格式 的音频文件。其他格式需先转换为 WAV（可使用 ffmpeg 或 librosa 预处理）。
 
@@ -293,12 +318,14 @@ def process(
 
   + Qwen3-ASR-1.7B 在所有指标上均优于 FunASR，尤其在词级和句子级指标上提升更明显
 
-### 6.2 待完成的实验
-
 + 方言与多语言扩展实验：
   + 实验目标：评估 ASR 模型在多种中文方言及多语言场景下的识别性能，构建方言语音指令数据集。
 + 优化策略实验：
   + 实验目标：验证前端语音增强（降噪）和后端方言映射对 ASR 性能的提升效果。
+
+
+### 6.2 待完成的实验
+
 + 真实场景部署测试：
   + 实验目标：在实际车载环境下验证 ASR 系统的端到端性能。
 + 多模态融合实验：
@@ -315,3 +342,5 @@ def process(
 | CT-PUNC | MIT | ModelScope | 标点恢复模型 |
 | CAM++（说话人识别） | MIT | ModelScope | 说话人分离模型 |
 | Qwen2.5-3B-Instruct | Apache-2.0 | Qwen 团队 | 中英翻译模型 |
+
++ 模块中涉及的所有模型权重可以从网站下载：https://box.nju.edu.cn/library/cb15c094-108b-4fd8-b978-42f00bae1b02/ASR_Model/

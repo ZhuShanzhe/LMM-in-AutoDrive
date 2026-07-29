@@ -31,18 +31,15 @@ def run_integration_test(
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    # 1. Load dataset
     samples = load_test_json(dataset_json)
     logger.info(f"Loaded {len(samples)} samples from {dataset_json}")
 
-    # 2. Initialize ASR pipeline
     config = ASRConfig(
         asr_mode=asr_mode,
         asr_device=asr_device,
     )
     pipeline = ASR(config=config)
 
-    # 3. Process each sample (ASR only, translation disabled)
     hypotheses = []
     refs = []
     per_sample_results = []
@@ -82,7 +79,6 @@ def run_integration_test(
             "original": sample.get("original", "")
         })
 
-    # save ASR result
     output = {
         "dataset": dataset_json,
         "total_samples": len(samples),
@@ -92,11 +88,9 @@ def run_integration_test(
     output_file = os.path.join(output_dir, "ASR_result.json")
     save_results_to_json(output, output_file)
 
-    # 4. Evaluate
     evaluator = ASREvaluator()
     eval_results = evaluator.evaluate_lists(refs, hypotheses)
 
-    # 5. Build final output
     final_output = {
         "dataset": dataset_json,
         "total_samples": len(samples),
@@ -106,11 +100,9 @@ def run_integration_test(
         "raw_evaluation": eval_results
     }
 
-    # 6. Save results
     summary_file = os.path.join(output_dir, "test_summary.json")
     save_results_to_json(final_output, summary_file)
 
-    # Print summary
     evaluator.print_summary()
 
     return final_output

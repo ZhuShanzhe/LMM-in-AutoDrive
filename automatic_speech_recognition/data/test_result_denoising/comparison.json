@@ -1,0 +1,19 @@
+{
+  "total_samples": 1000,
+  "noisy": {
+    "average_cer": 0.03897614391413791,
+    "average_wer": 0.23108333333333334,
+    "sentence_accuracy_rate": 0.766
+  },
+  "denoised": {
+    "average_cer": 0.01803341785383061,
+    "average_wer": 0.12036764705882354,
+    "sentence_accuracy_rate": 0.877
+  },
+  "clean_baseline": {
+    "total_samples": 1000,
+    "average_cer": 0.0003467238743243048,
+    "average_wer": 0.0055,
+    "sentence_accuracy_rate": 0.994
+  }
+}

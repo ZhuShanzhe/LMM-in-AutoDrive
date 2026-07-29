@@ -12,19 +12,22 @@ tests/
 |   
 ├── asr_test.py
 ├── qwen_test.py
+├── denoise_test.py
+├── accent_test.py
 ├── commands.py
 ├── wav_commands.py
 ├── noise_commands.py
 └── README.md
 
 data/
-├── test_results/
+├── results/                    # ASR 识别结果 json 报告 
+├── test_results/               # 基础数据集测试结果
 │   ├── ASR_result.json
 │   ├── test_summary.json
 |   ├── ASR_result_qwen3.json
 |   └── test_summary_qwen3.json
 |
-├── test_results_noise/
+├── test_results_noise/         # 噪声对比实验
 |   ├── normal/
 |   |   ├── ASR_result_qwen3.json
 |   |   └── test_summary_qwen3.json
@@ -32,25 +35,40 @@ data/
 |       ├── ASR_result_qwen3.json
 |       └── test_summary_qwen3.json
 |
-├── wav_files/
+├── test_results_denoising/     # 噪声优化测试
+|   ├── denoisy_mapping.json
+|   ├── ...
+|   └── comparison.json
+|
+├── test_results_accent/        # 方言优化测试
+|   ├── Guangzhou_details.json
+|   ├── ...
+|   └── Sichuan_details.json
+|
+├── wav_files/                  # 数据集
 │   ├── file_mapping.json
 │   ├── command_0001.wav
 │   ├── ...
 │   └── command_8349.wav
 |
-├── wav_files_noise/
+├── wav_files_noise/            # 噪声数据集
 |   ├── wav_files_with_noise/
 │   |   ├── file_mapping_noise.json
 │   |   ├── command_1_noise.wav
 │   |   ├── ...
-│   |   └── command_500_noise.wav
+│   |   └── ...
 |   |
 |   └── wav_files_without_noise/
 |       └──file_mapping_without_noise.json
 |
+├── wav_files_accent/            # 方言语音数据集
+|   ├── Dongbei Dialect Speech Corpus for TTS/
+|   ├── ...
+|   └── Sichuan Dialect Speech Corpus for TTS/
+|
 ├── commands.json              # 原始文本指令集
 ├── translated_commands.json   # 中文文本指令集
-└── logging/                   # 日志文件夹
+└── logging/                   # 日志
 ```
 
 + 功能概述：
@@ -133,9 +151,8 @@ python asr_test.py --dataset data/wav_files/file_mapping.json --output_dir data/
 python qwen_test.py --dataset data/wav_files/file_mapping.json --output_dir data/test_results --asr_device cuda:0 --load_type local --model_path models/Qwen3-ASR-1.7B
 ```
 
-## 4. 测试结果
 + 以上三种指标均为错误率，我们在评估模型时使用正确率（$1-e$）以让结果更直观。
-+ 在无噪声优化的基础 pipeline 下，模型在 `8349` 条标准普通话语音指令下进行了测试，结果字符准确率高达 **95.2%**，词准确率达到 86.2%，但句子准确率仅有 45.9%，模型识别关键字词的能力较强，但识别的句子与原始句子相比在开头或结尾处容易出现单个字词的错误。
++ 在无噪声优化的基础 pipeline 下，模型在 `8349` 条标准普通话语音指令下进行了测试，结果字符准确率高达 **95.19%**，词准确率达到 86.19%，但句子准确率仅有 45.86%，模型识别关键字词的能力较强，但识别的句子与原始句子相比在开头或结尾处容易出现单个字词的错误。
 
 ```json
 "average_cer": 0.04814557975262654,
@@ -148,7 +165,7 @@ python qwen_test.py --dataset data/wav_files/file_mapping.json --output_dir data
 "original": "pass the intersection before the grey car arrives. "
 ```
 
-+ 在改进后的 Qwen3-ASR 模型下，模型在 `8349` 条标准普通话语音指令下进行了测试，结果字符准确率高达 **96.0%**，词准确率达到 89.5%，句子准确率提高到 48.6%，模型的性能得到了一定的提高，但仍受限于生成语音指令数据集的质量欠佳。
++ 在改进后的 Qwen3-ASR 模型下，模型在 `8349` 条标准普通话语音指令下进行了测试，结果字符准确率高达 **96.04%**，词准确率达到 89.45%，句子准确率提高到 48.58%，模型的性能得到了一定的提高，但仍受限于生成语音指令数据集的质量欠佳。
 
 ```json
 "average_cer": 0.03956448642714553,
@@ -215,3 +232,95 @@ python qwen_test.py \
 "hypothesis": "停下！你左边的卡车上变道。",
 "original": "stop, the truck on your left side wants to pull out."
 ```
+
+## 6. 噪声优化模块测试
+
++ 我们需要测试为 `pipeline` 引入 `DeepFilterNet3` 进行降噪预处理对 ASR 性能的提升效果。
++ 为了排除 `TTS` 合成音频质量可能不稳定带来的干扰，我们通过一种特殊的方法构建测试集：
+  + 选取原始数据集中经过 `ASR` 识别准确率较高的语音样本，从中随机抽取 1000 个样本并为其添加随机强度的噪声，得到噪声数据集（`data/wav_files_noise/wav_files_with_noise/file_mapping_noise.json`）
++ 基于噪声数据集调用 `DeepFilterNet3` 模型对每条带噪音频进行降噪处理，生成降噪后的 WAV 文件，并建立新的映射文件 `denoisy_mapping.json`.
++ 噪声的相关配置可以在 python 脚本中查看和设置。
++ 运行脚本：
+```shell
+python denoise_test.py \
+    --dataset data/wav_files_noise/wav_files_with_noise/file_mapping_noise.json \
+    --original_dataset data/wav_files/file_mapping.json \
+    --output_dir data/test_results_denoising \
+    --asr_device cuda:0 \
+    --load_type local \
+    --model_path models/Qwen3-ASR-1.7B \
+    --denoiser_model DeepFilterNet3 \
+    --denoiser_output_sr 16000
+```
+
++ 相关参数设置：
+
+|          参数          |             说明             |
+|:--------------------:|:--------------------------:|
+|     `--dataset`      |       带噪数据集的 JSON 路径       |
+| `--original_dataset` |  原始干净数据集的 JSON（用于提取干净子集）   |
+|    `--output_dir`    |           输出根目录            |
+|    `--asr_device`     |          ASR 运行设备          |
+|     `--load_type`      | ASR 模型加载方式（`local` / `custom`） |
+|     `--model_path`     |      Qwen3‑ASR 本地模型路径      |
+|   `--denoiser_model`   | 降噪模型名称（默认 `DeepFilterNet3`）  |
+| `--denoiser_output_sr` |    降噪后音频的采样率（默认 16000）     |
+
++ 分别对干净基线（从原始数据集中提取对应的采样样本）、带噪数据和降噪数据运行 Qwen3‑ASR 测试，得到三组识别结果：
+
+|          模型          |  CER↓  |  WER↓  |   SAR↑   |
+|:--------------------:|:------:|:------:|:--------:|
+|        Origin        | 0.0003 | 0.0055 |  0.994   |
+|         ASR          | 0.0390 | 0.2311 |  0.766   |
+| ASR + DeepFilterNet3 | 0.0179 | 0.1204 |  0.877   |
+
++ 对比 `comparison.json` 中的测试指标，可得出以下结论：
+  + 原 Qwen3‑ASR 模型对噪声已经具有较好的鲁棒性，添加噪声后 CER 仅下降了约 4%，但 WER 下降了超过 20%，识别出的句子在中间部分词语上可能出现一定偏差，从而影响后续的指令解析。
+  + 降噪处理后各项指标均有所提高，WER 上升超 10%，证明降噪优化可以在有环境噪声的场景下提高语音识别的准确率，但相对应地优化部分需要占用一定的响应时间，导致处理效率略有下降。
+
+## 7. 方言优化模块测试
+
++ 当前在自动驾驶领域针对方言的语音指令数据集较为缺乏，我们选取了 Magic Data 开源的五种方言 TTS 数据集（MagicData-Dialect-TTS-Lite）。该数据集包含五种方言变体：东北话、河南话、四川话、吴语（江苏话）和粤语，每种方言包含若干语音片段（WAV 文件），由年龄在 30 至 60 岁之间的当地母语者录制，保留了地道的口音和表达习惯。数据集遵循 CC BY-NC-ND 4.0 许可，仅限学术研究使用。
++ 针对方言部分，我们测试基线方法 `ASR`（未引入方言优化）与改进后的基于 Qwen3‑ASR 的 `ASR2` 进行对比测试，测试脚本如下：
+
+```shell
+python accent_test.py \
+    --data_root data/wav_files_accent \
+    --output_dir data/test_results_accent \
+    --asr_device cuda:0 \
+    --model_path models/Qwen3-ASR-1.7B
+```
+
+|      参数       | 说明 |
+|:-------------:|:---:|
+|  `--data_root`  | 方言数据集根目录 |
+| `--output_dir`  | 输出结果目录 |
+| `--asr_device`  | ASR 运行设备 |
+| `--model_path`  | Qwen3‑ASR 本地模型路径 |
+| `--max_samples` | 每种方言最大测试样本数 |
+
++ 测试结果：
+
+
+|    方言     |   模型   |       CER↓        |    WER↓    |
+|:---------:|:------:|:-----------------:|:----------:|
+|  Dongbei  | Origin |      0.0982       |   0.9733   |
+|  Dongbei  |  ASR2  |    **0.0756**     | **0.7467** |
+|   Henan   | Origin |      0.0868       |   0.9459   |
+|   Henan   |  ASR2  |    **0.0634**     | **0.6108** |
+|  Sichuan  | Origin |      0.0953       |   0.9221   |
+|  Sichuan  |  ASR2  |    **0.0590**     | **0.6442** |
+| Guangzhou | Origin |      0.3730       |   0.9835   |
+| Guangzhou |  ASR2  |    **0.2039**     | **0.8454** |
+|  Jiangsu  | Origin |      0.7543       |   0.9886   |
+|  Jiangsu  |  ASR2  |    **0.3177**     | **0.9024** |
+
++ 简单总结：
+  + Qwen3-ASR 在方言识别上全面优于 FunASR：Qwen3-ASR 原生支持 30 种语言和 22 种中文方言，在五种方言上的 CER 均有所降低，尤其在较为困难的粤语和江苏话上提升较为明显。
+  + 方言难度差异显著：
+    + 粤语和江苏话对两个模型都是最具挑战性的方言，CER 分别高达 20.39% 和 31.77%（Qwen3-ASR）。
+    + 河南话和东北话属于官话方言区，与普通话在声调、词汇上的差异相对较小，CER 分别为 6.34% 和 7.56%（Qwen3-ASR），识别效果较好。
++ 未来展望：
+  + 模型微调：对于较为困难的目标方言，可使用更大规模、标注更规范的方言数据进行模型微调。
+  + 方言词汇映射：针对语音指令中的一些常用词汇，建立方言→普通话的词汇映射表，对 ASR 输出进行后处理修正。
+  + 数据增强：利用 TTS 合成更多方言语音数据，或对现有音频进行变速、加噪等处理，扩充训练集多样性。

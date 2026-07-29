@@ -1,0 +1,6 @@
+{
+  "total_samples": 1000,
+  "average_cer": 0.0003467238743243048,
+  "average_wer": 0.0055,
+  "sentence_accuracy_rate": 0.994
+}
