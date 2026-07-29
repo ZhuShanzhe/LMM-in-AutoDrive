@@ -1,5 +1,23 @@
 # Scene Understanding
 
+## 第一阶段 main 范围
+
+`main` 保留实时感知、CARLA 真值桥接、候选实体、DrivingIntent 语义对齐、TTC/风险判断、canonical 规则决策、ControlPlan FSM、Schema 和接口说明。模型权重、数据集、检测器训练检查点和逐帧大规模输出不提交 Git。
+
+默认运行权重：
+
+```text
+YOLO11s:
+  UNIC0RN-Zhu/yolo11s-drive-scene-carla-v1
+  /root/autodl-tmp/models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt
+
+ModernBERT:
+  UNIC0RN-Zhu/modernbert-drive-command-base
+  /root/autodl-tmp/models/modernbert-drive-command-compositional
+```
+
+本模块继续提供原规则链路的 canonical decision。`lightweight_vla_adapter` 是可选的新链路，只能在该 canonical decision 与风险安全门约束下提出场景条件化建议；未启用 VLA 时，本模块原有接口和 CARLA 控制链路保持不变。
+
 场景理解模块负责把结构化驾驶指令与 CARLA 世界状态对齐，生成确定性的风险判断、控制决策和多步骤计划状态。模块通过 JSON 文件与指令解析模块和车辆控制模块联调，不直接依赖其他成员的 Python 包内部实现。
 
 ## 运行环境

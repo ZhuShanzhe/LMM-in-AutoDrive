@@ -205,7 +205,7 @@ vehicle.apply_control(control)
 ### 5.1 决策入口
 
 - [run_control_experiment.py](run_control_experiment.py)
-- [control/decision_provider.py](control/decision_provider.py)
+- [control/protocol.py](control/protocol.py)：`ControlDecision 1.0` 到 CARLA 控制字段的稳定协议边界
 
 ### 5.2 协议规范化入口
 

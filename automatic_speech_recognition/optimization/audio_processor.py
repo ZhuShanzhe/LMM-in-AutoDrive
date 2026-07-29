@@ -1,83 +1,169 @@
 import os
-import random
+import time
+import logging
 import numpy as np
-import soundfile as sf
 import librosa
-from .config import Config
+import soundfile as sf
+from typing import Optional, Dict, Any, List, Tuple
+
+from .config import AugmentConfig
+from .noise_generator import white_noise, pink_noise, vehicle_noise, load_noise_file
+from .utils import ensure_dir, save_json, get_file_name
+
+logger = logging.getLogger(__name__)
 
 
-class AudioProcessor:
-    """
-    Audio post‑processing utilities, including background noise addition.
-    """
+class AudioAugmenter:
+    """Main class for adding noise to audio files."""
 
-    def __init__(self, config: Config):
+    def __init__(self, config: AugmentConfig):
         self.config = config
+        ensure_dir(config.output_dir)
 
-    def add_background_noise(
-        self,
-        audio_path: str,
-        output_path: str = None,
-        noise_type: str = None,
-        snr_db: float = None,
-    ) -> str:
-        """
-        Add background noise to an audio file.
+    def _compute_noise_scale(self, audio_power: float, noise_power: float, snr_db: float) -> float:
+        """Compute scaling factor for noise to achieve target SNR."""
+        if noise_power == 0:
+            return 0.0
+        target_noise_power = audio_power / (10 ** (snr_db / 10))
+        return np.sqrt(target_noise_power / noise_power)
 
-        Args:
-            audio_path: Path to the clean audio file.
-            output_path: Path to save the noisy audio.
-            noise_type: Type of noise (white, traffic, cafe, rain).
-            snr_db: Signal-to-noise ratio in dB.
-
-        Returns:
-            Path to the noisy audio file.
-        """
-        if output_path is None:
-            base, ext = os.path.splitext(audio_path)
-            output_path = f"{base}_noisy{ext}"
-
+    def _generate_noise(self, length: int, sr: int, noise_type: Optional[str] = None, noise_file: Optional[str] = None) -> np.ndarray:
         noise_type = noise_type or self.config.noise_type
-        snr_db = snr_db if snr_db is not None else self.config.noise_snr_db
-
-        audio, sr = librosa.load(audio_path, sr=self.config.sample_rate)
+        noise_file = noise_file or self.config.noise_file
 
         if noise_type == "white":
-            noise = self._generate_white_noise(len(audio))
+            noise = white_noise(length)
+        elif noise_type == "pink":
+            noise = pink_noise(length)
+        elif noise_type == "vehicle":
+            noise = vehicle_noise(length, sr, noise_file)
+        elif noise_type == "from_file":
+            if noise_file is None:
+                raise ValueError("noise_file must be specified for 'from_file' type.")
+            noise = load_noise_file(noise_file, length, sr)
         else:
-            noise = self._load_noise_sample(noise_type, len(audio))
+            raise ValueError(f"Unsupported noise_type: {noise_type}")
+        return noise
+
+    def add_noise_to_audio(self, audio: np.ndarray, sr: int, snr_db: Optional[float] = None, noise_type: Optional[str] = None, noise_file: Optional[str] = None) -> np.ndarray:
+        """
+        Add noise to an audio array.
+
+        Args:
+            audio: Input audio (float32, range [-1, 1]).
+            sr: Sample rate.
+            snr_db: Target SNR (overrides config).
+            noise_type: Override noise type.
+            noise_file: Override noise file.
+
+        Returns:
+            Noisy audio array (same shape as input).
+        """
+        snr = snr_db if snr_db is not None else self.config.snr_db
+        length = len(audio)
+        noise = self._generate_noise(length, sr, noise_type, noise_file)
+
+        if len(noise) != length:
+            if len(noise) > length:
+                noise = noise[:length]
+            else:
+                pad_len = length - len(noise)
+                noise = np.pad(noise, (0, pad_len), mode='constant', constant_values=0)
 
         audio_power = np.mean(audio ** 2)
         noise_power = np.mean(noise ** 2)
-        if noise_power > 0:
-            target_noise_power = audio_power / (10 ** (snr_db / 10))
-            scale = np.sqrt(target_noise_power / noise_power)
-            noise = noise * scale
+        scale = self._compute_noise_scale(audio_power, noise_power, snr)
+        noisy = audio + noise * scale
+        noisy = np.clip(noisy, -1.0, 1.0)
+        return noisy.astype(np.float32)
 
-        noisy_audio = audio + noise
-        noisy_audio = np.clip(noisy_audio, -1.0, 1.0)
+    def process_file(self, input_path: str, output_path: Optional[str] = None,
+                     snr_db: Optional[float] = None,
+                     noise_type: Optional[str] = None,
+                     noise_file: Optional[str] = None) -> str:
+        """
+        Load an audio file, add noise, and save the result.
 
-        sf.write(output_path, noisy_audio, self.config.sample_rate)
+        Returns:
+            Path to the saved file.
+        """
+        audio, sr = librosa.load(input_path, sr=self.config.sample_rate, mono=True)
+
+        noisy = self.add_noise_to_audio(audio, sr, snr_db, noise_type, noise_file)
+
+        if output_path is None:
+            base = get_file_name(input_path)
+            out_dir = self.config.output_dir
+            output_path = os.path.join(out_dir, f"{base}_noisy.wav")
+
+        ensure_dir(os.path.dirname(output_path))
+        sf.write(output_path, noisy, self.config.sample_rate)
+        logger.info(f"Saved noisy audio to {output_path}")
         return output_path
 
-    def _generate_white_noise(self, length: int) -> np.ndarray:
-        return np.random.normal(0, 1, length)
+    def process_dataset(self, dataset_json: str,
+                        audio_key: str = "audio_file",
+                        output_json_clean: Optional[str] = None,
+                        output_json_noisy: Optional[str] = None,
+                        snr_db: Optional[float] = None,
+                        noise_type: Optional[str] = None,
+                        noise_file: Optional[str] = None) -> Tuple[List[Dict], List[Dict]]:
+        """
+        Process a dataset JSON file.
 
-    def _load_noise_sample(self, noise_type: str, target_length: int) -> np.ndarray:
-        noise_dir = self.config.noise_dir
-        noise_files = [f for f in os.listdir(noise_dir) if noise_type in f]
+        Expected format:
+        [
+            {"index": 1, "audio_file": "path/to/audio.wav", ...},
+            ...
+        ]
 
-        if not noise_files:
-            print(f"Warning: No noise sample for '{noise_type}'. Falling back to white noise.")
-            return self._generate_white_noise(target_length)
+        Returns:
+            (clean_mapping, noisy_mapping) – lists of dicts with updated audio_file paths.
+        """
+        from .utils import load_json, save_json
 
-        noise_file = os.path.join(noise_dir, random.choice(noise_files))
-        noise, sr = librosa.load(noise_file, sr=self.config.sample_rate)
+        data = load_json(dataset_json)
+        clean_mapping = []
+        noisy_mapping = []
 
-        if len(noise) < target_length:
-            repeats = (target_length // len(noise)) + 1
-            noise = np.tile(noise, repeats)
-        return noise[:target_length]
+        for item in data:
+            audio_path = item.get(audio_key)
+            if not audio_path or not os.path.exists(audio_path):
+                logger.warning(f"Skipping {audio_path}: file not found.")
+                continue
 
-    def add_reverb(self, audio_path: str, output_path: str = None) -> str:
-        raise NotImplementedError("Reverb addition is not yet implemented.")
+            noisy_path = self.process_file(
+                audio_path,
+                snr_db=snr_db,
+                noise_type=noise_type,
+                noise_file=noise_file
+            )
+
+            clean_item = item.copy()
+            noisy_item = item.copy()
+            clean_item[audio_key] = audio_path
+            noisy_item[audio_key] = noisy_path
+
+            clean_mapping.append(clean_item)
+            noisy_mapping.append(noisy_item)
+
+        # Save mapping if requested
+        if output_json_clean:
+            save_json(clean_mapping, output_json_clean)
+        if output_json_noisy:
+            save_json(noisy_mapping, output_json_noisy)
+
+        return clean_mapping, noisy_mapping
+
+    def process_directory(self, input_dir: str, output_dir: Optional[str] = None,
+                          snr_db: Optional[float] = None,
+                          noise_type: Optional[str] = None,
+                          noise_file: Optional[str] = None) -> List[str]:
+        """Process all WAV files in a directory."""
+        from .utils import list_wav_files
+        wav_files = list_wav_files(input_dir)
+        results = []
+        for wav in wav_files:
+            out = self.process_file(wav, snr_db=snr_db, noise_type=noise_type, noise_file=noise_file)
+            results.append(out)
+        return results
