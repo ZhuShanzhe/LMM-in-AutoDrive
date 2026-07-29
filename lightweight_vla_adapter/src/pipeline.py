@@ -8,6 +8,7 @@ import torch
 from .contracts import SensorTensorBatch
 from .decision_adapter import LightweightDecisionAdapter, decode_proposal
 from .safety_bridge import advance_vla_control_plan
+from .temporal_supervisor import TemporalProposalSupervisor
 
 
 class LightweightVLAPipeline:
@@ -19,12 +20,16 @@ class LightweightVLAPipeline:
         device: str | torch.device = "cuda",
         dtype: torch.dtype | None = None,
         checkpoint_loaded: bool = False,
+        temporal_supervisor: TemporalProposalSupervisor | None = None,
     ) -> None:
         self.device = torch.device(device)
         self.model = model.to(device=self.device, dtype=dtype).eval()
         self.model_name = model_name
         self.dtype = next(self.model.parameters()).dtype
         self.checkpoint_loaded = checkpoint_loaded
+        self.temporal_supervisor = (
+            temporal_supervisor or TemporalProposalSupervisor()
+        )
 
     def _move(self, batch: SensorTensorBatch) -> SensorTensorBatch:
         def floating(tensor: torch.Tensor) -> torch.Tensor:
@@ -47,6 +52,9 @@ class LightweightVLAPipeline:
         request_id: str,
         frame_id: str,
         candidate_entity_ids: Sequence[Sequence[str]],
+        world_state: dict[str, Any] | None = None,
+        risk_assessment: dict[str, Any] | None = None,
+        stream_id: str | None = None,
     ) -> dict[str, Any]:
         if not self.checkpoint_loaded:
             raise RuntimeError(
@@ -73,7 +81,7 @@ class LightweightVLAPipeline:
         if self.device.type == "cuda":
             torch.cuda.synchronize(self.device)
         latency_ms = (time.perf_counter() - started) * 1000.0
-        return decode_proposal(
+        proposal = decode_proposal(
             output,
             request_id=request_id,
             frame_id=frame_id,
@@ -81,6 +89,17 @@ class LightweightVLAPipeline:
             model_name=self.model_name,
             latency_ms=latency_ms,
         )[0]
+        if world_state is not None and risk_assessment is not None:
+            return self.temporal_supervisor.stabilize(
+                proposal,
+                world_state,
+                risk_assessment,
+                stream_id=stream_id,
+            )
+        return proposal
+
+    def reset_temporal_state(self, stream_id: str | None = None) -> None:
+        self.temporal_supervisor.reset(stream_id)
 
     def warmup(self, batch: SensorTensorBatch, *, iterations: int = 10) -> None:
         if iterations <= 0:
@@ -118,6 +137,9 @@ class LightweightVLAPipeline:
             request_id=driving_intent["request_id"],
             frame_id=world_state["frame_id"],
             candidate_entity_ids=candidate_entity_ids,
+            world_state=world_state,
+            risk_assessment=risk_assessment,
+            stream_id=driving_intent["request_id"],
         )
         state, final_decision = advance_vla_control_plan(
             driving_intent,
@@ -139,6 +161,7 @@ class LightweightVLAPipeline:
         model_name: str = "lightweight-vla-adapter",
         device: str | torch.device = "cuda",
         dtype: torch.dtype | None = None,
+        temporal_supervisor: TemporalProposalSupervisor | None = None,
     ) -> "LightweightVLAPipeline":
         state = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
         model.load_state_dict(state)
@@ -148,4 +171,5 @@ class LightweightVLAPipeline:
             device=device,
             dtype=dtype,
             checkpoint_loaded=True,
+            temporal_supervisor=temporal_supervisor,
         )
