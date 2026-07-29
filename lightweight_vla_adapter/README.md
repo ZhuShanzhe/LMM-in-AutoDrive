@@ -10,7 +10,9 @@ ASR / 翻译
   -> 多视角相机 BEV + LiDAR BEV + 候选实体 + 自车状态
   -> ModernBERT 意图 token
   -> 4 层 Cross-Attention Decision Adapter
-  -> VLADecisionProposal 1.0
+  -> 原始 VLADecisionProposal 1.0
+  -> TemporalProposalSupervisor
+  -> 稳定化 VLADecisionProposal 1.0
   -> 确定性风险安全门
   -> ControlPlan FSM
   -> ControlDecision 1.0
@@ -57,7 +59,10 @@ DrivingIntent
 上游二：scene_understanding / CARLA perception
   SensorBundle + WorldState + RiskAssessment
 
-VLADecisionProposal + canonical ControlDecision + RiskAssessment
+原始 VLADecisionProposal + WorldState + RiskAssessment
+  -> TemporalProposalSupervisor
+  -> 稳定化 VLADecisionProposal
+  + canonical ControlDecision
   -> safety_bridge
   -> ControlPlanState + ControlDecision 1.0
   -> experiment/CARLA/control/protocol.py
@@ -265,6 +270,21 @@ turn_left
 turn_right
 ```
 
+### 时序监督层
+
+Decision Adapter 仍按单帧推理。`TemporalProposalSupervisor` 在模型输出和最终安全门之间维护按 `request_id` 隔离的轻量状态，不改变模型权重或 JSON 协议：
+
+- `decelerate`、`stop` 和 `emergency_brake` 等更保守动作立即生效；
+- 风险解除后的动作切换需连续 3 帧确认，重新加速需连续 5 帧确认；
+- 建议速度下降立即生效，建议速度上升默认限制为 `8 km/h/s`；
+- 前方同车道车辆闭合且 TTC 不足时，禁止模型继续建议加速；
+- 风险评估为 `decelerate` 或 `emergency_brake` 时，在 proposal 阶段即进行约束，最终风险门仍保留；
+- 目标实体切换需连续 3 帧确认，但已离开候选集合的旧目标不会被保留；
+- 重复处理同一 `frame_id` 不会推进确认计数。
+- 时间戳倒退或连续帧间隔超过 2 秒时自动清理旧状态，状态表最多保留 128 个请求。
+
+该层解决逐帧动作和目标抖动，但不等同于模型已经具备可学习的时序记忆。所有状态均为进程内确定性状态，服务重启或调用 `reset_temporal_state()` 后清空。
+
 ## 输出接口
 
 学生模型输出 `VLADecisionProposal 1.0`：
@@ -340,6 +360,34 @@ pipeline = LightweightVLAPipeline.from_checkpoint(
     dtype=torch.float16,
 )
 pipeline.warmup(example_batch, iterations=30)
+```
+
+`pipeline.decide()` 默认传入 `WorldState` 与 `RiskAssessment` 并启用时序监督。若现有链路直接调用 `predict_proposal()`，必须显式传入上下文：
+
+```python
+proposal = pipeline.predict_proposal(
+    batch,
+    request_id=driving_intent["request_id"],
+    frame_id=world_state["frame_id"],
+    candidate_entity_ids=candidate_entity_ids,
+    world_state=world_state,
+    risk_assessment=risk_assessment,
+    stream_id=driving_intent["request_id"],
+)
+```
+
+新指令、路线结束或场景重置时清理对应状态：
+
+```python
+pipeline.reset_temporal_state(driving_intent["request_id"])
+```
+
+最近一帧的监督原因可用于日志诊断，不写入 `VLADecisionProposal 1.0`：
+
+```python
+diagnostics = pipeline.temporal_supervisor.diagnostics(
+    driving_intent["request_id"]
+)
 ```
 
 随机初始化的 Pipeline 会拒绝在线推理。首次 CUDA 调用含 kernel 和显存初始化开销，不能作为稳态时延。
@@ -536,6 +584,20 @@ RTX 5090、FP16、batch size 1、预热 50 次、统计 500 次：
 
 在最新 CARLA 分支上完成两轮捕获序列复测，Adapter 平均时延为 2.23–2.37 ms，P95 为 2.25–2.38 ms，观测最大值 5.40 ms。配置预算为 Adapter 35 ms、完整决策 150 ms，均满足。
 
+### 时序稳定性与风险一致性
+
+针对逐帧 `accelerate/decelerate` 波动、目标指针抖动、前车制动阶段错误加速和紧急风险抢占，构建了 230 帧确定性压力序列。该测试只衡量新增监督层，不作为模型准确率：
+
+| 指标 | 原始逐帧 proposal | 时序监督后 |
+|---|---:|---:|
+| 动作切换次数 | 83 | 4 |
+| 目标实体切换次数 | 229 | 0 |
+| 危险帧错误加速 | 51 | 0 |
+| 紧急风险响应 | 不适用 | 同帧，0 帧延迟 |
+| 最大单帧速度上升 | 不受约束 | 0.4 km/h |
+
+在 CPU 上统计 230 次调用，时序监督层平均额外耗时 `0.023 ms`、P95 `0.026 ms`、最大 `0.102 ms`。最终确定性风险门和 FSM 未被移除；时序监督器负责减少错误 proposal 与抖动，风险门继续承担不可绕过的安全边界。
+
 ### CARLA 0.9.16 联调
 
 规则控制器闭环共运行 12 次：首次 9 次成功 8 次，随后直行场景热启动复测 3/3 成功，总计 11/12。所有成功运行均无碰撞、超速和非法车道侵入。唯一失败为直行 route manager 随机选择错误分支并达到时长上限，属于现有场景路线稳定性问题。
@@ -580,8 +642,8 @@ python -m pytest tests -q
 结果：
 
 ```text
-lightweight_vla_adapter: 19 passed
-structured_command_parser: 113 passed, 82 subtests passed
+lightweight_vla_adapter: 26 passed
+structured_command_parser: 117 passed, 86 subtests passed
 scene_understanding: 194 passed, 41 subtests passed
 experiment/CARLA: 31 passed
 最新 lx-main-integration 覆盖联调: 355 passed, 123 subtests passed
@@ -592,6 +654,7 @@ experiment/CARLA: 31 passed
 
 - 当前 CARLA 域训练和捕获联调使用 `StructuredBEVRasterizer` 处理 CARLA `WorldState` 真值实体；它验证的是多模态决策接口和高层决策，不是原始相机检测精度。
 - 当前 SimLingo 张量使用真实 LiDAR 点云栅格，camera BEV 仍主要来自官方 3D 标注/结构代理；接入真实 BEVFusion 后无需改变本模块张量和输出接口。
+- `TemporalProposalSupervisor` 是确定性进程内状态，不是经时序数据训练的 RNN/Transformer；它改善连续输出稳定性和风险一致性，但不改变单帧模型本身的分类准确率。
 - CARLA 独立测试仅覆盖直行、行人横穿和紧急制动三类场景，不等同于题目全部场景的闭环验收。
 - 98.68% 是上述独立 CARLA 高层动作测试准确率，不是完整 ASR、感知、规划和控制链路的总成功率。
 - 官方 validation 独立测试的 79.70% 是当前更严格的跨归档泛化结果；右变道和左右转向仍是主要误差来源。
