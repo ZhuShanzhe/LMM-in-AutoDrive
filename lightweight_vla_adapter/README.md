@@ -138,16 +138,47 @@ pip install -r lightweight_vla_adapter/requirements.txt
 
 ```text
 /root/autodl-tmp/models/modernbert-drive-command-compositional/
-/root/autodl-tmp/models/lightweight_vla_adapter/full_training_v7/model.pt
+/root/autodl-tmp/models/lightweight_vla_adapter/v10/model.pt
 ```
 
 VLA 检查点不提交 Git。当前最终检查点大小约 16 MB，SHA256：
 
 ```text
-e201f79750ebbcabf4eac27a2836aa5d34ded64422b97da6943498db887d1d8c
+0f813842ec36ef1b3d4d80a9013a83531c522dafc3f42723c3e22e55f6e567b6
 ```
 
 加载时必须同时使用仓库中的 `configs/student_base.json`。ModernBERT 权重的下载和接口说明见 `structured_command_parser/README.md`。
+
+最终 v10 权重托管于：
+
+```text
+https://huggingface.co/UNIC0RN-Zhu/lightweight-vla-drive-decision-adapter-v10
+```
+
+该仓库采用自动批准访问门控。首次下载时，先在模型页面申请访问并登录 Hugging Face，再下载到数据盘：
+
+```bash
+python -m pip install --upgrade huggingface_hub
+
+if [ -f /etc/network_turbo ]; then
+  source /etc/network_turbo
+fi
+
+hf auth login
+
+MODEL_DIR=/root/autodl-tmp/models/lightweight_vla_adapter/v10
+mkdir -p "$MODEL_DIR"
+
+hf download \
+  UNIC0RN-Zhu/lightweight-vla-drive-decision-adapter-v10 \
+  --repo-type model \
+  --local-dir "$MODEL_DIR"
+
+cd "$MODEL_DIR"
+sha256sum -c model.sha256
+```
+
+校验成功应输出 `model.pt: OK`。
 
 ## 输入接口
 
@@ -303,7 +334,7 @@ model = LightweightDecisionAdapter(
 )
 pipeline = LightweightVLAPipeline.from_checkpoint(
     model,
-    "/root/autodl-tmp/models/lightweight_vla_adapter/full_training_v7/model.pt",
+    "/root/autodl-tmp/models/lightweight_vla_adapter/v10/model.pt",
     model_name=config["model_name"],
     device="cuda",
     dtype=torch.float16,
@@ -389,12 +420,16 @@ python lightweight_vla_adapter/scripts/train_student.py \
 
 ## 推理与评测
 
+当前集成与提交统一使用最终 `v10` 权重：
+`/root/autodl-tmp/models/lightweight_vla_adapter/v10/model.pt`。
+上方 v7 训练命令和路径用于记录历史复现实验；服务器清理后如需重新训练，应先按数据构建脚本恢复对应数据集。
+
 离线推理：
 
 ```bash
 python lightweight_vla_adapter/scripts/run_offline_inference.py \
   --config lightweight_vla_adapter/configs/student_base.json \
-  --checkpoint /root/autodl-tmp/models/lightweight_vla_adapter/full_training_v7/model.pt \
+  --checkpoint /root/autodl-tmp/models/lightweight_vla_adapter/v10/model.pt \
   --request-json sample_request.json \
   --tensor-batch sample_tensors.pt \
   --output output/decision.json \
@@ -407,9 +442,9 @@ python lightweight_vla_adapter/scripts/run_offline_inference.py \
 ```bash
 python lightweight_vla_adapter/scripts/evaluate_student_checkpoint.py \
   --config lightweight_vla_adapter/configs/student_base.json \
-  --checkpoint /root/autodl-tmp/models/lightweight_vla_adapter/full_training_v7/model.pt \
+  --checkpoint /root/autodl-tmp/models/lightweight_vla_adapter/v10/model.pt \
   --dataset /root/autodl-tmp/datasets/vla_student/carla_domain_v1/test.pt \
-  --output /root/autodl-tmp/models/lightweight_vla_adapter/full_training_v7/evaluations/carla_test.json \
+  --output /root/autodl-tmp/evaluations/vla/carla_test.json \
   --batch-size 256 \
   --device cuda \
   --precision bf16
@@ -420,7 +455,7 @@ python lightweight_vla_adapter/scripts/evaluate_student_checkpoint.py \
 ```bash
 python lightweight_vla_adapter/scripts/benchmark_end_to_end_latency.py \
   --config lightweight_vla_adapter/configs/student_base.json \
-  --checkpoint /root/autodl-tmp/models/lightweight_vla_adapter/full_training_v7/model.pt \
+  --checkpoint /root/autodl-tmp/models/lightweight_vla_adapter/v10/model.pt \
   --language-model /root/autodl-tmp/models/modernbert-drive-command-compositional \
   --text "Keep the current lane." \
   --device cuda \
@@ -436,7 +471,7 @@ CARLA 捕获序列联调：
 python lightweight_vla_adapter/scripts/evaluate_carla_capture.py \
   --capture-index experiment/CARLA/outputs/runs/vla_domain_adaptation_v1/test/straight_driving/scene_understanding/capture_index.jsonl \
   --config lightweight_vla_adapter/configs/student_base.json \
-  --checkpoint /root/autodl-tmp/models/lightweight_vla_adapter/full_training_v7/model.pt \
+  --checkpoint /root/autodl-tmp/models/lightweight_vla_adapter/v10/model.pt \
   --language-model /root/autodl-tmp/models/modernbert-drive-command-compositional \
   --instruction "Keep the current lane." \
   --output output/carla_capture_eval.json \
