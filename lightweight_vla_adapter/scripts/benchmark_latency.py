@@ -26,6 +26,7 @@ def percentile(values: list[float], fraction: float) -> float:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Benchmark student adapter latency")
     parser.add_argument("--config", required=True)
+    parser.add_argument("--checkpoint")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--warmup", type=int, default=30)
     parser.add_argument("--runs", type=int, default=200)
@@ -50,7 +51,11 @@ def main() -> None:
         num_heads=config["num_heads"],
         dropout=0.0,
         bev_grid=tuple(config["bev_grid"]),
-    ).to(device=device, dtype=dtype).eval()
+    )
+    if args.checkpoint:
+        state = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
+        model.load_state_dict(state)
+    model.to(device=device, dtype=dtype).eval()
     inputs = {
         "camera_bev": torch.randn(
             1, config["camera_channels"], 64, 64, device=device, dtype=dtype
@@ -91,6 +96,8 @@ def main() -> None:
         "device": str(device),
         "precision": args.precision,
         "runs": args.runs,
+        "checkpoint": args.checkpoint,
+        "checkpoint_loaded": bool(args.checkpoint),
         "parameters": parameter_count,
         "latency_ms_mean": round(statistics.fmean(latencies), 4),
         "latency_ms_p50": round(percentile(latencies, 0.50), 4),

@@ -57,6 +57,7 @@ class AdapterOutput:
     target_speed_kmh: torch.Tensor
     target_lane_logits: torch.Tensor
     target_pointer_logits: torch.Tensor
+    confidence_logits: torch.Tensor
     confidence: torch.Tensor
     decision_embedding: torch.Tensor
 
@@ -154,13 +155,15 @@ class LightweightDecisionAdapter(nn.Module):
         target_pointer_logits = target_pointer_logits.masked_fill(
             ~candidate_mask, torch.finfo(target_pointer_logits.dtype).min
         )
+        confidence_logits = self.confidence_head(decision_token).squeeze(-1)
         return AdapterOutput(
             action_logits=self.action_head(decision_token),
             target_speed_kmh=torch.sigmoid(self.speed_head(decision_token)).squeeze(-1)
             * 100.0,
             target_lane_logits=self.lane_head(decision_token),
             target_pointer_logits=target_pointer_logits,
-            confidence=torch.sigmoid(self.confidence_head(decision_token)).squeeze(-1),
+            confidence_logits=confidence_logits,
+            confidence=torch.sigmoid(confidence_logits),
             decision_embedding=decision_token,
         )
 

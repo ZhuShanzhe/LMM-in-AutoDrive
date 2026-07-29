@@ -25,6 +25,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tensor-batch", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--precision",
+        choices=("fp32", "fp16", "bf16"),
+        default="fp16",
+    )
     return parser.parse_args()
 
 
@@ -64,6 +69,11 @@ def main() -> None:
         args.checkpoint,
         model_name=config["model_name"],
         device=args.device,
+        dtype={
+            "fp32": torch.float32,
+            "fp16": torch.float16,
+            "bf16": torch.bfloat16,
+        }[args.precision],
     )
     proposal, plan_state, control_decision = pipeline.decide(
         batch,

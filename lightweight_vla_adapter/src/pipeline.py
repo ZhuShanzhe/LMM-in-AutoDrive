@@ -17,10 +17,11 @@ class LightweightVLAPipeline:
         *,
         model_name: str = "lightweight-vla-adapter",
         device: str | torch.device = "cuda",
+        dtype: torch.dtype | None = None,
         checkpoint_loaded: bool = False,
     ) -> None:
         self.device = torch.device(device)
-        self.model = model.to(self.device).eval()
+        self.model = model.to(device=self.device, dtype=dtype).eval()
         self.model_name = model_name
         self.dtype = next(self.model.parameters()).dtype
         self.checkpoint_loaded = checkpoint_loaded
@@ -137,6 +138,7 @@ class LightweightVLAPipeline:
         *,
         model_name: str = "lightweight-vla-adapter",
         device: str | torch.device = "cuda",
+        dtype: torch.dtype | None = None,
     ) -> "LightweightVLAPipeline":
         state = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
         model.load_state_dict(state)
@@ -144,5 +146,6 @@ class LightweightVLAPipeline:
             model,
             model_name=model_name,
             device=device,
+            dtype=dtype,
             checkpoint_loaded=True,
         )

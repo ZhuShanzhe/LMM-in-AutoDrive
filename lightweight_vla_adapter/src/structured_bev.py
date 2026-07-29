@@ -50,6 +50,7 @@ class StructuredBEVRasterizer:
     def _relative_xyz(cls, entity: Mapping[str, Any]) -> tuple[float, float, float]:
         position = (
             entity.get("relative_position_m")
+            or entity.get("relative_position_ego_m")
             or entity.get("relative_position")
             or entity.get("position")
             or {}
@@ -62,9 +63,9 @@ class StructuredBEVRasterizer:
             )
         if isinstance(position, dict):
             return (
-                cls._number(position.get("x")),
-                cls._number(position.get("y")),
-                cls._number(position.get("z")),
+                cls._number(position.get("x", position.get("longitudinal"))),
+                cls._number(position.get("y", position.get("lateral"))),
+                cls._number(position.get("z", position.get("vertical"))),
             )
         distance = cls._number(entity.get("distance_m"))
         return distance, 0.0, 0.0
@@ -131,9 +132,22 @@ class StructuredBEVRasterizer:
             index = len(entity_ids)
             x, y, z = self._relative_xyz(entity)
             distance = math.sqrt(x * x + y * y + z * z)
-            velocity = entity.get("relative_velocity_mps") or entity.get("velocity") or {}
-            vx = self._number(velocity.get("x")) if isinstance(velocity, dict) else 0.0
-            vy = self._number(velocity.get("y")) if isinstance(velocity, dict) else 0.0
+            velocity = (
+                entity.get("relative_velocity_mps")
+                or entity.get("relative_velocity_ego_mps")
+                or entity.get("velocity")
+                or {}
+            )
+            vx = (
+                self._number(velocity.get("x", velocity.get("longitudinal")))
+                if isinstance(velocity, dict)
+                else 0.0
+            )
+            vy = (
+                self._number(velocity.get("y", velocity.get("lateral")))
+                if isinstance(velocity, dict)
+                else 0.0
+            )
             confidence = self._number(entity.get("confidence"), 1.0)
             lane_relation = str(entity.get("lane_relation") or "same").lower()
             vehicle, vru, static = self._kind(entity)
@@ -154,7 +168,13 @@ class StructuredBEVRasterizer:
                 ]
             )
             candidate_mask[0, index] = True
-            entity_ids.append(str(entity.get("entity_id") or f"candidate_{index}"))
+            entity_ids.append(
+                str(
+                    entity.get("entity_id")
+                    or entity.get("object_id")
+                    or f"candidate_{index}"
+                )
+            )
             cell = self._cell(x, y)
             if cell is None:
                 continue
@@ -189,7 +209,17 @@ class StructuredBEVRasterizer:
                     self._number(controls.get("throttle")),
                     self._number(controls.get("brake")),
                     self._number(ego.get("speed_limit_mps")),
-                    float(bool(environment.get("at_junction", False)))
+                    float(
+                        bool(
+                            environment.get(
+                                "at_junction",
+                                environment.get(
+                                    "is_intersection",
+                                    ego.get("is_junction", False),
+                                ),
+                            )
+                        )
+                    )
                     if isinstance(environment, dict)
                     else 0.0,
                 ]

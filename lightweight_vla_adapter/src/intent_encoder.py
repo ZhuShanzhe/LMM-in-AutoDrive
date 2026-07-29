@@ -14,16 +14,21 @@ class ModernBertIntentEncoder(nn.Module):
         self,
         backbone: nn.Module,
         input_hidden_size: int,
-        output_hidden_size: int = 256,
+        output_hidden_size: int | None = None,
         *,
         freeze_backbone: bool = True,
     ) -> None:
         super().__init__()
         self.backbone = backbone
-        self.projection = nn.Sequential(
-            nn.Linear(input_hidden_size, output_hidden_size),
-            nn.LayerNorm(output_hidden_size),
-        )
+        if output_hidden_size is None or output_hidden_size == input_hidden_size:
+            self.projection = nn.Identity()
+            self.output_hidden_size = int(input_hidden_size)
+        else:
+            self.projection = nn.Sequential(
+                nn.Linear(input_hidden_size, output_hidden_size),
+                nn.LayerNorm(output_hidden_size),
+            )
+            self.output_hidden_size = int(output_hidden_size)
         self.freeze_backbone = bool(freeze_backbone)
         if self.freeze_backbone:
             for parameter in self.backbone.parameters():
@@ -34,7 +39,7 @@ class ModernBertIntentEncoder(nn.Module):
         cls,
         model_path: str | Path,
         *,
-        output_hidden_size: int = 256,
+        output_hidden_size: int | None = None,
         freeze_backbone: bool = True,
         attn_implementation: str = "sdpa",
         dtype: torch.dtype | None = None,
