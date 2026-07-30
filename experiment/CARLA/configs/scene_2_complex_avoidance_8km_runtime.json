@@ -1,0 +1,245 @@
+{
+  "schema_version": "scene_2_complex_runtime/v1",
+  "scene_id": "scene_2_complex_avoidance_8km",
+  "competition_stage": "advanced",
+  "design_status": "runtime",
+  "route": {
+    "length_m": 8000.0,
+    "start_road_id": 1,
+    "start_lane_id": -1,
+    "start_s_m": 150.0,
+    "finish_s_m": 7900.0,
+    "speed_limit_kmh": 50.0,
+    "legal_lane_ids": [-1, -2]
+  },
+  "weather": {
+    "preset": "cloudy-evening",
+    "cloudiness": 80.0,
+    "sun_azimuth_angle": 280.0,
+    "sun_altitude_angle": 5.0,
+    "fog_density": 20.0,
+    "fog_distance": 200.0,
+    "wetness": 10.0
+  },
+  "traffic": {
+    "private_cars": 24,
+    "city_buses": 3,
+    "bicycles": 6,
+    "sidewalk_pedestrians": 18,
+    "seed": 2026
+  },
+  "sensors": {
+    "required": [
+      "front_rgb",
+      "left_rgb",
+      "right_rgb",
+      "rear_rgb",
+      "lidar",
+      "vehicle_state",
+      "collision",
+      "lane_invasion"
+    ],
+    "presentation_camera": "chase_rgb",
+    "presentation_view": {
+      "x": -10.0,
+      "y": 0.0,
+      "z": 3.0,
+      "pitch": -8.0,
+      "yaw": 0.0,
+      "roll": 0.0,
+      "attachment_type": "Rigid"
+    }
+  },
+  "segments": [
+    {"id": "S2-01", "range_m": [0, 1100], "purpose": "pedestrian yield and slow-vehicle overtake"},
+    {"id": "S2-02", "range_m": [1100, 2300], "purpose": "bus-stop passenger interaction"},
+    {"id": "S2-03", "range_m": [2300, 3600], "purpose": "left turn and lane selection"},
+    {"id": "S2-04", "range_m": [3600, 5200], "purpose": "cyclist avoidance and conditional overtaking"},
+    {"id": "S2-05", "range_m": [5200, 6800], "purpose": "signalized-junction speed control"},
+    {"id": "S2-06", "range_m": [6800, 8000], "purpose": "legal U-turn and route completion"}
+  ],
+  "voice_commands": [
+    {
+      "id": "s2_cmd_01_straight_through_45",
+      "announce_at_m": 0,
+      "spoken_text": "保持当前车道，减速至45公里每小时，通过前方路口后继续直行。",
+      "category": "NAVIGATION",
+      "urgency": "NORMAL",
+      "steps": ["KEEP_LANE", "SET_SPEED:12.50mps", "PROCEED:STRAIGHT_THROUGH_JUNCTION"]
+    },
+    {
+      "id": "s2_cmd_09_junction_resume_right",
+      "announce_at_m": 350,
+      "spoken_text": "通过路口后保持右侧车道，并恢复到50公里每小时。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": ["PROCEED:STRAIGHT_THROUGH_JUNCTION", "KEEP_LANE:RIGHT", "SET_SPEED:13.89mps"]
+    },
+    {
+      "id": "s2_cmd_02_yield_pedestrian_overtake_slow_car",
+      "announce_at_m": 760,
+      "spoken_text": "看到前方横穿马路的行人，减速避让后向左变道超越慢车。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "URGENT",
+      "steps": ["YIELD:PEDESTRIAN", "SET_SPEED:6.94mps", "CHANGE_LANE:LEFT_WHEN_SAFE", "OVERTAKE:SLOW_VEHICLE"]
+    },
+    {
+      "id": "s2_cmd_10_pedestrian_clear_return",
+      "announce_at_m": 1200,
+      "spoken_text": "确认行人离开后安全返回原车道，并恢复到45公里每小时。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": ["WAIT:PEDESTRIAN_CLEAR", "CHANGE_LANE:RETURN_WHEN_SAFE", "SET_SPEED:12.50mps"]
+    },
+    {
+      "id": "s2_cmd_03_bus_stop_passengers",
+      "announce_at_m": 1650,
+      "spoken_text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续行驶。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": ["PULL_OVER:RIGHT", "SET_SPEED:8.33mps", "WAIT:PASSENGERS_CLEAR", "PROCEED"]
+    },
+    {
+      "id": "s2_cmd_11_bus_stop_follow",
+      "announce_at_m": 2150,
+      "spoken_text": "等待乘客离开车道，确认道路安全后保持右侧车道继续行驶。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": ["WAIT:PASSENGERS_CLEAR", "CHECK:PATH_CLEAR", "KEEP_LANE:RIGHT", "PROCEED"]
+    },
+    {
+      "id": "s2_cmd_04_left_turn_second_lane",
+      "announce_at_m": 2750,
+      "spoken_text": "前方十字路口左转，进入左侧第二车道并保持40公里每小时。",
+      "category": "NAVIGATION",
+      "urgency": "NORMAL",
+      "steps": ["TURN:LEFT", "CHANGE_LANE:LEFT_LANE_INDEX_2", "SET_SPEED:11.11mps"]
+    },
+    {
+      "id": "s2_cmd_12_left_turn_stabilize",
+      "announce_at_m": 3400,
+      "spoken_text": "完成左转后保持第二车道，确认前方安全并恢复到45公里每小时。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": ["TURN:LEFT", "KEEP_LANE:LEFT_LANE_INDEX_2", "CHECK:PATH_CLEAR", "SET_SPEED:12.50mps"]
+    },
+    {
+      "id": "s2_cmd_05_pass_cyclist_return_right",
+      "announce_at_m": 3850,
+      "spoken_text": "右侧有自行车，减速并向左避让，超过后回到右侧车道。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": ["ADJUST_SPEED:DECREASE", "CHANGE_LANE:LEFT_WHEN_SAFE", "PASS_BY:CYCLIST", "CHANGE_LANE:RIGHT_WHEN_SAFE"]
+    },
+    {
+      "id": "s2_cmd_13_cyclist_safe_pass",
+      "announce_at_m": 4450,
+      "spoken_text": "降低车速，确认左侧安全后变道，超过自行车并保持左侧车道。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": ["ADJUST_SPEED:DECREASE", "CHECK:LEFT_LANE_SAFE", "CHANGE_LANE:LEFT", "PASS_BY:CYCLIST", "KEEP_LANE:LEFT"]
+    },
+    {
+      "id": "s2_cmd_06_overtake_slow_vehicle",
+      "announce_at_m": 5050,
+      "spoken_text": "前方慢车，确认左侧安全后变道超越，超过后回到原车道。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": ["CHANGE_LANE:LEFT_WHEN_SAFE", "PASS_BY:SLOW_VEHICLE", "CHANGE_LANE:RETURN_TO_ORIGINAL_WHEN_SAFE"]
+    },
+    {
+      "id": "s2_cmd_14_slow_vehicle_follow",
+      "announce_at_m": 5750,
+      "spoken_text": "先与慢车保持安全距离，左侧出现安全间隙后超越并返回原车道。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": ["FOLLOW:SLOW_VEHICLE", "KEEP_SAFE_DISTANCE", "CHANGE_LANE:LEFT_WHEN_SAFE", "PASS_BY:SLOW_VEHICLE", "CHANGE_LANE:RETURN_WHEN_SAFE"]
+    },
+    {
+      "id": "s2_cmd_07_right_turn_speed_30",
+      "announce_at_m": 6450,
+      "spoken_text": "前方路口右转前减速至30公里每小时，右转后保持当前车道继续行驶。",
+      "category": "NAVIGATION",
+      "urgency": "NORMAL",
+      "steps": ["SET_SPEED:8.33mps", "TURN:RIGHT", "KEEP_LANE", "PROCEED"]
+    },
+    {
+      "id": "s2_cmd_15_right_turn_exit",
+      "announce_at_m": 6850,
+      "spoken_text": "减速至30公里每小时，礼让横道行人后右转并保持当前车道。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": ["SET_SPEED:8.33mps", "YIELD:PEDESTRIAN", "TURN:RIGHT", "KEEP_LANE"]
+    },
+    {
+      "id": "s2_cmd_08_legal_u_turn",
+      "announce_at_m": 7250,
+      "spoken_text": "在前方允许掉头处减速，确认对向车流安全后掉头驶向终点。",
+      "category": "NAVIGATION",
+      "urgency": "NORMAL",
+      "steps": ["ADJUST_SPEED:DECREASE", "YIELD:ONCOMING_TRAFFIC", "U_TURN:LEGAL_MEDIAN_OPENING", "PROCEED"]
+    }
+  ],
+  "events": [
+    {
+      "id": "s2_evt_crosswalk_pedestrian",
+      "activate_at_m": 760,
+      "resolve_at_m": 1250,
+      "actors": ["crossing_pedestrian", "slow_vehicle"],
+      "completion": "pedestrian_clear_then_safe_overtake"
+    },
+    {
+      "id": "s2_evt_bus_stop_alighting",
+      "activate_at_m": 1600,
+      "resolve_at_m": 2200,
+      "actors": ["city_bus", "alighting_pedestrian_1", "alighting_pedestrian_2", "boarding_pedestrian", "bus_stop_sign"],
+      "completion": "passengers_clear"
+    },
+    {
+      "id": "s2_evt_left_turn_signal",
+      "activate_at_m": 2700,
+      "resolve_at_m": 3500,
+      "actors": ["traffic_light", "oncoming_traffic"],
+      "completion": "junction_exited"
+    },
+    {
+      "id": "s2_evt_cyclist_pass",
+      "activate_at_m": 3800,
+      "resolve_at_m": 4550,
+      "actors": ["cyclist"],
+      "completion": "cyclist_cleared"
+    },
+    {
+      "id": "s2_evt_overtake_gap",
+      "activate_at_m": 5000,
+      "resolve_at_m": 5850,
+      "actors": ["slow_vehicle", "left_lane_trailing_vehicle"],
+      "completion": "returned_to_original_lane"
+    },
+    {
+      "id": "s2_evt_final_u_turn",
+      "activate_at_m": 6800,
+      "resolve_at_m": 7900,
+      "actors": ["u_turn_signal", "cross_traffic"],
+      "completion": "route_completed"
+    }
+  ],
+  "interfaces": {
+    "driving_intent_schema": "DrivingIntent/1.2.0",
+    "world_state_schema": "WorldState/1.0.0",
+    "multimodal_bundle_schema": "MultimodalFrameBundle/1.0.0",
+    "vla_proposal_schema": "VlaActionProposal/1.0.0",
+    "control_decision_schema": "ControlDecision/1.0.0",
+    "simulation_frame_is_sync_key": true,
+    "allow_adjacent_frame_fill": false
+  },
+  "acceptance": {
+    "route_completed": true,
+    "collision_count_equals": 0,
+    "violation_count_at_most": 1,
+    "all_command_steps_completed": true,
+    "asr_accuracy_min": 0.96,
+    "semantic_alignment_accuracy_min": 0.985,
+    "ordered_step_omissions": 0
+  }
+}

@@ -1,0 +1,628 @@
+<?xml version="1.0" standalone="yes"?>
+<OpenDRIVE>
+  <header revMajor="1" revMinor="4" name="VLA_ComplexRoad_8km" version="1.0" date="2026-07-28" north="0.000000" south="0.000000" east="8000" west="0.000000">
+    <geoReference/>
+  </header>
+
+  <!-- 主道路 -->
+  <road name="VLA_ComplexRoad_8km" length="8000" id="1" junction="-1">
+    <type s="0.000000" type="town">
+      <speed max="16.670000" unit="m/s"/>
+    </type>
+    <planView>
+      <geometry s="0.000000" x="0.000000" y="0.000000" hdg="0.000000" length="8000">
+        <line/>
+      </geometry>
+    </planView>
+    <lanes>
+      <laneSection s="0.000000">
+        <center>
+          <lane id="0" type="none">
+            <roadMark sOffset="0.000000" type="solid" weight="standard" color="standard" width="0.150000"/>
+          </lane>
+        </center>
+        <left>
+
+          <lane id="2" type="driving" level="false">
+            <width sOffset="0.000000" a="3.5" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="solid" weight="standard" color="standard" width="0.150000"/>
+            <speed max="16.670000" unit="m/s"/>
+          </lane>
+          <lane id="1" type="driving" level="false">
+            <width sOffset="0.000000" a="3.5" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="broken" weight="standard" color="standard" width="0.150000"/>
+            <speed max="16.670000" unit="m/s"/>
+          </lane>
+          <lane id="3" type="biking" level="false">
+            <width sOffset="0.000000" a="1.8" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="solid" weight="standard" color="standard" width="0.150000"/>
+          </lane>
+          <lane id="4" type="shoulder" level="false">
+            <width sOffset="0.000000" a="0.5" b="0.000000" c="0.000000" d="0.000000"/>
+          </lane>
+          <lane id="5" type="sidewalk" level="false">
+            <width sOffset="0.000000" a="2.0" b="0.000000" c="0.000000" d="0.000000"/>
+          </lane>
+        </left>
+        <right>
+
+          <lane id="-1" type="driving" level="false">
+            <width sOffset="0.000000" a="3.5" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="broken" weight="standard" color="standard" width="0.150000"/>
+            <speed max="16.670000" unit="m/s"/>
+          </lane>
+          <lane id="-2" type="driving" level="false">
+            <width sOffset="0.000000" a="3.5" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="solid" weight="standard" color="standard" width="0.150000"/>
+            <speed max="16.670000" unit="m/s"/>
+          </lane>
+          <lane id="-3" type="biking" level="false">
+            <width sOffset="0.000000" a="1.8" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="solid" weight="standard" color="standard" width="0.150000"/>
+          </lane>
+          <lane id="-4" type="shoulder" level="false">
+            <width sOffset="0.000000" a="0.5" b="0.000000" c="0.000000" d="0.000000"/>
+          </lane>
+          <lane id="-5" type="sidewalk" level="false">
+            <width sOffset="0.000000" a="2.0" b="0.000000" c="0.000000" d="0.000000"/>
+          </lane>
+        </right>
+      </laneSection>
+    </lanes>
+    <objects>
+      <!-- 交叉口 -->
+      <object id="scene2_obj_0001" name="intersection" type="junction" s="3000" t="0.000000" length="80" width="80" height="0.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+
+      <!-- 公交站 -->
+      <object id="scene2_obj_0002" name="bus_station" type="busStop" s="1770" t="-8.000000" length="40" width="3" height="0.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+
+      <!-- 公交站候车亭 -->
+      <object id="scene2_obj_0003" name="bus_shelter" type="building" s="1775" t="-10.000000" length="4.000000" width="2.000000" height="2.500000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+
+      <!-- 路灯 (每100米) -->
+
+      <object id="scene2_obj_0004" name="street_light" type="pole" s="100" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0005" name="street_light" type="pole" s="100" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0006" name="street_light" type="pole" s="200" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0007" name="street_light" type="pole" s="200" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0008" name="street_light" type="pole" s="300" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0009" name="street_light" type="pole" s="300" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0010" name="street_light" type="pole" s="400" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0011" name="street_light" type="pole" s="400" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0012" name="street_light" type="pole" s="500" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0013" name="street_light" type="pole" s="500" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0014" name="street_light" type="pole" s="600" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0015" name="street_light" type="pole" s="600" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0016" name="street_light" type="pole" s="700" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0017" name="street_light" type="pole" s="700" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0018" name="street_light" type="pole" s="800" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0019" name="street_light" type="pole" s="800" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0020" name="street_light" type="pole" s="900" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0021" name="street_light" type="pole" s="900" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0022" name="street_light" type="pole" s="1000" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0023" name="street_light" type="pole" s="1000" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0024" name="street_light" type="pole" s="1100" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0025" name="street_light" type="pole" s="1100" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0026" name="street_light" type="pole" s="1200" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0027" name="street_light" type="pole" s="1200" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0028" name="street_light" type="pole" s="1300" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0029" name="street_light" type="pole" s="1300" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0030" name="street_light" type="pole" s="1400" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0031" name="street_light" type="pole" s="1400" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0032" name="street_light" type="pole" s="1500" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0033" name="street_light" type="pole" s="1500" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0034" name="street_light" type="pole" s="1600" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0035" name="street_light" type="pole" s="1600" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0036" name="street_light" type="pole" s="1700" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0037" name="street_light" type="pole" s="1700" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0038" name="street_light" type="pole" s="1800" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0039" name="street_light" type="pole" s="1800" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0040" name="street_light" type="pole" s="1900" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0041" name="street_light" type="pole" s="1900" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0042" name="street_light" type="pole" s="2000" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0043" name="street_light" type="pole" s="2000" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0044" name="street_light" type="pole" s="2100" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0045" name="street_light" type="pole" s="2100" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0046" name="street_light" type="pole" s="2200" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0047" name="street_light" type="pole" s="2200" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0048" name="street_light" type="pole" s="2300" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0049" name="street_light" type="pole" s="2300" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0050" name="street_light" type="pole" s="2400" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0051" name="street_light" type="pole" s="2400" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0052" name="street_light" type="pole" s="2500" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0053" name="street_light" type="pole" s="2500" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0054" name="street_light" type="pole" s="2600" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0055" name="street_light" type="pole" s="2600" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0056" name="street_light" type="pole" s="2700" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0057" name="street_light" type="pole" s="2700" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0058" name="street_light" type="pole" s="2800" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0059" name="street_light" type="pole" s="2800" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0060" name="street_light" type="pole" s="2900" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0061" name="street_light" type="pole" s="2900" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0062" name="street_light" type="pole" s="3100" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0063" name="street_light" type="pole" s="3100" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0064" name="street_light" type="pole" s="3200" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0065" name="street_light" type="pole" s="3200" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0066" name="street_light" type="pole" s="3300" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0067" name="street_light" type="pole" s="3300" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0068" name="street_light" type="pole" s="3400" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0069" name="street_light" type="pole" s="3400" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0070" name="street_light" type="pole" s="3500" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0071" name="street_light" type="pole" s="3500" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0072" name="street_light" type="pole" s="3600" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0073" name="street_light" type="pole" s="3600" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0074" name="street_light" type="pole" s="3700" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0075" name="street_light" type="pole" s="3700" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0076" name="street_light" type="pole" s="3800" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0077" name="street_light" type="pole" s="3800" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0078" name="street_light" type="pole" s="3900" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0079" name="street_light" type="pole" s="3900" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0080" name="street_light" type="pole" s="4000" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0081" name="street_light" type="pole" s="4000" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0082" name="street_light" type="pole" s="4100" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0083" name="street_light" type="pole" s="4100" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0084" name="street_light" type="pole" s="4200" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0085" name="street_light" type="pole" s="4200" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0086" name="street_light" type="pole" s="4300" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0087" name="street_light" type="pole" s="4300" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0088" name="street_light" type="pole" s="4400" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0089" name="street_light" type="pole" s="4400" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0090" name="street_light" type="pole" s="4600" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0091" name="street_light" type="pole" s="4600" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0092" name="street_light" type="pole" s="4700" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0093" name="street_light" type="pole" s="4700" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0094" name="street_light" type="pole" s="4800" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0095" name="street_light" type="pole" s="4800" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0096" name="street_light" type="pole" s="4900" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0097" name="street_light" type="pole" s="4900" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0098" name="street_light" type="pole" s="5000" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0099" name="street_light" type="pole" s="5000" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0100" name="street_light" type="pole" s="5100" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0101" name="street_light" type="pole" s="5100" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0102" name="street_light" type="pole" s="5200" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0103" name="street_light" type="pole" s="5200" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0104" name="street_light" type="pole" s="5300" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0105" name="street_light" type="pole" s="5300" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0106" name="street_light" type="pole" s="5400" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0107" name="street_light" type="pole" s="5400" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0108" name="street_light" type="pole" s="5500" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0109" name="street_light" type="pole" s="5500" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0110" name="street_light" type="pole" s="5600" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0111" name="street_light" type="pole" s="5600" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0112" name="street_light" type="pole" s="5700" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0113" name="street_light" type="pole" s="5700" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0114" name="street_light" type="pole" s="5800" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0115" name="street_light" type="pole" s="5800" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0116" name="street_light" type="pole" s="5900" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0117" name="street_light" type="pole" s="5900" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0118" name="street_light" type="pole" s="6000" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0119" name="street_light" type="pole" s="6000" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0120" name="street_light" type="pole" s="6100" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0121" name="street_light" type="pole" s="6100" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0122" name="street_light" type="pole" s="6200" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0123" name="street_light" type="pole" s="6200" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0124" name="street_light" type="pole" s="6300" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0125" name="street_light" type="pole" s="6300" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0126" name="street_light" type="pole" s="6400" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0127" name="street_light" type="pole" s="6400" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0128" name="street_light" type="pole" s="6500" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0129" name="street_light" type="pole" s="6500" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0130" name="street_light" type="pole" s="6600" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0131" name="street_light" type="pole" s="6600" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0132" name="street_light" type="pole" s="6700" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0133" name="street_light" type="pole" s="6700" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0134" name="street_light" type="pole" s="6800" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0135" name="street_light" type="pole" s="6800" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0136" name="street_light" type="pole" s="6900" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0137" name="street_light" type="pole" s="6900" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0138" name="street_light" type="pole" s="7000" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0139" name="street_light" type="pole" s="7000" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0140" name="street_light" type="pole" s="7100" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0141" name="street_light" type="pole" s="7100" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0142" name="street_light" type="pole" s="7200" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0143" name="street_light" type="pole" s="7200" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0144" name="street_light" type="pole" s="7300" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0145" name="street_light" type="pole" s="7300" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0146" name="street_light" type="pole" s="7400" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0147" name="street_light" type="pole" s="7400" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0148" name="street_light" type="pole" s="7500" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0149" name="street_light" type="pole" s="7500" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0150" name="street_light" type="pole" s="7600" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0151" name="street_light" type="pole" s="7600" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0152" name="street_light" type="pole" s="7700" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0153" name="street_light" type="pole" s="7700" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0154" name="street_light" type="pole" s="7800" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0155" name="street_light" type="pole" s="7800" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0156" name="street_light" type="pole" s="7900" t="12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0157" name="street_light" type="pole" s="7900" t="-12.5" length="0.200000" width="0.200000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+
+      <!-- 树木 -->
+
+      <object id="scene2_obj_0158" name="tree" type="tree" s="50" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0159" name="tree" type="tree" s="100" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0160" name="tree" type="tree" s="150" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0161" name="tree" type="tree" s="200" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0162" name="tree" type="tree" s="250" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0163" name="tree" type="tree" s="300" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0164" name="tree" type="tree" s="350" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0165" name="tree" type="tree" s="400" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0166" name="tree" type="tree" s="450" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0167" name="tree" type="tree" s="500" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0168" name="tree" type="tree" s="550" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0169" name="tree" type="tree" s="600" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0170" name="tree" type="tree" s="650" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0171" name="tree" type="tree" s="700" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0172" name="tree" type="tree" s="750" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0173" name="tree" type="tree" s="800" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0174" name="tree" type="tree" s="850" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0175" name="tree" type="tree" s="900" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0176" name="tree" type="tree" s="950" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0177" name="tree" type="tree" s="1000" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0178" name="tree" type="tree" s="1050" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0179" name="tree" type="tree" s="1100" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0180" name="tree" type="tree" s="1150" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0181" name="tree" type="tree" s="1200" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0182" name="tree" type="tree" s="1250" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0183" name="tree" type="tree" s="1300" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0184" name="tree" type="tree" s="1350" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0185" name="tree" type="tree" s="1400" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0186" name="tree" type="tree" s="1450" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0187" name="tree" type="tree" s="1500" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0188" name="tree" type="tree" s="1550" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0189" name="tree" type="tree" s="1600" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0190" name="tree" type="tree" s="1650" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0191" name="tree" type="tree" s="1700" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0192" name="tree" type="tree" s="1750" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0193" name="tree" type="tree" s="1800" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0194" name="tree" type="tree" s="1850" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0195" name="tree" type="tree" s="1900" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0196" name="tree" type="tree" s="1950" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0197" name="tree" type="tree" s="2000" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0198" name="tree" type="tree" s="2050" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0199" name="tree" type="tree" s="2100" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0200" name="tree" type="tree" s="2150" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0201" name="tree" type="tree" s="2200" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0202" name="tree" type="tree" s="2250" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0203" name="tree" type="tree" s="2300" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0204" name="tree" type="tree" s="2350" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0205" name="tree" type="tree" s="2400" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0206" name="tree" type="tree" s="2450" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0207" name="tree" type="tree" s="2500" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0208" name="tree" type="tree" s="2550" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0209" name="tree" type="tree" s="2600" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0210" name="tree" type="tree" s="2650" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0211" name="tree" type="tree" s="2700" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0212" name="tree" type="tree" s="2750" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0213" name="tree" type="tree" s="2800" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0214" name="tree" type="tree" s="2850" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0215" name="tree" type="tree" s="2900" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0216" name="tree" type="tree" s="3100" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0217" name="tree" type="tree" s="3150" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0218" name="tree" type="tree" s="3200" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0219" name="tree" type="tree" s="3250" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0220" name="tree" type="tree" s="3300" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0221" name="tree" type="tree" s="3350" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0222" name="tree" type="tree" s="3400" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0223" name="tree" type="tree" s="3450" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0224" name="tree" type="tree" s="3500" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0225" name="tree" type="tree" s="3550" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0226" name="tree" type="tree" s="3600" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0227" name="tree" type="tree" s="3650" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0228" name="tree" type="tree" s="3700" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0229" name="tree" type="tree" s="3750" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0230" name="tree" type="tree" s="3800" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0231" name="tree" type="tree" s="3850" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0232" name="tree" type="tree" s="3900" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0233" name="tree" type="tree" s="3950" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0234" name="tree" type="tree" s="4000" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0235" name="tree" type="tree" s="4050" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0236" name="tree" type="tree" s="4100" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0237" name="tree" type="tree" s="4150" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0238" name="tree" type="tree" s="4200" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0239" name="tree" type="tree" s="4250" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0240" name="tree" type="tree" s="4300" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0241" name="tree" type="tree" s="4350" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0242" name="tree" type="tree" s="4400" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0243" name="tree" type="tree" s="4450" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0244" name="tree" type="tree" s="4550" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0245" name="tree" type="tree" s="4600" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0246" name="tree" type="tree" s="4650" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0247" name="tree" type="tree" s="4700" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0248" name="tree" type="tree" s="4750" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0249" name="tree" type="tree" s="4800" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0250" name="tree" type="tree" s="4850" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0251" name="tree" type="tree" s="4900" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0252" name="tree" type="tree" s="4950" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0253" name="tree" type="tree" s="5000" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0254" name="tree" type="tree" s="5050" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0255" name="tree" type="tree" s="5100" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0256" name="tree" type="tree" s="5150" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0257" name="tree" type="tree" s="5200" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0258" name="tree" type="tree" s="5250" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0259" name="tree" type="tree" s="5300" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0260" name="tree" type="tree" s="5350" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0261" name="tree" type="tree" s="5400" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0262" name="tree" type="tree" s="5450" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0263" name="tree" type="tree" s="5500" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0264" name="tree" type="tree" s="5550" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0265" name="tree" type="tree" s="5600" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0266" name="tree" type="tree" s="5650" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0267" name="tree" type="tree" s="5700" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0268" name="tree" type="tree" s="5750" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0269" name="tree" type="tree" s="5800" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0270" name="tree" type="tree" s="5850" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0271" name="tree" type="tree" s="5900" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0272" name="tree" type="tree" s="5950" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0273" name="tree" type="tree" s="6000" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0274" name="tree" type="tree" s="6050" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0275" name="tree" type="tree" s="6100" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0276" name="tree" type="tree" s="6150" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0277" name="tree" type="tree" s="6200" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0278" name="tree" type="tree" s="6250" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0279" name="tree" type="tree" s="6300" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0280" name="tree" type="tree" s="6350" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0281" name="tree" type="tree" s="6400" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0282" name="tree" type="tree" s="6450" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0283" name="tree" type="tree" s="6500" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0284" name="tree" type="tree" s="6550" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0285" name="tree" type="tree" s="6600" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0286" name="tree" type="tree" s="6650" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0287" name="tree" type="tree" s="6700" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0288" name="tree" type="tree" s="6750" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0289" name="tree" type="tree" s="6800" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0290" name="tree" type="tree" s="6850" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0291" name="tree" type="tree" s="6900" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0292" name="tree" type="tree" s="6950" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0293" name="tree" type="tree" s="7000" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0294" name="tree" type="tree" s="7050" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0295" name="tree" type="tree" s="7100" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0296" name="tree" type="tree" s="7150" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0297" name="tree" type="tree" s="7200" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0298" name="tree" type="tree" s="7250" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0299" name="tree" type="tree" s="7300" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0300" name="tree" type="tree" s="7350" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0301" name="tree" type="tree" s="7400" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0302" name="tree" type="tree" s="7450" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0303" name="tree" type="tree" s="7500" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0304" name="tree" type="tree" s="7550" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0305" name="tree" type="tree" s="7600" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0306" name="tree" type="tree" s="7650" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0307" name="tree" type="tree" s="7700" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0308" name="tree" type="tree" s="7750" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0309" name="tree" type="tree" s="7800" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0310" name="tree" type="tree" s="7850" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0311" name="tree" type="tree" s="7900" t="-18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0312" name="tree" type="tree" s="7950" t="18" length="3.000000" width="3.000000" height="6.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+
+      <!-- 建筑物 -->
+
+      <object id="scene2_obj_0313" name="building" type="building" s="200" t="25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0314" name="building" type="building" s="200" t="-25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0315" name="building" type="building" s="400" t="25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0316" name="building" type="building" s="400" t="-25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0317" name="building" type="building" s="600" t="25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0318" name="building" type="building" s="600" t="-25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0319" name="building" type="building" s="800" t="25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0320" name="building" type="building" s="800" t="-25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0321" name="building" type="building" s="1000" t="25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0322" name="building" type="building" s="1000" t="-25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0323" name="building" type="building" s="1200" t="25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0324" name="building" type="building" s="1200" t="-25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0325" name="building" type="building" s="1400" t="25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0326" name="building" type="building" s="1400" t="-25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0327" name="building" type="building" s="1600" t="25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0328" name="building" type="building" s="1600" t="-25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0329" name="building" type="building" s="1800" t="25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0330" name="building" type="building" s="1800" t="-25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0331" name="building" type="building" s="2000" t="25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0332" name="building" type="building" s="2000" t="-25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0333" name="building" type="building" s="2200" t="25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0334" name="building" type="building" s="2200" t="-25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0335" name="building" type="building" s="2400" t="25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0336" name="building" type="building" s="2400" t="-25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0337" name="building" type="building" s="2600" t="25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0338" name="building" type="building" s="2600" t="-25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0339" name="building" type="building" s="2800" t="25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0340" name="building" type="building" s="2800" t="-25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0341" name="building" type="building" s="3200" t="25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0342" name="building" type="building" s="3200" t="-25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0343" name="building" type="building" s="3400" t="25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0344" name="building" type="building" s="3400" t="-25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0345" name="building" type="building" s="3600" t="25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0346" name="building" type="building" s="3600" t="-25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0347" name="building" type="building" s="3800" t="25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0348" name="building" type="building" s="3800" t="-25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0349" name="building" type="building" s="4000" t="25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0350" name="building" type="building" s="4000" t="-25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0351" name="building" type="building" s="4200" t="25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0352" name="building" type="building" s="4200" t="-25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0353" name="building" type="building" s="4400" t="25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0354" name="building" type="building" s="4400" t="-25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0355" name="building" type="building" s="4600" t="25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0356" name="building" type="building" s="4600" t="-25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0357" name="building" type="building" s="4800" t="25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0358" name="building" type="building" s="4800" t="-25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0359" name="building" type="building" s="5000" t="25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0360" name="building" type="building" s="5000" t="-25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0361" name="building" type="building" s="5200" t="25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0362" name="building" type="building" s="5200" t="-25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0363" name="building" type="building" s="5400" t="25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0364" name="building" type="building" s="5400" t="-25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0365" name="building" type="building" s="5600" t="25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0366" name="building" type="building" s="5600" t="-25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0367" name="building" type="building" s="5800" t="25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0368" name="building" type="building" s="5800" t="-25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0369" name="building" type="building" s="6000" t="25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0370" name="building" type="building" s="6000" t="-25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0371" name="building" type="building" s="6200" t="25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0372" name="building" type="building" s="6200" t="-25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0373" name="building" type="building" s="6400" t="25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0374" name="building" type="building" s="6400" t="-25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0375" name="building" type="building" s="6600" t="25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0376" name="building" type="building" s="6600" t="-25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0377" name="building" type="building" s="6800" t="25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0378" name="building" type="building" s="6800" t="-25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0379" name="building" type="building" s="7000" t="25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0380" name="building" type="building" s="7000" t="-25" length="30.000000" width="15.000000" height="28" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0381" name="building" type="building" s="7200" t="25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0382" name="building" type="building" s="7200" t="-25" length="30.000000" width="15.000000" height="12" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0383" name="building" type="building" s="7400" t="25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0384" name="building" type="building" s="7400" t="-25" length="30.000000" width="15.000000" height="16" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0385" name="building" type="building" s="7600" t="25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0386" name="building" type="building" s="7600" t="-25" length="30.000000" width="15.000000" height="20" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0387" name="building" type="building" s="7800" t="25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0388" name="building" type="building" s="7800" t="-25" length="30.000000" width="15.000000" height="24" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+
+      <!-- 交通标志 -->
+
+      <object id="scene2_obj_0389" name="traffic_sign" type="sign" s="500" t="14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0390" name="traffic_sign" type="sign" s="500" t="-14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0391" name="traffic_sign" type="sign" s="1500" t="14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0392" name="traffic_sign" type="sign" s="1500" t="-14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0393" name="traffic_sign" type="sign" s="2500" t="14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0394" name="traffic_sign" type="sign" s="2500" t="-14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0395" name="traffic_sign" type="sign" s="3500" t="14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0396" name="traffic_sign" type="sign" s="3500" t="-14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0397" name="traffic_sign" type="sign" s="4500" t="14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0398" name="traffic_sign" type="sign" s="4500" t="-14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0399" name="traffic_sign" type="sign" s="5500" t="14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0400" name="traffic_sign" type="sign" s="5500" t="-14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0401" name="traffic_sign" type="sign" s="6500" t="14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0402" name="traffic_sign" type="sign" s="6500" t="-14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0403" name="traffic_sign" type="sign" s="7500" t="14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0404" name="traffic_sign" type="sign" s="7500" t="-14" length="0.800000" width="0.800000" height="1.200000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+
+      <!-- 交通信号灯 -->
+
+      <object id="scene2_obj_0405" name="traffic_light" type="trafficLight" s="2980" t="14" length="0.500000" width="0.300000" height="2.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0406" name="traffic_light" type="trafficLight" s="2980" t="-14" length="0.500000" width="0.300000" height="2.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0407" name="traffic_light" type="trafficLight" s="3020" t="14" length="0.500000" width="0.300000" height="2.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0408" name="traffic_light" type="trafficLight" s="3020" t="-14" length="0.500000" width="0.300000" height="2.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0409" name="traffic_light" type="trafficLight" s="3000" t="20" length="0.500000" width="0.300000" height="2.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+      <object id="scene2_obj_0410" name="traffic_light" type="trafficLight" s="3000" t="-20" length="0.500000" width="0.300000" height="2.000000" hdg="0.000000" pitch="0.000000" roll="0.000000"/>
+    </objects>
+  </road>
+
+
+  <!-- 交叉口北向道路 -->
+  <road name="intersection_north" length="80" id="101" junction="100">
+    <link>
+      <predecessor elementType="road" elementId="1" contactPoint="start"/>
+      <successor elementType="road" elementId="1" contactPoint="end"/>
+    </link>
+    <type s="0.000000" type="town"/>
+    <planView>
+      <geometry s="0.000000" x="0.000000" y="0.000000" hdg="0.000000" length="80">
+        <line/>
+      </geometry>
+    </planView>
+    <lanes>
+      <laneSection s="0.000000">
+        <center>
+          <lane id="0" type="none"/>
+        </center>
+        <left>
+          <lane id="-1" type="driving" level="false">
+            <width sOffset="0.000000" a="3.5" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="solid" weight="standard" color="standard" width="0.150000"/>
+          </lane>
+        </left>
+        <right>
+          <lane id="1" type="driving" level="false">
+            <width sOffset="0.000000" a="3.5" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="solid" weight="standard" color="standard" width="0.150000"/>
+          </lane>
+        </right>
+      </laneSection>
+    </lanes>
+  </road>
+
+  <!-- 交叉口南向道路 -->
+  <road name="intersection_south" length="80" id="102" junction="100">
+    <link>
+      <predecessor elementType="road" elementId="1" contactPoint="start"/>
+      <successor elementType="road" elementId="1" contactPoint="end"/>
+    </link>
+    <type s="0.000000" type="town"/>
+    <planView>
+      <geometry s="0.000000" x="0.000000" y="0.000000" hdg="0.000000" length="80">
+        <line/>
+      </geometry>
+    </planView>
+    <lanes>
+      <laneSection s="0.000000">
+        <center>
+          <lane id="0" type="none"/>
+        </center>
+        <left>
+          <lane id="-1" type="driving" level="false">
+            <width sOffset="0.000000" a="3.5" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="solid" weight="standard" color="standard" width="0.150000"/>
+          </lane>
+        </left>
+        <right>
+          <lane id="1" type="driving" level="false">
+            <width sOffset="0.000000" a="3.5" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="solid" weight="standard" color="standard" width="0.150000"/>
+          </lane>
+        </right>
+      </laneSection>
+    </lanes>
+  </road>
+
+  <!-- 交叉口东向道路 -->
+  <road name="intersection_east" length="80" id="103" junction="100">
+    <link>
+      <predecessor elementType="road" elementId="1" contactPoint="start"/>
+      <successor elementType="road" elementId="1" contactPoint="end"/>
+    </link>
+    <type s="0.000000" type="town"/>
+    <planView>
+      <geometry s="0.000000" x="40" y="40" hdg="1.570796" length="80">
+        <line/>
+      </geometry>
+    </planView>
+    <lanes>
+      <laneSection s="0.000000">
+        <center>
+          <lane id="0" type="none"/>
+        </center>
+        <left>
+          <lane id="-1" type="driving" level="false">
+            <width sOffset="0.000000" a="3.5" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="solid" weight="standard" color="standard" width="0.150000"/>
+          </lane>
+        </left>
+        <right>
+          <lane id="1" type="driving" level="false">
+            <width sOffset="0.000000" a="3.5" b="0.000000" c="0.000000" d="0.000000"/>
+            <roadMark sOffset="0.000000" type="solid" weight="standard" color="standard" width="0.150000"/>
+          </lane>
+        </right>
+      </laneSection>
+    </lanes>
+  </road>
+
+  <junction id="100" name="main_intersection" type="default">
+    <connection id="1" incomingRoad="1" connectingRoad="101" contactPoint="start">
+      <laneLink from="1" to="1"/>
+      <laneLink from="2" to="2"/>
+      <laneLink from="-1" to="-1"/>
+      <laneLink from="-2" to="-2"/>
+    </connection>
+    <connection id="2" incomingRoad="1" connectingRoad="102" contactPoint="end">
+      <laneLink from="1" to="1"/>
+      <laneLink from="2" to="2"/>
+      <laneLink from="-1" to="-1"/>
+      <laneLink from="-2" to="-2"/>
+    </connection>
+    <connection id="3" incomingRoad="1" connectingRoad="103" contactPoint="start">
+      <laneLink from="1" to="1"/>
+      <laneLink from="2" to="2"/>
+      <laneLink from="-1" to="-1"/>
+      <laneLink from="-2" to="-2"/>
+    </connection>
+  </junction>
+
+
+</OpenDRIVE>
