@@ -14,6 +14,11 @@ from __future__ import annotations
 import math
 from typing import Any, Mapping
 
+from scene_understanding.src.high_level_driving_actions import (
+    fallback_action,
+    map_step_action,
+    validate_risk_assessment,
+)
 
 CONTROL_DECISION_SCHEMA_VERSION = "1.0.0"
 DECISION_STATUSES = {"READY", "BLOCKED", "SAFE_FALLBACK"}
@@ -30,15 +35,6 @@ CONTROL_ACTIONS = {
 }
 PARSE_STATUSES = {"VALID", "NEEDS_CLARIFICATION", "UNSUPPORTED", "INVALID"}
 RISK_LEVELS = {"none", "low", "medium", "high"}
-
-DIRECT_ACTION_MAP = {
-    "KEEP_LANE": "keep_lane",
-    "STOP": "stop",
-    "EMERGENCY_BRAKE": "emergency_brake",
-    "RESUME": "keep_lane",
-    "CANCEL": "keep_lane",
-}
-
 
 def _is_number(value: Any) -> bool:
     return (
@@ -123,27 +119,7 @@ def _validate_inputs(
     if any(not isinstance(item, dict) for item in alignments):
         raise ValueError("SemanticAlignment step_alignments entries must be objects")
 
-    if risk_assessment.get("risk_level") not in RISK_LEVELS:
-        raise ValueError("RiskAssessment risk_level is invalid")
-    if risk_assessment.get("recommended_action") not in {
-        "maintain_speed", "monitor", "decelerate", "emergency_brake"
-    }:
-        raise ValueError("RiskAssessment recommended_action is invalid")
-    _string_list(risk_assessment.get("reason_codes"), "RiskAssessment reason_codes")
-
-    lane_change = risk_assessment.get("lane_change")
-    if not isinstance(lane_change, dict):
-        raise ValueError("RiskAssessment lane_change must be an object")
-    for direction in ("left", "right"):
-        judgment = lane_change.get(direction)
-        if not isinstance(judgment, dict) or not isinstance(judgment.get("is_safe"), bool):
-            raise ValueError(
-                f"RiskAssessment lane_change.{direction}.is_safe must be a boolean"
-            )
-        _string_list(
-            judgment.get("reason_codes"),
-            f"RiskAssessment lane_change.{direction}.reason_codes",
-        )
+    validate_risk_assessment(risk_assessment)
 
 
 def _alignment_for_step(
@@ -161,87 +137,21 @@ def _alignment_for_step(
     return matches[0]
 
 
-def _fallback_action(on_blocked: Any) -> tuple[str, float | None, str]:
-    policy = str(on_blocked or "SAFE_STOP").strip().upper()
-    if policy in {"WAIT_FOR_SAFE", "WAIT", "SLOW_DOWN"}:
-        return "decelerate", None, "wait_for_safe"
-    if policy in {"SKIP", "SKIP_STEP", "CONTINUE"}:
-        return "keep_lane", None, "skip_blocked_step"
-    return "stop", 0.0, "safe_stop"
+def _inherited_plan_speed_kmh(
+    steps: list[Mapping[str, Any]],
+    selected_index: int,
+    current_speed_kmh: float,
+) -> float:
+    """Keep the latest explicit plan speed across later non-speed steps."""
 
-
-def _map_step_action(
-    step: Mapping[str, Any], current_speed_kmh: float
-) -> tuple[str, float, str | None, dict[str, float] | None]:
-    parser_action = str(step.get("action", "")).strip().upper()
-    parameters = step.get("parameters") or {}
-    if not isinstance(parameters, dict):
-        raise ValueError(f"DrivingIntent step {step.get('step_id')!r} parameters must be an object")
-
-    action = DIRECT_ACTION_MAP.get(parser_action)
-    target_speed_kmh = current_speed_kmh
-    target_lane: str | None = None
-    target_location: dict[str, float] | None = None
-
-    if parser_action == "SET_SPEED":
-        value = parameters.get("target_speed_mps")
-        if not _is_number(value) or float(value) < 0:
-            raise ValueError("SET_SPEED requires finite non-negative target_speed_mps")
-        action = "keep_lane"
-        target_speed_kmh = round(min(float(value) * 3.6, 100.0), 6)
-    elif parser_action == "ADJUST_SPEED":
-        change = str(parameters.get("change", "HOLD")).strip().upper()
-        action = {
-            "INCREASE": "accelerate",
-            "DECREASE": "decelerate",
-            "HOLD": "keep_lane",
-        }.get(change)
-    elif parser_action == "CHANGE_LANE":
-        direction = str(parameters.get("direction", "")).strip().upper()
-        if direction in {"LEFT", "RIGHT"}:
-            target_lane = direction.lower()
-            action = f"lane_change_{target_lane}"
-    elif parser_action == "TURN":
-        direction = str(parameters.get("direction", "")).strip().upper()
-        if direction == "STRAIGHT":
-            action = "keep_lane"
-        elif direction in {"LEFT", "RIGHT"}:
-            action = f"turn_{direction.lower()}"
-        location = parameters.get("target_location")
-        if location is not None:
-            if not isinstance(location, dict) or not all(
-                key in location and _is_number(location[key]) for key in ("x", "y")
-            ):
-                raise ValueError("TURN target_location requires finite x and y")
-            target_location = {
-                "x": float(location["x"]),
-                "y": float(location["y"]),
-                "z": float(location.get("z", 0.0)),
-            }
-    elif parser_action == "OVERTAKE":
-        direction = str(parameters.get("direction", "")).strip().upper()
-        if direction in {"LEFT", "RIGHT"}:
-            target_lane = direction.lower()
-            action = f"lane_change_{target_lane}"
-        else:
-            # In a sequenced plan, CHANGE_LANE has already established the
-            # passing lane.  OVERTAKE therefore means build longitudinal
-            # speed while the normal target-alignment and risk gates remain
-            # authoritative.
-            action = "accelerate"
-    elif parser_action in {"YIELD", "PULL_OVER", "AVOID"}:
-        direction = str(parameters.get("direction", "")).strip().upper()
-        if direction in {"LEFT", "RIGHT"}:
-            target_lane = direction.lower()
-            action = f"lane_change_{target_lane}"
-        else:
-            action = "decelerate"
-
-    if action not in CONTROL_ACTIONS:
-        raise ValueError(f"unsupported DrivingIntent action {parser_action!r}")
-    if action in {"stop", "emergency_brake"}:
-        target_speed_kmh = 0.0
-    return action, target_speed_kmh, target_lane, target_location
+    target = float(current_speed_kmh)
+    for step in steps[: selected_index + 1]:
+        if str(step.get("action", "")).strip().upper() != "SET_SPEED":
+            continue
+        value = (step.get("parameters") or {}).get("target_speed_mps")
+        if _is_number(value) and float(value) >= 0:
+            target = round(min(float(value) * 3.6, 100.0), 6)
+    return target
 
 
 def _decision(
@@ -294,6 +204,7 @@ def build_control_decision(
     risk_assessment: dict[str, Any],
     *,
     source_step_id: str | None = None,
+    planner_target_location: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return one validated flat action after deterministic safety gating.
 
@@ -324,24 +235,58 @@ def build_control_decision(
     steps = driving_intent["intent"]["steps"]
     if source_step_id is None:
         step = steps[0]
+        selected_index = 0
     else:
-        selected = [item for item in steps if item.get("step_id") == source_step_id]
+        selected = [
+            (index, item)
+            for index, item in enumerate(steps)
+            if item.get("step_id") == source_step_id
+        ]
         if len(selected) != 1:
             raise ValueError(
                 "DrivingIntent must contain exactly one step matching "
                 f"source_step_id {source_step_id!r}"
             )
-        step = selected[0]
+        selected_index, step = selected[0]
     if not isinstance(step, dict):
         raise ValueError("DrivingIntent first step must be an object")
     step_id = step.get("step_id")
     if not isinstance(step_id, str) or not step_id:
         raise ValueError("DrivingIntent first step step_id must be a non-empty string")
     alignment = _alignment_for_step(semantic_alignment, step_id)
-    action, target_speed, target_lane, target_location = _map_step_action(
+    action, target_speed, target_lane, target_location = map_step_action(
         step, current_speed
     )
+    if (
+        action in {"turn_left", "turn_right"}
+        and planner_target_location is not None
+    ):
+        if not all(
+            key in planner_target_location
+            and _is_number(planner_target_location[key])
+            for key in ("x", "y")
+        ):
+            raise ValueError("planner_target_location requires finite x and y")
+        target_location = {
+            "x": float(planner_target_location["x"]),
+            "y": float(planner_target_location["y"]),
+            "z": float(planner_target_location.get("z", 0.0)),
+        }
     parser_action = str(step.get("action", "")).strip().upper()
+    if parser_action in {
+        "KEEP_LANE",
+        "FOLLOW",
+        "NAVIGATE_TO",
+        "PROCEED",
+        "RESUME",
+        "ENTER_AREA",
+        "EXIT_AREA",
+    }:
+        target_speed = _inherited_plan_speed_kmh(
+            steps,
+            selected_index,
+            current_speed,
+        )
     matched_entity = alignment.get("matched_entity")
     matched_entity_id = (
         matched_entity.get("entity_id") if isinstance(matched_entity, dict) else None
@@ -399,7 +344,7 @@ def build_control_decision(
     if alignment.get("alignment_required") is True and alignment.get(
         "alignment_success"
     ) is not True:
-        fallback, fallback_speed, policy_reason = _fallback_action(step.get("on_blocked"))
+        fallback, fallback_speed, policy_reason = fallback_action(step.get("on_blocked"))
         reason_code = str(alignment.get("reason_code") or "target_not_aligned")
         return _decision(
             driving_intent=driving_intent,
@@ -420,7 +365,7 @@ def build_control_decision(
         direction = action.removeprefix("lane_change_")
         judgment = risk_assessment["lane_change"][direction]
         if not judgment["is_safe"]:
-            fallback, fallback_speed, policy_reason = _fallback_action(
+            fallback, fallback_speed, policy_reason = fallback_action(
                 step.get("on_blocked")
             )
             lane_reasons = list(judgment["reason_codes"])
@@ -444,20 +389,27 @@ def build_control_decision(
             )
 
     if action in {"turn_left", "turn_right"} and target_location is None:
-        fallback, fallback_speed, policy_reason = _fallback_action(step.get("on_blocked"))
+        fallback, fallback_speed, policy_reason = fallback_action(
+            step.get("on_blocked")
+        )
         return _decision(
             driving_intent=driving_intent,
             world_state=world_state,
             step=step,
             status="BLOCKED",
             action=fallback,
-            target_speed_kmh=current_speed if fallback_speed is None else fallback_speed,
+            target_speed_kmh=(
+                current_speed if fallback_speed is None else fallback_speed
+            ),
             target_lane=None,
             target_location=None,
             reason=f"turn_target_location_missing_{policy_reason}",
             matched_entity_id=matched_entity_id,
             risk_assessment=risk_assessment,
-            blocked_reason_codes=["turn_target_location_missing", policy_reason],
+            blocked_reason_codes=[
+                "turn_target_location_missing",
+                policy_reason,
+            ],
         )
 
     return _decision(

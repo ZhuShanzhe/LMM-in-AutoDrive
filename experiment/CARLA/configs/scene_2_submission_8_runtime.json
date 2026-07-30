@@ -1,0 +1,159 @@
+{
+  "schema_version": "scene_2_town05_runtime/v1",
+  "scene_id": "scene_2_complex_avoidance_town05_8km_submission",
+  "map": "Town05_Opt",
+  "route": {
+    "start_spawn_index": 239,
+    "turnaround_spawn_index": 289,
+    "target_length_m": 8150.0,
+    "route_sampling_m": 2.0,
+    "target_speed_kmh": 35.0,
+    "initial_speed_kmh": 35.0
+  },
+  "weather": {
+    "preset": "rainy-overcast-evening",
+    "cloudiness": 85.0,
+    "precipitation": 55.0,
+    "precipitation_deposits": 35.0,
+    "wetness": 65.0,
+    "wind_intensity": 35.0,
+    "sun_azimuth_angle": 250.0,
+    "sun_altitude_angle": 25.0,
+    "fog_density": 2.0,
+    "fog_distance": 120.0,
+    "fog_falloff": 0.2
+  },
+  "traffic": {
+    "seed": 20260730,
+    "vehicles": 36,
+    "buses": 3,
+    "ambient_walkers": 0,
+    "global_distance_to_leading_vehicle_m": 6.0,
+    "global_speed_difference_pct": 5.0,
+    "route_spawn_radius_m": 45.0,
+    "random_lane_change_percentage": 0.0,
+    "hybrid_physics": false,
+    "respawn_dormant_vehicles": false
+  },
+  "special_events": [
+    {
+      "id": "white_lead_vehicle",
+      "kind": "white_lead_vehicle",
+      "anchor_progress_m": 430.0,
+      "activate_progress_m": 99999.0,
+      "target_speed_kmh": 38.0,
+      "color": "255,255,255",
+      "enabled": false
+    },
+    {
+      "id": "slow_vehicle",
+      "kind": "slow_vehicle",
+      "anchor_progress_m": 500.0,
+      "activate_progress_m": 99999.0,
+      "target_speed_kmh": 20.0,
+      "color": "255,0,0",
+      "enabled": false
+    },
+    {
+      "id": "crosswalk_pedestrian",
+      "kind": "crossing_pedestrian",
+      "anchor_progress_m": 693.0,
+      "activate_progress_m": 99999.0,
+      "walker_speed_mps": 1.45,
+      "enabled": false
+    },
+    {
+      "id": "bus_stop_passengers",
+      "kind": "bus_stop",
+      "anchor_progress_m": 1045.0,
+      "activate_progress_m": 99999.0,
+      "passenger_speed_mps": 1.1,
+      "enabled": false
+    },
+    {
+      "id": "slow_cyclist",
+      "kind": "cyclist",
+      "anchor_progress_m": 1150.0,
+      "activate_progress_m": 99999.0,
+      "target_speed_kmh": 14.0,
+      "enabled": false
+    }
+  ],
+  "commands": [
+    {
+      "id": "s2_t05_cmd_01",
+      "announce_at_m": 0.0,
+      "text": "保持当前车道，减速至45公里每小时，通过前方路口后继续直行。"
+    },
+    {
+      "id": "s2_t05_cmd_02",
+      "announce_at_m": 400.0,
+      "text": "通过路口后保持右侧车道，并恢复到50公里每小时。"
+    },
+    {
+      "id": "s2_t05_cmd_03",
+      "announce_at_m": 590.0,
+      "text": "看到前方横穿马路的行人，减速避让后向左变道超越慢车。"
+    },
+    {
+      "id": "s2_t05_cmd_04",
+      "announce_at_m": 820.0,
+      "text": "确认行人离开后安全返回原车道，并恢复到45公里每小时。"
+    },
+    {
+      "id": "s2_t05_cmd_05",
+      "announce_at_m": 900.0,
+      "text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续行驶。"
+    },
+    {
+      "id": "s2_t05_cmd_06",
+      "announce_at_m": 1080.0,
+      "text": "等待乘客离开车道，确认道路安全后保持右侧车道继续行驶。"
+    },
+    {
+      "id": "s2_t05_cmd_07",
+      "announce_at_m": 1220.0,
+      "text": "右侧有自行车，减速并向左避让，超过后回到右侧车道。"
+    },
+    {
+      "id": "s2_t05_cmd_08",
+      "announce_at_m": 1550.0,
+      "text": "确认前方安全，通过路口后保持当前车道继续行驶。"
+    },
+    {
+      "id": "s2_t05_cmd_09",
+      "announce_at_m": 1950.0,
+      "text": "前方十字路口左转，进入左侧车道并保持40公里每小时。"
+    },
+    {
+      "id": "s2_t05_cmd_10",
+      "announce_at_m": 2500.0,
+      "text": "完成左转后保持当前车道，确认前方安全并恢复到45公里每小时。"
+    },
+    {
+      "id": "s2_t05_cmd_11",
+      "announce_at_m": 3600.0,
+      "text": "前方路口右转前减速至30公里每小时，右转后保持当前车道。"
+    },
+    {
+      "id": "s2_t05_cmd_12",
+      "announce_at_m": 4450.0,
+      "text": "确认左侧安全后变道超越慢车，超过后返回原车道。"
+    },
+    {
+      "id": "s2_t05_cmd_13",
+      "announce_at_m": 5350.0,
+      "text": "保持安全车距，通过前方路口后恢复到45公里每小时。"
+    },
+    {
+      "id": "s2_t05_cmd_14",
+      "announce_at_m": 6100.0,
+      "text": "减速至30公里每小时，礼让横道行人后右转并保持当前车道。"
+    },
+    {
+      "id": "s2_t05_cmd_15",
+      "announce_at_m": 7200.0,
+      "text": "确认道路安全后保持当前车道，以45公里每小时行驶至终点。"
+    }
+  ]
+}

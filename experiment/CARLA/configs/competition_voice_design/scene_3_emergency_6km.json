@@ -1,0 +1,515 @@
+{
+  "schema_version": "competition_voice_scene_plan/v1",
+  "design_status": "design_only",
+  "scene_id": "scene_3_emergency_6km",
+  "competition_stage": "advanced_emergency",
+  "design_principle": "Ambiguous voice wording is resolved by the risk policy only after the scene evidence is visible. The route contains no U-turn because that maneuver is unsafe on an urban expressway.",
+  "scene_profile": {
+    "weather": "HardRainNoon adapted to night lighting, wet road, fog, and reduced visibility",
+    "road_form": "urban expressway transitioning into a work zone with a closing right lane",
+    "visibility": "low light, rain reflection, fog occlusion",
+    "voice_input": "voice commands with controlled environmental-noise variants",
+    "sensors": [
+      "front_rgb_camera",
+      "left_rgb_camera",
+      "right_rgb_camera",
+      "rear_rgb_camera",
+      "vehicle_state"
+    ]
+  },
+  "route_design": {
+    "total_length_m": 6000,
+    "required_topology": [
+      "three-lane urban expressway at entry",
+      "right-lane closure taper created by cones between 1800 m and 2400 m",
+      "two-lane narrowed work zone from 2400 m to 4300 m",
+      "work-zone exit and normal-lane recovery before the finish",
+      "no legal U-turn or ordinary intersection maneuver within the route"
+    ],
+    "segments": [
+      {
+        "id": "S3-01",
+        "range_m": [
+          0,
+          1100
+        ],
+        "length_m": 1100,
+        "topology": "wet three-lane expressway",
+        "purpose": "ambiguous safe-speed command and sudden cut-in"
+      },
+      {
+        "id": "S3-02",
+        "range_m": [
+          1100,
+          2600
+        ],
+        "length_m": 1500,
+        "topology": "advance work-zone signs and cone taper",
+        "purpose": "speed reduction and left merge"
+      },
+      {
+        "id": "S3-03",
+        "range_m": [
+          2600,
+          4500
+        ],
+        "length_m": 1900,
+        "topology": "narrowed work zone",
+        "purpose": "pedestrian, work vehicle, and conditional avoidance"
+      },
+      {
+        "id": "S3-04",
+        "range_m": [
+          4500,
+          6000
+        ],
+        "length_m": 1500,
+        "topology": "work-zone exit",
+        "purpose": "safe recovery and finish"
+      }
+    ],
+    "traffic_flow": {
+      "private_cars": 16,
+      "work_vehicles": 2,
+      "maintenance_vehicles": 1,
+      "pedestrians": 2,
+      "replenish_by_route_progress": true
+    }
+  },
+  "voice_command_schedule": [
+    {
+      "id": "s3_cmd_01_safe_speed",
+      "announce_at_m": 0,
+      "spoken_text": "前方路况危险，保持安全车速。",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+      "steps": [
+        "ADJUST_SPEED:DECREASE",
+        "KEEP_LANE",
+        "KEEP_SAFE_DISTANCE"
+        ],
+        "unresolved_slot": "numeric_speed"
+      },
+      "scene_binding": {
+        "route_segment": "S3-01",
+        "visible_cues": [
+          "rain",
+          "wet_road_reflection",
+          "fog"
+        ],
+        "policy_resolution": "Risk policy selects a speed in the configured 35--45 km/h band.",
+        "completion": "SAFE_SPEED_ESTABLISHED"
+      }
+    },
+    {
+      "id": "s3_cmd_08_wet_road_speed",
+      "announce_at_m": 250,
+      "spoken_text": "??????????????????????????",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+        "steps": [
+          "ADJUST_SPEED:DECREASE",
+          "KEEP_LANE",
+          "KEEP_SAFE_DISTANCE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-01",
+        "visible_cues": [
+          "rain",
+          "wet_road_reflection",
+          "lead_vehicle"
+        ],
+        "completion": "SAFE_SPEED_ESTABLISHED"
+      }
+    },
+    {
+      "id": "s3_cmd_02_visibility_cap",
+      "announce_at_m": 500,
+      "spoken_text": "能见度差，保持右侧车道，车速不高于40公里每小时。",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+      "steps": [
+        "KEEP_LANE:RIGHT",
+        "SET_SPEED_MAX:11.11mps",
+        "KEEP_SAFE_DISTANCE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-01",
+        "visible_cues": [
+          "reduced_visibility",
+          "wet_lane_markings"
+        ],
+        "completion": "TARGET_SPEED_REACHED"
+      }
+    },
+    {
+      "id": "s3_cmd_09_following_gap",
+      "announce_at_m": 780,
+      "spoken_text": "????????????????????????",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+        "steps": [
+          "ADJUST_SPEED:DECREASE",
+          "KEEP_SAFE_DISTANCE",
+          "PREPARE:BRAKE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-01",
+        "visible_cues": [
+          "lead_vehicle",
+          "closing_gap"
+        ],
+        "completion": "SAFE_FOLLOWING_DISTANCE_ESTABLISHED"
+      }
+    },
+    {
+      "id": "s3_cmd_03_cut_in_emergency",
+      "announce_at_m": 1050,
+      "spoken_text": "突发车辆加塞，紧急避让。",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "EMERGENCY",
+      "steps": [
+        "EMERGENCY_BRAKE",
+        "AVOID:CUT_IN_VEHICLE_WHEN_SAFE",
+        "KEEP_LANE:WHEN_STABLE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-01",
+        "visible_cues": [
+          "cut_in_vehicle",
+          "rapid_closing_gap"
+        ],
+        "completion": "COLLISION_AVOIDED",
+        "on_blocked": "EMERGENCY_BRAKE"
+      }
+    },
+    {
+      "id": "s3_cmd_10_cut_in_recover",
+      "announce_at_m": 1400,
+      "spoken_text": "??????????????????????????",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+        "steps": [
+          "YIELD:CUT_IN_VEHICLE",
+          "CHECK:CURRENT_LANE_SAFE",
+          "KEEP_SPEED_LOW",
+          "PROCEED"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-01",
+        "visible_cues": [
+          "cut_in_vehicle_cleared",
+          "lane_markings"
+        ],
+        "completion": "COLLISION_AVOIDED"
+      }
+    },
+    {
+      "id": "s3_cmd_04_cone_merge_left",
+      "announce_at_m": 1850,
+      "spoken_text": "施工路段，减速并道至左侧车道。",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+      "steps": [
+        "SET_SPEED:8.33mps",
+        "CHECK:LEFT_LANE_SAFE",
+        "MERGE:LEFT_WHEN_SAFE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-02",
+        "visible_cues": [
+          "advance_work_sign",
+          "flashing_beacon",
+          "cone_taper",
+          "right_lane_closed"
+        ],
+        "completion": "LANE_CHANGE_COMPLETED",
+        "on_blocked": "SAFE_STOP"
+      }
+    },
+    {
+      "id": "s3_cmd_11_cone_taper_merge",
+      "announce_at_m": 2400,
+      "spoken_text": "????????????????????????????????",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+        "steps": [
+          "ADJUST_SPEED:DECREASE",
+          "CHECK:LEFT_LANE_SAFE",
+          "MERGE:LEFT",
+          "KEEP_SPEED_LOW"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-02",
+        "visible_cues": [
+          "cone_taper",
+          "lane_narrowing",
+          "left_lane_gap"
+        ],
+        "completion": "LANE_CHANGE_COMPLETED"
+      }
+    },
+    {
+      "id": "s3_cmd_05_cones_and_pedestrian",
+      "announce_at_m": 3100,
+      "spoken_text": "看到锥形桶和临时横穿行人，保持低速，必要时停车。",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+        "steps": [
+          "KEEP_SPEED_LOW",
+          "YIELD:PEDESTRIAN",
+          "STOP:IF_PATH_BLOCKED"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-03",
+        "visible_cues": [
+          "construction_cones",
+          "temporary_crossing_pedestrian"
+        ],
+        "completion": "TARGET_CLEARED"
+      }
+    },
+    {
+      "id": "s3_cmd_12_work_zone_pedestrian_clear",
+      "announce_at_m": 3650,
+      "spoken_text": "??????????????????????????????",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+        "steps": [
+          "WAIT:PEDESTRIAN_CLEAR",
+          "KEEP_SPEED_LOW",
+          "CHECK:CONE_BOUNDARY_CLEAR",
+          "PROCEED"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-03",
+        "visible_cues": [
+          "temporary_crossing_pedestrian",
+          "construction_cones"
+        ],
+        "completion": "TARGET_CLEARED"
+      }
+    },
+    {
+      "id": "s3_cmd_06_blocked_lane_avoidance",
+      "announce_at_m": 4250,
+      "spoken_text": "前方施工车辆占道，左侧安全时绕行，否则停车等待。",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+        "steps": [
+          "AVOID:WORK_VEHICLE",
+          "CHANGE_LANE:LEFT_WHEN_SAFE",
+          "STOP:IF_LEFT_UNSAFE",
+          "WAIT_FOR_SAFE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-03",
+        "visible_cues": [
+          "stopped_work_vehicle",
+          "flashing_arrow_board",
+          "left_lane_gap"
+        ],
+        "completion": "TARGET_CLEARED"
+      }
+    },
+    {
+      "id": "s3_cmd_13_work_vehicle_pass",
+      "announce_at_m": 4700,
+      "spoken_text": "???????????????????????????",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+        "steps": [
+          "CHECK:LEFT_LANE_SAFE",
+          "ADJUST_SPEED:DECREASE",
+          "AVOID:WORK_VEHICLE",
+          "RETURN:SAFE_LANE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-03",
+        "visible_cues": [
+          "stopped_work_vehicle",
+          "left_lane_gap",
+          "flashing_arrow_board"
+        ],
+        "completion": "TARGET_CLEARED"
+      }
+    },
+    {
+      "id": "s3_cmd_07_exit_work_zone",
+      "announce_at_m": 5200,
+      "spoken_text": "驶离施工路段后，保持安全速度行驶至终点。",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "NORMAL",
+        "steps": [
+          "RESUME",
+          "SET_SPEED_MAX:12.50mps",
+          "KEEP_LANE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-04",
+        "visible_cues": [
+          "work_zone_end_sign",
+          "restored_lane_markings"
+        ],
+        "completion": "ROUTE_COMPLETED"
+      }
+    },
+    {
+      "id": "s3_cmd_14_exit_visibility_cap",
+      "announce_at_m": 5550,
+      "spoken_text": "????????????????????????45??????",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+        "steps": [
+          "KEEP_LANE",
+          "SET_SPEED_MAX:12.50mps",
+          "KEEP_SAFE_DISTANCE"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-04",
+        "visible_cues": [
+          "work_zone_end_sign",
+          "fog",
+          "wet_lane_markings"
+        ],
+        "completion": "SAFE_SPEED_ESTABLISHED"
+      }
+    },
+    {
+      "id": "s3_cmd_15_finish_safe",
+      "announce_at_m": 5800,
+      "spoken_text": "???????????????????????????",
+      "expected_parse": {
+        "category": "EMERGENCY_RESPONSE",
+        "urgency": "URGENT",
+        "steps": [
+          "KEEP_SAFE_SPEED",
+          "KEEP_LANE",
+          "CHECK:PATH_CLEAR",
+          "PROCEED"
+        ]
+      },
+      "scene_binding": {
+        "route_segment": "S3-04",
+        "visible_cues": [
+          "restored_lane_markings",
+          "clear_path"
+        ],
+        "completion": "ROUTE_COMPLETED"
+      }
+    }
+  ],
+  "special_events": [
+    {
+      "id": "s3_evt_visibility",
+      "at_m": 0,
+      "behavior": "Rain, night lighting, wet-road reflection, and fog are active throughout. Camera exposure and noise should be fixed per test seed."
+    },
+    {
+      "id": "s3_evt_cut_in",
+      "at_m": 1080,
+      "actors": [
+        "cut_in_vehicle"
+      ],
+      "behavior": "Vehicle enters the ego lane from the left at a closing distance that is recoverable by braking; it must not create an unavoidable collision."
+    },
+    {
+      "id": "s3_evt_advance_warning",
+      "at_m": 1550,
+      "actors": [
+        "work_zone_sign",
+        "flashing_beacon"
+      ],
+      "behavior": "Warning signs appear before any cone blocks a lane."
+    },
+    {
+      "id": "s3_evt_cone_taper",
+      "at_m": 1850,
+      "actors": [
+        "traffic_cones"
+      ],
+      "behavior": "Cones appear progressively every 18--25 m, moving from the right lane edge toward the lane center, then close the right lane by 2400 m."
+    },
+    {
+      "id": "s3_evt_work_zone",
+      "at_m": 2400,
+      "actors": [
+        "work_truck",
+        "arrow_board",
+        "barrier"
+      ],
+      "behavior": "A work truck occupies the closed lane and displays a left-merge cue; the remaining lane width is visibly reduced."
+    },
+    {
+      "id": "s3_evt_temporary_pedestrian",
+      "at_m": 3200,
+      "actors": [
+        "high_visibility_worker"
+      ],
+      "behavior": "A worker starts behind the barrier, becomes visible near the taper, and crosses only after the ego has a recoverable stopping distance."
+    },
+    {
+      "id": "s3_evt_blocked_lane",
+      "at_m": 4300,
+      "actors": [
+        "maintenance_vehicle",
+        "left_lane_trailing_vehicle"
+      ],
+      "behavior": "Maintenance vehicle partially blocks the active lane. The left gap is initially unsafe, then becomes safe after a short wait, exercising the conditional command."
+    },
+    {
+      "id": "s3_evt_work_zone_exit",
+      "at_m": 5050,
+      "actors": [
+        "work_zone_end_sign"
+      ],
+      "behavior": "Cones end and normal lane markings return before the final command is announced."
+    }
+  ],
+  "evaluation_protocol": {
+    "online_demo_commands": 15,
+    "offline_utterance_set": "At least 10 paraphrases per template under clean audio and at least 3 controlled noise levels. Evaluate whether ambiguity is preserved for risk-policy resolution rather than invented by the parser.",
+    "success_conditions": [
+      "route_completed",
+      "no_collision",
+      "no_illegal_lane_invasion",
+      "no_decision_timeout",
+      "all_emergency_commands_resolved"
+    ],
+    "required_metrics": [
+      "noise_robust_asr_accuracy",
+      "emergency_semantic_alignment_accuracy",
+      "hazard_response_latency_ms",
+      "decision_timeout_count",
+      "collision_count",
+      "violation_count"
+    ]
+  }
+}

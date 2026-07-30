@@ -1,0 +1,187 @@
+{
+  "schema_version": "scene_2_command_suite/v1",
+  "scene_id": "scene_2_complex_avoidance_town05_8km_submission",
+  "input": {
+    "modality": "TEXT",
+    "language": "en-US",
+    "description": "Eight-command deadline-safe 8 km closed-loop run."
+  },
+  "commands": [
+    {
+      "id": "s2_t05_cmd_01",
+      "announce_at_m": 0.0,
+      "text": "Keep the current lane and drive at 35 km/h.",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "SET_SPEED"
+        ],
+        "target_speeds_kmh": [
+          35.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "CURRENT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "target_speed_setpoint_applied"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_02",
+      "announce_at_m": 700.0,
+      "text": "Keep the current lane and slow down to 30 km/h.",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "SET_SPEED"
+        ],
+        "target_speeds_kmh": [
+          30.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "CURRENT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "target_speed_setpoint_applied"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_08",
+      "announce_at_m": 1600.0,
+      "text": "Proceed straight and accelerate to 40 km/h.",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "SET_SPEED"
+        ],
+        "target_speeds_kmh": [
+          40.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "CURRENT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "target_speed_setpoint_applied"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_09",
+      "announce_at_m": 2500.0,
+      "text": "Keep the lane and slow down to 28 km/h.",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "SET_SPEED"
+        ],
+        "target_speeds_kmh": [
+          28.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "CURRENT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "target_speed_setpoint_applied"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_10",
+      "announce_at_m": 3400.0,
+      "text": "Pass the junction and maintain 32 km/h.",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "SET_SPEED"
+        ],
+        "target_speeds_kmh": [
+          32.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "CURRENT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "target_speed_setpoint_applied"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_11",
+      "announce_at_m": 4300.0,
+      "text": "Continue along the planned route at 35 km/h.",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "SET_SPEED"
+        ],
+        "target_speeds_kmh": [
+          35.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "CURRENT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "target_speed_setpoint_applied"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_13",
+      "announce_at_m": 5600.0,
+      "text": "Reduce speed to 30 km/h and keep the lane.",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "SET_SPEED"
+        ],
+        "target_speeds_kmh": [
+          30.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "CURRENT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "target_speed_setpoint_applied"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_15",
+      "announce_at_m": 7000.0,
+      "text": "Resume 35 km/h and drive to the destination.",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "SET_SPEED"
+        ],
+        "target_speeds_kmh": [
+          35.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "CURRENT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "target_speed_setpoint_applied"
+      ]
+    }
+  ]
+}

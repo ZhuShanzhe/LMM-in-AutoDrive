@@ -29,6 +29,21 @@ ACTION_ALIASES = {
     "change_lane_right": "lane_change_right",
 }
 
+HIGH_LEVEL_FALLBACK_ACTIONS = {
+    "follow": "keep_lane",
+    "approach": "keep_lane",
+    "navigate_to": "keep_lane",
+    "proceed": "keep_lane",
+    "wait": "stop",
+    "yield": "decelerate",
+    "avoid": "decelerate",
+    "overtake": "keep_lane",
+    "pass_by": "keep_lane",
+    "u_turn": "turn_left",
+    "park": "stop",
+    "reverse": "stop",
+}
+
 STEP_ACTION_MAP = {
     "KEEP_LANE": "keep_lane",
     "STOP": "stop",
@@ -46,10 +61,24 @@ def _speed_mps_to_kmh(value, default_speed_kmh):
 
 
 def _select_first_actionable_step(steps):
-    for step in steps:
-        if isinstance(step, dict):
-            return step
-    return {}
+    valid_steps = [step for step in steps if isinstance(step, dict)]
+    if not valid_steps:
+        return {}
+    first = valid_steps[0]
+    # "Keep lane and set speed" is a concurrent longitudinal/lateral command.
+    # A flat consumer has no completion feedback for an unconstrained KEEP_LANE
+    # prefix, so select the following explicit speed setpoint when present.
+    if (
+        str(first.get("action", "")).upper() == "KEEP_LANE"
+        and not first.get("depends_on")
+        and not first.get("preconditions")
+        and first.get("completion") is None
+        and len(valid_steps) > 1
+    ):
+        second = valid_steps[1]
+        if str(second.get("action", "")).upper() == "SET_SPEED":
+            return second
+    return first
 
 
 def _flatten_driving_intent(driving_intent, default_speed_kmh):
@@ -114,6 +143,9 @@ def _flatten_driving_intent(driving_intent, default_speed_kmh):
 
     if action is None:
         action = "stop"
+        reason = "unsupported_parser_action_{0}".format(parser_action.lower())
+    else:
+        reason = "driving_intent_{0}".format(parser_action.lower())
 
     emergency = (
         action == "emergency_brake"
@@ -128,7 +160,7 @@ def _flatten_driving_intent(driving_intent, default_speed_kmh):
         "target_lane": None,
         "target_location": None,
         "emergency": emergency,
-        "reason": "driving_intent_{0}".format(parser_action.lower()),
+        "reason": reason,
         "request_id": request_id,
         "parse_status": status,
         "parse_confidence": parse_result.get("confidence"),
@@ -136,6 +168,24 @@ def _flatten_driving_intent(driving_intent, default_speed_kmh):
         "source_step_action": parser_action,
         "source_step_count": len(steps),
     }
+
+
+def _compile_high_level_action(action, intent):
+    """Safely reduce a VLA semantic action to the controller contract.
+
+    Multi-step ordering remains the scene-planning module's responsibility.
+    This adapter only prevents a direct high-level VLA output from bypassing
+    the stable ControlDecision action vocabulary at the CARLA boundary.
+    """
+    target_lane = str(intent.get("target_lane") or "").strip().lower()
+    if action in {"merge", "pull_over"}:
+        direction = target_lane or "right"
+        return (
+            "lane_change_{0}".format(direction)
+            if direction in {"left", "right"}
+            else "decelerate"
+        )
+    return HIGH_LEVEL_FALLBACK_ACTIONS.get(action, action)
 
 
 def normalize_intent(intent, default_speed_kmh=25.0):
@@ -149,6 +199,8 @@ def normalize_intent(intent, default_speed_kmh=25.0):
 
     action = str(intent.get("action", "keep_lane")).strip().lower()
     action = ACTION_ALIASES.get(action, action)
+    original_action = action
+    action = _compile_high_level_action(action, intent)
     if action not in SUPPORTED_ACTIONS:
         raise ValueError("Unsupported driving action: {0}".format(action))
 
@@ -170,6 +222,20 @@ def normalize_intent(intent, default_speed_kmh=25.0):
             "y": float(target_location["y"]),
             "z": float(target_location.get("z", 0.0)),
         }
+        if "yaw" in intent["target_location"]:
+            target_location["yaw"] = float(intent["target_location"]["yaw"])
+        reference = intent["target_location"].get("reference")
+        if reference is not None:
+            if not isinstance(reference, dict) or not all(
+                key in reference for key in ("x", "y", "yaw")
+            ):
+                raise ValueError("target_location.reference requires x, y, and yaw")
+            target_location["reference"] = {
+                "x": float(reference["x"]),
+                "y": float(reference["y"]),
+                "z": float(reference.get("z", 0.0)),
+                "yaw": float(reference["yaw"]),
+            }
 
     return {
         "action": action,
@@ -177,11 +243,20 @@ def normalize_intent(intent, default_speed_kmh=25.0):
         "target_lane": intent.get("target_lane"),
         "target_location": target_location,
         "emergency": bool(intent.get("emergency", action == "emergency_brake")),
-        "reason": str(intent.get("reason", "")),
+        "reason": str(intent.get("reason", "")) or (
+            "compiled_high_level_{0}".format(original_action)
+            if original_action != action else ""
+        ),
         "request_id": intent.get("request_id"),
         "parse_status": intent.get("parse_status"),
         "parse_confidence": intent.get("parse_confidence"),
         "source_step_id": intent.get("source_step_id"),
         "source_step_action": intent.get("source_step_action"),
         "source_step_count": intent.get("source_step_count"),
+        "command_id": intent.get("command_id"),
+        "voice_text": intent.get("voice_text", ""),
+        "structured_command": intent.get("structured_command", {}),
+        "command_phase": intent.get("command_phase"),
+        "audio_file": intent.get("audio_file"),
+        "route_target_trusted": bool(intent.get("route_target_trusted", False)),
     }

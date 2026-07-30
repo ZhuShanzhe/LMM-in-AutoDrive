@@ -393,6 +393,21 @@ def _active_step(
     return _intent_steps(driving_intent)[index]
 
 
+def _plan_hold_speed_kmh(
+    driving_intent: Mapping[str, Any], current_speed_kmh: float
+) -> float:
+    """Hold the latest explicit command speed after the final FSM step."""
+
+    target = float(current_speed_kmh)
+    for step in _intent_steps(driving_intent):
+        if str(step.get("action", "")).upper() != "SET_SPEED":
+            continue
+        value = (step.get("parameters") or {}).get("target_speed_mps")
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            target = max(0.0, min(float(value) * 3.6, 100.0))
+    return round(target, 6)
+
+
 def advance_control_plan(
     driving_intent: dict[str, Any],
     world_state: dict[str, Any],
@@ -401,6 +416,7 @@ def advance_control_plan(
     *,
     prior_state: dict[str, Any] | None = None,
     feedback: dict[str, Any] | None = None,
+    planner_target_location: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Advance a plan by at most one feedback transition and emit an action."""
 
@@ -435,6 +451,7 @@ def advance_control_plan(
         semantic_alignment,
         risk_assessment,
         source_step_id=template_step_id,
+        planner_target_location=planner_target_location,
     )
 
     if state["plan_status"] == "SAFE_FALLBACK":
@@ -446,7 +463,10 @@ def advance_control_plan(
             status="READY",
             action="keep_lane",
             reason="plan_completed",
-            target_speed_kmh=current_speed_kmh,
+            target_speed_kmh=_plan_hold_speed_kmh(
+                driving_intent,
+                current_speed_kmh,
+            ),
             blocked_reason_codes=[],
         )
     elif state["plan_status"] in {"FAILED", "CANCELLED", "BLOCKED"}:
@@ -506,7 +526,10 @@ def advance_control_plan(
                         status="READY",
                         action="keep_lane",
                         reason="plan_completed_after_skips",
-                        target_speed_kmh=current_speed_kmh,
+                        target_speed_kmh=_plan_hold_speed_kmh(
+                            driving_intent,
+                            current_speed_kmh,
+                        ),
                         blocked_reason_codes=[],
                     )
                 else:
@@ -525,6 +548,7 @@ def advance_control_plan(
                 semantic_alignment,
                 risk_assessment,
                 source_step_id=state["active_step_id"],
+                planner_target_location=planner_target_location,
             )
 
     state_errors = validate_control_plan_state(state)

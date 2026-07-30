@@ -1,0 +1,1 @@
+{"event_id": "perception_camera_sync_skip", "frame": 479950, "reason": "front RGB frame 479950 was not received", "simulation_time_s": 0.10000000149011612, "state": "SKIPPED"}

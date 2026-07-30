@@ -38,6 +38,7 @@ class ExperimentCamera:
         self._images = queue.Queue()
         self._pending_images = {}
         self._speed_history = deque()
+        self._font_cache = {}
 
     def start(self):
         import carla
@@ -122,24 +123,194 @@ class ExperimentCamera:
         draw = ImageDraw.Draw(image, "RGBA")
 
         def font(size, bold=False):
-            candidates = (
-                [
-                    "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
-                    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-                ]
-                if bold
-                else [
-                    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-                    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-                ]
+            key = (int(size), bool(bold))
+            if key in self._font_cache:
+                return self._font_cache[key]
+            font_dir = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "assets",
+                "fonts",
             )
-            for path in candidates:
+            path = os.path.join(font_dir, "NotoSansSC-VF.ttf")
+            try:
+                loaded = ImageFont.truetype(path, size)
+                loaded.set_variation_by_name(
+                    "Bold" if bold else "Regular"
+                )
+            except OSError:
+                path = os.path.join(
+                    font_dir,
+                    "DejaVuSans-Bold.ttf"
+                    if bold
+                    else "DejaVuSans.ttf",
+                )
                 try:
-                    return ImageFont.truetype(path, size)
+                    loaded = ImageFont.truetype(path, size)
                 except OSError:
-                    continue
-            return ImageFont.load_default()
+                    loaded = ImageFont.load_default()
+            self._font_cache[key] = loaded
+            return loaded
 
+        command_phase = str(
+            overlay.get("command_phase", overlay.get("status", "WAITING"))
+        ).upper()
+        status = "RUNNING" if command_phase == "EXECUTING" else command_phase
+        text_color = (255, 255, 255, 255)
+        muted_color = (218, 222, 228, 255)
+        accent_color = {
+            "RUNNING": (255, 208, 64, 255),
+            "SUCCESS": (88, 226, 128, 255),
+            "FAILED": (255, 96, 96, 255),
+            "FAILURE": (255, 96, 96, 255),
+        }.get(status, text_color)
+        speed_kmh = float(overlay.get("speed_kmh", 0.0))
+        target_speed_kmh = float(overlay.get("target_speed_kmh", 0.0))
+        progress_m = float(overlay.get("route_progress_m", 0.0))
+        route_length_m = max(
+            1.0,
+            float(overlay.get("route_length_m", 8000.0)),
+        )
+        progress_ratio = max(
+            0.0,
+            min(1.0, progress_m / route_length_m),
+        )
+
+        panel_height = max(120, min(200, round(self.height * 0.185)))
+        draw.rectangle(
+            (0, 0, self.width, panel_height),
+            fill=(40, 44, 50, 158),
+        )
+        margin = 42
+        scale = panel_height / 200.0
+        y = lambda value: round(value * scale)
+        sized = lambda value: max(10, round(value * scale))
+
+        line_y = y(26)
+        draw.line(
+            (margin, line_y, self.width - margin, line_y),
+            fill=(255, 255, 255, 105),
+            width=2,
+        )
+        progress_x = (
+            margin + progress_ratio * (self.width - 2 * margin)
+        )
+        draw.line(
+            (margin, line_y, progress_x, line_y),
+            fill=accent_color,
+            width=5,
+        )
+        draw.text(
+            (margin, y(38)),
+            "ROUTE  {:.2f} / {:.2f} km".format(
+                progress_m / 1000.0,
+                route_length_m / 1000.0,
+            ),
+            font=font(sized(18), bold=True),
+            fill=text_color,
+        )
+        status_font = font(sized(20), bold=True)
+        status_width = draw.textlength(status, font=status_font)
+        draw.text(
+            (self.width - margin - status_width, y(38)),
+            status,
+            font=status_font,
+            fill=accent_color,
+        )
+
+        risk_level = str(overlay.get("risk_level", "UNKNOWN")).upper()
+        risk_color = {
+            "LOW": (88, 226, 128, 255),
+            "NONE": (88, 226, 128, 255),
+            "MEDIUM": (255, 208, 64, 255),
+            "HIGH": (255, 96, 96, 255),
+        }.get(risk_level, text_color)
+        columns = [margin, int(self.width * 0.61), int(self.width * 0.80)]
+        values = [
+            ("VOICE COMMAND", str(overlay.get("asr_text") or "WAITING")),
+            (
+                "SCENE / RISK",
+                "{}  DET V{}  P{}".format(
+                    risk_level,
+                    int(overlay.get("detected_vehicle_count", 0)),
+                    int(overlay.get("detected_pedestrian_count", 0)),
+                ),
+            ),
+            (
+                "CONTROL",
+                "{:.0f} / {:.0f} km/h".format(
+                    speed_kmh,
+                    target_speed_kmh,
+                ),
+            ),
+        ]
+        for index, (x_pos, (label, value)) in enumerate(
+            zip(columns, values)
+        ):
+            draw.text(
+                (x_pos, y(77)),
+                label,
+                font=font(sized(14), bold=True),
+                fill=muted_color,
+            )
+            value_size = sized(18)
+            if index == 0:
+                max_width = columns[1] - x_pos - 20
+                while (
+                    value_size > sized(12)
+                    and draw.textlength(
+                        value,
+                        font=font(value_size, bold=True),
+                    )
+                    > max_width
+                ):
+                    value_size -= 1
+            draw.text(
+                (x_pos, y(101)),
+                value,
+                font=font(value_size, bold=True),
+                fill=risk_color if index == 1 else text_color,
+            )
+
+        latency = []
+        for label, key in (
+            ("PARSE", "parse_latency_ms"),
+            ("SCENE", "scene_decision_latency_ms"),
+            ("E2E", "end_to_end_ms"),
+        ):
+            value = overlay.get(key)
+            if value is not None:
+                latency.append("{} {:.1f}ms".format(label, float(value)))
+        draw.text(
+            (margin, y(137)),
+            "LATENCY  " + "  ".join(latency),
+            font=font(sized(15), bold=True),
+            fill=text_color,
+        )
+        draw.text(
+            (margin, y(170)),
+            "SIM {:.1f}s   COLL {}   LANE {}".format(
+                float(overlay.get("sim_time_s", 0.0)),
+                int(overlay.get("collisions", 0)),
+                int(overlay.get("lane_events", 0)),
+            ),
+            font=font(sized(13)),
+            fill=muted_color,
+        )
+        self._draw_speed_chart(
+            draw,
+            overlay,
+            font,
+            muted_color,
+            (
+                int(self.width * 0.78),
+                y(142),
+                self.width - margin,
+                y(190),
+            ),
+        )
+        return image.tobytes("raw", "BGRA")
+
+        # Legacy dashboard retained below for compatibility with old exports.
         status = str(overlay.get("status", "RUNNING")).upper()
         status_color = {
             "RUNNING": (255, 211, 54, 255),

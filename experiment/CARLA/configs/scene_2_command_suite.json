@@ -1,0 +1,426 @@
+{
+  "schema_version": "scene_2_command_suite/v1",
+  "scene_id": "scene_2_complex_avoidance_town05_8km",
+  "input": {
+    "modality": "TEXT",
+    "language": "zh-CN",
+    "description": "场景二离线解析和 CARLA 闭环共用的15条中文复合指令"
+  },
+  "commands": [
+    {
+      "id": "s2_t05_cmd_01",
+      "announce_at_m": 0.0,
+      "text": "保持当前车道，减速至45公里每小时，通过前方路口后继续直行。",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "SET_SPEED",
+          "TURN"
+        ],
+        "target_speeds_kmh": [
+          45.0
+        ],
+        "directions": [
+          "STRAIGHT"
+        ],
+        "alignment_targets": [
+          "CURRENT_LANE",
+          "JUNCTION"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "target_speed_reached",
+        "junction_cleared"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_02",
+      "announce_at_m": 400.0,
+      "text": "通过路口后保持当前车道，减速至40公里每小时，跟随前方白色车辆，并保持安全车距。",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "SET_SPEED",
+          "FOLLOW"
+        ],
+        "target_speeds_kmh": [
+          40.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "CURRENT_LANE",
+          "WHITE_VEHICLE"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "target_speed_reached",
+        "safe_following_distance"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_03",
+      "announce_at_m": 590.0,
+      "text": "看到前方横穿马路的行人，减速避让，行人通过后向左变道超越红色慢车。",
+      "expected": {
+        "actions": [
+          "ADJUST_SPEED",
+          "YIELD",
+          "CHANGE_LANE",
+          "OVERTAKE"
+        ],
+        "target_speeds_kmh": [],
+        "directions": [
+          "LEFT"
+        ],
+        "alignment_targets": [
+          "CROSSING_PEDESTRIAN",
+          "LEFT_LANE",
+          "RED_SLOW_VEHICLE"
+        ]
+      },
+      "execution_checks": [
+        "pedestrian_yielded",
+        "left_lane_reached",
+        "red_vehicle_overtaken"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_04",
+      "announce_at_m": 820.0,
+      "text": "确认已经超过红色慢车，安全返回右侧车道，恢复至45公里每小时并保持安全车距。",
+      "expected": {
+        "actions": [
+          "CHANGE_LANE",
+          "SET_SPEED",
+          "FOLLOW"
+        ],
+        "target_speeds_kmh": [
+          45.0
+        ],
+        "directions": [
+          "RIGHT"
+        ],
+        "alignment_targets": [
+          "RED_SLOW_VEHICLE",
+          "RIGHT_LANE",
+          "LEAD_VEHICLE"
+        ]
+      },
+      "execution_checks": [
+        "overtake_clearance_confirmed",
+        "right_lane_reached",
+        "target_speed_reached"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_05",
+      "announce_at_m": 900.0,
+      "text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认乘客离开车道后继续行驶。",
+      "expected": {
+        "actions": [
+          "PULL_OVER",
+          "SET_SPEED",
+          "RESUME"
+        ],
+        "target_speeds_kmh": [
+          30.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "BUS_STOP",
+          "STOPPED_BUS",
+          "BUS_PASSENGERS"
+        ]
+      },
+      "execution_checks": [
+        "roadside_position_safe",
+        "target_speed_reached",
+        "passengers_cleared"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_06",
+      "announce_at_m": 1080.0,
+      "text": "等待最后一名乘客离开，确认公交车没有起步后向左变道，超过公交车再返回右侧车道。",
+      "expected": {
+        "actions": [
+          "WAIT",
+          "CHANGE_LANE",
+          "OVERTAKE",
+          "CHANGE_LANE"
+        ],
+        "target_speeds_kmh": [],
+        "directions": [
+          "LEFT",
+          "RIGHT"
+        ],
+        "alignment_targets": [
+          "BUS_PASSENGERS",
+          "STOPPED_BUS",
+          "LEFT_LANE",
+          "RIGHT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "passengers_cleared",
+        "bus_stationary",
+        "bus_overtaken",
+        "right_lane_reached"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_07",
+      "announce_at_m": 1220.0,
+      "text": "右侧有慢速自行车，先减速并向左变道避让，超过自行车后回到右侧车道。",
+      "expected": {
+        "actions": [
+          "ADJUST_SPEED",
+          "CHANGE_LANE",
+          "AVOID",
+          "OVERTAKE",
+          "CHANGE_LANE"
+        ],
+        "target_speeds_kmh": [],
+        "directions": [
+          "LEFT",
+          "RIGHT"
+        ],
+        "alignment_targets": [
+          "SLOW_CYCLIST",
+          "LEFT_LANE",
+          "RIGHT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "cyclist_clearance_safe",
+        "left_lane_reached",
+        "cyclist_passed",
+        "right_lane_reached"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_08",
+      "announce_at_m": 1550.0,
+      "text": "接近前方十字路口时减速，礼让横向来车，确认路口清空后直行通过。",
+      "expected": {
+        "actions": [
+          "ADJUST_SPEED",
+          "YIELD",
+          "PROCEED"
+        ],
+        "target_speeds_kmh": [],
+        "directions": [
+          "STRAIGHT"
+        ],
+        "alignment_targets": [
+          "JUNCTION",
+          "CROSS_TRAFFIC"
+        ]
+      },
+      "execution_checks": [
+        "approach_speed_safe",
+        "cross_traffic_yielded",
+        "junction_cleared"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_09",
+      "announce_at_m": 1950.0,
+      "text": "前方十字路口左转，转弯前减速至30公里每小时，完成左转后进入右侧车道。",
+      "expected": {
+        "actions": [
+          "SET_SPEED",
+          "TURN",
+          "CHANGE_LANE"
+        ],
+        "target_speeds_kmh": [
+          30.0
+        ],
+        "directions": [
+          "LEFT",
+          "RIGHT"
+        ],
+        "alignment_targets": [
+          "JUNCTION",
+          "RIGHT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "target_speed_reached",
+        "left_turn_completed",
+        "right_lane_reached"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_10",
+      "announce_at_m": 2500.0,
+      "text": "完成左转后保持当前车道，跟随前方公交车并保持安全车距，以35公里每小时行驶。",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "FOLLOW",
+          "SET_SPEED"
+        ],
+        "target_speeds_kmh": [
+          35.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "CURRENT_LANE",
+          "MOVING_BUS"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "safe_following_distance",
+        "target_speed_reached"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_11",
+      "announce_at_m": 3600.0,
+      "text": "前方路口右转，转弯前减速至30公里每小时，礼让行人，完成右转后保持当前车道。",
+      "expected": {
+        "actions": [
+          "SET_SPEED",
+          "YIELD",
+          "TURN",
+          "KEEP_LANE"
+        ],
+        "target_speeds_kmh": [
+          30.0
+        ],
+        "directions": [
+          "RIGHT"
+        ],
+        "alignment_targets": [
+          "JUNCTION",
+          "CROSSWALK_PEDESTRIAN",
+          "CURRENT_LANE"
+        ]
+      },
+      "execution_checks": [
+        "target_speed_reached",
+        "pedestrian_yielded",
+        "right_turn_completed",
+        "lane_centered"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_12",
+      "announce_at_m": 4450.0,
+      "text": "前方红色车辆发生故障并减速，先减速，确认安全后向左变道超越，再返回原车道。",
+      "expected": {
+        "actions": [
+          "ADJUST_SPEED",
+          "CHANGE_LANE",
+          "OVERTAKE",
+          "CHANGE_LANE"
+        ],
+        "target_speeds_kmh": [],
+        "directions": [
+          "LEFT",
+          "RIGHT"
+        ],
+        "alignment_targets": [
+          "RED_SLOW_VEHICLE",
+          "LEFT_LANE",
+          "ORIGINAL_LANE"
+        ]
+      },
+      "execution_checks": [
+        "closing_speed_safe",
+        "left_lane_clear",
+        "red_vehicle_overtaken",
+        "original_lane_reached"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_13",
+      "announce_at_m": 5350.0,
+      "text": "返回原车道后恢复至45公里每小时，保持安全车距，通过前方路口后继续直行。",
+      "expected": {
+        "actions": [
+          "SET_SPEED",
+          "FOLLOW",
+          "TURN"
+        ],
+        "target_speeds_kmh": [
+          45.0
+        ],
+        "directions": [
+          "STRAIGHT"
+        ],
+        "alignment_targets": [
+          "LEAD_VEHICLE",
+          "JUNCTION"
+        ]
+      },
+      "execution_checks": [
+        "target_speed_reached",
+        "safe_following_distance",
+        "junction_cleared"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_14",
+      "announce_at_m": 6100.0,
+      "text": "前方人行横道有行人，减速至25公里每小时并停车礼让，行人通过后右转并继续行驶。",
+      "expected": {
+        "actions": [
+          "SET_SPEED",
+          "STOP",
+          "YIELD",
+          "TURN",
+          "PROCEED"
+        ],
+        "target_speeds_kmh": [
+          25.0
+        ],
+        "directions": [
+          "RIGHT"
+        ],
+        "alignment_targets": [
+          "CROSSWALK_PEDESTRIAN",
+          "JUNCTION"
+        ]
+      },
+      "execution_checks": [
+        "target_speed_reached",
+        "vehicle_stopped",
+        "pedestrian_yielded",
+        "right_turn_completed"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_15",
+      "announce_at_m": 7200.0,
+      "text": "确认道路安全后保持当前车道，恢复至45公里每小时，保持安全车距并行驶至终点。",
+      "expected": {
+        "actions": [
+          "KEEP_LANE",
+          "SET_SPEED",
+          "FOLLOW",
+          "NAVIGATE_TO"
+        ],
+        "target_speeds_kmh": [
+          45.0
+        ],
+        "directions": [],
+        "alignment_targets": [
+          "CURRENT_LANE",
+          "LEAD_VEHICLE",
+          "ROUTE_ENDPOINT"
+        ]
+      },
+      "execution_checks": [
+        "lane_centered",
+        "target_speed_reached",
+        "safe_following_distance",
+        "route_completed"
+      ]
+    }
+  ]
+}

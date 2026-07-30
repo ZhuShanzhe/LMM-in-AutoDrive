@@ -5,9 +5,10 @@
   "route": {
     "start_spawn_index": 239,
     "turnaround_spawn_index": 289,
-    "target_length_m": 8000.0,
+    "target_length_m": 8150.0,
     "route_sampling_m": 2.0,
-    "target_speed_kmh": 45.0
+    "target_speed_kmh": 45.0,
+    "initial_speed_kmh": 50.0
   },
   "weather": {
     "preset": "rainy-overcast-evening",
@@ -26,7 +27,7 @@
     "seed": 20260730,
     "vehicles": 70,
     "buses": 3,
-    "ambient_walkers": 24,
+    "ambient_walkers": 0,
     "global_distance_to_leading_vehicle_m": 3.2,
     "global_speed_difference_pct": 5.0,
     "route_spawn_radius_m": 45.0,
@@ -36,10 +37,20 @@
   },
   "special_events": [
     {
+      "id": "white_lead_vehicle",
+      "kind": "white_lead_vehicle",
+      "anchor_progress_m": 430.0,
+      "activate_progress_m": 380.0,
+      "target_speed_kmh": 38.0,
+      "color": "255,255,255"
+    },
+    {
       "id": "slow_vehicle",
       "kind": "slow_vehicle",
       "anchor_progress_m": 500.0,
-      "target_speed_kmh": 20.0
+      "activate_progress_m": 410.0,
+      "target_speed_kmh": 20.0,
+      "color": "255,0,0"
     },
     {
       "id": "crosswalk_pedestrian",
@@ -71,7 +82,7 @@
     },
     {
       "id": "s2_t05_cmd_02",
-      "announce_at_m": 350.0,
+      "announce_at_m": 400.0,
       "text": "通过路口后保持右侧车道，并恢复到50公里每小时。"
     },
     {

@@ -209,9 +209,17 @@ class SafetyMonitor:
 
     def _on_collision(self, event: Any) -> None:
         other = getattr(event, "other_actor", None)
+        impulse = getattr(event, "normal_impulse", None)
+        impulse_vector = {
+            "x": float(getattr(impulse, "x", 0.0)),
+            "y": float(getattr(impulse, "y", 0.0)),
+            "z": float(getattr(impulse, "z", 0.0)),
+        }
         self.collisions.append(
             {
+                "event_id": f"collision_{int(event.frame)}_{len(self.collisions)}",
                 "frame": int(event.frame),
+                "timestamp_s": self.simulation_time_s,
                 "simulation_time_s": self.simulation_time_s,
                 "other_actor_id": getattr(other, "id", None),
                 "other_actor_type": getattr(
@@ -219,15 +227,28 @@ class SafetyMonitor:
                     "type_id",
                     "unknown",
                 ),
+                "normal_impulse_ns": impulse_vector,
+                "impulse_magnitude_ns": math.sqrt(
+                    sum(value * value for value in impulse_vector.values())
+                ),
             }
         )
 
     def _on_lane_invasion(self, event: Any) -> None:
         self.lane_invasions.append(
             {
+                "event_id": (
+                    f"lane_invasion_{int(event.frame)}_"
+                    f"{len(self.lane_invasions)}"
+                ),
                 "frame": int(event.frame),
+                "timestamp_s": self.simulation_time_s,
                 "simulation_time_s": self.simulation_time_s,
                 "markings": [
+                    str(marking.type)
+                    for marking in event.crossed_lane_markings
+                ],
+                "crossed_lane_markings": [
                     str(marking.type)
                     for marking in event.crossed_lane_markings
                 ],

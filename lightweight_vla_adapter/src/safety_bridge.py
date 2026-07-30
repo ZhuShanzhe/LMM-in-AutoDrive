@@ -21,6 +21,13 @@ COMPATIBLE_ACTIONS = {
     "turn_right": {"turn_right", "decelerate", "stop"},
 }
 
+ACTIVE_LATERAL_ACTIONS = {
+    "lane_change_left",
+    "lane_change_right",
+    "turn_left",
+    "turn_right",
+}
+
 
 def _canonical(
     decision: Mapping[str, Any], reason_code: str
@@ -69,6 +76,37 @@ def gate_vla_proposal(
     proposed_action = proposal["action"]
     if proposed_action not in COMPATIBLE_ACTIONS[canonical_action]:
         return _canonical(canonical_decision, "vla_incompatible_with_active_intent")
+    if (
+        proposed_action in {"decelerate", "stop", "emergency_brake"}
+        and recommended not in {"decelerate", "emergency_brake"}
+    ):
+        return _canonical(
+            canonical_decision,
+            "vla_caution_rejected_without_risk_evidence",
+        )
+
+    if (
+        canonical_action in ACTIVE_LATERAL_ACTIONS
+        and proposed_action == "decelerate"
+        and recommended not in {"decelerate", "emergency_brake"}
+    ):
+        result = copy.deepcopy(canonical_decision)
+        result["target_speed_kmh"] = round(
+            min(
+                float(proposal["target_speed_kmh"]),
+                float(canonical_decision["target_speed_kmh"]),
+            ),
+            6,
+        )
+        result["reason"] = "vla_speed_caution_during_active_maneuver"
+        result["blocked_reason_codes"] = []
+        errors = validate_control_decision(result)
+        if errors:
+            raise ValueError(
+                "invalid maneuver-preserving ControlDecision: "
+                + "; ".join(errors)
+            )
+        return result
 
     if proposed_action in {"lane_change_left", "lane_change_right"}:
         direction = proposed_action.removeprefix("lane_change_")
@@ -78,13 +116,22 @@ def gate_vla_proposal(
 
     result = copy.deepcopy(canonical_decision)
     result["action"] = proposed_action
-    result["target_speed_kmh"] = round(
-        min(
-            float(proposal["target_speed_kmh"]),
+    if proposed_action in {"decelerate", "stop", "emergency_brake"}:
+        result["target_speed_kmh"] = round(
+            min(
+                float(proposal["target_speed_kmh"]),
+                float(canonical_decision["target_speed_kmh"]),
+            ),
+            6,
+        )
+    else:
+        # Explicit speed slots belong to DrivingIntent/FSM. The learned head
+        # may choose a compatible maneuver, but its unconstrained speed
+        # regression must not silently replace a reviewed command target.
+        result["target_speed_kmh"] = round(
             float(canonical_decision["target_speed_kmh"]),
-        ),
-        6,
-    )
+            6,
+        )
     if proposed_action in {"stop", "emergency_brake"}:
         result["target_speed_kmh"] = 0.0
     result["target_lane"] = (
@@ -112,6 +159,7 @@ def advance_vla_control_plan(
     *,
     prior_state: dict[str, Any] | None = None,
     feedback: dict[str, Any] | None = None,
+    planner_target_location: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Advance the existing FSM and safety-gate one learned model proposal."""
 
@@ -122,6 +170,7 @@ def advance_vla_control_plan(
         risk_assessment,
         prior_state=prior_state,
         feedback=feedback,
+        planner_target_location=planner_target_location,
     )
     final_decision = gate_vla_proposal(
         proposal,

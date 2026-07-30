@@ -219,11 +219,65 @@ class ControlDecisionTests(unittest.TestCase):
         self.assertEqual(result["action"], "decelerate")
         self.assertIn("turn_target_location_missing", result["blocked_reason_codes"])
 
+    def test_turn_uses_explicit_runtime_planner_location(self):
+        intent = driving_intent(
+            "TURN", {"direction": "LEFT"}, on_blocked="WAIT_FOR_SAFE"
+        )
+        alignment = semantic_alignment(intent, self.world_state["frame_id"])
+        result = build_control_decision(
+            intent,
+            self.world_state,
+            alignment,
+            self.risk,
+            planner_target_location={"x": 12.0, "y": -4.0, "z": 0.2},
+        )
+        self.assertEqual(result["decision_status"], "READY")
+        self.assertEqual(result["action"], "turn_left")
+        self.assertEqual(
+            result["target_location"],
+            {"x": 12.0, "y": -4.0, "z": 0.2},
+        )
+
     def test_set_speed_converts_mps_to_kmh(self):
         intent = driving_intent("SET_SPEED", {"target_speed_mps": 16.667})
         result = self.build(intent)
         self.assertEqual(result["action"], "keep_lane")
         self.assertAlmostEqual(result["target_speed_kmh"], 60.0012)
+
+    def test_follow_inherits_previous_explicit_plan_speed(self):
+        intent = driving_intent("SET_SPEED", {"target_speed_mps": 12.5})
+        intent["intent"]["steps"].append(
+            {
+                "step_id": "step_2",
+                "action": "FOLLOW",
+                "parameters": {"following_distance_m": 18.0},
+                "depends_on": ["step_1"],
+                "preconditions": [],
+                "on_blocked": "WAIT_FOR_SAFE",
+            }
+        )
+        alignment = semantic_alignment(intent, self.world_state["frame_id"])
+        alignment["step_alignments"].append(
+            {
+                "step_id": "step_2",
+                "action": "FOLLOW",
+                "target": None,
+                "alignment_required": False,
+                "alignment_success": None,
+                "candidate_count": 0,
+                "matched_entity": None,
+                "reason_code": "target_not_required",
+            }
+        )
+        result = build_control_decision(
+            intent,
+            self.world_state,
+            alignment,
+            self.risk,
+            source_step_id="step_2",
+        )
+        self.assertEqual(result["action"], "keep_lane")
+        self.assertEqual(result["target_speed_kmh"], 45.0)
 
     def test_grounded_overtake_accelerates_after_lane_change(self):
         intent = driving_intent(
