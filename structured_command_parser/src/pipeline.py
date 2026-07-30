@@ -138,10 +138,18 @@ class ChineseEnglishCommandPipeline:
             )
 
         translation = self.translator.translate(text)
+        parser_kwargs: dict[str, Any] = {
+            "modality": modality,
+            "request_id": pipeline_request_id,
+        }
+        if self.parser_backend == "modernbert":
+            parser_kwargs.update(
+                source_text=text,
+                source_language="zh-CN",
+            )
         intent = self.parser.parse(
             translation.translated_text,
-            modality=modality,
-            request_id=pipeline_request_id,
+            **parser_kwargs,
         )
         return {
             "pipeline_version": "1.1.0",

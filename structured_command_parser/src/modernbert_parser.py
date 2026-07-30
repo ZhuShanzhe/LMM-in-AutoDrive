@@ -28,6 +28,7 @@ from .modernbert_labels import (
 from .modernbert_model import ModernBertDrivingModel
 from .schema_tools import semantic_errors
 from .semantic_decomposer import decompose_atomic_actions
+from .speed_slots import restore_source_target_speeds
 from .semantic_normalizer import (
     filter_suppressed_actions,
     normalize_semantics,
@@ -36,7 +37,13 @@ from .semantic_normalizer import (
 
 ACTION_PATTERNS = {
     "KEEP_LANE": r"\b(?:keep|maintain|stay|remain).{0,20}\blane\b",
-    "SET_SPEED": r"\b(?:set|maintain|hold|drive at).{0,24}\b(?:km/h|m/s)\b",
+    "SET_SPEED": (
+        r"\b(?:set|maintain|hold|keep|drive at|cruise at|speed up to|accelerate to|"
+        r"slow down to|decelerate to|reduce(?: (?:the )?speed)? to)"
+        r".{0,24}\b(?:km/h|kmph|kph|m/s|"
+        r"kilometers? per hour|kilometres? per hour|"
+        r"meters? per second|metres? per second)\b"
+    ),
     "ADJUST_SPEED": r"\b(?:accelerate|speed up|slow down|decelerate|brake|reduce speed)\b",
     "STOP": r"\b(?:stop|halt|standstill|cease all movement)\b",
     "WAIT": r"\b(?:wait|hold position|stay put)\b",
@@ -182,6 +189,17 @@ class ModernBertEnglishIntentParser:
         payload = QwenEnglishIntentParser._normalize_payload(payload, normalized)
         if atomic_commands is not None and payload.get("status") == "VALID":
             payload["commands"] = atomic_commands
+        if source_text is not None and payload.get("status") == "VALID":
+            payload["commands"], source_speed_restored = (
+                restore_source_target_speeds(
+                    payload.get("commands", []),
+                    source_text,
+                )
+            )
+            if source_speed_restored:
+                payload.setdefault("warnings", []).append(
+                    "Explicit target speed restored from the source-language command."
+                )
         status = payload.pop("status")
         missing_slots = payload.pop("missing_slots", [])
         warnings = payload.pop("warnings", [])

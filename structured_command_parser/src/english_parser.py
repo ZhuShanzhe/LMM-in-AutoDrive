@@ -659,7 +659,11 @@ class QwenEnglishIntentParser:
             r"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>km/h|m/s)", text
         )
         if explicit_target_speed and re.search(
-            r"set (?:the )?speed to|adjust (?:your )?speed to|maintain|drive at|consistent|steady|keep (?:your )?speed|aim|focus|stay at|try to reach",
+            r"set (?:the )?speed to|adjust (?:your )?speed to|"
+            r"speed up to|accelerate to|slow down to|decelerate to|"
+            r"reduce(?: (?:the )?speed)? to|maintain|drive at|"
+            r"consistent|steady|keep (?:your )?speed|aim|focus|"
+            r"stay at|try to reach",
             text,
         ):
             value = float(explicit_target_speed.group("value"))
@@ -673,7 +677,11 @@ class QwenEnglishIntentParser:
                 "target_speed_mps": round(target_speed, 3),
             }
             preserved_actions: set[str] = set()
-            if re.search(r"keep (?:the |this )?(?:current )?lane", text):
+            if re.search(
+                r"(?:keep|maintain|stay)(?: in)? "
+                r"(?:the |this )?(?:current )?lane",
+                text,
+            ):
                 preserved_actions.add("KEEP_LANE")
             if "pull over" in text:
                 preserved_actions.add("PULL_OVER")
@@ -1025,7 +1033,9 @@ class QwenEnglishIntentParser:
             r"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>km/h|m/s)", text
         )
         if explicit_speed and re.search(
-            r"set (?:the )?speed|speed to|decelerate to|reduce (?:the )?speed to|drive at|maintain|steady",
+            r"set (?:the )?speed|speed (?:up )?to|accelerate to|"
+            r"slow down to|decelerate to|reduce(?: (?:the )?speed)? to|"
+            r"drive at|maintain|steady",
             text,
         ):
             value = float(explicit_speed.group("value"))
@@ -1079,8 +1089,15 @@ class QwenEnglishIntentParser:
                 command.pop("lane_reference", None)
 
         keyword_patterns = {
-            "KEEP_LANE": r"keep (?:the )?(?:current )?lane",
-            "SET_SPEED": r"speed to|drive at|maintain|steady|decelerate to|reduce (?:the )?speed to",
+            "KEEP_LANE": (
+                r"(?:keep|maintain|stay)(?: in)? "
+                r"(?:the )?(?:current )?lane"
+            ),
+            "SET_SPEED": (
+                r"speed (?:up )?to|accelerate to|slow down to|"
+                r"drive at|maintain|steady|decelerate to|"
+                r"reduce(?: (?:the )?speed)? to"
+            ),
             "ADJUST_SPEED": r"decelerate|reduce (?:the )?speed|slow down|accelerate|increase (?:the )?speed",
             "STOP": r"\bstop\b",
             "WAIT": r"\bwait\b|hold position|remain in place",

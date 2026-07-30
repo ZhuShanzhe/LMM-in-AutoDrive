@@ -261,7 +261,14 @@ def _valid_relation_span(text: str, span: dict[str, Any]) -> bool:
 
 
 def _valid_model_entity_span(span: dict[str, Any]) -> bool:
-    tokens = set(re.findall(r"[a-z0-9-]+", str(span["text"]).casefold()))
+    tokens = {
+        token
+        for token in re.findall(
+            r"[a-z0-9.-]+",
+            str(span["text"]).casefold(),
+        )
+        if not re.fullmatch(r"\d+(?:\.\d+)?", token)
+    }
     non_referential = {
         "a",
         "an",
@@ -280,8 +287,29 @@ def _valid_model_entity_span(span: dict[str, Any]) -> bool:
         "gap",
         "opportunity",
         "chance",
+        "current",
+        "next",
         "safe",
         "safely",
+        "to",
+        "of",
+        "at",
+        "in",
+        "on",
+        "per",
+        "speed",
+        "km",
+        "kilometer",
+        "kilometers",
+        "h",
+        "hour",
+        "hours",
+        "m",
+        "meter",
+        "meters",
+        "s",
+        "second",
+        "seconds",
     }
     return bool(tokens - non_referential)
 
@@ -429,9 +457,25 @@ def extract_semantic_frame(
             for entity, span in zip(entities, entity_spans)
             if int(span["start"]) >= int(relation["end"])
         ]
-        if not following:
+        if following:
+            primary, _ = min(
+                following,
+                key=lambda item: int(item[1]["start"]),
+            )
+        elif predicate == "VISIBLE":
+            preceding = [
+                (entity, span)
+                for entity, span in zip(entities, entity_spans)
+                if int(span["end"]) <= int(relation["start"])
+            ]
+            if not preceding:
+                continue
+            primary, _ = max(
+                preceding,
+                key=lambda item: int(item[1]["end"]),
+            )
+        else:
             continue
-        primary, _ = min(following, key=lambda item: int(item[1]["start"]))
         condition: dict[str, Any] = {
             "predicate": predicate,
             "subject": "EGO",

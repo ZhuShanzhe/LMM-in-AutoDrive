@@ -28,6 +28,40 @@ class RuleParserTest(unittest.TestCase):
             places=3,
         )
 
+    def test_colloquial_kilometer_speed_keeps_numeric_target(self) -> None:
+        cases = (
+            "保持40公里速度行驶",
+            "以40公里的速度行驶",
+            "车速保持在40公里",
+            "时速保持在四十公里",
+        )
+        for text in cases:
+            with self.subTest(text=text):
+                result = self.parse(text)
+                step = result["intent"]["steps"][0]
+                self.assertEqual(step["action"], "SET_SPEED")
+                self.assertAlmostEqual(
+                    step["parameters"]["target_speed_mps"],
+                    11.111,
+                    places=3,
+                )
+                self.assertEqual(step["parameters"]["source_value"], 40.0)
+                self.assertEqual(step["parameters"]["source_unit"], "km/h")
+
+    def test_distance_phrases_are_not_inferred_as_target_speed(self) -> None:
+        for text in ("行驶40公里", "前方40公里后右转", "保持40米距离"):
+            with self.subTest(text=text):
+                result = self.parser.parse(text, request_id="distance-command")
+                if result is None:
+                    continue
+                self.assertNotIn(
+                    "SET_SPEED",
+                    [
+                        step["action"]
+                        for step in result["intent"]["steps"]
+                    ],
+                )
+
     def test_turn_at_distance(self) -> None:
         result = self.parse("前方三百米路口右转")
         step = result["intent"]["steps"][0]

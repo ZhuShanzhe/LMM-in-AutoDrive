@@ -22,7 +22,7 @@ class ASRConfig:
     trans_temperature: float = 0.0
     trans_device: str = "cuda:0"
 
-    output_dir: str = "data"
+    output_dir: str = "data/result"
     raise_on_error: bool = False
 
 
@@ -56,5 +56,5 @@ class Qwen3PipelineConfig:
     trans_temperature: float = 0.0
     trans_device: str = "cuda:0"
 
-    output_dir: str = "data"
+    output_dir: str = "data/result"
     raise_on_error: bool = False

@@ -1,5 +1,20 @@
 # ModernBERT 英文驾驶指令结构化解析模块
 
+## 第一阶段 main 范围
+
+`main` 保留结构化指令解析的运行时源代码、规则与术语配置、Schema、接口示例、服务入口和必要回归测试。模型权重不进入 Git，通过 Hugging Face 下载；完整数据构建、伪标签、训练、校准和大规模评测资产继续保留在 `zsz` 分支及外部数据盘，待最终复现包审核。
+
+默认实时链路使用 `ModernBertCommandService` 输出 `DrivingIntent 1.2.0`。规则短路和结构校验继续保留，Qwen 只作为历史对照或离线扩展，不进入默认实时链路。
+
+模型仓库与推荐路径：
+
+```text
+UNIC0RN-Zhu/modernbert-drive-command-base
+/root/autodl-tmp/models/modernbert-drive-command-compositional
+```
+
+本模块只负责语言指令结构化，不直接输出油门、制动、方向盘或最终安全决策。
+
 本模块是 XH-202602 项目中的英文指令解析基线。它接收上游翻译模块输出的英文驾驶指令，通过“语义规范化、原子意图分解、ModernBERT 语义识别、场景检索、规则验证”生成符合 `DrivingIntent 1.2.0` Schema 的 JSON，再交给场景理解、规划与控制模块。
 
 ```text
@@ -157,7 +172,7 @@ GitHub 不上传模型权重。最终权重发布在 Hugging Face：
 
 - 模型页面：<https://huggingface.co/UNIC0RN-Zhu/modernbert-drive-command-base>
 - 仓库 ID：`UNIC0RN-Zhu/modernbert-drive-command-base`
-- License：`research-only-non-commercial`（Hugging Face 类型为 `other`）
+- License：`simlingo-talk2car-non-commercial-research`（Hugging Face 类型为 `other`）
 
 AutoDL 上启用网络加速并下载完整模型：
 
@@ -518,3 +533,84 @@ ModernBERT 默认后端、伪标签防泄漏切分、规则短路、模型服务
 - Conda 环境
 
 `.gitignore` 已按以上边界配置。模型权重通过 Hugging Face 分发，代码通过 GitHub 协作。
+
+## 语音批测问题修复（2026-07-29）
+
+针对 `voice_to_driving_intent_report` 中 6 条异常结果，本模块修复了以下两类解析问题：
+
+- 复合指令中的显式目标速度可能被规范化前的原子动作覆盖，导致
+  `SET_SPEED.parameters.target_speed_mps` 丢失；
+- 语义 token 头可能把 `to`、`of`、`current`、`next`、`km`、`h` 和
+  `40 km` 等功能词或单位片段误识别为 `UNKNOWN` 实体，并错误绑定到速度动作。
+
+本次采用确定性后处理修复，不重新训练 ModernBERT 权重：
+
+- 原子分解器将 `speed up to`、`accelerate to`、`slow down to`、
+  `decelerate to`、`reduce to` 和 `drive at a speed of` 加数值单位的表达统一识别为
+  `SET_SPEED`；
+- 同时接受 `km/h`、`m/s`、`kilometer(s) per hour` 和
+  `meter(s) per second`，统一换算并保留规范源单位；
+- 过滤纯数字、单位和非指代功能词实体；
+- 对 `the traffic light comes into view` 这类后置可见关系，让
+  `VISIBLE` 正确回指前置真实实体，避免依赖伪实体形成关系。
+
+真实 `modernbert-drive-command-compositional` 权重复测结果：
+
+| 范围 | 结果 |
+|---|---|
+| 报告中的 6 条异常英文指令 | 6/6 为 `VALID`，全部生成唯一 `SET_SPEED` 和正确 `target_speed_mps` |
+| 伪实体检查 | 6/6 的单位/功能词伪实体均被清除 |
+| 6 条常驻推理延时 | 平均 34.086ms，最大 85.300ms |
+| 指令解析单元与回归测试 | 117 passed，86 subtests passed |
+| 175 条组合挑战集 | 图完全匹配 100%，动作、方向、谓词、实体和否定均为 100% |
+| 175 条挑战集延时 | 平均 46.741ms，P95 86.793ms，最大 96.349ms |
+
+以上延时仅包含英文结构化指令解析，不包含 ASR、中文到英文翻译、视觉感知和车辆控制。
+报告中 `Road畅通` 等中英文混合翻译属于上游翻译输出质量问题，不在本模块修改范围；
+本模块仅保证收到可解析的英文速度表达后正确生成 `DrivingIntent`。
+
+## 中文目标速度保真修复（2026-07-30）
+
+针对 `保持40公里速度行驶` 等中文口语定速指令，新增源语言数值槽位保护：
+
+- 在 `保持`、`车速`、`速度`、`时速`、`按`、`以` 等明确速度上下文中，
+  将口语化 `40公里` 解释为 `40 km/h`；
+- `行驶40公里`、`前方40公里后右转` 和 `保持40米距离` 等距离表达不会被误判为目标速度；
+- 支持英文 ASR 变体 `kph`、`kmph`、英式 `kilometres per hour` 和
+  `cruise at`、`keep ... speed`；
+- 翻译后进入 ModernBERT 时同时传入中文 `source_text`。若翻译遗漏或改写速度数值，
+  中文源文本中的明确数值覆盖翻译结果并写入审计警告；
+- `SET_SPEED` 始终通过 `parameters.target_speed_mps` 表示目标速度，
+  场景决策和 CARLA 协议再统一转换为 `target_speed_kmh`。
+
+例如：
+
+```json
+{
+  "action": "SET_SPEED",
+  "parameters": {
+    "target_speed_mps": 11.111,
+    "source_value": 40.0,
+    "source_unit": "km/h"
+  }
+}
+```
+
+该步骤传入控制协议后得到 `action=keep_lane` 和约 `40.0 km/h` 的
+`target_speed_kmh`。本次修复属于规则槽位提取和 ModernBERT 输入/后处理增强，
+不需要重新训练或更新 ModernBERT 权重。
+
+真实权重与接口回归结果：
+
+| 范围 | 结果 |
+|---|---|
+| 6 条中文定速表达 | 全部为 `VALID + SET_SPEED + 11.111 m/s` |
+| 3 条距离反例 | 均未生成 `SET_SPEED` |
+| 4 条英文 ASR 单位/措辞变体 | 全部正确生成 `SET_SPEED + 11.111 m/s` |
+| 翻译将 40 错写为 50 的反事实测试 | 恢复中文源值 40，并产生审计警告 |
+| DrivingIntent 到 CARLA 协议 | 输出 `keep_lane + 40.0 km/h` |
+| 指令解析单元与回归测试 | 122 passed，96 subtests passed |
+| 当前 `main` 指令解析与场景理解联合测试 | 316 passed，137 subtests passed |
+| 当前 `main` CARLA 控制测试 | 18 passed |
+| `zsz` 含 VLA 开发测试的三模块联合测试 | 342 passed，137 subtests passed |
+| `zsz` 完整 CARLA 控制测试 | 32 passed |

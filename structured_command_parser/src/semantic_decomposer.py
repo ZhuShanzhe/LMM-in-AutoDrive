@@ -4,6 +4,13 @@ import re
 from typing import Any
 
 
+_SPEED_UNIT = (
+    r"(?:km/h|kmph|kph|m/s|"
+    r"kilometers? per hour|kilometres? per hour|"
+    r"meters? per second|metres? per second)"
+)
+
+
 _ACTION_PATTERNS = (
     (
         "EMERGENCY_BRAKE",
@@ -58,18 +65,25 @@ _ACTION_PATTERNS = (
         ),
     ),
     (
-        "ADJUST_SPEED",
+        "SET_SPEED",
         re.compile(
-            r"\b(?:accelerate|speed up|slow down|decelerate|reduce speed|brake)\b",
+            r"\b(?:set|maintain|hold|keep)(?: the| your| a)? "
+            r"speed(?: at| to| of)? "
+            rf"\d+(?:\.\d+)?\s*{_SPEED_UNIT}\b|"
+            rf"\b(?:drive|cruise) at(?: a speed of)? "
+            rf"\d+(?:\.\d+)?\s*{_SPEED_UNIT}\b|"
+            r"\b(?:speed up|accelerate|slow down|decelerate|"
+            r"reduce(?: (?:the )?speed)?) to "
+            rf"\d+(?:\.\d+)?\s*{_SPEED_UNIT}\b|"
+            rf"\b(?:set|maintain|hold|keep) "
+            rf"\d+(?:\.\d+)?\s*{_SPEED_UNIT}\b",
             re.IGNORECASE,
         ),
     ),
     (
-        "SET_SPEED",
+        "ADJUST_SPEED",
         re.compile(
-            r"\b(?:set|maintain|hold|drive at)(?: the)? speed(?: at| to| of)? "
-            r"\d+(?:\.\d+)?\s*(?:km/h|m/s)\b|"
-            r"\b(?:set|maintain|hold|drive at) \d+(?:\.\d+)?\s*(?:km/h|m/s)\b",
+            r"\b(?:accelerate|speed up|slow down|decelerate|reduce speed|brake)\b",
             re.IGNORECASE,
         ),
     ),
@@ -181,16 +195,24 @@ def _command(action: str, surface: str, text: str) -> dict[str, Any]:
         )
     if action == "SET_SPEED":
         speed = re.search(
-            r"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>km/h|m/s)",
+            rf"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>{_SPEED_UNIT})",
             surface,
             re.IGNORECASE,
         )
         if speed:
             value = float(speed.group("value"))
             unit = speed.group("unit").casefold()
-            command["target_speed_mps"] = round(value / 3.6 if unit == "km/h" else value, 3)
+            is_kmh = (
+                unit in {"km/h", "kmph", "kph"}
+                or "kilometer" in unit
+                or "kilometre" in unit
+            )
+            command["target_speed_mps"] = round(
+                value / 3.6 if is_kmh else value,
+                3,
+            )
             command["source_value"] = value
-            command["source_unit"] = unit
+            command["source_unit"] = "km/h" if is_kmh else "m/s"
     return command
 
 
