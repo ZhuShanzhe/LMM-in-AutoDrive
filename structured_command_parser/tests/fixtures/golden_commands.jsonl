@@ -13,7 +13,7 @@
 {"sample_id":"rule-013","parser_path":"RULE","text":"立即紧急刹车","expected":{"status":"VALID","category":"EMERGENCY_RESPONSE","actions":["EMERGENCY_BRAKE"]}}
 {"sample_id":"rule-014","parser_path":"RULE","text":"取消刚才的指令","expected":{"status":"VALID","category":"META_CONTROL","actions":["CANCEL"]}}
 {"sample_id":"rule-015","parser_path":"RULE","text":"恢复正常行驶","expected":{"status":"VALID","category":"META_CONTROL","actions":["RESUME"]}}
-{"sample_id":"llm-001","parser_path":"LLM","text":"看到前方横穿马路的行人，减速避让后向左变道超越慢车","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["ADJUST_SPEED","CHANGE_LANE","OVERTAKE"],"directions":["LEFT"]}}
+{"sample_id":"llm-001","parser_path":"LLM","text":"看到前方横穿马路的行人，减速避让后向左变道超越慢车","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["ADJUST_SPEED","YIELD","CHANGE_LANE","OVERTAKE"],"directions":["LEFT"]}}
 {"sample_id":"llm-002","parser_path":"LLM","text":"前方公交站有行人上下车，靠边减速至30km/h，确认安全后继续行驶","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["PULL_OVER","SET_SPEED","RESUME"],"target_speed_mps":[8.333]}}
 {"sample_id":"llm-003","parser_path":"LLM","text":"避让前方施工锥桶并回归原车道","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["AVOID","RESUME"]}}
 {"sample_id":"llm-004","parser_path":"LLM","text":"绕开前方慢车后提速","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["OVERTAKE","ADJUST_SPEED"]}}

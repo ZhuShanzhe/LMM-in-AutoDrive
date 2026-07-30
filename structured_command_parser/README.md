@@ -518,7 +518,7 @@ python -m structured_command_parser.scripts.evaluate_parser_alignment \
 git diff --check
 ```
 
-当前指令解析单元与回归测试共 113 项，4 个 Schema 示例全部通过；联调所依赖的
+当前指令解析单元与回归测试共 128 项，4 个 Schema 示例全部通过；联调所依赖的
 场景理解模块 186 项测试也全部通过。覆盖输入消息契约、Schema、动作边界、歧义与
 危险指令、否定和修正、ASR 疑义、共享实体引用、条件关系、多动作顺序、
 ModernBERT 默认后端、伪标签防泄漏切分、规则短路、模型服务预热和线程安全入口。
@@ -621,7 +621,80 @@ ModernBERT 默认后端、伪标签防泄漏切分、规则短路、模型服务
 | 翻译将 40 错写为 50 的反事实测试 | 恢复中文源值 40，并产生审计警告 |
 | DrivingIntent 到 CARLA 协议 | 输出 `keep_lane + 40.0 km/h` |
 | 指令解析单元与回归测试 | 122 passed，96 subtests passed |
-| 当前 `main` 指令解析与场景理解联合测试 | 316 passed，137 subtests passed |
-| 当前 `main` CARLA 控制测试 | 18 passed |
-| `zsz` 含 VLA 开发测试的三模块联合测试 | 342 passed，137 subtests passed |
+| 当前 `main` 指令解析与场景理解联合测试 | 322 passed，169 subtests passed |
+| 当前 `main` CARLA 控制测试 | 21 passed |
+| `zsz` 含 VLA 开发测试的三模块联合测试 | 348 passed，169 subtests passed |
 | `zsz` 完整 CARLA 控制测试 | 32 passed |
+
+## 场景二、场景三中文组合指令修复（2026-07-30）
+
+根据场景二和场景三的 ASR 文本到驾驶意图对比报告，本次在实时规则层新增中文
+组合场景解析器。ModernBERT 英文主模型及权重未修改；英文回退链路、Schema 和
+下游接口保持兼容。
+
+本次修复覆盖：
+
+- 多动作指令按原文顺序完整拆解，允许同一动作在不同阶段重复出现，例如
+  `等待 -> 向右变道超车 -> 返回原车道`；
+- 将完成态或历史条件与待执行动作分离，`已经超过`、`完成左转` 和句首
+  `返回原车道后` 不再错误重发动作；
+- 新增 `WAIT`、`PROCEED`、`FOLLOW`、`YIELD`、`NAVIGATE_TO`、`RESUME`
+  等报告缺失动作，并保留规则安全前置条件；
+- 提取行人、车辆、慢车、骑行者、锥桶、施工区域、公交站、路口、车道和终点等
+  场景实体，步骤通过 `target_ref` 引用实体，同时保留颜色、车辆角色、相对位置和
+  开放描述；
+- 将“保持安全车距”表示为 `FOLLOW` 加 `SAFE_DISTANCE` 目标条件；
+- 支持“不高于、不超过、不得超过”等速度上限表达，除
+  `SET_SPEED.parameters.target_speed_mps` 外，在约束中写入 `max_speed_mps`；
+- 区分对行人或来车的 `YIELD`、对锥桶或骑行者的 `AVOID`、对慢车的
+  `OVERTAKE`，并保留显式方向；
+- 支持距离型转向触发，生成 `AT_DISTANCE + distance_m`；
+- 基础保持车道、单次变道和定速仍归类为 `BASIC_CONTROL`，未被组合规则错误提升
+  为复杂避障。
+
+示例：
+
+```json
+{
+  "entities": [
+    {
+      "entity_id": "vehicle_1",
+      "type": "VEHICLE",
+      "relation": "AHEAD",
+      "description": "前车"
+    }
+  ],
+  "intent": {
+    "steps": [
+      {
+        "action": "FOLLOW",
+        "target_ref": "vehicle_1",
+        "goal_conditions": [
+          {
+            "predicate": "SAFE_DISTANCE",
+            "subject": "ego",
+            "object": "vehicle_1"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+回归结果：
+
+| 范围 | 结果 |
+|---|---|
+| 场景二报告 15 条指令 | 15/15 动作序列通过 |
+| 场景三报告 15 条指令 | 15/15 必需动作与约束通过 |
+| 实体、目标引用、速度上限、完成态抑制专项检查 | 全部通过 |
+| 场景报告专项测试 | 6 passed，32 subtests passed |
+| 指令解析完整测试 | 128 passed，128 subtests passed |
+| `main` 指令解析与场景理解联合测试 | 322 passed，169 subtests passed |
+| `main` CARLA 控制接口测试 | 21 passed |
+| `zsz` 指令解析、场景理解、轻量 VLA 联合测试 | 348 passed，169 subtests passed |
+| `zsz` CARLA 控制接口测试 | 32 passed |
+
+以上结果验证的是 ASR 文本进入结构化解析后的动作、实体、约束与接口一致性，不包含
+ASR 识别准确率、中文到英文翻译时延或 CARLA 闭环任务成功率。
