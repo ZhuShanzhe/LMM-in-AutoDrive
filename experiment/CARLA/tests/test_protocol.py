@@ -1,6 +1,15 @@
+import sys
 import unittest
+from pathlib import Path
 
 from control.protocol import normalize_intent
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from structured_command_parser.src.rule_parser import RuleIntentParser
 
 
 def driving_intent(action, parameters=None, status="VALID", urgency="NORMAL"):
@@ -46,6 +55,20 @@ def driving_intent(action, parameters=None, status="VALID", urgency="NORMAL"):
 
 
 class ProtocolDrivingIntentTest(unittest.TestCase):
+    def test_colloquial_chinese_speed_reaches_control_protocol(self):
+        parsed = RuleIntentParser().parse(
+            "保持40公里速度行驶",
+            request_id="spoken-speed",
+        )
+        self.assertIsNotNone(parsed)
+        intent = normalize_intent(parsed)
+        self.assertEqual(intent["action"], "keep_lane")
+        self.assertAlmostEqual(
+            intent["target_speed_kmh"],
+            40.0,
+            places=2,
+        )
+
     def test_set_speed_maps_to_keep_lane_with_kmh(self):
         intent = normalize_intent(
             driving_intent("SET_SPEED", {"target_speed_mps": 16.667})

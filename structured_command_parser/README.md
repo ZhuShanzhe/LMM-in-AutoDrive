@@ -568,3 +568,47 @@ ModernBERT 默认后端、伪标签防泄漏切分、规则短路、模型服务
 以上延时仅包含英文结构化指令解析，不包含 ASR、中文到英文翻译、视觉感知和车辆控制。
 报告中 `Road畅通` 等中英文混合翻译属于上游翻译输出质量问题，不在本模块修改范围；
 本模块仅保证收到可解析的英文速度表达后正确生成 `DrivingIntent`。
+
+## 中文目标速度保真修复（2026-07-30）
+
+针对 `保持40公里速度行驶` 等中文口语定速指令，新增源语言数值槽位保护：
+
+- 在 `保持`、`车速`、`速度`、`时速`、`按`、`以` 等明确速度上下文中，
+  将口语化 `40公里` 解释为 `40 km/h`；
+- `行驶40公里`、`前方40公里后右转` 和 `保持40米距离` 等距离表达不会被误判为目标速度；
+- 支持英文 ASR 变体 `kph`、`kmph`、英式 `kilometres per hour` 和
+  `cruise at`、`keep ... speed`；
+- 翻译后进入 ModernBERT 时同时传入中文 `source_text`。若翻译遗漏或改写速度数值，
+  中文源文本中的明确数值覆盖翻译结果并写入审计警告；
+- `SET_SPEED` 始终通过 `parameters.target_speed_mps` 表示目标速度，
+  场景决策和 CARLA 协议再统一转换为 `target_speed_kmh`。
+
+例如：
+
+```json
+{
+  "action": "SET_SPEED",
+  "parameters": {
+    "target_speed_mps": 11.111,
+    "source_value": 40.0,
+    "source_unit": "km/h"
+  }
+}
+```
+
+该步骤传入控制协议后得到 `action=keep_lane` 和约 `40.0 km/h` 的
+`target_speed_kmh`。本次修复属于规则槽位提取和 ModernBERT 输入/后处理增强，
+不需要重新训练或更新 ModernBERT 权重。
+
+真实权重与接口回归结果：
+
+| 范围 | 结果 |
+|---|---|
+| 6 条中文定速表达 | 全部为 `VALID + SET_SPEED + 11.111 m/s` |
+| 3 条距离反例 | 均未生成 `SET_SPEED` |
+| 4 条英文 ASR 单位/措辞变体 | 全部正确生成 `SET_SPEED + 11.111 m/s` |
+| 翻译将 40 错写为 50 的反事实测试 | 恢复中文源值 40，并产生审计警告 |
+| DrivingIntent 到 CARLA 协议 | 输出 `keep_lane + 40.0 km/h` |
+| 指令解析单元与回归测试 | 122 passed，96 subtests passed |
+| 三模块联合测试 | 342 passed，137 subtests passed |
+| CARLA 控制测试 | 32 passed |
