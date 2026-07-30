@@ -11,6 +11,9 @@ from structured_command_parser.src.semantic_normalizer import (
     filter_suppressed_actions,
     normalize_semantics,
 )
+from structured_command_parser.src.speed_slots import (
+    restore_source_target_speeds,
+)
 
 
 class SemanticNormalizerTests(unittest.TestCase):
@@ -94,6 +97,54 @@ class CompositionalFrameTests(unittest.TestCase):
                     expected_speed,
                     places=3,
                 )
+
+    def test_english_asr_speed_unit_variants_are_deterministic(self):
+        cases = (
+            "Cruise at 40 kph.",
+            "Keep 40 kmph.",
+            "Maintain a speed of 40 kilometres per hour.",
+        )
+        for text in cases:
+            with self.subTest(text=text):
+                commands = decompose_atomic_actions(text)
+                self.assertEqual([item["action"] for item in commands], ["SET_SPEED"])
+                self.assertAlmostEqual(
+                    commands[0]["target_speed_mps"],
+                    11.111,
+                    places=3,
+                )
+
+    def test_source_language_speed_overrides_translation_slot(self):
+        restored, changed = restore_source_target_speeds(
+            [{"action": "SET_SPEED", "target_speed_mps": 13.889}],
+            "保持40公里速度行驶",
+        )
+        self.assertTrue(changed)
+        self.assertEqual(restored[0]["action"], "SET_SPEED")
+        self.assertAlmostEqual(
+            restored[0]["target_speed_mps"],
+            11.111,
+            places=3,
+        )
+        self.assertEqual(restored[0]["source_unit"], "km/h")
+
+    def test_source_language_speed_upgrades_relative_speed_action(self):
+        restored, changed = restore_source_target_speeds(
+            [{"action": "ADJUST_SPEED", "change": "INCREASE"}],
+            "保持40公里速度行驶",
+        )
+        self.assertTrue(changed)
+        self.assertEqual(
+            restored,
+            [
+                {
+                    "action": "SET_SPEED",
+                    "target_speed_mps": 11.111,
+                    "source_value": 40.0,
+                    "source_unit": "km/h",
+                }
+            ],
+        )
 
     def test_unit_and_function_token_predictions_are_not_entities(self):
         text = "Maintain the current lane, speed up to 50 km/h."
