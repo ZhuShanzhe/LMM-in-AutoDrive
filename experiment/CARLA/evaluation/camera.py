@@ -12,7 +12,7 @@ from evaluation.video import FfmpegVideoWriter
 class ExperimentCamera:
     def __init__(self, world, ego_vehicle, output_dir, every_n_frames=1, width=1920, height=1080,
                  save_images=True, video_output=None, video_fps=30.0, ffmpeg_path=None,
-                 video_overlay=False):
+                 video_overlay=False, camera_attributes=None, camera_pose=None):
         self.world = world
         self.ego_vehicle = ego_vehicle
         self.output_dir = output_dir
@@ -24,6 +24,14 @@ class ExperimentCamera:
         self.video_fps = float(video_fps)
         self.ffmpeg_path = ffmpeg_path
         self.video_overlay = bool(video_overlay)
+        self.camera_attributes = dict(camera_attributes or {})
+        self.camera_pose = tuple(
+            camera_pose or (1.5, 0.0, 2.4, 0.0, 0.0)
+        )
+        if len(self.camera_pose) != 5:
+            raise ValueError(
+                "camera_pose must contain x, y, z, pitch, yaw"
+            )
         self.sensor = None
         self.video_writer = None
         self.saved_frames = 0
@@ -40,9 +48,16 @@ class ExperimentCamera:
         blueprint.set_attribute("image_size_x", str(self.width))
         blueprint.set_attribute("image_size_y", str(self.height))
         blueprint.set_attribute("fov", "90")
+        for name, value in self.camera_attributes.items():
+            if blueprint.has_attribute(name):
+                blueprint.set_attribute(name, str(value))
         if self.video_output is not None:
             blueprint.set_attribute("sensor_tick", str(1.0 / self.video_fps))
-        transform = carla.Transform(carla.Location(x=1.5, z=2.4))
+        x, y, z, pitch, yaw = self.camera_pose
+        transform = carla.Transform(
+            carla.Location(x=x, y=y, z=z),
+            carla.Rotation(pitch=pitch, yaw=yaw),
+        )
         self.sensor = self.world.spawn_actor(blueprint, transform, attach_to=self.ego_vehicle)
         if self.video_output is not None:
             self.video_writer = FfmpegVideoWriter(
