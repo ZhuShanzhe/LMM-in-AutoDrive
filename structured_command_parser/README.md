@@ -610,5 +610,7 @@ ModernBERT 默认后端、伪标签防泄漏切分、规则短路、模型服务
 | 翻译将 40 错写为 50 的反事实测试 | 恢复中文源值 40，并产生审计警告 |
 | DrivingIntent 到 CARLA 协议 | 输出 `keep_lane + 40.0 km/h` |
 | 指令解析单元与回归测试 | 122 passed，96 subtests passed |
-| 三模块联合测试 | 342 passed，137 subtests passed |
-| CARLA 控制测试 | 32 passed |
+| 当前 `main` 指令解析与场景理解联合测试 | 316 passed，137 subtests passed |
+| 当前 `main` CARLA 控制测试 | 18 passed |
+| `zsz` 含 VLA 开发测试的三模块联合测试 | 342 passed，137 subtests passed |
+| `zsz` 完整 CARLA 控制测试 | 32 passed |
