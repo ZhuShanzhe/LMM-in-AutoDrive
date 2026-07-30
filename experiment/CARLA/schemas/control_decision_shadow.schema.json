@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lmm-autodrive.local/schemas/control_decision_shadow.schema.json",
+  "title": "ControlDecisionShadow",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "scene_id",
+    "simulation_frame",
+    "action",
+    "safety_gate_status",
+    "latency_ms"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "ControlDecisionShadow/1.0.0"
+    },
+    "scene_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "simulation_frame": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "action": {
+      "enum": [
+        "keep_lane",
+        "accelerate",
+        "decelerate",
+        "stop",
+        "emergency_brake",
+        "lane_change_left",
+        "lane_change_right",
+        "turn_left",
+        "turn_right"
+      ]
+    },
+    "safety_gate_status": {
+      "enum": [
+        "APPROVED",
+        "OVERRIDDEN",
+        "REJECTED"
+      ]
+    },
+    "latency_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "target_speed_kmh": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "request_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

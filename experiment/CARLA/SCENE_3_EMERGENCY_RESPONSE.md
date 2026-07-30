@@ -82,6 +82,8 @@ python experiment/CARLA/run_emergency_response_6km.py \
   --host 127.0.0.1 \
   --port 2000 \
   --duration 0 \
+  --record-ground-truth \
+  --ground-truth-every-n 1 \
   --require-complete-scene
 ```
 
@@ -103,6 +105,8 @@ python experiment/CARLA/run_emergency_response_6km.py \
 - `runtime_config_snapshot.json`：本次运行配置快照；
 - `event_timeline.jsonl`：事件激活和解除时间线；
 - `scene_summary.json`：路线、事件、碰撞、车道和图像数量汇总。
+- `frame_ground_truth.jsonl`：切入车、施工区、横穿工人、阻塞车与安全间隙的
+  精确帧真值；影子评测方法见 `SCENE_GROUND_TRUTH_EVALUATION.md`。
 
 运行产物不应提交到 Git。
 

@@ -230,3 +230,19 @@ CARLA 世界状态 -> 你的决策/规划模块 -> 统一动作字典/DrivingInt
 也就是说，前端只需要负责“读取世界状态并输出统一意图”，后端只负责“把意图翻译为车辆控制”。
 
 这使得决策模块可以替换，而不需要改动控制和评测链路。
+
+---
+
+## 7. 逐帧真值与影子评测边界
+
+场景二、三可用 `--record-ground-truth` 生成
+`frame_ground_truth.jsonl`。该接口只读取 CARLA、事件配置和事件控制器状态，
+不读取感知或决策模型输出。
+
+待测模块分别输出 `SemanticPrediction/1.0.0` 和
+`ControlDecisionShadow/1.0.0`，三类记录使用 `simulation_frame` 精确连接。
+影子控制决策不得调用 `vehicle.apply_control`；只有在影子指标和安全门检查通过后，
+才进入单独的闭环控制验收。
+
+字段、证据等级、Schema 和评测命令见
+[SCENE_GROUND_TRUTH_EVALUATION.md](SCENE_GROUND_TRUTH_EVALUATION.md)。

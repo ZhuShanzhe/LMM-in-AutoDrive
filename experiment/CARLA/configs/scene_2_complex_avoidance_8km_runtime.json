@@ -186,42 +186,145 @@
       "activate_at_m": 760,
       "resolve_at_m": 1250,
       "actors": ["crossing_pedestrian", "slow_vehicle"],
-      "completion": "pedestrian_clear_then_safe_overtake"
+      "completion": "pedestrian_clear_then_safe_overtake",
+      "ground_truth": {
+        "evidence_mode": "proxy",
+        "actor_roles": [
+          "scene2_pedestrian_03",
+          "scene2_private_car_03"
+        ],
+        "risk_labels": [
+          "pedestrian_near_crosswalk",
+          "slow_vehicle_ahead"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "stop",
+          "lane_change_left"
+        ],
+        "forbidden_control_actions": [
+          "accelerate"
+        ]
+      }
     },
     {
       "id": "s2_evt_bus_stop_alighting",
       "activate_at_m": 1600,
       "resolve_at_m": 2200,
       "actors": ["city_bus", "alighting_pedestrian_1", "alighting_pedestrian_2", "boarding_pedestrian", "bus_stop_sign"],
-      "completion": "passengers_clear"
+      "completion": "passengers_clear",
+      "ground_truth": {
+        "evidence_mode": "proxy",
+        "actor_roles": [
+          "scene2_city_bus_01",
+          "scene2_pedestrian_06",
+          "scene2_pedestrian_07"
+        ],
+        "risk_labels": [
+          "bus_stop_activity",
+          "pedestrian_near_bus_stop"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "stop",
+          "keep_lane"
+        ],
+        "forbidden_control_actions": [
+          "accelerate"
+        ]
+      }
     },
     {
       "id": "s2_evt_left_turn_signal",
       "activate_at_m": 2700,
       "resolve_at_m": 3500,
       "actors": ["traffic_light", "oncoming_traffic"],
-      "completion": "junction_exited"
+      "completion": "junction_exited",
+      "ground_truth": {
+        "evidence_mode": "schedule_only",
+        "risk_labels": [
+          "signalized_left_turn"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "stop",
+          "turn_left"
+        ],
+        "forbidden_control_actions": [
+          "accelerate"
+        ]
+      }
     },
     {
       "id": "s2_evt_cyclist_pass",
       "activate_at_m": 3800,
       "resolve_at_m": 4550,
       "actors": ["cyclist"],
-      "completion": "cyclist_cleared"
+      "completion": "cyclist_cleared",
+      "ground_truth": {
+        "evidence_mode": "proxy",
+        "actor_roles": [
+          "scene2_bicycle_03"
+        ],
+        "risk_labels": [
+          "cyclist_ahead"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "keep_lane",
+          "lane_change_left"
+        ],
+        "forbidden_control_actions": [
+          "accelerate"
+        ]
+      }
     },
     {
       "id": "s2_evt_overtake_gap",
       "activate_at_m": 5000,
       "resolve_at_m": 5850,
       "actors": ["slow_vehicle", "left_lane_trailing_vehicle"],
-      "completion": "returned_to_original_lane"
+      "completion": "returned_to_original_lane",
+      "ground_truth": {
+        "evidence_mode": "proxy",
+        "actor_roles": [
+          "scene2_private_car_22",
+          "scene2_private_car_23"
+        ],
+        "risk_labels": [
+          "slow_vehicle_ahead",
+          "target_lane_traffic"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "keep_lane",
+          "lane_change_left",
+          "lane_change_right"
+        ],
+        "forbidden_control_actions": []
+      }
     },
     {
       "id": "s2_evt_final_u_turn",
       "activate_at_m": 6800,
       "resolve_at_m": 7900,
       "actors": ["u_turn_signal", "cross_traffic"],
-      "completion": "route_completed"
+      "completion": "route_completed",
+      "ground_truth": {
+        "evidence_mode": "schedule_only",
+        "risk_labels": [
+          "u_turn",
+          "cross_traffic"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "stop",
+          "turn_left"
+        ],
+        "forbidden_control_actions": [
+          "accelerate"
+        ]
+      }
     }
   ],
   "interfaces": {

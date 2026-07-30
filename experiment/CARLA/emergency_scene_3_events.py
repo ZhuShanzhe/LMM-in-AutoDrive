@@ -134,6 +134,86 @@ class EmergencySceneActorRuntime:
         self._gap_control_vehicles: dict[str, Any] = {}
         self._gap_release_commanded = False
 
+    def ground_truth_actor_bindings(
+        self,
+    ) -> dict[str, Any]:
+        """Expose event actors without exposing model predictions.
+
+        The evaluation recorder uses these stable semantic roles to read
+        authoritative CARLA transforms and velocities on the same simulation
+        frame as the event scheduler.
+        """
+
+        bindings: dict[str, Any] = {}
+        if self._cut_in_actor is not None:
+            bindings[
+                "scene3_cut_in_vehicle"
+            ] = self._cut_in_actor
+        if self._warning_sign is not None:
+            bindings[
+                "scene3_warning_sign"
+            ] = self._warning_sign
+        for index, actor in enumerate(
+            self._cone_actors,
+            start=1,
+        ):
+            bindings[
+                "scene3_cone_{0:03d}".format(index)
+            ] = actor
+        for index, actor in enumerate(
+            self._work_vehicles,
+            start=1,
+        ):
+            bindings[
+                "scene3_work_truck_{0}".format(index)
+            ] = actor
+        if self._crossing_worker is not None:
+            bindings[
+                "scene3_crossing_worker"
+            ] = self._crossing_worker
+        static_workers = [
+            actor
+            for actor in self._worker_actors
+            if actor is not self._crossing_worker
+        ]
+        if static_workers:
+            bindings[
+                "scene3_static_worker"
+            ] = static_workers[0]
+        if self._maintenance_vehicle is not None:
+            bindings[
+                "scene3_maintenance_vehicle"
+            ] = self._maintenance_vehicle
+        if "front" in self._gap_control_vehicles:
+            bindings[
+                "scene3_gap_front_vehicle"
+            ] = self._gap_control_vehicles["front"]
+        if "rear" in self._gap_control_vehicles:
+            bindings[
+                "scene3_gap_rear_vehicle"
+            ] = self._gap_control_vehicles["rear"]
+        return bindings
+
+    def ground_truth_runtime_state(
+        self,
+    ) -> dict[str, Any]:
+        """Return deterministic event-controller phases for truth labels."""
+
+        return {
+            "cut_in_phase": self._cut_in_phase,
+            "worker_phase": self._worker_phase,
+            "target_lane_released": (
+                self._target_lane_released
+            ),
+            "blocked_lane_change_commanded": (
+                self._blocked_lane_change_commanded
+            ),
+            "gap_release_commanded": (
+                self._gap_release_commanded
+            ),
+            "work_zone_exited": self._work_zone_exited,
+        }
+
     def _set_vehicle_lights(
         self,
         actor: Any,

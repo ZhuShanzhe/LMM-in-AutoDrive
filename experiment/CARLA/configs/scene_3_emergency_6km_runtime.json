@@ -86,6 +86,25 @@
           "decelerate",
           "maintain_lane"
         ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_roles": [
+          "scene3_cut_in_vehicle"
+        ],
+        "runtime_phase_key": "cut_in_phase",
+        "risk_labels": [
+          "cut_in_vehicle",
+          "closing_vehicle"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "keep_lane"
+        ],
+        "forbidden_control_actions": [
+          "accelerate",
+          "lane_change_right"
+        ]
       }
     },
     {
@@ -106,6 +125,22 @@
         "expected_actions": [
           "decelerate",
           "monitor"
+        ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_roles": [
+          "scene3_warning_sign"
+        ],
+        "risk_labels": [
+          "work_zone_warning"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "keep_lane"
+        ],
+        "forbidden_control_actions": [
+          "accelerate"
         ]
       }
     },
@@ -130,6 +165,24 @@
         "expected_actions": [
           "decelerate",
           "lane_change_left"
+        ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_role_prefixes": [
+          "scene3_cone_"
+        ],
+        "risk_labels": [
+          "progressive_lane_closure",
+          "merge_required"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "lane_change_left"
+        ],
+        "forbidden_control_actions": [
+          "lane_change_right",
+          "accelerate"
         ]
       }
     },
@@ -169,6 +222,24 @@
           "maintain_lane",
           "decelerate"
         ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_roles": [
+          "scene3_work_truck_1",
+          "scene3_work_truck_2"
+        ],
+        "risk_labels": [
+          "active_work_zone",
+          "closed_right_lane"
+        ],
+        "allowed_control_actions": [
+          "keep_lane",
+          "decelerate"
+        ],
+        "forbidden_control_actions": [
+          "lane_change_right"
+        ]
       }
     },
     {
@@ -204,6 +275,25 @@
           "decelerate",
           "yield"
         ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_roles": [
+          "scene3_crossing_worker",
+          "scene3_static_worker"
+        ],
+        "runtime_phase_key": "worker_phase",
+        "risk_labels": [
+          "worker_crossing",
+          "vulnerable_road_user"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "stop"
+        ],
+        "forbidden_control_actions": [
+          "accelerate"
+        ]
       }
     },
     {
@@ -234,6 +324,56 @@
         "expected_actions_after_release": [
           "lane_change_left"
         ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_roles": [
+          "scene3_maintenance_vehicle",
+          "scene3_gap_front_vehicle",
+          "scene3_gap_rear_vehicle"
+        ],
+        "runtime_phase_key": "target_lane_released",
+        "risk_labels": [
+          "blocked_lane",
+          "target_lane_gap"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "stop"
+        ],
+        "forbidden_control_actions": [
+          "lane_change_left",
+          "accelerate"
+        ],
+        "conditional": {
+          "runtime_flag": "target_lane_released",
+          "when_false": {
+            "risk_labels": [
+              "blocked_lane",
+              "unsafe_target_lane_gap"
+            ],
+            "allowed_control_actions": [
+              "decelerate",
+              "stop"
+            ],
+            "forbidden_control_actions": [
+              "lane_change_left",
+              "accelerate"
+            ]
+          },
+          "when_true": {
+            "risk_labels": [
+              "blocked_lane",
+              "safe_target_lane_gap"
+            ],
+            "allowed_control_actions": [
+              "lane_change_left"
+            ],
+            "forbidden_control_actions": [
+              "lane_change_right"
+            ]
+          }
+        }
       }
     },
     {
@@ -254,6 +394,21 @@
           "maintain_lane",
           "resume_speed"
         ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "required_runtime_flags": [
+          "work_zone_exited"
+        ],
+        "risk_labels": [
+          "work_zone_exit",
+          "lane_reopened"
+        ],
+        "allowed_control_actions": [
+          "keep_lane",
+          "accelerate"
+        ],
+        "forbidden_control_actions": []
       }
     }
   ],

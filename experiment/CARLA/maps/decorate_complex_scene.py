@@ -66,6 +66,10 @@ from scene2_runtime_interface import (
     build_multimodal_frame_bundle,
     build_scheduled_driving_intent,
 )
+from evaluation.ground_truth import (
+    FrameGroundTruthRecorder,
+    validate_event_ground_truth_contracts,
+)
 
 CAR_BLUEPRINTS = (
     "vehicle.tesla.model3",
@@ -195,6 +199,20 @@ def parse_args(
         action="store_true",
         help="Spawn four RGB cameras and LiDAR and save synchronized evidence.",
     )
+    parser.add_argument(
+        "--record-ground-truth",
+        action="store_true",
+        help=(
+            "Write independent exact-frame CARLA truth to "
+            "frame_ground_truth.jsonl."
+        ),
+    )
+    parser.add_argument(
+        "--ground-truth-every-n",
+        type=int,
+        default=1,
+        help="Record one ground-truth row every N simulation frames.",
+    )
     parser.add_argument("--sensor-tick", type=float, default=0.2)
     parser.add_argument(
         "--validate-config-only",
@@ -204,7 +222,12 @@ def parse_args(
         "--require-complete-scene",
         action="store_true",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.ground_truth_every_n < 1:
+        parser.error(
+            "--ground-truth-every-n must be at least 1"
+        )
+    return args
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -262,6 +285,7 @@ def validate_runtime_config(
             raise ValueError(
                 "{0} has no visible actors".format(event["id"])
             )
+    validate_event_ground_truth_contracts(events)
 
     traffic = config.get("traffic", {})
     required_counts = {
@@ -715,6 +739,16 @@ class Scene2RuntimeInterface:
             "scene_id": SCENE_ID,
             **dict(config["interfaces"]),
             "producer": "decorate_complex_scene.py",
+            "ground_truth_schema": (
+                "FrameGroundTruth/1.0.0"
+            ),
+            "semantic_prediction_schema": (
+                "SemanticPrediction/1.0.0"
+            ),
+            "control_shadow_schema": (
+                "ControlDecisionShadow/1.0.0"
+            ),
+            "shadow_join_key": "simulation_frame",
             "policy_boundary": (
                 "VLA proposals are untrusted. RiskAssessment and the "
                 "deterministic safety gate must produce ControlDecision."
@@ -1392,6 +1426,7 @@ def write_summary(
     multimodal_counts: Mapping[str, int],
     map_contract: Mapping[str, Any],
     direct_video: Mapping[str, Any] | None,
+    ground_truth_summary: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
     event_counts = Counter(scheduler.event_states.values())
     traffic_targets_met = all(
@@ -1441,6 +1476,11 @@ def write_summary(
         "multimodal_frame_counts": dict(multimodal_counts),
         "map_contract": dict(map_contract),
         "direct_video": direct_video,
+        "ground_truth": (
+            dict(ground_truth_summary)
+            if ground_truth_summary is not None
+            else None
+        ),
         "complete_scene_success": complete_scene_success,
         "competition_metrics_pending": [
             "asr_accuracy",
@@ -1493,6 +1533,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     runtime_interface = Scene2RuntimeInterface(
         output_dir,
         config,
+    )
+    ground_truth = (
+        FrameGroundTruthRecorder(
+            output_dir / "frame_ground_truth.jsonl",
+            scene_id=SCENE_ID,
+            events=config["events"],
+            every_n_frames=args.ground_truth_every_n,
+        )
+        if args.record_ground_truth
+        else None
     )
     registry = ActorRegistry()
     camera = None
@@ -1621,6 +1671,18 @@ def main(argv: Sequence[str] | None = None) -> int:
                 frame,
                 elapsed_s,
             )
+            if ground_truth is not None:
+                ground_truth.record(
+                    world=world,
+                    ego=ego,
+                    simulation_frame=frame,
+                    timestamp_s=elapsed_s,
+                    route_s_m=route_s_m,
+                    event_states=(
+                        scheduler.event_states
+                    ),
+                    actor_bindings=registry.roles,
+                )
             overlay = camera_overlay(
                 scheduler,
                 route_s_m,
@@ -1702,6 +1764,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             ),
             map_contract,
             direct_video,
+            (
+                ground_truth.summary()
+                if ground_truth is not None
+                else None
+            ),
         )
         print(
             "Event scheduler summary: pending={0}, active={1}, "
@@ -1753,6 +1820,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 pass
         event_log.close()
         command_log.close()
+        if ground_truth is not None:
+            ground_truth.close()
         registry.destroy(client)
         runtime_interface.close()
         print("Scene actors cleaned up")

@@ -24,6 +24,10 @@ from emergency_scene_3_events import (
     EmergencySceneActorRuntime,
 )
 from evaluation.camera import ExperimentCamera
+from evaluation.ground_truth import (
+    FrameGroundTruthRecorder,
+    validate_event_ground_truth_contracts,
+)
 
 
 MAP_NAME = "VLA_EmergencyRoad_6km"
@@ -906,6 +910,8 @@ def load_runtime_config(
             )
         previous_distance = distance
 
+    validate_event_ground_truth_contracts(events)
+
     traffic = data.get("traffic")
     expected_counts = {
         "private_vehicle_count": 16,
@@ -1064,6 +1070,20 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--record-ground-truth",
+        action="store_true",
+        help=(
+            "Write independent exact-frame CARLA truth to "
+            "frame_ground_truth.jsonl."
+        ),
+    )
+    parser.add_argument(
+        "--ground-truth-every-n",
+        type=int,
+        default=1,
+        help="Record one ground-truth row every N simulation frames.",
+    )
+    parser.add_argument(
         "--record-every-n",
         type=int,
         default=1,
@@ -1162,6 +1182,10 @@ def validate_args(
     if args.duration < 0.0:
         raise ValueError(
             "--duration must be non-negative"
+        )
+    if args.ground_truth_every_n < 1:
+        raise ValueError(
+            "--ground-truth-every-n must be at least 1"
         )
     if args.fixed_delta_seconds <= 0.0:
         raise ValueError(
@@ -1624,6 +1648,12 @@ def run_simulation(
     fixed_delta_seconds: float,
     video_camera: ExperimentCamera | None = None,
     cruise_speed_kmh: float = 40.0,
+    ground_truth_recorder: (
+        FrameGroundTruthRecorder | None
+    ) = None,
+    event_actor_runtime: (
+        EmergencySceneActorRuntime | None
+    ) = None,
 ) -> bool:
     tick_count: int | None = None
     if duration_s > 0.0:
@@ -1696,6 +1726,30 @@ def run_simulation(
             (index + 1)
             * fixed_delta_seconds
         )
+        if ground_truth_recorder is not None:
+            if event_actor_runtime is None:
+                raise RuntimeError(
+                    "event_actor_runtime is required "
+                    "for Scene 3 ground truth"
+                )
+            ground_truth_recorder.record(
+                world=world,
+                ego=ego,
+                simulation_frame=int(frame),
+                timestamp_s=elapsed_s,
+                route_s_m=last_route_s_m,
+                event_states=(
+                    scheduler.state_snapshot()
+                ),
+                actor_bindings=(
+                    event_actor_runtime
+                    .ground_truth_actor_bindings()
+                ),
+                runtime_state=(
+                    event_actor_runtime
+                    .ground_truth_runtime_state()
+                ),
+            )
         if video_camera is not None:
             video_camera.save_frame(
                 frame,
@@ -1805,6 +1859,10 @@ def main(
     direct_camera: ExperimentCamera | None = None
     direct_camera_closed = False
     safety_audit: SafetyAuditState | None = None
+    ground_truth: FrameGroundTruthRecorder | None = None
+    event_actor_runtime: (
+        EmergencySceneActorRuntime | None
+    ) = None
     result = 1
 
     try:
@@ -2016,6 +2074,20 @@ def main(
             ),
             event_handler=event_actor_runtime,
         )
+        if args.record_ground_truth:
+            ground_truth = FrameGroundTruthRecorder(
+                output_dir
+                / "frame_ground_truth.jsonl",
+                scene_id=runtime_config["scene_id"],
+                events=runtime_config["events"],
+                every_n_frames=(
+                    args.ground_truth_every_n
+                ),
+            )
+            print(
+                "Frame ground truth:",
+                ground_truth.path,
+            )
 
         world.tick()
         route_completed = run_simulation(
@@ -2035,6 +2107,8 @@ def main(
             ),
             video_camera=direct_camera,
             cruise_speed_kmh=args.ego_speed_kmh,
+            ground_truth_recorder=ground_truth,
+            event_actor_runtime=event_actor_runtime,
         )
 
         if direct_camera is not None:
@@ -2168,6 +2242,11 @@ def main(
                         )
                         else None
                     ),
+                    "ground_truth": (
+                        ground_truth.summary()
+                        if ground_truth is not None
+                        else None
+                    ),
                     "complete_scene_success": (
                         complete_scene_success
                     ),
@@ -2245,6 +2324,8 @@ def main(
         )
         result = 1
     finally:
+        if ground_truth is not None:
+            ground_truth.close()
         if (
             direct_camera is not None
             and not direct_camera_closed
