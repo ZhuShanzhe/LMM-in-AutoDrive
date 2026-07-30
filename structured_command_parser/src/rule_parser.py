@@ -7,14 +7,14 @@ from typing import Any
 from .factory import make_document, make_step
 from .intent_boundaries import classify_chinese_braking
 from .normalizer import normalize_text
-
-
-_TARGET_SPEED = re.compile(
-    r"(?:(?:提速|加速|减速|降速|(?:车速|速度)(?:控制|调整|设置|设|降|降低)?|保持车速|保持速度)"
-    r"\s*(?:至|到|为|在)\s*|(?:保持|按|以)\s*|(?:尝试)?行驶至\s*)"
-    r"(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>km/h|m/s)",
-    re.IGNORECASE,
+from .speed_slots import (
+    TARGET_SPEED_PATTERN,
+    canonical_speed_unit,
+    speed_to_mps,
 )
+
+
+_TARGET_SPEED = TARGET_SPEED_PATTERN
 _RELATIVE_SPEED = re.compile(
     r"(?P<verb>提速|加速|减速|降速)\s*(?P<value>\d+(?:\.\d+)?)\s*(?P<unit>km/h|m/s)",
     re.IGNORECASE,
@@ -29,10 +29,6 @@ _COMPLEX_HINTS = re.compile(
     r"绕开|绕过|避让|避开|躲开|礼让|让行|超越|超车|超过|加塞|"
     r"确认安全|然后|随后|之后|以后|后再|并回|并入|回到|靠边|路边"
 )
-
-
-def _speed_to_mps(value: float, unit: str) -> float:
-    return value / 3.6 if unit.lower() == "km/h" else value
 
 
 class RuleIntentParser:
@@ -194,9 +190,9 @@ class RuleIntentParser:
                     "pending",
                     "SET_SPEED",
                     parameters={
-                        "target_speed_mps": round(_speed_to_mps(value, unit), 3),
+                        "target_speed_mps": round(speed_to_mps(value, unit), 3),
                         "source_value": value,
-                        "source_unit": unit,
+                        "source_unit": canonical_speed_unit(unit),
                     },
                     preconditions=["PATH_CLEAR"],
                     on_blocked="WAIT_FOR_SAFE",
@@ -218,9 +214,9 @@ class RuleIntentParser:
                     "ADJUST_SPEED",
                     parameters={
                         "change": change,
-                        "speed_delta_mps": round(_speed_to_mps(value, unit), 3),
+                        "speed_delta_mps": round(speed_to_mps(value, unit), 3),
                         "source_value": value,
-                        "source_unit": unit,
+                        "source_unit": canonical_speed_unit(unit),
                     },
                     preconditions=["PATH_CLEAR"] if change == "INCREASE" else [],
                     on_blocked="WAIT_FOR_SAFE" if change == "INCREASE" else "SAFE_STOP",
@@ -406,9 +402,9 @@ class RuleIntentParser:
             add(
                 speed.start(),
                 "SET_SPEED",
-                target_speed_mps=round(_speed_to_mps(value, unit), 3),
+                target_speed_mps=round(speed_to_mps(value, unit), 3),
                 source_value=value,
-                source_unit=unit,
+                source_unit=canonical_speed_unit(unit),
             )
 
         if not any(command["action"] == "SET_SPEED" for _, command in candidates):
