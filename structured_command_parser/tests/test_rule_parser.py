@@ -105,7 +105,7 @@ class RuleParserTest(unittest.TestCase):
         result = self.parse("看到前方行人后减速避让，然后向左变道")
         self.assertEqual(
             [step["action"] for step in result["intent"]["steps"]],
-            ["ADJUST_SPEED", "CHANGE_LANE"],
+            ["ADJUST_SPEED", "YIELD", "CHANGE_LANE"],
         )
         self.assertEqual(result["parse_result"]["method"], "RULE")
 
