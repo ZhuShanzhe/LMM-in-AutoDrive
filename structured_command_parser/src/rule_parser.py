@@ -5,6 +5,7 @@ from time import perf_counter
 from typing import Any
 
 from .factory import make_document, make_step
+from .chinese_scene_rules import parse_chinese_scene_command
 from .intent_boundaries import classify_chinese_braking
 from .normalizer import normalize_text
 from .speed_slots import (
@@ -155,6 +156,23 @@ class RuleIntentParser:
                 ],
                 0.99,
                 started,
+            )
+
+        scene_result = parse_chinese_scene_command(text)
+        if scene_result is not None:
+            return self._document(
+                raw_text,
+                text,
+                modality,
+                request_id,
+                scene_result.category,
+                scene_result.urgency,
+                self._expand_fast_commands(scene_result.commands),
+                0.98,
+                started,
+                driving_style=scene_result.driving_style,
+                entities=scene_result.entities,
+                max_speed_mps=scene_result.max_speed_mps,
             )
 
         complex_result = self._parse_complex_command(
@@ -581,18 +599,19 @@ class RuleIntentParser:
                     "source_value",
                     "source_unit",
                     "lane_count",
+                    "distance_m",
                 )
                 if key in command
             }
-            target = None
-            if "target_type" in command:
+            target = command.get("target")
+            if target is None and "target_type" in command:
                 target = {
                     "type": command["target_type"],
                     "relation": command.get("target_relation", "UNSPECIFIED"),
                 }
 
-            trigger: dict[str, Any] = {"type": "IMMEDIATE"}
-            if previous_id:
+            trigger: dict[str, Any] = command.get("trigger") or {"type": "IMMEDIATE"}
+            if previous_id and "trigger" not in command:
                 trigger = {"type": "AFTER_STEP", "step_id": previous_id}
             elif target is not None and action in {"AVOID", "OVERTAKE", "YIELD"}:
                 trigger = {"type": "OBJECT_PRESENT"}
@@ -621,9 +640,41 @@ class RuleIntentParser:
                 completion = {"type": "LANE_CHANGE_COMPLETED"}
             elif action in {"AVOID", "OVERTAKE", "YIELD"}:
                 preconditions = ["TARGET_VISIBLE", "PATH_CLEAR"]
+                side = command.get("direction")
+                if action == "AVOID" and side in {"LEFT", "RIGHT"}:
+                    preconditions.extend(
+                        [f"{side}_LANE_EXISTS", f"{side}_LANE_SAFE"]
+                    )
                 completion = {"type": "TARGET_CLEARED"}
             elif action in {"STOP", "EMERGENCY_BRAKE"}:
                 completion = {"type": "VEHICLE_STOPPED"}
+            elif action == "WAIT":
+                preconditions = ["TARGET_VISIBLE"] if command.get("target_ref") else []
+                trigger = {
+                    "type": "CONDITION",
+                    "description": command.get(
+                        "condition",
+                        "wait until the requested condition is satisfied",
+                    ),
+                }
+                on_blocked = "WAIT_FOR_SAFE"
+                completion = {"type": "WAIT_CONDITION_MET"}
+            elif action == "FOLLOW":
+                preconditions = ["TARGET_VISIBLE", "PATH_CLEAR"]
+                on_blocked = "WAIT_FOR_SAFE"
+                completion = {"type": "FOLLOWING_ESTABLISHED"}
+            elif action == "NAVIGATE_TO":
+                preconditions = ["TARGET_REACHABLE", "PATH_CLEAR"]
+                on_blocked = "WAIT_FOR_SAFE"
+                completion = {"type": "TARGET_REACHED"}
+            elif action == "PROCEED":
+                preconditions = ["PATH_CLEAR"]
+                on_blocked = "WAIT_FOR_SAFE"
+                completion = (
+                    {"type": "JUNCTION_EXITED"}
+                    if command.get("target_ref")
+                    else {"type": "ACTION_REACHED"}
+                )
             elif action == "RESUME":
                 preconditions = ["PATH_CLEAR"]
                 on_blocked = "WAIT_FOR_SAFE"
@@ -639,6 +690,8 @@ class RuleIntentParser:
                     on_blocked=on_blocked,
                     purpose=command.get("purpose"),
                     target=target,
+                    target_ref=command.get("target_ref"),
+                    goal_conditions=command.get("goal_conditions"),
                     completion=completion,
                 )
             )
@@ -697,6 +750,8 @@ class RuleIntentParser:
         started: float,
         *,
         driving_style: str = "NORMAL",
+        entities: list[dict[str, Any]] | None = None,
+        max_speed_mps: float | None = None,
     ) -> dict[str, Any]:
         return make_document(
             raw_text=raw_text,
@@ -712,4 +767,6 @@ class RuleIntentParser:
             latency_ms=(perf_counter() - started) * 1000,
             request_id=request_id,
             driving_style=driving_style,
+            entities=entities,
+            max_speed_mps=max_speed_mps,
         )
