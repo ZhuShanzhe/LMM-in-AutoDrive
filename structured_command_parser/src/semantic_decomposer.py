@@ -4,7 +4,11 @@ import re
 from typing import Any
 
 
-_SPEED_UNIT = r"(?:km/h|m/s|kilometers? per hour|meters? per second)"
+_SPEED_UNIT = (
+    r"(?:km/h|kmph|kph|m/s|"
+    r"kilometers? per hour|kilometres? per hour|"
+    r"meters? per second|metres? per second)"
+)
 
 
 _ACTION_PATTERNS = (
@@ -63,13 +67,16 @@ _ACTION_PATTERNS = (
     (
         "SET_SPEED",
         re.compile(
-            r"\b(?:set|maintain|hold)(?: the)? speed(?: at| to| of)? "
+            r"\b(?:set|maintain|hold|keep)(?: the| your| a)? "
+            r"speed(?: at| to| of)? "
             rf"\d+(?:\.\d+)?\s*{_SPEED_UNIT}\b|"
-            rf"\bdrive at(?: a speed of)? \d+(?:\.\d+)?\s*{_SPEED_UNIT}\b|"
+            rf"\b(?:drive|cruise) at(?: a speed of)? "
+            rf"\d+(?:\.\d+)?\s*{_SPEED_UNIT}\b|"
             r"\b(?:speed up|accelerate|slow down|decelerate|"
             r"reduce(?: (?:the )?speed)?) to "
             rf"\d+(?:\.\d+)?\s*{_SPEED_UNIT}\b|"
-            rf"\b(?:set|maintain|hold) \d+(?:\.\d+)?\s*{_SPEED_UNIT}\b",
+            rf"\b(?:set|maintain|hold|keep) "
+            rf"\d+(?:\.\d+)?\s*{_SPEED_UNIT}\b",
             re.IGNORECASE,
         ),
     ),
@@ -195,7 +202,11 @@ def _command(action: str, surface: str, text: str) -> dict[str, Any]:
         if speed:
             value = float(speed.group("value"))
             unit = speed.group("unit").casefold()
-            is_kmh = unit == "km/h" or "kilometer" in unit
+            is_kmh = (
+                unit in {"km/h", "kmph", "kph"}
+                or "kilometer" in unit
+                or "kilometre" in unit
+            )
             command["target_speed_mps"] = round(
                 value / 3.6 if is_kmh else value,
                 3,
