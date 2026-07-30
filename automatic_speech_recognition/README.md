@@ -1,4 +1,31 @@
-# 自动驾驶语音指令处理流水线
+﻿# 自动驾驶语音指令处理流水线
+
+## 基础赛道提交包模型路径
+
+提交包将运行权重放在仓库根目录 `models/`。从根目录执行：
+
+```bash
+source submission_env.sh
+```
+
+默认路径为：
+
+```text
+models/Qwen3-ASR-1.7B
+models/Qwen2.5-3B-Instruct
+```
+
+`Qwen3PipelineConfig` 和 `ASR2` 根据源码位置直接定位仓库根目录，并默认使用
+上述本地 ASR 与翻译权重；无需在评测时联网下载。可通过构造参数主动指定其他权重。
+
+基础赛道运行环境按子模块安装，根目录 `requirements.txt` 是历史完整环境快照，
+不用于干净机器的一键安装：
+
+```bash
+python -m pip install -r automatic_speech_recognition/src/asr2/requirements.txt
+python -m pip install -r automatic_speech_recognition/src/translation/requirements.txt
+python -m pip install -r automatic_speech_recognition/optimization/requirements.txt
+```
 
 ## 第一阶段 main 范围
 
@@ -6,11 +33,11 @@
 
 `main` 保留运行代码、配置、最小示例和题目要求的 ASR 测试入口；语音数据集、生成音频、逐样本识别结果、日志和大规模评测 JSON 不进入 Git，统一在 `data/README.md` 中说明。模型权重继续从本 README 指定的模型仓库或团队共享地址下载到数据盘。
 
-推荐统一路径：
+提交包固定路径：
 
 ```text
-/root/autodl-tmp/models/asr/
-/root/autodl-tmp/models/translation/
+models/Qwen3-ASR-1.7B/
+models/Qwen2.5-3B-Instruct/
 ```
 
 ASR 不属于当前 VLA 决策模块的性能联调范围，但属于 XH-202602 第一阶段完整语音入口，接口保持独立。

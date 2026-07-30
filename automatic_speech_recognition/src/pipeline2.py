@@ -1,4 +1,3 @@
-import os
 import time
 import json
 import logging
@@ -12,6 +11,10 @@ from translation.config import ModelConfig
 from .config import Qwen3PipelineConfig
 
 logger = logging.getLogger(__name__)
+
+MODEL_ROOT = Path(__file__).resolve().parents[2] / "models"
+DEFAULT_ASR_MODEL_PATH = str(MODEL_ROOT / "Qwen3-ASR-1.7B")
+DEFAULT_TRANSLATION_MODEL_PATH = str(MODEL_ROOT / "Qwen2.5-3B-Instruct")
 
 
 class Qwen3ASRPipeline:
@@ -120,7 +123,7 @@ class ASR2:
         config: Optional[Qwen3PipelineConfig] = None,
 
         asr_load_type: str = "local",
-        asr_model_path: str = "./models/Qwen3-ASR-1.7B",
+        asr_model_path: str = DEFAULT_ASR_MODEL_PATH,
         asr_device: str = "cuda:0",
         asr_dtype: str = "bfloat16",
         asr_language: str = "Chinese",
@@ -132,8 +135,8 @@ class ASR2:
         asr_dialect_map: Optional[Dict[str, str]] = None,
 
         trans_model_name: str = "Qwen/Qwen2.5-3B-Instruct",
-        trans_load_type: str = "custom",
-        trans_model_path: Optional[str] = None,
+        trans_load_type: str = "local",
+        trans_model_path: Optional[str] = DEFAULT_TRANSLATION_MODEL_PATH,
         trans_src_lang: str = "zho_Hans",
         trans_tgt_lang: str = "eng_Latn",
         trans_max_length: int = 512,

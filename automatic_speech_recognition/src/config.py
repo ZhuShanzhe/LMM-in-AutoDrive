@@ -1,5 +1,11 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional, Dict
+
+
+MODEL_ROOT = Path(__file__).resolve().parents[2] / "models"
+DEFAULT_ASR_MODEL_PATH = str(MODEL_ROOT / "Qwen3-ASR-1.7B")
+DEFAULT_TRANSLATION_MODEL_PATH = str(MODEL_ROOT / "Qwen2.5-3B-Instruct")
 
 
 @dataclass
@@ -12,8 +18,8 @@ class ASRConfig:
     asr_spk_model: Optional[str] = None
 
     trans_model_name: str = "Qwen/Qwen2.5-3B-Instruct"
-    trans_load_type: str = "custom"
-    trans_model_path: Optional[str] = None
+    trans_load_type: str = "local"
+    trans_model_path: Optional[str] = DEFAULT_TRANSLATION_MODEL_PATH
     trans_src_lang: str = "zho_Hans"
     trans_tgt_lang: str = "eng_Latn"
     trans_max_length: int = 512
@@ -28,9 +34,9 @@ class ASRConfig:
 
 @dataclass
 class Qwen3PipelineConfig:
-    load_type: str = "custom"
-    model_name: str = "Qwen/Qwen3-ASR-1.7B-hf"
-    model_path: Optional[str] = None
+    load_type: str = "local"
+    model_name: str = "Qwen/Qwen3-ASR-1.7B"
+    model_path: Optional[str] = DEFAULT_ASR_MODEL_PATH
     device: str = "cuda:0"
     dtype: str = "bfloat16"
     attn_implementation: Optional[str] = None
@@ -46,8 +52,8 @@ class Qwen3PipelineConfig:
     dialect_map: Dict[str, str] = field(default_factory=dict)
 
     trans_model_name: str = "Qwen/Qwen2.5-3B-Instruct"
-    trans_load_type: str = "custom"
-    trans_model_path: Optional[str] = None
+    trans_load_type: str = "local"
+    trans_model_path: Optional[str] = DEFAULT_TRANSLATION_MODEL_PATH
     trans_src_lang: str = "zho_Hans"
     trans_tgt_lang: str = "eng_Latn"
     trans_max_length: int = 512

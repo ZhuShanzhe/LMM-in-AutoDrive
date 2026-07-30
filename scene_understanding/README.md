@@ -1,4 +1,22 @@
-# Scene Understanding
+﻿# Scene Understanding
+
+## 基础赛道提交包模型路径
+
+从仓库根目录执行：
+
+```bash
+source submission_env.sh
+```
+
+实时感知入口默认读取：
+
+```text
+models/external/YOLOP/weights/End-to-end.pth
+models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt
+```
+
+也可以使用 `--yolop-root` 或 `--yolo11-weights` 主动指定其他权重。默认路径
+固定为提交包根目录下的 `models/`，完整邮件提交包直接包含权重。
 
 ## 第一阶段 main 范围
 
@@ -9,11 +27,11 @@
 ```text
 YOLO11s:
   UNIC0RN-Zhu/yolo11s-drive-scene-carla-v1
-  /root/autodl-tmp/models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt
+  models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt
 
 ModernBERT:
   UNIC0RN-Zhu/modernbert-drive-command-base
-  /root/autodl-tmp/models/modernbert-drive-command-compositional
+  models/modernbert-drive-command-compositional
 ```
 
 本模块继续提供原规则链路的 canonical decision。`lightweight_vla_adapter` 是可选的新链路，只能在该 canonical decision 与风险安全门约束下提出场景条件化建议；未启用 VLA 时，本模块原有接口和 CARLA 控制链路保持不变。
@@ -134,7 +152,7 @@ if [ -f /etc/network_turbo ]; then
   source /etc/network_turbo
 fi
 
-MODEL_DIR=/root/autodl-tmp/models/scene_understanding/yolo11s_specialized_carla_v1
+MODEL_DIR=models/scene_understanding/yolo11s_specialized_carla_v1
 mkdir -p "$MODEL_DIR/weights"
 
 hf download UNIC0RN-Zhu/yolo11s-drive-scene-carla-v1 \
@@ -174,8 +192,8 @@ YOLOP 输出车道线和可行驶区域，YOLO11s 补充车辆、行人、骑行
 ```bash
 python -m scene_understanding.realtime_perception.run \
   --backend yolop_yolo11 \
-  --yolop-root /root/autodl-tmp/models/external/YOLOP \
-  --yolo11-weights /root/autodl-tmp/models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt \
+  --yolop-root models/external/YOLOP \
+  --yolo11-weights models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt \
   --image-size 640 \
   --object-image-size 640 \
   --score-threshold 0.10 \
@@ -260,7 +278,7 @@ python -m scene_understanding.realtime_perception.run_dataset \
   --output /path/to/perception.jsonl \
   --summary /path/to/summary.json \
   --backend yolop_yolo11 \
-  --yolo11-weights /root/autodl-tmp/models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt \
+  --yolo11-weights models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt \
   --image-size 640 --object-image-size 640 \
   --score-threshold 0.10 --limit 1000
 
@@ -390,7 +408,7 @@ DrivingIntent `1.2.0` 联调时，场景模块直接读取 `intent.entities[]`�
 
 ```bash
 python -m structured_command_parser.scripts.evaluate_parser_alignment \
-  --model /root/autodl-tmp/models/modernbert-drive-command-compositional
+  --model models/modernbert-drive-command-compositional
 ```
 
 ### 2. 风险评估
@@ -475,7 +493,7 @@ python -m scene_understanding.scripts.advance_control_plan \
 
 ```text
 模型：Qwen/Qwen2.5-VL-3B-Instruct
-本地权重：/root/autodl-tmp/models/Qwen2.5-VL-3B-Instruct
+本地权重：models/Qwen2.5-VL-3B-Instruct
 Python：3.12.13
 PyTorch：2.11.0+cu130（包含 sm_120）
 Torchvision：0.26.0+cu130
@@ -531,7 +549,7 @@ python -m pip install \
 
 PYTHONPATH=. python -m scene_understanding.async_semantics.run_minicpm_scene_inference \
   --manifest /path/to/scene_manifest.jsonl \
-  --model-path /root/autodl-tmp/models/MiniCPM-V-4.6 \
+  --model-path models/MiniCPM-V-4.6 \
   --output /path/to/minicpm_results.jsonl \
   --max-new-tokens 768 --downsample-mode 16x --max-slice-nums 9
 ```

@@ -1,4 +1,15 @@
-# ModernBERT 英文驾驶指令结构化解析模块
+﻿# ModernBERT 英文驾驶指令结构化解析模块
+
+## 基础赛道提交包模型路径
+
+最终组合语义权重随完整提交包放在：
+
+```text
+models/modernbert-drive-command-compositional/
+```
+
+运行入口默认根据源码位置读取该目录，无需设置环境变量。用于从头复现的
+ModernBERT 预训练 Backbone 位于 `models/pretrained/ModernBERT-base/`。
 
 ## 第一阶段 main 范围
 
@@ -10,7 +21,7 @@
 
 ```text
 UNIC0RN-Zhu/modernbert-drive-command-base
-/root/autodl-tmp/models/modernbert-drive-command-compositional
+models/modernbert-drive-command-compositional
 ```
 
 本模块只负责语言指令结构化，不直接输出油门、制动、方向盘或最终安全决策。
@@ -33,7 +44,7 @@ UNIC0RN-Zhu/modernbert-drive-command-base
 - PyTorch：`2.11.0+cu130`
 - Transformers：`4.57.6`
 - 训练/测试 GPU：RTX 5090，计算能力 `SM120`
-- 当前组合语义模型路径：`/root/autodl-tmp/models/modernbert-drive-command-compositional`
+- 当前组合语义模型路径：`models/modernbert-drive-command-compositional`
 - 输入：翻译完成的英文文本
 - 输出：`DrivingIntent 1.2.0` JSON
 - 动作空间：25 类
@@ -184,13 +195,13 @@ conda activate /root/autodl-tmp/conda_envs/command_parser
 hf download \
   UNIC0RN-Zhu/modernbert-drive-command-base \
   --repo-type model \
-  --local-dir /root/autodl-tmp/models/modernbert-drive-command-compositional
+  --local-dir models/modernbert-drive-command-compositional
 ```
 
 公开仓库不要求登录；私有仓库需要先运行 `hf auth login` 并获得读取权限。下载后的目录结构应为：
 
 ```text
-/root/autodl-tmp/models/modernbert-drive-command-compositional/
+models/modernbert-drive-command-compositional/
 ├── config.json
 ├── model.safetensors
 ├── multitask_heads.pt
@@ -216,14 +227,14 @@ hf download \
 验证下载完整性：
 
 ```bash
-cd /root/autodl-tmp/models/modernbert-drive-command-compositional
+cd models/modernbert-drive-command-compositional
 sha256sum -c SHA256SUMS
 sha256sum -c LICENSE_CHECKSUMS
 export MODERNBERT_MODEL_PATH=$PWD
 ```
 
 ```bash
-export MODERNBERT_MODEL_PATH=/root/autodl-tmp/models/modernbert-drive-command-compositional
+export MODERNBERT_MODEL_PATH=models/modernbert-drive-command-compositional
 
 test -s "$MODERNBERT_MODEL_PATH/model.safetensors"
 test -s "$MODERNBERT_MODEL_PATH/multitask_heads.pt"
@@ -235,7 +246,7 @@ test -s "$MODERNBERT_MODEL_PATH/inference_config.json"
 
 ```bash
 hf download answerdotai/ModernBERT-base \
-  --local-dir /root/autodl-tmp/models/ModernBERT-base
+  --local-dir models/pretrained/ModernBERT-base
 ```
 
 ## 命令行运行
@@ -245,7 +256,7 @@ hf download answerdotai/ModernBERT-base \
 ```bash
 cd /root/autodl-tmp/LMM-in-AutoDrive
 conda activate /root/autodl-tmp/conda_envs/command_parser
-export MODERNBERT_MODEL_PATH=/root/autodl-tmp/models/modernbert-drive-command-compositional
+export MODERNBERT_MODEL_PATH=models/modernbert-drive-command-compositional
 
 python -m structured_command_parser.scripts.parse_english \
   "Slow down and stop before the red truck." \
@@ -265,7 +276,7 @@ RTX 5090 上一次性预热不计入在线请求时延。组合语义版本在 1
 from structured_command_parser import ModernBertCommandService
 
 command_parser = ModernBertCommandService(
-    "/root/autodl-tmp/models/modernbert-drive-command-compositional",
+    "models/modernbert-drive-command-compositional",
     device="cuda",
     max_input_chars=512,
 )
@@ -427,39 +438,39 @@ python -m structured_command_parser.scripts.build_full_english_pseudolabels
 
 # 第一阶段
 python -m structured_command_parser.scripts.train_modernbert_parser \
-  --base-model /root/autodl-tmp/models/ModernBERT-base \
-  --output /root/autodl-tmp/models/modernbert-drive-command-stage1 \
+  --base-model models/pretrained/ModernBERT-base \
+  --output models/modernbert-drive-command-stage1 \
   --epochs 1 \
   --batch-size 128 \
   --learning-rate 3e-5
 
 # 第二阶段
 python -m structured_command_parser.scripts.train_modernbert_parser \
-  --base-model /root/autodl-tmp/models/modernbert-drive-command-stage1 \
-  --output /root/autodl-tmp/models/modernbert-drive-command-base \
+  --base-model models/modernbert-drive-command-stage1 \
+  --output models/modernbert-drive-command-base \
   --epochs 1 \
   --batch-size 128 \
   --learning-rate 1e-5
 
 python -m structured_command_parser.scripts.calibrate_modernbert_thresholds \
-  --model /root/autodl-tmp/models/modernbert-drive-command-base
+  --model models/modernbert-drive-command-base
 
 python -m structured_command_parser.scripts.evaluate_modernbert_classifier \
-  --model /root/autodl-tmp/models/modernbert-drive-command-base \
-  --report /root/autodl-tmp/models/modernbert-drive-command-base/test_metrics_calibrated.json
+  --model models/modernbert-drive-command-base \
+  --report models/modernbert-drive-command-base/test_metrics_calibrated.json
 
 # 构造组合泛化数据，训练 1.2.0 实体/关系 token 头
 python -m structured_command_parser.scripts.build_compositional_generalization_data
 python -m structured_command_parser.scripts.train_semantic_token_head \
-  --base-model /root/autodl-tmp/models/modernbert-drive-command-base \
-  --output /root/autodl-tmp/models/modernbert-drive-command-compositional \
+  --base-model models/modernbert-drive-command-base \
+  --output models/modernbert-drive-command-compositional \
   --epochs 8
 
 # 开发挑战集回归与解析-语义对齐联调
 python -m structured_command_parser.scripts.evaluate_compositional_pipeline \
-  --model /root/autodl-tmp/models/modernbert-drive-command-compositional
+  --model models/modernbert-drive-command-compositional
 python -m structured_command_parser.scripts.evaluate_parser_alignment \
-  --model /root/autodl-tmp/models/modernbert-drive-command-compositional
+  --model models/modernbert-drive-command-compositional
 ```
 
 基础切分为 `463,890 / 132,540 / 66,270`；训练时额外加入 108 条稀有动作定向样本，实际训练行数为 `463,998`。
@@ -503,7 +514,7 @@ python -m unittest discover -s structured_command_parser/tests -v
 python -m structured_command_parser.scripts.validate_examples
 python -m structured_command_parser.scripts.validate_curated_english_knowledge
 python -m structured_command_parser.scripts.evaluate_parser_alignment \
-  --model /root/autodl-tmp/models/modernbert-drive-command-compositional
+  --model models/modernbert-drive-command-compositional
 git diff --check
 ```
 

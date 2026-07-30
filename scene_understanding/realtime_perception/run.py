@@ -13,6 +13,16 @@ from .pipeline import RealtimePerceptionPipeline
 from .tracker import ByteTrackAdapter
 from .ultralytics_backend import load_category_thresholds
 
+MODEL_ROOT = Path(__file__).resolve().parents[2] / "models"
+DEFAULT_YOLOP_ROOT = MODEL_ROOT / "external" / "YOLOP"
+DEFAULT_YOLO11_WEIGHTS = (
+    MODEL_ROOT
+    / "scene_understanding"
+    / "yolo11s_specialized_carla_v1"
+    / "weights"
+    / "best.pt"
+)
+
 
 def percentile(values: list[float], fraction: float) -> float:
     if not values:
@@ -30,11 +40,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--backend", choices=("ssdlite", "yolop", "yolop_yolo11"), default="yolop"
     )
-    parser.add_argument("--yolop-root", type=Path, default=Path("/root/autodl-tmp/models/external/YOLOP"))
+    parser.add_argument("--yolop-root", type=Path, default=DEFAULT_YOLOP_ROOT)
     parser.add_argument(
         "--yolo11-weights",
         type=Path,
-        default=Path("/root/autodl-tmp/models/YOLO11/yolo11n.pt"),
+        default=DEFAULT_YOLO11_WEIGHTS,
     )
     parser.add_argument("--score-threshold", type=float, default=0.25)
     parser.add_argument(

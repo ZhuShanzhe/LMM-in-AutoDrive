@@ -10,7 +10,7 @@ from statistics import mean
 
 from .detector import TorchvisionTrafficDetector
 from .pipeline import RealtimePerceptionPipeline
-from .run import percentile
+from .run import DEFAULT_YOLO11_WEIGHTS, DEFAULT_YOLOP_ROOT, percentile
 from .tracker import ByteTrackAdapter
 from .ultralytics_backend import load_category_thresholds
 
@@ -67,12 +67,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--yolop-root",
         type=Path,
-        default=Path("/root/autodl-tmp/models/external/YOLOP"),
+        default=DEFAULT_YOLOP_ROOT,
     )
     parser.add_argument(
         "--yolo11-weights",
         type=Path,
-        default=Path("/root/autodl-tmp/models/YOLO11/yolo11n.pt"),
+        default=DEFAULT_YOLO11_WEIGHTS,
     )
     parser.add_argument("--score-threshold", type=float, default=0.25)
     parser.add_argument(

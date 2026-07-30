@@ -32,8 +32,8 @@ python -m scene_understanding.training.build_specialized_yolo_dataset \
 ```bash
 python -m scene_understanding.training.train_yolo11_specialized \
   --data /root/autodl-tmp/datasets/scene_understanding/specialized_yolo_v1/dataset.yaml \
-  --model /root/autodl-tmp/models/YOLO11/yolo11s.pt \
-  --project /root/autodl-tmp/models/scene_understanding \
+  --model models/YOLO11/yolo11s.pt \
+  --project models/scene_understanding \
   --name yolo11s_specialized_v1 \
   --epochs 40 --batch 48 --image-size 640
 ```
@@ -41,7 +41,7 @@ python -m scene_understanding.training.train_yolo11_specialized \
 最佳权重：
 
 ```text
-/root/autodl-tmp/models/scene_understanding/yolo11s_specialized_v1/weights/best.pt
+models/scene_understanding/yolo11s_specialized_v1/weights/best.pt
 ```
 
 验证结果：
@@ -82,8 +82,8 @@ python -m scene_understanding.training.build_carla_domain_dataset \
 ```bash
 python -m scene_understanding.training.train_yolo11_specialized \
   --data /root/autodl-tmp/datasets/scene_understanding/specialized_yolo_carla_v1/dataset.yaml \
-  --model /root/autodl-tmp/models/scene_understanding/yolo11s_specialized_v1/weights/best.pt \
-  --project /root/autodl-tmp/models/scene_understanding \
+  --model models/scene_understanding/yolo11s_specialized_v1/weights/best.pt \
+  --project models/scene_understanding \
   --name yolo11s_specialized_carla_v1 \
   --epochs 12 --batch 48 --image-size 640
 ```
@@ -91,7 +91,7 @@ python -m scene_understanding.training.train_yolo11_specialized \
 最佳权重：
 
 ```text
-/root/autodl-tmp/models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt
+models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt
 ```
 
 混合验证结果：
@@ -111,7 +111,7 @@ python -m scene_understanding.realtime_perception.run_dataset \
   --output /path/to/perception.jsonl \
   --summary /path/to/summary.json \
   --backend yolop_yolo11 \
-  --yolo11-weights /root/autodl-tmp/models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt \
+  --yolo11-weights models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt \
   --image-size 640 \
   --object-image-size 640 \
   --score-threshold 0.10

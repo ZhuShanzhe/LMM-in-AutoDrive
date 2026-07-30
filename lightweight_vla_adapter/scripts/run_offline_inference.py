@@ -9,6 +9,9 @@ import torch
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_CHECKPOINT = (
+    REPO_ROOT / "models" / "lightweight_vla_adapter" / "v10" / "model.pt"
+)
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -20,7 +23,7 @@ from lightweight_vla_adapter.src.pipeline import LightweightVLAPipeline
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run one offline VLA adapter sample")
     parser.add_argument("--config", required=True)
-    parser.add_argument("--checkpoint", required=True)
+    parser.add_argument("--checkpoint", default=str(DEFAULT_CHECKPOINT))
     parser.add_argument("--request-json", required=True)
     parser.add_argument("--tensor-batch", required=True)
     parser.add_argument("--output", required=True)

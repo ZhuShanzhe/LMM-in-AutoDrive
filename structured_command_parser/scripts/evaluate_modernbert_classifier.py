@@ -17,8 +17,9 @@ from structured_command_parser.src.modernbert_model import ModernBertDrivingMode
 
 
 MODULE_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = MODULE_ROOT.parent
 DEFAULT_TEST = MODULE_ROOT / "data" / "processed" / "english_pseudolabels" / "test.jsonl"
-DEFAULT_MODEL = Path("/root/autodl-tmp/models/modernbert-drive-command-base")
+DEFAULT_MODEL = REPO_ROOT / "models" / "modernbert-drive-command-compositional"
 
 
 def main() -> None:
