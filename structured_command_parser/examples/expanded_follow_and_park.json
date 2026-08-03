@@ -1,0 +1,138 @@
+{
+  "schema_version": "1.2.0",
+  "request_id": "expanded-0001",
+  "input": {
+    "modality": "TEXT",
+    "language": "en-US",
+    "raw_text": "Follow the blue car for five minutes, make a U-turn, enter the parking area on the right, and reverse into the first parking space from the right to pick up Alex.",
+    "normalized_text": "Follow the blue car for five minutes, make a U-turn, enter the parking area on the right, and reverse into the first parking space from the right to pick up Alex."
+  },
+  "normalization": {
+    "edits": [],
+    "unresolved_references": []
+  },
+  "intent": {
+    "category": "NAVIGATION",
+    "urgency": "NORMAL",
+    "entities": [],
+    "suppressed_intents": [],
+    "steps": [
+      {
+        "step_id": "step_1",
+        "action": "FOLLOW",
+        "target": {
+          "type": "VEHICLE",
+          "relation": "AHEAD",
+          "description": "blue car"
+        },
+        "parameters": {
+          "duration_s": 300,
+          "source_value": 5,
+          "source_unit": "min"
+        },
+        "trigger": {
+          "type": "OBJECT_PRESENT"
+        },
+        "completion": {
+          "type": "DURATION_ELAPSED"
+        },
+        "depends_on": [],
+        "preconditions": [
+          "TARGET_VISIBLE",
+          "PATH_CLEAR"
+        ],
+        "on_blocked": "WAIT_FOR_SAFE"
+      },
+      {
+        "step_id": "step_2",
+        "action": "U_TURN",
+        "parameters": {},
+        "trigger": {
+          "type": "AFTER_STEP",
+          "step_id": "step_1"
+        },
+        "completion": {
+          "type": "JUNCTION_EXITED"
+        },
+        "depends_on": [
+          "step_1"
+        ],
+        "preconditions": [
+          "JUNCTION_REACHED",
+          "PATH_CLEAR"
+        ],
+        "on_blocked": "WAIT_FOR_SAFE"
+      },
+      {
+        "step_id": "step_3",
+        "action": "ENTER_AREA",
+        "target": {
+          "type": "PARKING_AREA",
+          "relation": "RIGHT"
+        },
+        "parameters": {
+          "direction": "RIGHT"
+        },
+        "trigger": {
+          "type": "AFTER_STEP",
+          "step_id": "step_2"
+        },
+        "completion": {
+          "type": "AREA_ENTERED"
+        },
+        "depends_on": [
+          "step_2"
+        ],
+        "preconditions": [
+          "AREA_ACCESSIBLE",
+          "PATH_CLEAR"
+        ],
+        "on_blocked": "WAIT_FOR_SAFE"
+      },
+      {
+        "step_id": "step_4",
+        "action": "PARK",
+        "purpose": "PICK_UP",
+        "target": {
+          "type": "PARKING_SPACE",
+          "relation": "RIGHT",
+          "description": "first parking space from the right near Alex"
+        },
+        "parameters": {
+          "lane_index": 1,
+          "lane_reference": "RIGHT_EDGE",
+          "parking_maneuver": "REVERSE"
+        },
+        "trigger": {
+          "type": "AFTER_STEP",
+          "step_id": "step_3"
+        },
+        "completion": {
+          "type": "PARKING_COMPLETED"
+        },
+        "depends_on": [
+          "step_3"
+        ],
+        "preconditions": [
+          "PATH_CLEAR",
+          "PARKING_SPACE_AVAILABLE"
+        ],
+        "on_blocked": "REQUEST_CLARIFICATION"
+      }
+    ],
+    "constraints": {
+      "safety_first": true,
+      "obey_traffic_rules": true,
+      "driving_style": "NORMAL"
+    }
+  },
+  "parse_result": {
+    "status": "VALID",
+    "method": "HYBRID",
+    "model": "command-parser-v1.1",
+    "confidence": 0.96,
+    "missing_slots": [],
+    "warnings": [],
+    "latency_ms": 8.2
+  }
+}

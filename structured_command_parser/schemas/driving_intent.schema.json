@@ -1,0 +1,817 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xh-202602.local/schemas/driving_intent-1.2.0.json",
+  "title": "XH-202602 Driving Intent",
+  "description": "Natural-language driving intent passed to scene alignment and decision modules.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "input",
+    "normalization",
+    "intent",
+    "parse_result"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.2.0"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "input": {
+      "$ref": "#/$defs/input"
+    },
+    "normalization": {
+      "$ref": "#/$defs/normalization"
+    },
+    "intent": {
+      "$ref": "#/$defs/intent"
+    },
+    "parse_result": {
+      "$ref": "#/$defs/parseResult"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "parse_result": {
+            "properties": {
+              "status": {
+                "const": "VALID"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "intent": {
+            "properties": {
+              "steps": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modality",
+        "language",
+        "raw_text",
+        "normalized_text"
+      ],
+      "properties": {
+        "modality": {
+          "enum": [
+            "TEXT",
+            "VOICE"
+          ]
+        },
+        "language": {
+          "type": "string",
+          "minLength": 2
+        },
+        "raw_text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "translated_text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_language": {
+          "type": "string",
+          "minLength": 2
+        },
+        "normalized_text": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "normalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "edits",
+        "unresolved_references"
+      ],
+      "properties": {
+        "edits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/normalizationEdit"
+          }
+        },
+        "unresolved_references": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "normalizationEdit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "source_span",
+        "replacement",
+        "confidence",
+        "requires_confirmation"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "SYNONYM_CANONICALIZATION",
+            "ELLIPSIS_RESOLUTION",
+            "COREFERENCE_RESOLUTION",
+            "NEGATIVE_CONSTRAINT_NORMALIZATION",
+            "ASR_HOMOPHONE_CORRECTION",
+            "ASR_HOMOPHONE_CANDIDATE"
+          ]
+        },
+        "source_span": {
+          "type": "string",
+          "minLength": 1
+        },
+        "replacement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "requires_confirmation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "category",
+        "urgency",
+        "entities",
+        "suppressed_intents",
+        "steps",
+        "constraints"
+      ],
+      "properties": {
+        "category": {
+          "enum": [
+            "BASIC_CONTROL",
+            "COMPLEX_OBSTACLE_AVOIDANCE",
+            "EMERGENCY_RESPONSE",
+            "NAVIGATION",
+            "META_CONTROL"
+          ]
+        },
+        "urgency": {
+          "enum": [
+            "NORMAL",
+            "URGENT",
+            "EMERGENCY"
+          ]
+        },
+        "entities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/entity"
+          }
+        },
+        "suppressed_intents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/suppressedIntent"
+          }
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "constraints": {
+          "$ref": "#/$defs/constraints"
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step_id",
+        "action",
+        "parameters",
+        "trigger",
+        "depends_on",
+        "preconditions",
+        "on_blocked"
+      ],
+      "properties": {
+        "step_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+        },
+        "action": {
+          "enum": [
+            "KEEP_LANE",
+            "SET_SPEED",
+            "ADJUST_SPEED",
+            "STOP",
+            "WAIT",
+            "FOLLOW",
+            "APPROACH",
+            "NAVIGATE_TO",
+            "CHANGE_LANE",
+            "MERGE",
+            "TURN",
+            "U_TURN",
+            "PROCEED",
+            "YIELD",
+            "PULL_OVER",
+            "PARK",
+            "OVERTAKE",
+            "PASS_BY",
+            "AVOID",
+            "REVERSE",
+            "ENTER_AREA",
+            "EXIT_AREA",
+            "EMERGENCY_BRAKE",
+            "RESUME",
+            "CANCEL"
+          ]
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "target": {
+          "$ref": "#/$defs/target"
+        },
+        "target_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+        },
+        "goal_conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/goalCondition"
+          }
+        },
+        "parameters": {
+          "$ref": "#/$defs/parameters"
+        },
+        "trigger": {
+          "$ref": "#/$defs/trigger"
+        },
+        "completion": {
+          "$ref": "#/$defs/completion"
+        },
+        "depends_on": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "preconditions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "LEFT_LANE_EXISTS",
+              "RIGHT_LANE_EXISTS",
+              "LEFT_LANE_SAFE",
+              "RIGHT_LANE_SAFE",
+              "TARGET_LANE_SAFE",
+              "LANE_CHANGE_LEGAL",
+              "JUNCTION_REACHED",
+              "TARGET_VISIBLE",
+              "PATH_CLEAR",
+              "TARGET_REACHABLE",
+              "AREA_ACCESSIBLE",
+              "PARKING_SPACE_AVAILABLE"
+            ]
+          }
+        },
+        "on_blocked": {
+          "enum": [
+            "WAIT_FOR_SAFE",
+            "SAFE_STOP",
+            "REQUEST_CLARIFICATION",
+            "ABORT_COMMAND",
+            "SKIP_STEP"
+          ]
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "relation"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "VEHICLE",
+            "SLOW_VEHICLE",
+            "PEDESTRIAN",
+            "CYCLIST",
+            "OBSTACLE",
+            "TRAFFIC_CONE",
+            "CONSTRUCTION_ZONE",
+            "TRAFFIC_LIGHT",
+            "TRAFFIC_SIGN",
+            "CROSSWALK",
+            "STOP_LINE",
+            "JUNCTION",
+            "LANE",
+            "ROAD",
+            "AREA",
+            "PARKING_AREA",
+            "PARKING_SPACE",
+            "CURB",
+            "LANDMARK",
+            "DESTINATION",
+            "PICKUP_POINT",
+            "DROPOFF_POINT",
+            "ROAD_HAZARD",
+            "COORDINATE",
+            "UNKNOWN"
+          ]
+        },
+        "relation": {
+          "enum": [
+            "AHEAD",
+            "BEHIND",
+            "LEFT",
+            "RIGHT",
+            "FRONT_LEFT",
+            "FRONT_RIGHT",
+            "REAR_LEFT",
+            "REAR_RIGHT",
+            "AHEAD_CROSSING",
+            "ADJACENT",
+            "NEXT_TO",
+            "IN_FRONT_OF",
+            "NEAR",
+            "AT_JUNCTION",
+            "NEAR_DESTINATION",
+            "INSIDE",
+            "PAST",
+            "UNSPECIFIED"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "canonical_attributes": {
+          "$ref": "#/$defs/canonicalAttributes"
+        },
+        "open_descriptors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "coordinates": {
+          "$ref": "#/$defs/coordinates"
+        }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity_id",
+        "type",
+        "relation",
+        "description",
+        "canonical_attributes",
+        "open_descriptors",
+        "source_span"
+      ],
+      "properties": {
+        "entity_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+        },
+        "type": {
+          "$ref": "#/$defs/target/properties/type"
+        },
+        "relation": {
+          "$ref": "#/$defs/target/properties/relation"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "canonical_attributes": {
+          "$ref": "#/$defs/canonicalAttributes"
+        },
+        "open_descriptors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "source_span": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "suppressedIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "reason",
+        "source_span"
+      ],
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/step/properties/action"
+        },
+        "parameters": {
+          "$ref": "#/$defs/parameters"
+        },
+        "reason": {
+          "enum": [
+            "EXPLICIT_NEGATION",
+            "USER_CORRECTION",
+            "SUPERSEDED_ACTION"
+          ]
+        },
+        "source_span": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "canonicalAttributes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "integer",
+          "boolean"
+        ]
+      },
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]{0,63}$"
+      }
+    },
+    "goalCondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "predicate",
+        "subject",
+        "source_span"
+      ],
+      "properties": {
+        "predicate": {
+          "enum": [
+            "BEFORE",
+            "AFTER",
+            "BEHIND",
+            "IN_FRONT_OF",
+            "LEFT_OF",
+            "RIGHT_OF",
+            "NEAR",
+            "NEXT_TO",
+            "BETWEEN",
+            "INSIDE",
+            "PAST",
+            "UNTIL",
+            "VISIBLE",
+            "SAFE_DISTANCE",
+            "STOPPED"
+          ]
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "object": {
+          "type": "string",
+          "minLength": 1
+        },
+        "secondary_object": {
+          "type": "string",
+          "minLength": 1
+        },
+        "distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "source_span": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "coordinates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x_m",
+        "y_m"
+      ],
+      "properties": {
+        "x_m": {
+          "type": "number"
+        },
+        "y_m": {
+          "type": "number"
+        },
+        "frame": {
+          "enum": [
+            "EGO",
+            "MAP"
+          ]
+        }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "LEFT",
+            "RIGHT",
+            "STRAIGHT",
+            "FORWARD",
+            "BACKWARD"
+          ]
+        },
+        "change": {
+          "enum": [
+            "INCREASE",
+            "DECREASE",
+            "HOLD"
+          ]
+        },
+        "target_speed_mps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "speed_delta_mps": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "start_distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "transition_distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "following_distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "duration_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "lane_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "lane_index": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "lane_reference": {
+          "enum": [
+            "LEFT_EDGE",
+            "RIGHT_EDGE"
+          ]
+        },
+        "parking_maneuver": {
+          "enum": [
+            "FORWARD",
+            "REVERSE",
+            "PARALLEL",
+            "UNSPECIFIED"
+          ]
+        },
+        "source_value": {
+          "type": "number"
+        },
+        "source_unit": {
+          "enum": [
+            "km/h",
+            "m/s",
+            "m",
+            "s",
+            "min"
+          ]
+        }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "IMMEDIATE",
+            "AFTER_STEP",
+            "AT_DISTANCE",
+            "AT_JUNCTION",
+            "OBJECT_PRESENT",
+            "ON_ENTITY_VISIBLE",
+            "AFTER_ENTITY",
+            "WHEN_SAFE",
+            "CONDITION"
+          ]
+        },
+        "step_id": {
+          "type": "string"
+        },
+        "entity_ref": {
+          "type": "string"
+        },
+        "distance_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "ACTION_REACHED",
+            "TARGET_CLEARED",
+            "TARGET_SPEED_REACHED",
+            "LANE_CHANGE_COMPLETED",
+            "JUNCTION_EXITED",
+            "VEHICLE_STOPPED",
+            "STOPPED_BEFORE_TARGET",
+            "WAIT_CONDITION_MET",
+            "DURATION_ELAPSED",
+            "FOLLOWING_ESTABLISHED",
+            "TARGET_REACHED",
+            "AREA_ENTERED",
+            "AREA_EXITED",
+            "PARKING_COMPLETED"
+          ]
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "safety_first",
+        "obey_traffic_rules",
+        "driving_style"
+      ],
+      "properties": {
+        "safety_first": {
+          "const": true
+        },
+        "obey_traffic_rules": {
+          "const": true
+        },
+        "driving_style": {
+          "enum": [
+            "NORMAL",
+            "CONSERVATIVE"
+          ]
+        },
+        "max_speed_mps": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "parseResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "method",
+        "model",
+        "confidence",
+        "missing_slots",
+        "warnings",
+        "latency_ms"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "VALID",
+            "NEEDS_CLARIFICATION",
+            "UNSUPPORTED",
+            "INVALID"
+          ]
+        },
+        "method": {
+          "enum": [
+            "RULE",
+            "LLM",
+            "HYBRID"
+          ]
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "missing_slots": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "clarification_question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "latency_ms": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "schema_version": "1.2.0",
+  "request_id": "complex-0001",
+  "input": {
+    "modality": "VOICE",
+    "language": "zh-CN",
+    "raw_text": "看到前方横穿马路的行人，减速避让后向左变道超越慢车",
+    "normalized_text": "看到前方横穿马路的行人，减速避让后向左变道超越慢车"
+  },
+  "normalization": {
+    "edits": [],
+    "unresolved_references": []
+  },
+  "intent": {
+    "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+    "urgency": "NORMAL",
+    "entities": [],
+    "suppressed_intents": [],
+    "steps": [
+      {
+        "step_id": "step_1",
+        "action": "ADJUST_SPEED",
+        "purpose": "YIELD",
+        "target": {
+          "type": "PEDESTRIAN",
+          "relation": "AHEAD_CROSSING"
+        },
+        "parameters": {
+          "change": "DECREASE"
+        },
+        "trigger": {
+          "type": "OBJECT_PRESENT"
+        },
+        "completion": {
+          "type": "TARGET_CLEARED"
+        },
+        "depends_on": [],
+        "preconditions": [
+          "TARGET_VISIBLE"
+        ],
+        "on_blocked": "SAFE_STOP"
+      },
+      {
+        "step_id": "step_2",
+        "action": "CHANGE_LANE",
+        "purpose": "OVERTAKE",
+        "target": {
+          "type": "SLOW_VEHICLE",
+          "relation": "AHEAD"
+        },
+        "parameters": {
+          "direction": "LEFT",
+          "lane_count": 1
+        },
+        "trigger": {
+          "type": "AFTER_STEP",
+          "step_id": "step_1"
+        },
+        "completion": {
+          "type": "LANE_CHANGE_COMPLETED"
+        },
+        "depends_on": [
+          "step_1"
+        ],
+        "preconditions": [
+          "LEFT_LANE_EXISTS",
+          "LEFT_LANE_SAFE",
+          "LANE_CHANGE_LEGAL"
+        ],
+        "on_blocked": "WAIT_FOR_SAFE"
+      },
+      {
+        "step_id": "step_3",
+        "action": "OVERTAKE",
+        "target": {
+          "type": "SLOW_VEHICLE",
+          "relation": "AHEAD"
+        },
+        "parameters": {},
+        "trigger": {
+          "type": "AFTER_STEP",
+          "step_id": "step_2"
+        },
+        "completion": {
+          "type": "TARGET_CLEARED"
+        },
+        "depends_on": [
+          "step_2"
+        ],
+        "preconditions": [
+          "PATH_CLEAR"
+        ],
+        "on_blocked": "SAFE_STOP"
+      }
+    ],
+    "constraints": {
+      "safety_first": true,
+      "obey_traffic_rules": true,
+      "driving_style": "CONSERVATIVE"
+    }
+  },
+  "parse_result": {
+    "status": "VALID",
+    "method": "LLM",
+    "model": "Qwen2.5-1.5B-Instruct",
+    "confidence": 0.96,
+    "missing_slots": [],
+    "warnings": [],
+    "latency_ms": 0.0
+  }
+}
