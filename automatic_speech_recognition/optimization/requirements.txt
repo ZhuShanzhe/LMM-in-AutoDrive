@@ -1,0 +1,10 @@
+torch
+torchaudio
+librosa
+soundfile
+pydub
+numpy
+modelscope
+scipy>=1.10.0
+tqdm
+click
