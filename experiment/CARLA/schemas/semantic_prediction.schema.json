@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lmm-autodrive.local/schemas/semantic_prediction.schema.json",
+  "title": "SemanticPrediction",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "scene_id",
+    "simulation_frame",
+    "active_event_ids",
+    "risk_labels"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "SemanticPrediction/1.0.0"
+    },
+    "scene_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "simulation_frame": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "active_event_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "risk_labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "inference_timestamp_s": {
+      "type": "number",
+      "minimum": 0
+    },
+    "model_id": {
+      "type": "string"
+    }
+  }
+}

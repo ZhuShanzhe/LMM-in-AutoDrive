@@ -48,37 +48,23 @@ The default `pid` controller supports longitudinal control, lane keeping, and
 basic lane-change steering. For junction turns, use `--controller behavior`
 or `--controller basic` and provide `target_location` from the planner.
 
-## External decision JSON boundary
-
-`run_control_experiment.py` can read an external decision document on every
-simulation tick. This is a Python-version-independent boundary for the later
-parser, scene-understanding, risk, or FSM process: it can atomically replace a
-JSON file without importing CARLA into that process.
-
-The document may be either a `DrivingIntent` or a flattened
-`control_decision.json`. The latter should use one of the nine control actions
-listed above and may include `frame_id`, `risk_level`, and other diagnostic
-fields; unsupported extra fields are preserved by the producer but ignored by
-the CARLA controller.
-
-```powershell
-python run_control_experiment.py emergency_brake --duration-s 20 `
-  --decision-source json_file `
-  --decision-json examples\decisions\emergency_brake.json
-```
-
-The included JSON file is only a temporary emergency-braking placeholder. A
-missing, malformed, or unsupported external document always becomes a safe
-`stop` command rather than allowing the ego vehicle to continue a stale action.
-The default `--decision-source rule` remains available for baseline tests.
-
 ## Run an experiment
 
-CARLA `0.9.15` on this Windows machine ships a Python 3.7 API package. Start
-the CARLA server first, then use a Python 3.7 environment and run from this
-directory:
+The integration environment is Linux with CARLA `0.9.16` and Python
+`3.12.13`. The CARLA server and Python API must use the same version. Install
+the API in the data-disk environment and verify it before starting a run:
 
-```powershell
+```bash
+conda activate /root/autodl-tmp/conda_envs/command_parser
+export CARLA_ROOT=/root/autodl-tmp/CARLA_0.9.16
+python -m pip install "$CARLA_ROOT"/PythonAPI/carla/dist/carla-0.9.16-*.whl
+python -c "from importlib.metadata import version; print(version('carla'))"
+```
+
+Start the Linux server with `-RenderOffScreen` as documented in `README.md`.
+Then run from `experiment/CARLA`:
+
+```bash
 python run_control_experiment.py straight_driving --duration-s 25 --goal-distance-m 60 --stop-when-goal-reached
 python run_control_experiment.py emergency_brake --duration-s 25
 python run_control_experiment.py pedestrian_crossing --duration-s 25
@@ -86,7 +72,7 @@ python run_control_experiment.py emergency_brake --duration-s 25 --record-images
 ```
 
 Set `CARLA_ROOT` if CARLA is not installed at
-`D:\CARLA\carla-0-9-15-windows\WindowsNoEditor`.
+`/root/autodl-tmp/CARLA_0.9.16`.
 
 ## Outputs
 
@@ -106,18 +92,29 @@ With `--record-images`, `camera_frames/` holds front-camera evidence at the
 default 1920x1080 resolution. Convert
 the saved images into a demonstration video with:
 
-```powershell
-python frames_to_video.py --frames outputs\runs\<run>\camera_frames --output outputs\runs\<run>\demo.mp4 --fps 10
+```bash
+apt-get update
+apt-get install -y ffmpeg fonts-noto-cjk
+python frames_to_video.py \
+  --frames outputs/runs/<run>/camera_frames \
+  --output outputs/runs/<run>/demo.mp4 \
+  --fps 10
 ```
 
-The script uses `ffmpeg` and automatically locates the bundled executable in
-the local `carla37` conda environment.
+The script uses `ffmpeg` from `PATH`; use `--ffmpeg /path/to/ffmpeg` only for a
+non-standard installation.
 
 For higher frame rate, bypass PNG files and stream the camera directly to an
 H.264 video:
 
-```powershell
-python run_control_experiment.py emergency_brake --duration-s 10 --fixed-delta-s 0.0333333333 --camera-width 1920 --camera-height 1080 --video-output outputs\runs\emergency_30fps.mp4 --video-fps 30 --ffmpeg C:\path\to\ffmpeg.exe
+```bash
+python run_control_experiment.py emergency_brake \
+  --duration-s 10 \
+  --fixed-delta-s 0.0333333333 \
+  --camera-width 1920 \
+  --camera-height 1080 \
+  --video-output outputs/runs/emergency_30fps.mp4 \
+  --video-fps 30
 ```
 
 `RuleDecisionPolicy` in `run_control_experiment.py` is a temporary safety rule

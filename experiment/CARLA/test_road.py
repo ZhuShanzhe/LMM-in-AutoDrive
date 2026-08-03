@@ -1,28 +1,29 @@
 import carla
 
-from Route_manager import RouteManager
+from scenarios.utils.road import RoadFinder
 
 
-client=carla.Client(
+
+client = carla.Client(
     "localhost",
     2000
 )
 
 client.set_timeout(10)
 
-world=client.get_world()
+
+world = client.get_world()
 
 
-route_manager=RouteManager(
+
+finder = RoadFinder(
     world
 )
 
 
-route_manager.build_route(
-    length=8000
-)
+
+road = finder.find_straight_road()
 
 
-route_manager.save(
-    "route/routes/town10_route.json"
-)
+
+print(road)

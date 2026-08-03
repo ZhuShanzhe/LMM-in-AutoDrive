@@ -33,10 +33,45 @@ class MetricsResultSemanticsTest(unittest.TestCase):
             make_record(2, 1.0, speed_kmh=20.0),
         ]
         for record in records:
-            record["intent"] = {"action": "decelerate", "target_speed_kmh": 10.0}
-        metrics = summarize(records, "emergency_brake", goal_distance_m=1.0)
+            record["intent"] = {
+                "action": "decelerate",
+                "target_speed_kmh": 10.0,
+            }
+        metrics = summarize(
+            records,
+            "emergency_brake",
+            goal_distance_m=1.0,
+        )
         self.assertEqual(metrics["speeding_frames"], 0)
         self.assertTrue(metrics["violation_free"])
+
+    def test_non_illegal_lane_observations_do_not_fail_a_run(self):
+        records = [make_record(1, 0.0), make_record(2, 1.0)]
+        for record in records:
+            record["events"] = {
+                "collision_count": 0,
+                "lane_invasion_count": 3,
+                "illegal_lane_invasion_count": 0,
+            }
+        metrics = summarize(
+            records,
+            "basic_track_5km",
+            goal_distance_m=1.0,
+        )
+        self.assertEqual(metrics["lane_invasion_events"], 3)
+        self.assertEqual(metrics["illegal_lane_invasion_events"], 0)
+        self.assertTrue(metrics["violation_free"])
+
+    def test_illegal_lane_invasion_fails_the_violation_check(self):
+        records = [make_record(1, 0.0), make_record(2, 1.0)]
+        for record in records:
+            record["events"]["illegal_lane_invasion_count"] = 1
+        metrics = summarize(
+            records,
+            "basic_track_5km",
+            goal_distance_m=1.0,
+        )
+        self.assertFalse(metrics["violation_free"])
 
 
 if __name__ == "__main__":

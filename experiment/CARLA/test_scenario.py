@@ -11,28 +11,21 @@ from scenarios.basic.straight_driving import (
     StraightDrivingScenario
 )
 
+
 from scenarios.emergency.emergency_brake import (
     EmergencyBrakeScenario
-)
-
-from scenarios.emergency.cut_in_vehicle import (
-    CutInVehicleScenario
 )
 
 from scenarios.pedestrian.pedestrian_crossing import (
     PedestrianCrossingScenario
 )
 
-from scenarios.obstacle.static_obstacle import (
-    StaticObstacleScenario
-)
-
-
 # =========================
 # 场景注册表
 # =========================
 
 SCENARIOS = {
+
 
     "straight_driving":
         StraightDrivingScenario,
@@ -41,31 +34,20 @@ SCENARIOS = {
     "emergency_brake":
         EmergencyBrakeScenario,
 
-
-    "cut_in_vehicle":
-        CutInVehicleScenario,
-
-
     "pedestrian_crossing":
         PedestrianCrossingScenario,
-
-
-    "static_obstacle":
-        StaticObstacleScenario,
 
 }
 
 
 
-# =========================
-# 打印场景
-# =========================
-
 def print_available_scenarios():
+
 
     print("\nAvailable scenarios:")
 
-    for name in SCENARIOS:
+
+    for name in SCENARIOS.keys():
 
         print(
             " -",
@@ -74,77 +56,20 @@ def print_available_scenarios():
 
 
 
-# =========================
-# 输出结果
-# =========================
-
-def print_result(status):
-
-    print(
-        "\n========== Scenario Result =========="
-    )
-
-
-    print(
-        "Status:",
-        status.get(
-            "status",
-            "UNKNOWN"
-        )
-    )
-
-
-    print(
-        "Reason:",
-        status.get(
-            "reason",
-            ""
-        )
-    )
-
-
-    print(
-        "Actors:",
-        status.get(
-            "actors",
-            {}
-        )
-    )
-
-
-    print(
-        "Metrics:"
-    )
-
-
-    print(
-        status.get(
-            "metrics",
-            {}
-        )
-    )
-
-
-    print(
-        "===================================="
-    )
-
-
-
-# =========================
-# 主函数
-# =========================
-
 def main():
 
 
-    # 参数检查
+    # =====================
+    # 检查参数
+    # =====================
 
     if len(sys.argv) < 2:
+
 
         print(
             "Please specify scenario name."
         )
+
 
         print_available_scenarios()
 
@@ -164,6 +89,7 @@ def main():
             scenario_name
         )
 
+
         print_available_scenarios()
 
         return
@@ -171,7 +97,7 @@ def main():
 
 
     # =====================
-    # CARLA连接
+    # 连接CARLA
     # =====================
 
     client = carla.Client(
@@ -190,17 +116,22 @@ def main():
 
 
     # =====================
-    # 创建Scenario
+    # 创建场景
     # =====================
 
-    scenario = SCENARIOS[scenario_name](
-        world,
-        external_control=True
+    scenario_class = (
+        SCENARIOS[scenario_name]
+    )
+
+
+    scenario = scenario_class(
+        world
     )
 
 
 
     try:
+
 
         print(
             "\n[Scenario]",
@@ -208,15 +139,12 @@ def main():
         )
 
 
+
         # 初始化
 
         scenario.setup()
 
-
-        print(
-            scenario.get_scenario_info()
-        )
-
+        print(scenario.get_scenario_info()) # 获取信息
 
         print(
             "[Scenario] Running..."
@@ -231,20 +159,15 @@ def main():
         while not scenario.finished():
 
 
+            # 更新场景
+
             scenario.tick()
 
 
+
+            # 推进CARLA
+
             world.tick()
-
-
-            status = scenario.get_status()
-
-
-            # 成功/失败退出
-
-            if status["status"] != "RUNNING":
-
-                break
 
 
 
@@ -265,20 +188,7 @@ def main():
 
     finally:
 
-
-        # 输出最终状态
-
-        try:
-
-            print_result(
-                scenario.get_status()
-            )
-
-        except Exception:
-
-            pass
-
-
+        print(scenario.get_scenario_info())
 
         print(
             "[Scenario] Cleaning..."
@@ -286,6 +196,7 @@ def main():
 
 
         scenario.destroy()
+
 
 
         print(

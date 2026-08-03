@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lmm-autodrive.local/schemas/scene_event_observation.schema.json",
+  "title": "SceneEventObservation",
+  "description": "Scheduler lifecycle metadata that excludes actor truth and future triggers.",
+  "type": "object",
+  "required": ["schema_version", "route_progress_m", "policy_use"],
+  "properties": {
+    "schema_version": {"const": "scene_event_observation/1.0"},
+    "scene_id": {"type": "string"},
+    "simulation_frame": {"type": "integer", "minimum": 0},
+    "route_progress_m": {"type": "number", "minimum": 0},
+    "active_event_count": {"type": "integer", "minimum": 0},
+    "active_event_types": {"type": "array", "items": {"type": "string"}},
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["event_id", "kind", "lifecycle_state", "expected_modalities"],
+        "properties": {
+          "event_id": {"type": "string", "minLength": 1},
+          "kind": {"type": "string", "minLength": 1},
+          "lifecycle_state": {"enum": ["STAGED", "PENDING", "ACTIVE", "RESOLVED"]},
+          "expected_modalities": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "policy_use": {"enum": ["evaluation_and_logging_only", "synchronization_only"]}
+  }
+}

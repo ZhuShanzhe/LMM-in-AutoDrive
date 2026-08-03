@@ -117,6 +117,7 @@ class EmergencyBrakeScenario(BaseScenario):
         self.safe_stop_speed_kmh = 0.5
         self.safe_stop_hold_s = 1.0
         self.min_safe_gap_m = 5.0
+        self.min_trigger_speed_kmh = 3.0
         self.safe_stop_elapsed_s = 0.0
         self.brake_trigger_time_s = None
         self.success_condition = {
@@ -125,7 +126,13 @@ class EmergencyBrakeScenario(BaseScenario):
             "hold_s": self.safe_stop_hold_s,
             "min_front_gap_m": self.min_safe_gap_m,
         }
-        self.failure_conditions = ["collision", "timeout", "unsafe_stop_gap"]
+        self.failure_conditions = [
+            "collision",
+            "timeout",
+            "unsafe_stop_gap",
+            "ego_not_moving_at_brake_trigger",
+            "goal_reached_without_safe_stop",
+        ]
 
 
 
@@ -226,7 +233,7 @@ class EmergencyBrakeScenario(BaseScenario):
             self.road_finder
             .find_straight_road(
 
-                min_length=150
+                min_length=120
 
             )
 
@@ -242,32 +249,11 @@ class EmergencyBrakeScenario(BaseScenario):
 
 
         # =====================
-        # ego 后退40m
+        # 从已验证的直路起点出发
         # =====================
 
 
-        ego_candidates = (
-
-            road_wp.previous(
-
-                40
-
-            )
-
-        )
-
-
-        if len(ego_candidates)==0:
-
-            raise RuntimeError(
-
-                "Cannot find ego waypoint"
-
-            )
-
-
-
-        ego_wp = ego_candidates[0]
+        ego_wp = road_wp
 
 
 
@@ -716,7 +702,7 @@ class EmergencyBrakeScenario(BaseScenario):
 
         ):
 
- 
+
             self.failure(
 
                 "timeout"
@@ -798,6 +784,18 @@ class EmergencyBrakeScenario(BaseScenario):
             self.brake_triggered = True
             self.brake_trigger_time_s = self.metrics["simulation_time"]
             self.metrics["brake_triggered"] = True
+            ego_velocity = self.ego_vehicle.get_velocity()
+            trigger_speed_kmh = 3.6 * (
+                ego_velocity.x ** 2
+                + ego_velocity.y ** 2
+                + ego_velocity.z ** 2
+            ) ** 0.5
+            self.metrics["ego_speed_at_brake_trigger_kmh"] = round(
+                trigger_speed_kmh, 3
+            )
+            if trigger_speed_kmh < self.min_trigger_speed_kmh:
+                self.failure("ego_not_moving_at_brake_trigger")
+                return
 
         if self.brake_triggered:
             ego_velocity = self.ego_vehicle.get_velocity()
@@ -813,6 +811,14 @@ class EmergencyBrakeScenario(BaseScenario):
             )
             self.metrics["front_distance_m"] = round(front_distance, 3)
             self.metrics["ego_speed_kmh"] = round(ego_speed_kmh, 3)
+            if self.metrics.get("reaction_time") is None:
+                applied_control = self.ego_vehicle.get_control()
+                if applied_control.brake >= 0.2:
+                    self.metrics["reaction_time"] = round(
+                        self.metrics["simulation_time"]
+                        - self.brake_trigger_time_s,
+                        3,
+                    )
 
             if ego_speed_kmh <= self.safe_stop_speed_kmh:
                 self.safe_stop_elapsed_s += self.fixed_delta_s
@@ -856,12 +862,8 @@ class EmergencyBrakeScenario(BaseScenario):
 
 
             if distance < 3.0:
-
-
-                self.success(
-
-                    "ego_reached_goal"
-
+                self.failure(
+                    "goal_reached_without_safe_stop"
                 )
 
 

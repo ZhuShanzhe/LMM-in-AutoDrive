@@ -1,1 +1,1 @@
-"""Logging, events, metrics, and video helpers for CARLA experiments."""
+"""Evaluation and recording helpers shared by CARLA experiment runners."""

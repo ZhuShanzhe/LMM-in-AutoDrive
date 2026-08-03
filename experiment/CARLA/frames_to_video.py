@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument("--frames", required=True, help="Directory containing PNG frames")
     parser.add_argument("--output", required=True, help="Output .mp4 path")
     parser.add_argument("--fps", type=float, default=20.0)
-    parser.add_argument("--ffmpeg", default=None, help="Optional path to ffmpeg.exe")
+    parser.add_argument("--ffmpeg", default=None, help="Optional path to the ffmpeg executable")
     parser.add_argument("--extension", default="png", help="Input frame extension, without a dot")
     return parser.parse_args()
 
@@ -50,12 +50,13 @@ def find_ffmpeg(explicit_path):
     candidates = [explicit_path, shutil.which("ffmpeg")]
     conda_prefix = os.environ.get("CONDA_PREFIX")
     if conda_prefix:
-        candidates.append(os.path.join(conda_prefix, "Library", "bin", "ffmpeg.exe"))
-    candidates.append(r"D:\\anaconda3\\envs\\carla37\\Library\\bin\\ffmpeg.exe")
+        candidates.append(os.path.join(conda_prefix, "bin", "ffmpeg"))
     for candidate in candidates:
         if candidate and os.path.isfile(candidate):
             return candidate
-    raise RuntimeError("ffmpeg was not found; pass --ffmpeg <path-to-ffmpeg.exe>")
+    raise RuntimeError(
+        "ffmpeg was not found; install it with apt or pass --ffmpeg /path/to/ffmpeg"
+    )
 
 
 def write_concat_manifest(frame_paths, fps):

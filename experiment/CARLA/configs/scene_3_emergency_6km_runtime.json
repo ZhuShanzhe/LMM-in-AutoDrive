@@ -1,0 +1,471 @@
+{
+  "schema_version": "emergency_response_runtime/v1",
+  "scene_id": "scene_3_emergency_6km",
+  "description": "Rainy-night 6 km emergency-response route with recoverable hazards.",
+  "random_seed": 20260729,
+  "map": {
+    "name": "VLA_EmergencyRoad_6km",
+    "xodr": "../maps/maps/output/VLA_EmergencyRoad_6km.xodr",
+    "road_id": 1,
+    "length_m": 6000.0,
+    "junction_count": 0,
+    "ego_start": {
+      "lane_id": -2,
+      "s_m": 50.0
+    },
+    "finish_s_m": 5990.0
+  },
+  "lane_contract": {
+    "traffic_rule": "RHT",
+    "ego_direction": {
+      "left_lane_id": -1,
+      "middle_lane_id": -2,
+      "right_lane_id": -3,
+      "shoulder_lane_id": -4,
+      "sidewalk_lane_id": -5
+    },
+    "forbidden_route_features": [
+      "u_turn",
+      "intersection"
+    ]
+  },
+  "weather": {
+    "preset": "rainy_night",
+    "cloudiness": 100.0,
+    "precipitation": 80.0,
+    "precipitation_deposits": 80.0,
+    "wind_intensity": 35.0,
+    "sun_altitude_angle": -15.0,
+    "fog_density": 35.0,
+    "fog_distance": 75.0,
+    "wetness": 100.0
+  },
+  "surface_and_visibility": {
+    "wet_road_friction_scale": 0.68,
+    "standing_water_depth_mm": [0.0, 6.0],
+    "headlight_reflection": true,
+    "tyre_spray": true,
+    "camera_degradation": {
+      "rain_streak_probability": 0.35,
+      "oncoming_glare_probability": 0.12,
+      "exposure_recovery_s": 0.9
+    },
+    "policy_interface": "environment_observation/v1"
+  },
+  "sensors": {
+    "required_camera_names": [
+      "front_rgb",
+      "left_rgb",
+      "right_rgb",
+      "rear_rgb"
+    ],
+    "camera_yaw_degrees": {
+      "front_rgb": 0.0,
+      "left_rgb": -90.0,
+      "right_rgb": 90.0,
+      "rear_rgb": 180.0
+    },
+    "vehicle_state_required": true
+  },
+  "traffic": {
+    "private_vehicle_count": 16,
+    "work_vehicle_count": 2,
+    "maintenance_vehicle_count": 1,
+    "worker_count": 2,
+    "minimum_ego_spawn_clearance_m": 35.0
+  },
+  "events": [
+    {
+      "id": "scene3_cut_in",
+      "order": 1,
+      "scenario": "cut_in_vehicle",
+      "distance_m": 1080.0,
+      "activate_at_m": 980.0,
+      "resolve_after_m": 1280.0,
+      "voice_command_id": "scene3_cut_in_decelerate",
+      "actor": {
+        "role_name": "scene3_cut_in_vehicle",
+        "spawn_lane_id": -1,
+        "spawn_s_m": 1135.0,
+        "target_lane_id": -2,
+        "target_speed_kmh": 32.0,
+        "turn_indicator_lead_time_s": 0.8,
+        "lane_change_duration_s": 2.2,
+        "post_merge_brake_probability": 0.25
+      },
+      "safety": {
+        "recoverable": true,
+        "minimum_initial_gap_m": 45.0,
+        "minimum_time_to_collision_s": 2.5,
+        "expected_actions": [
+          "decelerate",
+          "maintain_lane"
+        ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_roles": [
+          "scene3_cut_in_vehicle"
+        ],
+        "runtime_phase_key": "cut_in_phase",
+        "risk_labels": [
+          "cut_in_vehicle",
+          "closing_vehicle"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "keep_lane"
+        ],
+        "forbidden_control_actions": [
+          "accelerate",
+          "lane_change_right"
+        ]
+      }
+    },
+    {
+      "id": "scene3_advance_warning",
+      "order": 2,
+      "scenario": "work_zone_advance_warning",
+      "distance_m": 1550.0,
+      "activate_at_m": 1450.0,
+      "resolve_after_m": 1850.0,
+      "voice_command_id": "scene3_work_zone_warning",
+      "props": {
+        "lane_id": -4,
+        "s_m": 1550.0,
+        "type": "warning_sign"
+      },
+      "safety": {
+        "recoverable": true,
+        "expected_actions": [
+          "decelerate",
+          "monitor"
+        ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_roles": [
+          "scene3_warning_sign"
+        ],
+        "risk_labels": [
+          "work_zone_warning"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "keep_lane"
+        ],
+        "forbidden_control_actions": [
+          "accelerate"
+        ]
+      }
+    },
+    {
+      "id": "scene3_cone_taper",
+      "order": 3,
+      "scenario": "progressive_lane_closure",
+      "distance_m": 1850.0,
+      "activate_at_m": 1750.0,
+      "resolve_after_m": 2400.0,
+      "voice_command_id": "scene3_right_lane_closure",
+      "closure": {
+        "closed_lane_id": -3,
+        "taper_start_s_m": 1850.0,
+        "taper_end_s_m": 2400.0,
+        "cone_spacing_m": 20.0,
+        "merge_target_lane_id": -2,
+        "reflective_cones": true,
+        "two_stage_taper": true
+      },
+      "safety": {
+        "recoverable": true,
+        "minimum_warning_distance_m": 100.0,
+        "expected_actions": [
+          "decelerate",
+          "lane_change_left"
+        ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_role_prefixes": [
+          "scene3_cone_"
+        ],
+        "risk_labels": [
+          "progressive_lane_closure",
+          "merge_required"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "lane_change_left"
+        ],
+        "forbidden_control_actions": [
+          "lane_change_right",
+          "accelerate"
+        ]
+      }
+    },
+    {
+      "id": "scene3_work_zone",
+      "order": 4,
+      "scenario": "right_lane_work_zone",
+      "distance_m": 2400.0,
+      "activate_at_m": 2300.0,
+      "resolve_after_m": 4300.0,
+      "voice_command_id": "scene3_pass_work_zone",
+      "zone": {
+        "start_s_m": 2400.0,
+        "end_s_m": 4300.0,
+        "closed_lane_id": -3,
+        "open_lane_ids": [
+          -1,
+          -2
+        ],
+        "work_vehicle_spawns": [
+          {
+            "role_name": "scene3_work_truck_1",
+            "lane_id": -3,
+            "s_m": 2550.0
+          },
+          {
+            "role_name": "scene3_work_truck_2",
+            "lane_id": -3,
+            "s_m": 3900.0
+          }
+        ]
+      },
+      "safety": {
+        "recoverable": true,
+        "minimum_open_lane_count": 2,
+        "expected_actions": [
+          "maintain_lane",
+          "decelerate"
+        ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_roles": [
+          "scene3_work_truck_1",
+          "scene3_work_truck_2"
+        ],
+        "risk_labels": [
+          "active_work_zone",
+          "closed_right_lane"
+        ],
+        "allowed_control_actions": [
+          "keep_lane",
+          "decelerate"
+        ],
+        "forbidden_control_actions": [
+          "lane_change_right"
+        ]
+      }
+    },
+    {
+      "id": "scene3_temporary_pedestrian",
+      "order": 5,
+      "scenario": "temporary_worker_crossing",
+      "distance_m": 3200.0,
+      "activate_at_m": 3100.0,
+      "resolve_after_m": 3450.0,
+      "voice_command_id": "scene3_worker_crossing",
+      "workers": [
+        {
+          "role_name": "scene3_crossing_worker",
+          "start_lane_id": -4,
+          "start_s_m": 3275.0,
+          "destination_lane_id": -3,
+          "high_visibility": true
+        },
+        {
+          "role_name": "scene3_static_worker",
+          "start_lane_id": -4,
+          "start_s_m": 3350.0,
+          "destination_lane_id": -4,
+          "high_visibility": true
+        }
+      ],
+      "crossing_behavior": {
+        "hesitation_probability": 0.35,
+        "hesitation_duration_s": [0.4, 1.2],
+        "look_toward_ego": true,
+        "visibility_clothing": "retroreflective"
+      },
+      "safety": {
+        "recoverable": true,
+        "minimum_trigger_distance_m": 75.0,
+        "minimum_time_to_collision_s": 3.0,
+        "crossing_must_not_be_unavoidable": true,
+        "expected_actions": [
+          "decelerate",
+          "yield"
+        ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_roles": [
+          "scene3_crossing_worker",
+          "scene3_static_worker"
+        ],
+        "runtime_phase_key": "worker_phase",
+        "risk_labels": [
+          "worker_crossing",
+          "vulnerable_road_user"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "stop"
+        ],
+        "forbidden_control_actions": [
+          "accelerate"
+        ]
+      }
+    },
+    {
+      "id": "scene3_blocked_lane",
+      "order": 6,
+      "scenario": "maintenance_vehicle_blockage",
+      "distance_m": 4300.0,
+      "activate_at_m": 4200.0,
+      "resolve_after_m": 4750.0,
+      "voice_command_id": "scene3_blocked_lane_change_left",
+      "blockage": {
+        "role_name": "scene3_maintenance_vehicle",
+        "lane_id": -2,
+        "s_m": 4400.0,
+        "target_lane_id": -1,
+        "initial_target_lane_state": "unsafe",
+        "release_target_lane_after_s": 4.0,
+        "hazard_lights": true,
+        "rear_warning_triangle_distance_m": 25.0
+      },
+      "safety": {
+        "recoverable": true,
+        "must_wait_for_safe_gap": true,
+        "minimum_front_gap_m": 30.0,
+        "minimum_rear_gap_m": 25.0,
+        "expected_actions_before_release": [
+          "decelerate",
+          "wait"
+        ],
+        "expected_actions_after_release": [
+          "lane_change_left"
+        ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_roles": [
+          "scene3_maintenance_vehicle",
+          "scene3_gap_front_vehicle",
+          "scene3_gap_rear_vehicle"
+        ],
+        "runtime_phase_key": "target_lane_released",
+        "risk_labels": [
+          "blocked_lane",
+          "target_lane_gap"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "stop"
+        ],
+        "forbidden_control_actions": [
+          "lane_change_left",
+          "accelerate"
+        ],
+        "conditional": {
+          "runtime_flag": "target_lane_released",
+          "when_false": {
+            "risk_labels": [
+              "blocked_lane",
+              "unsafe_target_lane_gap"
+            ],
+            "allowed_control_actions": [
+              "decelerate",
+              "stop"
+            ],
+            "forbidden_control_actions": [
+              "lane_change_left",
+              "accelerate"
+            ]
+          },
+          "when_true": {
+            "risk_labels": [
+              "blocked_lane",
+              "safe_target_lane_gap"
+            ],
+            "allowed_control_actions": [
+              "lane_change_left"
+            ],
+            "forbidden_control_actions": [
+              "lane_change_right"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "scene3_work_zone_exit",
+      "order": 7,
+      "scenario": "work_zone_exit",
+      "distance_m": 5050.0,
+      "activate_at_m": 4950.0,
+      "resolve_after_m": 5200.0,
+      "voice_command_id": "scene3_resume_normal_driving",
+      "recovery": {
+        "reopened_lane_id": -3,
+        "normal_speed_limit_kmh": 60.0
+      },
+      "safety": {
+        "recoverable": true,
+        "expected_actions": [
+          "maintain_lane",
+          "resume_speed"
+        ]
+      },
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "required_runtime_flags": [
+          "work_zone_exited"
+        ],
+        "risk_labels": [
+          "work_zone_exit",
+          "lane_reopened"
+        ],
+        "allowed_control_actions": [
+          "keep_lane",
+          "accelerate"
+        ],
+        "forbidden_control_actions": []
+      }
+    }
+  ],
+  "decision_interfaces": {
+    "input_health_schema": "multisource_health/1.0",
+    "event_observation_schema": "scene_event_observation/1.0",
+    "vla_proposal_schema": "VLADecisionProposal/1.0.0",
+    "control_decision_schema": "ControlDecision/1.0.0",
+    "simulation_frame_is_sync_key": true,
+    "maximum_source_skew_ms": 150,
+    "maximum_decision_latency_ms": 150,
+    "carla_truth_allowed_for_policy": false,
+    "carla_truth_allowed_for_evaluation": true
+  },
+  "logging": {
+    "required_event_timestamps": [
+      "visible_at",
+      "voice_issued_at",
+      "parse_completed_at",
+      "policy_started_at",
+      "action_started_at",
+      "event_resolved_at"
+    ],
+    "record_control_decision": true,
+    "record_risk_assessment": true,
+    "record_four_camera_frames": true
+  },
+  "success_conditions": {
+    "route_completed": true,
+    "maximum_collisions": 0,
+    "maximum_illegal_lane_invasions": 0,
+    "all_events_resolved": true,
+    "maximum_decision_timeouts": 0
+  }
+}
