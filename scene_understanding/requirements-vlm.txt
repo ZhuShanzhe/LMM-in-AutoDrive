@@ -1,5 +1,0 @@
-accelerate>=1.14,<2
-huggingface_hub>=0.36,<2
-Pillow>=12,<13
-transformers>=4.57,<5
-# Install the torchvision build matching the local PyTorch/CUDA index separately.
