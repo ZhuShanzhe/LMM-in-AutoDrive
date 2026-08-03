@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/lmm-autodrive/vla-action-proposal.schema.json",
+  "title": "VlaActionProposal",
+  "description": "An untrusted multimodal VLA action proposal that must pass deterministic safety gating before becoming a ControlDecision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "proposal_id",
+    "request_id",
+    "bundle_id",
+    "frame_id",
+    "simulation_frame",
+    "status",
+    "action",
+    "target_speed_kmh",
+    "target_lane",
+    "target_location",
+    "confidence",
+    "model_name",
+    "inference_latency_ms",
+    "matched_entity_id",
+    "evidence_modalities",
+    "reason_codes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "proposal_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "bundle_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "frame_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "simulation_frame": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "status": {
+      "enum": [
+        "VALID",
+        "LOW_CONFIDENCE",
+        "INVALID",
+        "INCOMPLETE_INPUT"
+      ]
+    },
+    "action": {
+      "enum": [
+        "keep_lane",
+        "accelerate",
+        "decelerate",
+        "stop",
+        "emergency_brake",
+        "lane_change_left",
+        "lane_change_right",
+        "turn_left",
+        "turn_right"
+      ]
+    },
+    "target_speed_kmh": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "target_lane": {
+      "enum": [
+        null,
+        "left",
+        "right"
+      ]
+    },
+    "target_location": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/location"
+        }
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "model_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inference_latency_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "matched_entity_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "evidence_modalities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "instruction",
+          "front_rgb",
+          "left_rgb",
+          "right_rgb",
+          "rear_rgb",
+          "lidar",
+          "world_state"
+        ]
+      }
+    },
+    "reason_codes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "lane_change_left"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "target_lane": {
+            "const": "left"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "lane_change_right"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "target_lane": {
+            "const": "right"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "not": {
+              "enum": [
+                "lane_change_left",
+                "lane_change_right"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "target_lane": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "enum": [
+              "stop",
+              "emergency_brake"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "target_speed_kmh": {
+            "const": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "enum": [
+              "turn_left",
+              "turn_right"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "target_location": {
+            "$ref": "#/$defs/location"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "not": {
+              "enum": [
+                "turn_left",
+                "turn_right"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "target_location": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

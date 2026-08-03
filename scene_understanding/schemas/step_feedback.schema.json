@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/lmm-autodrive/step-feedback.schema.json",
+  "title": "StepFeedback",
+  "description": "Explicit controller or evaluator outcome for one active plan step.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "frame_id",
+    "step_id",
+    "outcome",
+    "reason_codes"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "request_id": {"type": "string", "minLength": 1},
+    "frame_id": {"type": "string", "minLength": 1},
+    "step_id": {"type": "string", "minLength": 1},
+    "outcome": {"enum": ["CONTINUE", "COMPLETED", "FAILED", "CANCELLED"]},
+    "reason_codes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
