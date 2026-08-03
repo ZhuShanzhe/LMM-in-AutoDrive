@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lmm-autodrive.local/schemas/multisource_health.schema.json",
+  "title": "MultisourceHealth",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["vision", "voice", "vehicle_state", "environment"],
+  "properties": {
+    "vision": {"$ref": "#/$defs/source"},
+    "voice": {"$ref": "#/$defs/source"},
+    "vehicle_state": {"$ref": "#/$defs/source"},
+    "environment": {"$ref": "#/$defs/source"}
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["available", "timestamp_s"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "timestamp_s": {"type": "number", "minimum": 0},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "frame_id": {"type": "string", "minLength": 1},
+        "inferred": {"type": "boolean"}
+      }
+    }
+  }
+}

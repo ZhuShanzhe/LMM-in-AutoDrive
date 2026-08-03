@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lmm-autodrive.local/schemas/decision_coordinator_state.schema.json",
+  "title": "DecisionCoordinatorState",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "request_id", "revision", "active_step_index",
+    "active_step_id", "completed_step_ids", "maneuver", "blocked_frames",
+    "replan_requested", "replan_reason_codes", "last_frame_id",
+    "last_source_health", "decision_source"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "request_id": {"type": "string", "minLength": 1},
+    "revision": {"type": "integer", "minimum": 0},
+    "active_step_index": {"type": ["integer", "null"], "minimum": 0},
+    "active_step_id": {"type": ["string", "null"]},
+    "completed_step_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "maneuver": {"type": ["object", "null"]},
+    "blocked_frames": {"type": "integer", "minimum": 0},
+    "replan_requested": {"type": "boolean"},
+    "replan_reason_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "last_frame_id": {"type": "string", "minLength": 1},
+    "last_source_health": {"type": "object"},
+    "decision_source": {"enum": ["vla", "safety_fallback", "rule_fallback"]}
+  }
+}
