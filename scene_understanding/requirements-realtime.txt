@@ -1,0 +1,7 @@
+numpy>=1.26,<3
+opencv-python>=4.11,<4.12
+Pillow>=10,<13
+supervision>=0.25,<0.28
+yacs>=0.1.8,<0.2
+prefetch_generator>=1.0.3,<2
+ultralytics>=8.3,<9
