@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lmm-autodrive.local/schemas/environment_observation.schema.json",
+  "title": "EnvironmentObservation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "frame_id", "simulation_frame", "timestamp_s",
+    "weather", "surface", "visibility", "source"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "frame_id": {"type": "string", "minLength": 1},
+    "simulation_frame": {"type": "integer", "minimum": 0},
+    "timestamp_s": {"type": "number", "minimum": 0},
+    "weather": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["precipitation_percent", "fog_density_percent", "wetness_percent"],
+      "properties": {
+        "precipitation_percent": {"type": "number", "minimum": 0, "maximum": 100},
+        "fog_density_percent": {"type": "number", "minimum": 0, "maximum": 100},
+        "wetness_percent": {"type": "number", "minimum": 0, "maximum": 100}
+      }
+    },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["condition", "friction_scale", "standing_water_depth_mm"],
+      "properties": {
+        "condition": {"enum": ["dry", "damp", "wet", "flooded", "unknown"]},
+        "friction_scale": {"type": ["number", "null"], "exclusiveMinimum": 0, "maximum": 1},
+        "standing_water_depth_mm": {"type": ["number", "null"], "minimum": 0}
+      }
+    },
+    "visibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["estimated_range_m", "glare", "spray"],
+      "properties": {
+        "estimated_range_m": {"type": ["number", "null"], "minimum": 0},
+        "glare": {"type": "boolean"},
+        "spray": {"type": "boolean"}
+      }
+    },
+    "source": {"enum": ["sensor_estimate", "map_prior", "fused"]}
+  }
+}

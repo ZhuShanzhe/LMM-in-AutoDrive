@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "request_id": "placeholder-emergency-001",
+  "frame_id": "external-placeholder",
+  "decision_status": "READY",
+  "action": "emergency_brake",
+  "target_speed_kmh": 0.0,
+  "target_lane": null,
+  "target_location": null,
+  "emergency": true,
+  "reason": "placeholder_external_safety_policy",
+  "parse_status": "VALID",
+  "parse_confidence": 1.0,
+  "source_step_id": "step_1",
+  "source_step_action": "EMERGENCY_BRAKE",
+  "source_step_count": 1,
+  "matched_entity_id": null,
+  "risk_level": "high",
+  "risk_reason_codes": [
+    "placeholder"
+  ],
+  "blocked_reason_codes": []
+}
