@@ -1,118 +1,82 @@
-# 场景三：6 km 应急响应场景
+# 场景三：Town05_Opt 雨夜应急驾驶（6 km）
 
-本场景用于验证车辆在雨夜、湿滑、低能见度道路中对连续突发事件的响应能力。
-路线为 6 km 双向直线快速路，每个方向包含三条机动车道，不包含路口、掉头点或
-不可恢复的必撞事件。
+场景三已重构为 CARLA 官方 `Town05_Opt`。运行器不再加载自建
+`VLA_EmergencyRoad_6km.xodr`，而是加载官方建筑、绿化、路灯和道路资产，并在官方道路拓扑上构造累计里程不少于 6000 m、完成点严格为 6000 m 的连续路线。
 
-## 场景目标
+## 场景合同
 
-- 在统一路线中连续触发 7 个可恢复应急事件；
-- 提供前、左、右、后四路 RGB 图像；
-- 记录事件激活、解除、路线完成、碰撞和车道使用情况；
-- 为上层 VLA 提议、风险判断与控制模块提供可重复的 CARLA 场景；
-- 所有危险事件都必须保留足够的预警距离或安全避让空间。
+- 环境：雨天夜间、低光、100% 湿路、路面反光、雨雾遮挡；
+- 道路：Town05 城市快速路走廊，包含施工预警、锥桶渐变、右车道封闭和车道收窄；
+- 动态干扰：左侧车辆突发加塞、施工人员临时横穿、维修车阻塞及目标车道安全间隙释放；
+- 输入：前/左/右/后四路低信噪比 RGB、逐帧动态车辆状态、带轻微雨声/座舱/道路噪声合同的中文模糊或应急指令；
+- 完成条件：累计路线进度 6000 m、7 个事件全部解除、零碰撞、零非法车道侵入、四路相机均有输出；
+- 评测门槛：应急响应时延不高于 120 ms，多模态语义对齐准确率不低于 97%。这两个指标由外部 VLA/评测链实测，场景运行器只提供同步帧、事件和真值数据，不伪造达标结果。
 
-## 正式文件
+## 实现文件
 
-| 文件 | 用途 |
+| 文件 | 作用 |
 |---|---|
-| `maps/generate_emergency_road_xodr.py` | 生成并静态校验 6 km OpenDRIVE 地图 |
-| `maps/maps/output/VLA_EmergencyRoad_6km.xodr` | 生成的正式地图 |
-| `configs/scene_3_emergency_6km_runtime.json` | 天气、交通参与者、传感器和事件配置 |
-| `emergency_scene_3_events.py` | 创建并更新事件 Actor |
-| `run_emergency_response_6km.py` | 场景三正式运行入口 |
-| `tests/test_emergency_response_6km.py` | 不依赖 CARLA 服务端的合同与调度测试 |
+| `configs/scene_3_emergency_6km_runtime.json` | 官方地图、路线、雨夜、湿滑、传感器、语音、事件和指标合同 |
+| `scene3_town05_route.py` | 6 km 路线生成、累计进度跟踪和逻辑车道到 Town05 实际车道的适配 |
+| `emergency_scene_3_events.py` | 加塞、施工、锥桶、横穿行人和阻塞车辆 Actor 行为 |
+| `run_emergency_response_6km.py` | 正式运行器，实际调用天气、灯光、摩擦触发器、相机和车辆状态记录 API |
+| `scene3_video_preview.py` | 完整 6 km 四视角与第三人称 H.264 预览入口 |
+| `tests/test_scene3_town05_rebuild.py` | 不依赖 CARLA 安装的重构合同测试 |
 
-## 道路与环境
+旧的 XODR 生成器和地图文件仅保留为历史兼容材料，场景三配置、正式运行器和预览入口均不再引用它们。
 
-- 路线长度：6000 m；
-- 交通规则：右侧通行；
-- 自车方向车道：左侧 `-1`、中间 `-2`、右侧 `-3`；
-- 路肩：`-4`，人行道：`-5`；
-- 自车起点：road `1`、lane `-2`、s `50 m`；
-- 路线完成点：s `5990 m`；
-- 天气：100% 阴云、80% 降雨、80% 积水、100% 湿滑；
-- 夜间太阳高度角：`-15°`；
-- 雾密度：35，雾可视距离：75 m。
+## 6 km 路线与事件
 
-交通参与者总量为 16 辆社会车辆、2 辆施工车辆、1 辆维修车辆和 2 名施工人员。
-图像传感器固定为 `front_rgb`、`left_rgb`、`right_rgb` 和 `rear_rgb`。
-正式提交视频使用同步第三人称 `chase_rgb` 相机，挂载于自车后上方；四路 RGB 模式仍保留用于传感器合同和离线证据。
+路线从 Town05 官方 spawn point 239 出发，以 spawn point 289 为折返点锚点，复用官方拓扑规划器生成双向走廊段，并按官方道路中心线累计重复拼接到至少 6000 m。启动时会校验所有事件锚点所需车道；施工区每 50 m 校验左、中、右三条可行驶车道，缺失时在 Actor 生成前直接失败。
 
-## 事件序列
+场景内部继续使用稳定逻辑车道编号 `-1/-2/-3/-4/-5` 表示左/中/右/路肩/人行道，适配器在每个路线进度点解析 Town05 的真实 `road_id/lane_id`。因此原有事件代码可复用，同时不再错误依赖自建直路的固定道路编号。
 
-| 顺序 | 位置 | 事件 | 预期安全响应 |
-|---|---:|---|---|
-| 1 | 1080 m | 左侧车辆切入自车车道 | 减速、保持可控跟车距离 |
-| 2 | 1550 m | 施工提前警示 | 减速并持续观察 |
-| 3 | 1850–2400 m | 锥桶渐变封闭右车道 | 减速并向左安全并线 |
-| 4 | 2400–4300 m | 右侧车道施工区 | 保持开放车道并低速通过 |
-| 5 | 3200 m | 临时施工人员横穿 | 减速、停车或让行 |
-| 6 | 4300 m | 维修车阻塞中间车道 | 等待左侧安全间隙后变道 |
-| 7 | 5050 m | 施工区结束、右车道恢复 | 保持车道并逐步恢复车速 |
+| 顺序 | 路线位置 | 场景事件 |
+|---|---:|---|
+| 1 | 980–1280 m | 突发车辆加塞，紧急减速避让 |
+| 2 | 1450–1850 m | 施工提前警示 |
+| 3 | 1750–2400 m | 反光锥桶渐变封闭右车道并收窄 |
+| 4 | 2300–4300 m | 施工车辆占用右车道，左/中车道通行 |
+| 5 | 3100–3450 m | 施工人员临时横穿，减速/停车让行 |
+| 6 | 4200–4750 m | 维修车阻塞，等待安全间隙后向左避让 |
+| 7 | 4950–5200 m | 施工区结束、车道恢复 |
 
-第 6 个事件会先创建不安全的左侧目标车道间隙。只有实测前向间距不小于
-30 m、后向间距不小于 25 m 后，目标车道才会被标记为可用。
+## 参数如何真正作用
 
-## 离线验证
+- `weather` 被转换为 `carla.WeatherParameters` 并传给 `world.set_weather`；
+- `Town05_Opt` 的 `MapLayer.All` 被加载，Street/Building/Other 灯组在雨夜模式下开启；
+- 湿滑摩擦系数通过沿 6 km 路线铺设 `static.trigger.friction` 实际作用于轮胎接触区域；缺少必要蓝图属性或生成失败会立即报错；
+- 湿路限速会限制自车 Traffic Manager 目标速度；
+- 四路相机的手动曝光、快门、ISO、gamma、运动模糊和眩光参数写入 CARLA 相机蓝图；
+- `vehicle_state.jsonl` 每帧记录速度、加速度、角速度、实际车道和控制量，并以 `simulation_frame` 为同步键；
+- `voice_command_schedule.jsonl` 输出指令、语义目标、触发进度及噪声注入合同。音频波形的混噪仍由语音/ASR 模块完成，场景侧不把配置项冒充已合成音频。
 
-在仓库根目录运行：
+## 离线检查
 
-```bash
-python experiment/CARLA/maps/generate_emergency_road_xodr.py
-
-python experiment/CARLA/run_emergency_response_6km.py \
-  --validate-config-only
-
-PYTHONPATH="$PWD/experiment/CARLA" \
-python -m unittest discover \
-  -s experiment/CARLA/tests \
-  -v
+```powershell
+python experiment/CARLA/run_emergency_response_6km.py --validate-config-only
+python -m unittest experiment.CARLA.tests.test_scene3_town05_rebuild
 ```
 
-离线测试覆盖地图结构、地图可重复生成、事件顺序、Actor 数量、四路相机方向、
-配置拒绝规则、事件激活和解除、路线完成、碰撞记录及非法车道检测。
+## 完整场景预览
 
-## CARLA 实际运行
+启动 CARLA 0.9.16 服务端后，在仓库根目录执行：
 
-先在具有 NVIDIA Vulkan 图形能力的计算节点启动 CARLA 0.9.16 服务端，再运行：
-
-```bash
-python experiment/CARLA/run_emergency_response_6km.py \
-  --host 127.0.0.1 \
-  --port 2000 \
-  --duration 0 \
-  --record-ground-truth \
-  --ground-truth-every-n 1 \
-  --require-complete-scene
+```powershell
+python experiment/CARLA/scene3_video_preview.py --host 127.0.0.1 --port 2000
 ```
 
-`--duration 0` 表示持续运行到车辆到达 5990 m，或由用户按 `Ctrl+C` 停止。
-`--require-complete-scene` 会在以下任一条件不满足时返回失败：
+该入口使用 `--duration 0`，会一直运行到累计进度 6000 m，并启用严格完成检查。默认输出目录为
+`experiment/CARLA/outputs/scene3_town05_preview/`，其中包括：
 
-- 路线没有完成；
-- 7 个事件没有全部解除；
-- 发生碰撞；
-- 自车驶入 `-1`、`-2`、`-3` 以外的车道；
-- 任一路 RGB 相机没有产出图像。
+- `scene3_town05_complete_preview.mp4`：带事件 HUD 的第三人称 H.264 完整预览；
+- `rgb/front_rgb`、`left_rgb`、`right_rgb`、`rear_rgb`：四路低信噪比图像；
+- `vehicle_state.jsonl`：逐帧动态车辆状态；
+- `voice_command_schedule.jsonl`：带噪声合同的语音指令计划；
+- `event_timeline.jsonl`、`frame_ground_truth.jsonl`、`scene_summary.json`：事件与评测证据。
 
-## 输出产物
+仅检查预览命令和配置、不连接 CARLA：
 
-默认输出目录为 `experiment/CARLA/outputs/emergency_scene_3/`：
-
-- `rgb/front_rgb/`、`rgb/left_rgb/`、`rgb/right_rgb/`、`rgb/rear_rgb/`：
-  四路相机图像；
-- `runtime_config_snapshot.json`：本次运行配置快照；
-- `event_timeline.jsonl`：事件激活和解除时间线；
-- `scene_summary.json`：路线、事件、碰撞、车道和图像数量汇总。
-- `frame_ground_truth.jsonl`：切入车、施工区、横穿工人、阻塞车与安全间隙的
-  精确帧真值；影子评测方法见 `SCENE_GROUND_TRUTH_EVALUATION.md`。
-
-运行产物不应提交到 Git。
-
-## 当前验证状态
-
-场景三的地图、配置、事件调度、安全审计及录像链已经通过自动化测试。
-2026 年 7 月 29 日已完成真实 CARLA 6 km 验收运行：路线到达 5990.4 m，7 个事件全部解除，碰撞数为 0，非法车道采样数为 0。
-
-正式第三人称视频为 1920×1080、30 FPS、12598 帧，直接编码为 H.264 MP4，完整解码验证通过。运行产物、日志和视频不提交到 Git。
+```powershell
+python experiment/CARLA/scene3_video_preview.py --validate-only --no-strict-completion
+```

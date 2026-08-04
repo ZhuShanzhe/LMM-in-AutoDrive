@@ -1,8 +1,9 @@
-"""Run the complete 6 km emergency-response scene and capture four RGB views.
+"""Run the 6 km emergency-response scene on official CARLA Town05_Opt.
 
-The runner loads the generated OpenDRIVE map, applies deterministic rainy-night
-weather, spawns background traffic and all seven recoverable emergency events,
-audits the ego route, and records front/left/right/rear camera images.
+The runner loads the official town asset (buildings, vegetation, streetlights
+and road furniture), builds a route-progress coordinate system over a 6 km
+urban expressway corridor, applies physical rain/fog/wet-friction settings,
+and reuses the seven recoverable emergency event controllers.
 """
 
 from __future__ import annotations
@@ -28,20 +29,20 @@ from evaluation.ground_truth import (
     FrameGroundTruthRecorder,
     validate_event_ground_truth_contracts,
 )
-
-
-MAP_NAME = "VLA_EmergencyRoad_6km"
-ROAD_ID = 1
-EGO_LANE_ID = -2
-EGO_START_S_M = 50.0
-
-DEFAULT_XODR_PATH = (
-    Path(__file__).resolve().parent
-    / "maps"
-    / "maps"
-    / "output"
-    / "VLA_EmergencyRoad_6km.xodr"
+from scene3_town05_route import (
+    LOGICAL_CENTRE_LANE,
+    LOGICAL_ROUTE_ID,
+    Town05RouteContext,
+    build_town05_route_context,
+    validate_scene3_event_anchors,
 )
+
+
+MAP_NAME = "Town05_Opt"
+MAP_ASSET_PATH = "/Game/Carla/Maps/Town05_Opt"
+ROAD_ID = LOGICAL_ROUTE_ID
+EGO_LANE_ID = LOGICAL_CENTRE_LANE
+EGO_START_S_M = 0.0
 DEFAULT_OUTPUT_DIR = (
     Path(__file__).resolve().parent
     / "outputs"
@@ -120,7 +121,7 @@ CLEAR_PRESENTATION_WEATHER = {
 
 EVENT_VIDEO_INTENTS = {
     "scene3_cut_in": {
-        "asr_text": "Vehicle cutting in from the left lane",
+        "asr_text": "突发车辆加塞，紧急避让",
         "action": "decelerate",
         "target_speed_kmh": 30.0,
         "emergency": True,
@@ -128,7 +129,7 @@ EVENT_VIDEO_INTENTS = {
         "policy_state": "CUT_IN_RESPONSE",
     },
     "scene3_advance_warning": {
-        "asr_text": "Road work warning ahead",
+        "asr_text": "前方进入施工区域，注意观察",
         "action": "decelerate",
         "target_speed_kmh": 35.0,
         "emergency": False,
@@ -136,7 +137,7 @@ EVENT_VIDEO_INTENTS = {
         "policy_state": "ADVANCE_WARNING",
     },
     "scene3_cone_taper": {
-        "asr_text": "Cone taper closes the right lane",
+        "asr_text": "施工路段，减速并道至左侧车道",
         "action": "keep_lane",
         "target_speed_kmh": 30.0,
         "emergency": False,
@@ -144,7 +145,7 @@ EVENT_VIDEO_INTENTS = {
         "policy_state": "CONE_TAPER",
     },
     "scene3_work_zone": {
-        "asr_text": "Work zone active on the right",
+        "asr_text": "前方路况危险，保持安全车速",
         "action": "keep_lane",
         "target_speed_kmh": 25.0,
         "emergency": False,
@@ -152,7 +153,7 @@ EVENT_VIDEO_INTENTS = {
         "policy_state": "WORK_ZONE",
     },
     "scene3_temporary_pedestrian": {
-        "asr_text": "Worker crossing ahead",
+        "asr_text": "有人突然横穿，立即减速让行",
         "action": "decelerate",
         "target_speed_kmh": 15.0,
         "emergency": True,
@@ -160,7 +161,7 @@ EVENT_VIDEO_INTENTS = {
         "policy_state": "WORKER_CROSSING",
     },
     "scene3_blocked_lane": {
-        "asr_text": "Maintenance vehicle blocks this lane",
+        "asr_text": "前方车道受阻，确认安全后向左避让",
         "action": "change_lane_left",
         "target_speed_kmh": 20.0,
         "emergency": True,
@@ -168,7 +169,7 @@ EVENT_VIDEO_INTENTS = {
         "policy_state": "GAP_CHECK",
     },
     "scene3_work_zone_exit": {
-        "asr_text": "Work zone exit; lane reopened",
+        "asr_text": "危险路段结束，保持安全并逐步恢复车速",
         "action": "accelerate",
         "target_speed_kmh": 60.0,
         "emergency": False,
@@ -198,6 +199,7 @@ def camera_sensor_attributes(
     image_height: int,
     fov: float,
     camera_tick: float,
+    low_signal_config: dict[str, Any] | None = None,
 ) -> dict[str, str]:
     attributes = {
         "image_size_x": str(image_width),
@@ -224,6 +226,17 @@ def camera_sensor_attributes(
                 "fstop": "8.0",
             }
         )
+    if low_signal_config and low_signal_config.get("enabled") is True:
+        for key in (
+            "exposure_mode",
+            "shutter_speed",
+            "iso",
+            "gamma",
+            "motion_blur_intensity",
+            "lens_flare_intensity",
+        ):
+            if key in low_signal_config:
+                attributes[key] = str(low_signal_config[key])
     return attributes
 
 
@@ -469,8 +482,6 @@ class CaptureState:
 class SafetyAuditState:
     """Thread-safe collision, lane-invasion, and lane-use audit."""
 
-    _LEGAL_EGO_LANE_IDS = frozenset((-1, -2, -3))
-
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._collision_frames: list[int] = []
@@ -498,8 +509,14 @@ class SafetyAuditState:
     def record_lane_id(
         self,
         lane_id: int,
+        legal_lane_ids: set[int] | None = None,
     ) -> None:
-        if lane_id in self._LEGAL_EGO_LANE_IDS:
+        legal = (
+            {-1, -2, -3}
+            if legal_lane_ids is None
+            else legal_lane_ids
+        )
+        if lane_id in legal:
             return
         with self._lock:
             self._invalid_lane_samples += 1
@@ -574,6 +591,7 @@ class EmergencyEventScheduler:
             "scene_id": "scene_3_emergency_6km",
             "event_id": event["id"],
             "scenario": event["scenario"],
+            "voice_command_id": event.get("voice_command_id"),
             "state": state,
             "route_s_m": round(route_s_m, 3),
             "simulation_frame": simulation_frame,
@@ -733,6 +751,67 @@ def vehicle_speed_kmh(
     )
 
 
+class VehicleStateRecorder:
+    """Persist the dynamic ego-state modality using the simulation frame key."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._stream = self.path.open("w", encoding="utf-8")
+
+    @staticmethod
+    def _vector(value: Any) -> dict[str, float]:
+        return {
+            "x": round(float(value.x), 4),
+            "y": round(float(value.y), 4),
+            "z": round(float(value.z), 4),
+        }
+
+    def record(
+        self,
+        *,
+        ego: Any,
+        waypoint: Any,
+        simulation_frame: int,
+        timestamp_s: float,
+        route_progress_m: float,
+    ) -> None:
+        control = ego.get_control()
+        payload = {
+            "schema_version": "vehicle_state/1.0",
+            "simulation_frame": int(simulation_frame),
+            "timestamp_s": round(float(timestamp_s), 4),
+            "route_progress_m": round(float(route_progress_m), 3),
+            "speed_kmh": round(vehicle_speed_kmh(ego), 3),
+            "velocity_mps": self._vector(ego.get_velocity()),
+            "acceleration_mps2": self._vector(ego.get_acceleration()),
+            "angular_velocity_deg_s": self._vector(
+                ego.get_angular_velocity()
+            ),
+            "lane": {
+                "road_id": int(waypoint.road_id),
+                "section_id": int(waypoint.section_id),
+                "lane_id": int(waypoint.lane_id),
+            },
+            "control": {
+                "throttle": round(float(control.throttle), 4),
+                "steer": round(float(control.steer), 4),
+                "brake": round(float(control.brake), 4),
+                "hand_brake": bool(control.hand_brake),
+                "reverse": bool(control.reverse),
+                "gear": int(control.gear),
+            },
+        }
+        self._stream.write(
+            json.dumps(payload, ensure_ascii=False) + "\n"
+        )
+
+    def close(self) -> None:
+        if not self._stream.closed:
+            self._stream.flush()
+            self._stream.close()
+
+
 def make_video_overlay(
     *,
     ego: Any,
@@ -821,7 +900,7 @@ def load_runtime_config(
         )
     if (
         data.get("schema_version")
-        != "emergency_response_runtime/v1"
+        != "emergency_response_town05_runtime/v2"
     ):
         raise ValueError(
             "unsupported runtime config schema"
@@ -834,9 +913,10 @@ def load_runtime_config(
         )
     expected_map_values = {
         "name": MAP_NAME,
-        "road_id": ROAD_ID,
-        "length_m": 6000.0,
-        "junction_count": 0,
+        "asset_path": MAP_ASSET_PATH,
+        "official_carla_asset": True,
+        "target_length_m": 6000.0,
+        "finish_progress_m": 6000.0,
     }
     for key, expected in expected_map_values.items():
         if map_config.get(key) != expected:
@@ -845,20 +925,15 @@ def load_runtime_config(
                 f"{expected!r}"
             )
 
-    ego_start = map_config.get("ego_start")
-    if not isinstance(ego_start, dict):
-        raise ValueError(
-            "runtime config map.ego_start must "
-            "be an object"
-        )
-    if (
-        ego_start.get("lane_id") != EGO_LANE_ID
-        or ego_start.get("s_m") != EGO_START_S_M
-    ):
-        raise ValueError(
-            "runtime config ego start does not "
-            "match the generated road"
-        )
+    route_config = map_config.get("route")
+    if not isinstance(route_config, dict):
+        raise ValueError("runtime config map.route must be an object")
+    if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+        raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+    for key in ("start_spawn_index", "turnaround_spawn_index"):
+        value = route_config.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError(f"runtime config map.route.{key} is invalid")
 
     events = data.get("events")
     if not isinstance(events, list):
@@ -921,7 +996,7 @@ def load_runtime_config(
             <= float(event["activate_at_m"])
             < distance
             < float(event["resolve_after_m"])
-            <= float(map_config["length_m"])
+            <= float(map_config["target_length_m"])
         ):
             raise ValueError(
                 f"event {event_id} has an invalid "
@@ -981,6 +1056,29 @@ def load_runtime_config(
         raise ValueError("maximum_source_skew_ms must be positive")
     if float(interfaces.get("maximum_decision_latency_ms", 0.0)) <= 0.0:
         raise ValueError("maximum_decision_latency_ms must be positive")
+    if float(interfaces["maximum_decision_latency_ms"]) > 120.0:
+        raise ValueError("Scene 3 emergency response latency budget exceeds 120 ms")
+
+    voice_input = data.get("voice_input")
+    if not isinstance(voice_input, dict):
+        raise ValueError("runtime config voice_input must be an object")
+    commands = voice_input.get("commands")
+    if not isinstance(commands, list) or len(commands) < 6:
+        raise ValueError("Scene 3 requires ambiguous/emergency voice commands")
+    command_ids = {str(item.get("id")) for item in commands if isinstance(item, dict)}
+    referenced_ids = {str(event.get("voice_command_id")) for event in events}
+    if not referenced_ids.issubset(command_ids):
+        missing = sorted(referenced_ids - command_ids)
+        raise ValueError("voice command definitions missing: " + ", ".join(missing))
+    noise = voice_input.get("environment_noise", {})
+    if noise.get("enabled") is not True or float(noise.get("snr_db", 99.0)) > 25.0:
+        raise ValueError("Scene 3 voice input must include light environment noise")
+
+    success = data.get("success_conditions", {})
+    if float(success.get("maximum_emergency_response_latency_ms", 999.0)) > 120.0:
+        raise ValueError("success latency must be no greater than 120 ms")
+    if float(success.get("minimum_multimodal_semantic_alignment_accuracy", 0.0)) < 0.97:
+        raise ValueError("semantic alignment target must be at least 0.97")
 
     return data
 
@@ -1005,12 +1103,6 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=8000,
         help="CARLA Traffic Manager port",
-    )
-    parser.add_argument(
-        "--xodr",
-        type=Path,
-        default=DEFAULT_XODR_PATH,
-        help="Emergency road OpenDRIVE file",
     )
     parser.add_argument(
         "--runtime-config",
@@ -1218,6 +1310,37 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def write_voice_command_schedule(
+    output_path: Path,
+    voice_config: dict[str, Any],
+) -> None:
+    """Materialize the ASR/audio-injection contract used by the preview run."""
+
+    noise = dict(voice_config["environment_noise"])
+    rows = []
+    for command in voice_config["commands"]:
+        rows.append(
+            {
+                "schema_version": "scene3_voice_command/1.0",
+                "command_id": command["id"],
+                "trigger_progress_m": float(command["trigger_progress_m"]),
+                "text": command["text"],
+                "semantic_goal": list(command["semantic_goal"]),
+                "audio_injection": {
+                    "enabled": bool(noise["enabled"]),
+                    "noise_type": noise["type"],
+                    "snr_db": float(noise["snr_db"]),
+                    "maximum_peak_dbfs": float(noise["maximum_peak_dbfs"]),
+                },
+            }
+        )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+
 def validate_args(
     args: argparse.Namespace,
 ) -> None:
@@ -1333,7 +1456,9 @@ def apply_emergency_weather(
             wind_intensity=float(
                 effective_config["wind_intensity"]
             ),
-            sun_azimuth_angle=280.0,
+            sun_azimuth_angle=float(
+                effective_config.get("sun_azimuth_angle", 280.0)
+            ),
             sun_altitude_angle=float(
                 effective_config[
                     "sun_altitude_angle"
@@ -1369,6 +1494,95 @@ def apply_emergency_weather(
             "Weather: rainy night, wet road, "
             "fog density 35"
         )
+
+
+def activate_town05_night_lighting(world: Any) -> int:
+    """Turn on official-map street and building lights for the night scene."""
+
+    manager = world.get_lightmanager()
+    groups = []
+    light_group = getattr(carla, "LightGroup", None)
+    if light_group is not None:
+        for name in ("Street", "Building", "Other"):
+            value = getattr(light_group, name, None)
+            if value is not None:
+                groups.append(value)
+    lights: list[Any] = []
+    for group in groups:
+        lights.extend(manager.get_all_lights(group))
+    unique = {int(light.id): light for light in lights}
+    if unique:
+        manager.turn_on(list(unique.values()))
+        manager.set_intensity(list(unique.values()), 65.0)
+    print(f"Town05 night lights enabled: {len(unique)}")
+    return len(unique)
+
+
+def spawn_wet_surface_friction_triggers(
+    world: Any,
+    route_context: Town05RouteContext,
+    surface_config: dict[str, Any],
+) -> list[Any]:
+    """Apply configured wet-road friction to the actual Town05 road surface."""
+
+    trigger_config = surface_config.get("friction_triggers", {})
+    if not isinstance(trigger_config, dict) or trigger_config.get("enabled") is not True:
+        return []
+    spacing_m = float(trigger_config["spacing_m"])
+    if spacing_m <= 0.0:
+        raise ValueError("friction trigger spacing_m must be positive")
+    library = world.get_blueprint_library()
+    blueprint = library.find("static.trigger.friction")
+    attributes = {
+        "friction": trigger_config["friction"],
+        "extent_x": trigger_config["extent_x_m"],
+        "extent_y": trigger_config["extent_y_m"],
+        "extent_z": trigger_config["extent_z_m"],
+    }
+    for name, value in attributes.items():
+        if not blueprint.has_attribute(name):
+            raise RuntimeError(
+                "CARLA static.trigger.friction does not expose required "
+                f"attribute {name!r}; wet-road physics cannot be guaranteed"
+            )
+        blueprint.set_attribute(name, str(value))
+
+    actors: list[Any] = []
+    seen_physical_tiles: set[tuple[int, int]] = set()
+    progress_m = 0.0
+    while progress_m <= route_context.length_m:
+        waypoint = route_context.adapter.route_waypoint(progress_m)
+        location = waypoint.transform.location
+        tile = (round(float(location.x) / 8.0), round(float(location.y) / 8.0))
+        if tile not in seen_physical_tiles:
+            seen_physical_tiles.add(tile)
+            base = waypoint.transform
+            transform = carla.Transform(
+                carla.Location(
+                    x=base.location.x,
+                    y=base.location.y,
+                    z=base.location.z + 0.2,
+                ),
+                carla.Rotation(
+                    pitch=base.rotation.pitch,
+                    yaw=base.rotation.yaw,
+                    roll=base.rotation.roll,
+                ),
+            )
+            actor = world.try_spawn_actor(blueprint, transform)
+            if actor is None:
+                raise RuntimeError(
+                    f"failed to apply wet friction near route {progress_m:.1f} m"
+                )
+            actors.append(actor)
+        progress_m += spacing_m
+    if not actors:
+        raise RuntimeError("wet friction is enabled but no trigger was spawned")
+    print(
+        "Wet-road friction triggers: "
+        f"count={len(actors)}, friction={float(trigger_config['friction']):.2f}"
+    )
+    return actors
 
 
 def spawn_ego(
@@ -1528,6 +1742,7 @@ def spawn_rgb_cameras(
     fov: float,
     camera_tick: float,
     camera_mode: str,
+    low_signal_config: dict[str, Any] | None = None,
 ) -> tuple[list[Any], CaptureState]:
     library = world.get_blueprint_library()
     camera_transforms = (
@@ -1553,6 +1768,7 @@ def spawn_rgb_cameras(
             image_height=image_height,
             fov=fov,
             camera_tick=camera_tick,
+            low_signal_config=low_signal_config,
         )
         for name, value in attributes.items():
             if blueprint.has_attribute(name):
@@ -1682,6 +1898,7 @@ def run_simulation(
     *,
     world: Any,
     carla_map: Any,
+    route_context: Town05RouteContext | None = None,
     ego: Any,
     scheduler: EmergencyEventScheduler,
     safety_audit: SafetyAuditState,
@@ -1696,6 +1913,7 @@ def run_simulation(
     event_actor_runtime: (
         EmergencySceneActorRuntime | None
     ) = None,
+    vehicle_state_recorder: VehicleStateRecorder | None = None,
 ) -> bool:
     tick_count: int | None = None
     if duration_s > 0.0:
@@ -1748,14 +1966,22 @@ def run_simulation(
             raise RuntimeError(
                 "ego is no longer on a driving lane"
             )
-        if waypoint.road_id != ROAD_ID:
-            raise RuntimeError(
-                "ego left the emergency route"
-            )
-        safety_audit.record_lane_id(
-            int(waypoint.lane_id)
+        route_progress_m = (
+            route_context.progress(ego_location)
+            if route_context is not None
+            else float(waypoint.s)
         )
-        last_route_s_m = float(waypoint.s)
+        if route_context is None and waypoint.road_id != ROAD_ID:
+            raise RuntimeError("ego left the emergency route")
+        safety_audit.record_lane_id(
+            int(waypoint.lane_id),
+            (
+                route_context.adapter.legal_driving_lane_ids(route_progress_m)
+                if route_context is not None
+                else None
+            ),
+        )
+        last_route_s_m = route_progress_m
         scheduler.update(
             route_s_m=last_route_s_m,
             simulation_frame=int(frame),
@@ -1768,6 +1994,14 @@ def run_simulation(
             (index + 1)
             * fixed_delta_seconds
         )
+        if vehicle_state_recorder is not None:
+            vehicle_state_recorder.record(
+                ego=ego,
+                waypoint=waypoint,
+                simulation_frame=int(frame),
+                timestamp_s=elapsed_s,
+                route_progress_m=last_route_s_m,
+            )
         if ground_truth_recorder is not None:
             if event_actor_runtime is None:
                 raise RuntimeError(
@@ -1873,15 +2107,7 @@ def main(
         )
         return 0
 
-    xodr_path = args.xodr.expanduser().resolve()
     output_dir = args.output_dir.expanduser().resolve()
-    if not xodr_path.is_file():
-        print(
-            "ERROR: emergency OpenDRIVE file "
-            f"not found: {xodr_path}",
-            file=sys.stderr,
-        )
-        return 1
 
     try:
         carla = load_carla_api()
@@ -1902,9 +2128,11 @@ def main(
     direct_camera_closed = False
     safety_audit: SafetyAuditState | None = None
     ground_truth: FrameGroundTruthRecorder | None = None
+    vehicle_state_recorder: VehicleStateRecorder | None = None
     event_actor_runtime: (
         EmergencySceneActorRuntime | None
     ) = None
+    route_context: Town05RouteContext | None = None
     result = 1
 
     try:
@@ -1918,20 +2146,28 @@ def main(
             client.get_server_version(),
         )
 
-        xodr_content = xodr_path.read_text(
-            encoding="utf-8",
+        world = client.load_world(MAP_NAME)
+        map_layer = getattr(carla, "MapLayer", None)
+        if map_layer is not None and hasattr(world, "load_map_layer"):
+            world.load_map_layer(map_layer.All)
+            print("Town05_Opt layers: All (buildings, foliage, streetlights, props)")
+        official_map = world.get_map()
+        loaded_map_name = str(getattr(official_map, "name", ""))
+        if not loaded_map_name.endswith(MAP_NAME):
+            raise RuntimeError(
+                f"CARLA loaded {loaded_map_name!r}, expected official {MAP_NAME}"
+            )
+        route_context = build_town05_route_context(
+            official_map,
+            runtime_config["map"]["route"],
         )
-        world = client.generate_opendrive_world(
-            xodr_content,
-            carla.OpendriveGenerationParameters(
-                vertex_distance=2.0,
-                max_road_length=50.0,
-                wall_height=0.0,
-                additional_width=0.6,
-                smooth_junctions=True,
-                enable_mesh_visibility=True,
-                enable_pedestrian_navigation=True,
-            ),
+        validate_scene3_event_anchors(
+            route_context,
+            runtime_config["events"],
+        )
+        print(
+            "Official map and route: "
+            f"{loaded_map_name}, length={route_context.length_m:.1f} m"
         )
 
         original_settings = world.get_settings()
@@ -1953,37 +2189,53 @@ def main(
         traffic_manager.set_global_distance_to_leading_vehicle(
             5.0
         )
-        traffic_manager.set_osm_mode(True)
+        # Town05_Opt ships native CARLA lane topology; OSM mode is only for
+        # imported OpenDRIVE/OSM networks and would weaken route following.
+        traffic_manager.set_osm_mode(False)
 
         apply_emergency_weather(
             world,
             runtime_config["weather"],
             profile=args.presentation_lighting,
         )
+        if args.presentation_lighting == "official-rainy-night":
+            activate_town05_night_lighting(world)
+        actors.extend(
+            spawn_wet_surface_friction_triggers(
+                world,
+                route_context,
+                runtime_config["surface_and_visibility"],
+            )
+        )
+        effective_ego_speed_kmh = min(
+            float(args.ego_speed_kmh),
+            float(
+                runtime_config["surface_and_visibility"].get(
+                    "wet_speed_limit_kmh", args.ego_speed_kmh
+                )
+            ),
+        )
+        print(
+            "Wet-weather ego speed cap: "
+            f"requested={args.ego_speed_kmh:.1f}, "
+            f"effective={effective_ego_speed_kmh:.1f} km/h"
+        )
         if (
             args.draw_presentation_lane_markings
         ):
-            draw_presentation_lane_markings(
-                world,
-                road_length_m=float(
-                    runtime_config["map"].get(
-                        "physical_road_length_m",
-                        6100.0,
-                    )
-                ),
-                life_time_s=max(
-                    args.duration + 120.0,
-                    240.0,
-                ),
+            print(
+                "WARNING: --draw-presentation-lane-markings is ignored on "
+                "Town05_Opt because the official map already contains native "
+                "lane markings"
             )
         ego = spawn_ego(
             world,
-            world.get_map(),
+            route_context.adapter,
             traffic_manager=traffic_manager,
             traffic_manager_port=(
                 args.traffic_manager_port
             ),
-            target_speed_kmh=args.ego_speed_kmh,
+            target_speed_kmh=effective_ego_speed_kmh,
             stationary=args.stationary_ego,
             color=(
                 "40,100,180"
@@ -2006,6 +2258,14 @@ def main(
             parents=True,
             exist_ok=True,
         )
+        write_voice_command_schedule(
+            output_dir / "voice_command_schedule.jsonl",
+            runtime_config["voice_input"],
+        )
+        vehicle_state_recorder = VehicleStateRecorder(
+            output_dir / "vehicle_state.jsonl"
+        )
+        print("Dynamic vehicle state:", vehicle_state_recorder.path)
         if direct_recording:
             video_output = (
                 str(
@@ -2035,7 +2295,13 @@ def main(
                     DIRECT_PRESENTATION_CAMERA_ATTRIBUTES
                     if args.presentation_lighting
                     != "official-rainy-night"
-                    else None
+                    else {
+                        key: str(value)
+                        for key, value in runtime_config["sensors"]
+                        .get("low_signal_rgb", {})
+                        .items()
+                        if key != "enabled"
+                    }
                 ),
                 camera_pose=(
                     CHASE_CAMERA_TRANSFORMS[
@@ -2053,7 +2319,15 @@ def main(
                     "H.264 video output:",
                     video_output,
                 )
-        else:
+        if (
+            not direct_recording
+            or args.camera_mode in {"four-view", "four-view-plus-chase"}
+        ):
+            auxiliary_camera_mode = (
+                "four-view"
+                if direct_recording
+                else args.camera_mode
+            )
             cameras, capture_state = (
                 spawn_rgb_cameras(
                     world,
@@ -2063,7 +2337,10 @@ def main(
                     image_height=args.image_height,
                     fov=args.fov,
                     camera_tick=args.camera_tick,
-                    camera_mode=args.camera_mode,
+                    camera_mode=auxiliary_camera_mode,
+                    low_signal_config=runtime_config["sensors"].get(
+                        "low_signal_rgb"
+                    ),
                 )
             )
             actors.extend(cameras)
@@ -2092,7 +2369,7 @@ def main(
             EmergencySceneActorRuntime(
                 carla_module=carla,
                 world=world,
-                carla_map=world.get_map(),
+                carla_map=route_context.adapter,
                 traffic_manager=traffic_manager,
                 traffic_manager_port=(
                     args.traffic_manager_port
@@ -2134,13 +2411,14 @@ def main(
         world.tick()
         route_completed = run_simulation(
             world=world,
-            carla_map=world.get_map(),
+            carla_map=route_context.adapter,
+            route_context=route_context,
             ego=ego,
             scheduler=scheduler,
             safety_audit=safety_audit,
             finish_s_m=float(
                 runtime_config["map"][
-                    "finish_s_m"
+                    "finish_progress_m"
                 ]
             ),
             duration_s=args.duration,
@@ -2148,10 +2426,14 @@ def main(
                 args.fixed_delta_seconds
             ),
             video_camera=direct_camera,
-            cruise_speed_kmh=args.ego_speed_kmh,
+            cruise_speed_kmh=effective_ego_speed_kmh,
             ground_truth_recorder=ground_truth,
             event_actor_runtime=event_actor_runtime,
+            vehicle_state_recorder=vehicle_state_recorder,
         )
+
+        vehicle_state_recorder.close()
+        vehicle_state_recorder = None
 
         if direct_camera is not None:
             direct_camera.hold_last_video_frame(
@@ -2195,18 +2477,17 @@ def main(
             ],
         )
 
+        counts: dict[str, int] = {}
+        if capture_state is not None:
+            capture_state.wait_for_first_frames(timeout_s=5.0)
+            counts.update(capture_state.snapshot())
         if direct_camera is not None:
-            counts = {
+            counts.update({
                 "chase_rgb": max(
                     direct_camera.saved_frames,
                     direct_camera.written_video_frames,
                 )
-            }
-        else:
-            capture_state.wait_for_first_frames(
-                timeout_s=5.0,
-            )
-            counts = capture_state.snapshot()
+            })
         print("RGB frame counts:")
         for camera_name in counts:
             print(
@@ -2250,6 +2531,32 @@ def main(
                     "scene_id": runtime_config[
                         "scene_id"
                     ],
+                    "map": {
+                        "name": MAP_NAME,
+                        "asset_path": MAP_ASSET_PATH,
+                        "official_carla_asset": True,
+                    },
+                    "route": {
+                        "target_length_m": float(
+                            runtime_config["map"]["target_length_m"]
+                        ),
+                        "generated_length_m": round(
+                            float(route_context.length_m), 3
+                        ),
+                        "finish_progress_m": float(
+                            runtime_config["map"]["finish_progress_m"]
+                        ),
+                        "last_progress_m": (
+                            round(
+                                float(
+                                    route_context.distances_m[
+                                        route_context.tracker.index
+                                    ]
+                                ),
+                                3,
+                            )
+                        ),
+                    },
                     "route_completed": (
                         route_completed
                     ),
@@ -2366,6 +2673,8 @@ def main(
         )
         result = 1
     finally:
+        if vehicle_state_recorder is not None:
+            vehicle_state_recorder.close()
         if ground_truth is not None:
             ground_truth.close()
         if (

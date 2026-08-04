@@ -115,6 +115,9 @@ class EmergencySceneActorRuntime:
         self._crossing_worker_config: (
             dict[str, Any] | None
         ) = None
+        self._crossing_worker_target_location: Any | None = None
+        # Retained for compatibility with older offline fixtures. Town05 uses
+        # the full target location because global Y is not a lateral axis.
         self._crossing_worker_target_y: float | None = None
         self._crossing_worker_start_location: (
             Any | None
@@ -714,7 +717,7 @@ class EmergencySceneActorRuntime:
             actor,
             traffic_manager_controlled=False,
         )
-        # Park work vehicles at their declared OpenDRIVE pose.
+        # Park work vehicles at their route-relative Town05 pose.
         actor.set_simulate_physics(False)
         actor.apply_control(
             self._carla.VehicleControl(
@@ -1018,9 +1021,11 @@ class EmergencySceneActorRuntime:
         self._crossing_worker_config = (
             crossing_config
         )
+        self._crossing_worker_target_location = (
+            destination_waypoint.transform.location
+        )
         self._crossing_worker_target_y = (
-            destination_waypoint
-            .transform.location.y
+            destination_waypoint.transform.location.y
         )
         self._walker_blueprint_candidates = (
             blueprints
@@ -1092,8 +1097,10 @@ class EmergencySceneActorRuntime:
         if self._worker_phase == "ARMED":
             if (
                 self._crossing_worker_config is None
-                or self._crossing_worker_target_y
-                is None
+                or (
+                    self._crossing_worker_target_location is None
+                    and self._crossing_worker_target_y is None
+                )
             ):
                 raise RuntimeError(
                     "crossing worker was not "
@@ -1123,17 +1130,24 @@ class EmergencySceneActorRuntime:
                 ),
             )
             location = worker.get_location()
-            direction_y = (
-                -1.0
-                if self._crossing_worker_target_y
-                < location.y
-                else 1.0
-            )
+            if (
+                self._crossing_worker_target_location is None
+                and self._crossing_worker_target_y is not None
+            ):
+                self._crossing_worker_target_location = self._carla.Location(
+                    x=location.x,
+                    y=self._crossing_worker_target_y,
+                    z=location.z,
+                )
+            assert self._crossing_worker_target_location is not None
+            dx = self._crossing_worker_target_location.x - location.x
+            dy = self._crossing_worker_target_location.y - location.y
+            distance = max((dx * dx + dy * dy) ** 0.5, 0.001)
             worker.apply_control(
                 self._carla.WalkerControl(
                     direction=self._carla.Vector3D(
-                        x=0.0,
-                        y=direction_y,
+                        x=dx / distance,
+                        y=dy / distance,
                         z=0.0,
                     ),
                     speed=1.2,
@@ -1154,14 +1168,14 @@ class EmergencySceneActorRuntime:
                 "WORKER CROSSING SPAWNED AND "
                 "TRIGGERED | "
                 f"gap={gap_m:.1f} m | "
-                f"target_y="
-                f"{self._crossing_worker_target_y:.2f}"
+                f"target=({self._crossing_worker_target_location.x:.2f}, "
+                f"{self._crossing_worker_target_location.y:.2f})"
             )
             return
 
         if (
             self._crossing_worker is None
-            or self._crossing_worker_target_y is None
+            or self._crossing_worker_target_location is None
         ):
             return
         if not self._crossing_worker.is_alive:
@@ -1186,12 +1200,11 @@ class EmergencySceneActorRuntime:
             start = (
                 self._crossing_worker_start_location
             )
-            distance_y = (
-                self._crossing_worker_target_y
-                - start.y
-            )
+            distance_x = self._crossing_worker_target_location.x - start.x
+            distance_y = self._crossing_worker_target_location.y - start.y
+            distance = (distance_x * distance_x + distance_y * distance_y) ** 0.5
             duration_s = max(
-                abs(distance_y) / 1.2,
+                distance / 1.2,
                 0.5,
             )
             progress = min(
@@ -1206,13 +1219,10 @@ class EmergencySceneActorRuntime:
                 ),
                 1.0,
             )
-            scripted_y = (
-                start.y + distance_y * progress
-            )
             self._crossing_worker.set_location(
                 self._carla.Location(
-                    x=start.x,
-                    y=scripted_y,
+                    x=start.x + distance_x * progress,
+                    y=start.y + distance_y * progress,
                     z=start.z,
                 )
             )
@@ -1233,8 +1243,8 @@ class EmergencySceneActorRuntime:
                 self._worker_phase = "YIELDED_CLEAR"
                 print(
                     "WORKER CLEARED | "
-                    f"target_y="
-                    f"{self._crossing_worker_target_y:.2f}"
+                    f"target=({self._crossing_worker_target_location.x:.2f}, "
+                    f"{self._crossing_worker_target_location.y:.2f})"
                 )
             return
 
@@ -1416,14 +1426,17 @@ class EmergencySceneActorRuntime:
             raise RuntimeError(
                 "gap-control vehicle left the road"
             )
-        front_gap_m = (
-            float(front_waypoint.s)
-            - ego_route_s_m
-        )
-        rear_gap_m = (
-            ego_route_s_m
-            - float(rear_waypoint.s)
-        )
+        if self._ego_actor is None:
+            raise RuntimeError("ego actor is required for target-lane gap measurement")
+        ego_location = self._ego_actor.get_location()
+        front_location = self._gap_control_vehicles["front"].get_location()
+        rear_location = self._gap_control_vehicles["rear"].get_location()
+        if hasattr(front_location, "distance") and hasattr(rear_location, "distance"):
+            front_gap_m = float(front_location.distance(ego_location))
+            rear_gap_m = float(rear_location.distance(ego_location))
+        else:
+            front_gap_m = float(front_waypoint.s) - ego_route_s_m
+            rear_gap_m = ego_route_s_m - float(rear_waypoint.s)
         safety = self._blocked_lane_event["safety"]
         minimum_front_gap_m = float(
             safety["minimum_front_gap_m"]
@@ -1438,11 +1451,6 @@ class EmergencySceneActorRuntime:
             return
 
         self._target_lane_released = True
-        if self._ego_actor is None:
-            raise RuntimeError(
-                "ego actor is required for the "
-                "blocked-lane maneuver"
-            )
         self._traffic_manager.force_lane_change(
             self._ego_actor,
             False,
@@ -1615,13 +1623,17 @@ class EmergencySceneActorRuntime:
             traffic_manager_controlled=True,
         )
         if float(actor_config.get("turn_indicator_lead_time_s", 0.0)) > 0.0:
-            actor.set_light_state(
-                self._carla.VehicleLightState(
-                    self._carla.VehicleLightState.Position
-                    | self._carla.VehicleLightState.LowBeam
-                    | self._carla.VehicleLightState.LeftBlinker
+            try:
+                actor.set_light_state(
+                    self._carla.VehicleLightState(
+                        self._carla.VehicleLightState.Position
+                        | self._carla.VehicleLightState.LowBeam
+                        | self._carla.VehicleLightState.LeftBlinker
+                    )
                 )
-            )
+            except (AttributeError, TypeError):
+                # Minimal offline CARLA fakes may not expose LeftBlinker.
+                pass
         actor.apply_control(
             self._carla.VehicleControl(
                 throttle=0.0,
@@ -1722,11 +1734,15 @@ class EmergencySceneActorRuntime:
                 "target_lane_id"
             ]
         )
-        if (
-            self._cut_in_phase == "CUTTING_IN"
-            and actor_waypoint.lane_id
-            == target_lane_id
-        ):
+        lane_matcher = getattr(
+            self._map, "waypoint_matches_logical_lane", None
+        )
+        lane_matches = (
+            lane_matcher(actor_waypoint, target_lane_id, ego_route_s_m + 20.0)
+            if callable(lane_matcher)
+            else actor_waypoint.lane_id == target_lane_id
+        )
+        if self._cut_in_phase == "CUTTING_IN" and lane_matches:
             self._cut_in_phase = "MERGED"
             print(
                 "CUT-IN MERGED | "
