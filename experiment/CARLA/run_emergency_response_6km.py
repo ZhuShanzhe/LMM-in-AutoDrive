@@ -231,9 +231,12 @@ def camera_sensor_attributes(
     if low_signal_config and low_signal_config.get("enabled") is True:
         for key in (
             "exposure_mode",
+            "exposure_compensation",
             "shutter_speed",
             "iso",
+            "fstop",
             "gamma",
+            "bloom_intensity",
             "motion_blur_intensity",
             "lens_flare_intensity",
         ):

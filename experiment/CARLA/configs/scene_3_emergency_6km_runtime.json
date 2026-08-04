@@ -84,11 +84,14 @@
     "low_signal_rgb": {
       "enabled": true,
       "exposure_mode": "manual",
-      "shutter_speed": 80.0,
-      "iso": 1600.0,
-      "gamma": 1.8,
-      "motion_blur_intensity": 0.15,
-      "lens_flare_intensity": 0.25
+      "exposure_compensation": 0.0,
+      "shutter_speed": 100.0,
+      "iso": 800.0,
+      "fstop": 2.0,
+      "gamma": 2.2,
+      "bloom_intensity": 0.1,
+      "motion_blur_intensity": 0.1,
+      "lens_flare_intensity": 0.05
     }
   },
   "voice_input": {

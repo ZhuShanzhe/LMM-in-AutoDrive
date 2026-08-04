@@ -140,9 +140,14 @@ class Town05Scene3ContractTests(unittest.TestCase):
             low_signal_config=config["sensors"]["low_signal_rgb"],
         )
         self.assertEqual(attributes["exposure_mode"], "manual")
-        self.assertEqual(attributes["iso"], "1600.0")
-        self.assertEqual(attributes["gamma"], "1.8")
-        self.assertEqual(attributes["motion_blur_intensity"], "0.15")
+        self.assertEqual(attributes["exposure_compensation"], "0.0")
+        self.assertEqual(attributes["shutter_speed"], "100.0")
+        self.assertEqual(attributes["iso"], "800.0")
+        self.assertEqual(attributes["fstop"], "2.0")
+        self.assertEqual(attributes["gamma"], "2.2")
+        self.assertEqual(attributes["bloom_intensity"], "0.1")
+        self.assertEqual(attributes["motion_blur_intensity"], "0.1")
+        self.assertEqual(attributes["lens_flare_intensity"], "0.05")
 
     def test_voice_and_competition_thresholds(self):
         config = runner.load_runtime_config(CONFIG)
