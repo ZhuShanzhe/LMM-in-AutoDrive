@@ -1224,7 +1224,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--video-output",
         type=Path,
         help=(
-            "Write front RGB directly to an H.264 MP4 "
+            "Write chase RGB directly to an H.264 MP4 "
             "through ffmpeg"
         ),
     )
@@ -3024,7 +3024,7 @@ def main(
 
         if direct_camera is not None:
             print(
-                "FRONT RGB DIRECT H.264 "
+                "CHASE RGB DIRECT H.264 "
                 "CAPTURE: PASS"
             )
         else:

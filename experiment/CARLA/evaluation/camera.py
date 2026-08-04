@@ -455,7 +455,7 @@ class ExperimentCamera:
         )
         draw.text(
             (rx, 95),
-            "STRUCTURED INTENT (RULE)",
+            "SCENARIO INTENT (REFERENCE)",
             font=font(16, bold=True),
             fill=muted_color,
         )
