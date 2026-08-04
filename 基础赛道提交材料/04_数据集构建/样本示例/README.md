@@ -1,20 +1,15 @@
 # 样本示例
 
-当前可公开的结构示例位于：
+当前提交包中的可公开结构示例位于：
 
 - `structured_command_parser/examples/`
 - `structured_command_parser/tests/fixtures/golden_commands.jsonl`
 - `scene_understanding/schemas/examples/`
 - `lightweight_vla_adapter/examples/`
+- `experiment/CARLA/configs/scene_2_submission_8_commands.json`
+- `experiment/CARLA/configs/scene_2_submission_8_intents.json`
+- `基础赛道提交材料/06_仿真测试全量报告/原始时序数据/`
 
-最终提交时在本目录放置固定随机种子抽取的样本副本，并提供：
+这些文件覆盖文本输入、DrivingIntent 标注、场景实体、风险、传感器特征接口、VLA proposal、控制决策和车辆遥测。示例可由对应模块的 Schema 测试直接校验。
 
-1. 原始输入；
-2. 标注 JSON；
-3. 来源数据集和样本 ID；
-4. 预处理版本；
-5. Schema 校验结果；
-6. 图片/点云/语音等关联文件；
-7. 许可证允许的再分发说明。
-
-当前未找到经过最终人工复核并可独立再分发的完整多模态样本包，因此本目录不复制可能受许可证限制的原始数据。
+Talk2Car、SimLingo、nuScenes、BDD100K 和方言音频受各自许可证约束，不在提交包中复制原始数据；提交包保留获取、处理、训练和评测代码，以及允许公开的结构化示例和 CARLA 自生成日志。
