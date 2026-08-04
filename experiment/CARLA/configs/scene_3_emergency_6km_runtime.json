@@ -1,33 +1,38 @@
 {
-  "schema_version": "emergency_response_runtime/v1",
+  "schema_version": "emergency_response_town05_runtime/v2",
   "scene_id": "scene_3_emergency_6km",
-  "description": "Rainy-night 6 km emergency-response route with recoverable hazards.",
+  "description": "Official Town05_Opt rainy-night 6 km emergency-response route with urban scenery and recoverable hazards.",
   "random_seed": 20260729,
   "map": {
-    "name": "VLA_EmergencyRoad_6km",
-    "xodr": "../maps/maps/output/VLA_EmergencyRoad_6km.xodr",
-    "road_id": 1,
+    "name": "Town05_Opt",
+    "asset_path": "/Game/Carla/Maps/Town05_Opt",
+    "official_carla_asset": true,
     "length_m": 6000.0,
-    "junction_count": 0,
-    "ego_start": {
-      "lane_id": -2,
-      "s_m": 50.0
-    },
-    "finish_s_m": 5990.0
+    "target_length_m": 6000.0,
+    "finish_s_m": 6000.0,
+    "physical_road_length_m": 6100.0,
+    "finish_progress_m": 6000.0,
+    "route": {
+      "start_spawn_index": 239,
+      "turnaround_spawn_index": 289,
+      "target_length_m": 6000.0,
+      "route_sampling_m": 2.0,
+      "tracker_search_ahead": 160,
+      "tracker_search_behind": 12,
+      "route_kind": "repeated_official_urban_expressway_corridor"
+    }
   },
   "lane_contract": {
     "traffic_rule": "RHT",
-    "ego_direction": {
+    "logical_lane_roles": {
       "left_lane_id": -1,
       "middle_lane_id": -2,
       "right_lane_id": -3,
       "shoulder_lane_id": -4,
       "sidewalk_lane_id": -5
     },
-    "forbidden_route_features": [
-      "u_turn",
-      "intersection"
-    ]
+    "logical_route_id": 1,
+    "actual_road_and_lane_ids_are_resolved_at_runtime": true
   },
   "weather": {
     "preset": "rainy_night",
@@ -35,6 +40,7 @@
     "precipitation": 80.0,
     "precipitation_deposits": 80.0,
     "wind_intensity": 35.0,
+    "sun_azimuth_angle": 280.0,
     "sun_altitude_angle": -15.0,
     "fog_density": 35.0,
     "fog_distance": 75.0,
@@ -42,6 +48,7 @@
   },
   "surface_and_visibility": {
     "wet_road_friction_scale": 0.68,
+    "wet_speed_limit_kmh": 40.0,
     "standing_water_depth_mm": [0.0, 6.0],
     "headlight_reflection": true,
     "tyre_spray": true,
@@ -50,7 +57,15 @@
       "oncoming_glare_probability": 0.12,
       "exposure_recovery_s": 0.9
     },
-    "policy_interface": "environment_observation/v1"
+    "policy_interface": "environment_observation/v1",
+    "friction_triggers": {
+      "enabled": true,
+      "friction": 0.68,
+      "spacing_m": 35.0,
+      "extent_x_m": 22.0,
+      "extent_y_m": 7.0,
+      "extent_z_m": 1.0
+    }
   },
   "sensors": {
     "required_camera_names": [
@@ -65,7 +80,76 @@
       "right_rgb": 90.0,
       "rear_rgb": 180.0
     },
-    "vehicle_state_required": true
+    "vehicle_state_required": true,
+    "low_signal_rgb": {
+      "enabled": true,
+      "exposure_mode": "manual",
+      "shutter_speed": 80.0,
+      "iso": 1600.0,
+      "gamma": 1.8,
+      "motion_blur_intensity": 0.15,
+      "lens_flare_intensity": 0.25
+    }
+  },
+  "voice_input": {
+    "language": "zh-CN",
+    "command_style": "ambiguous_emergency",
+    "environment_noise": {
+      "enabled": true,
+      "type": "light_rain_cabin_road_noise",
+      "snr_db": 18.0,
+      "maximum_peak_dbfs": -3.0
+    },
+    "commands": [
+      {
+        "id": "scene3_general_hazard",
+        "trigger_progress_m": 900.0,
+        "text": "前方路况危险，保持安全车速",
+        "semantic_goal": ["decelerate", "monitor", "keep_lane"]
+      },
+      {
+        "id": "scene3_cut_in_decelerate",
+        "trigger_progress_m": 980.0,
+        "text": "突发车辆加塞，紧急避让",
+        "semantic_goal": ["decelerate", "yield", "avoid_collision"]
+      },
+      {
+        "id": "scene3_work_zone_warning",
+        "trigger_progress_m": 1450.0,
+        "text": "前方进入施工区域，注意观察",
+        "semantic_goal": ["decelerate", "monitor"]
+      },
+      {
+        "id": "scene3_right_lane_closure",
+        "trigger_progress_m": 1750.0,
+        "text": "施工路段，减速并道至左侧车道",
+        "semantic_goal": ["decelerate", "lane_change_left"]
+      },
+      {
+        "id": "scene3_pass_work_zone",
+        "trigger_progress_m": 2300.0,
+        "text": "前方路况危险，保持安全车速",
+        "semantic_goal": ["decelerate", "monitor", "keep_lane"]
+      },
+      {
+        "id": "scene3_worker_crossing",
+        "trigger_progress_m": 3100.0,
+        "text": "有人突然横穿，立即减速让行",
+        "semantic_goal": ["decelerate", "yield", "stop_if_needed"]
+      },
+      {
+        "id": "scene3_blocked_lane_change_left",
+        "trigger_progress_m": 4200.0,
+        "text": "前方车道受阻，确认安全后向左避让",
+        "semantic_goal": ["decelerate", "wait_for_gap", "lane_change_left"]
+      },
+      {
+        "id": "scene3_resume_normal_driving",
+        "trigger_progress_m": 4950.0,
+        "text": "危险路段结束，保持安全并逐步恢复车速",
+        "semantic_goal": ["keep_lane", "resume_speed"]
+      }
+    ]
   },
   "traffic": {
     "private_vehicle_count": 16,
@@ -444,7 +528,7 @@
     "control_decision_schema": "ControlDecision/1.0.0",
     "simulation_frame_is_sync_key": true,
     "maximum_source_skew_ms": 150,
-    "maximum_decision_latency_ms": 150,
+    "maximum_decision_latency_ms": 120,
     "carla_truth_allowed_for_policy": false,
     "carla_truth_allowed_for_evaluation": true
   },
@@ -466,6 +550,8 @@
     "maximum_collisions": 0,
     "maximum_illegal_lane_invasions": 0,
     "all_events_resolved": true,
-    "maximum_decision_timeouts": 0
+    "maximum_decision_timeouts": 0,
+    "maximum_emergency_response_latency_ms": 120,
+    "minimum_multimodal_semantic_alignment_accuracy": 0.97
   }
 }
