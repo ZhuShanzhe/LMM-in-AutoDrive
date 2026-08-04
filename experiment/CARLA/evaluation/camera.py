@@ -153,7 +153,15 @@ class ExperimentCamera:
         ):
             return False
         frame = int(frame)
-        if frame % self.every_n_frames != 0:
+        save_image = (
+            self.save_images
+            and frame % self.every_n_frames == 0
+        )
+        write_video = self.video_writer is not None
+        # Image sampling and direct video have independent cadences.  A
+        # sparse --record-every-n value must not turn a 20 FPS recording
+        # into a handful of still frames.
+        if not save_image and not write_video:
             return False
         image = self._pending_images.pop(
             frame,
@@ -184,14 +192,14 @@ class ExperimentCamera:
             image = candidate
         if image is None:
             return False
-        if self.save_images:
+        if save_image:
             path = os.path.join(
                 self.output_dir,
                 "{0:08d}.png".format(frame),
             )
             image.save_to_disk(path)
             self.saved_frames += 1
-        if self.video_writer is not None:
+        if write_video:
             raw_frame = bytes(image.raw_data)
             if self.video_overlay and overlay:
                 raw_frame = self._render_overlay(

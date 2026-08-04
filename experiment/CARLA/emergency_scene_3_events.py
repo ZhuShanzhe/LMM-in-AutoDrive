@@ -128,6 +128,7 @@ class EmergencySceneActorRuntime:
         ) = None
         self._walker_blueprint_candidates: list[Any] = []
         self._worker_phase = "NOT_SPAWNED"
+        self._crossing_worker_respawn_count = 0
         self._maintenance_vehicle: Any | None = None
         self._blocked_lane_event: dict[str, Any] | None = None
         self._blocked_lane_activation_s: float | None = None
@@ -1314,9 +1315,29 @@ class EmergencySceneActorRuntime:
         ):
             return
         if not self._crossing_worker.is_alive:
-            raise RuntimeError(
-                "crossing worker was destroyed "
-                "unexpectedly"
+            if (
+                self._crossing_worker_respawn_count >= 1
+                or self._crossing_worker_config is None
+            ):
+                raise RuntimeError(
+                    "crossing worker was destroyed "
+                    "unexpectedly after recovery"
+                )
+            # Town05_Opt can occasionally retire a walker actor while its
+            # synchronous trajectory is being updated. Recover once at the
+            # same deterministic trajectory time instead of aborting the
+            # remaining 2.6 km of the evaluation route.
+            recovered = self._spawn_work_zone_worker(
+                worker_config=self._crossing_worker_config,
+                blueprints=self._walker_blueprint_candidates,
+            )
+            self._crossing_worker = recovered
+            self._worker_actors.append(recovered)
+            self._actor_sink.append(recovered)
+            self._crossing_worker_respawn_count += 1
+            print(
+                "WORKER CROSSING ACTOR RECOVERED | "
+                f"attempt={self._crossing_worker_respawn_count}"
             )
         location = (
             self._crossing_worker.get_location()

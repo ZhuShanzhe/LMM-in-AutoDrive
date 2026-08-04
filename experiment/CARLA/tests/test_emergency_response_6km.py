@@ -894,6 +894,62 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
             "YIELDED_CLEAR",
         )
 
+    def test_crossing_worker_recovers_once_if_actor_is_retired(self):
+        retired = mock.Mock()
+        retired.is_alive = False
+        recovered = mock.Mock()
+        recovered.is_alive = True
+        recovered.get_location.return_value = SimpleNamespace(
+            x=3275.0,
+            y=12.0,
+            z=0.3,
+        )
+        fake_carla = SimpleNamespace(
+            WalkerControl=lambda **values: SimpleNamespace(**values),
+            Vector3D=lambda **values: SimpleNamespace(**values),
+            Location=lambda **values: SimpleNamespace(**values),
+        )
+        actor_sink = []
+        runtime = scene_events.EmergencySceneActorRuntime(
+            carla_module=fake_carla,
+            world=mock.Mock(),
+            carla_map=mock.Mock(),
+            traffic_manager=mock.Mock(),
+            traffic_manager_port=8000,
+            actor_sink=actor_sink,
+        )
+        runtime._worker_phase = "CROSSING"
+        runtime._crossing_worker = retired
+        runtime._crossing_worker_config = {
+            "role_name": "scene3_crossing_worker",
+            "start_lane_id": -4,
+            "start_s_m": 3275.0,
+        }
+        runtime._walker_blueprint_candidates = [mock.Mock()]
+        runtime._crossing_worker_start_location = SimpleNamespace(
+            x=3275.0,
+            y=12.0,
+            z=0.3,
+        )
+        runtime._crossing_worker_target_location = SimpleNamespace(
+            x=3275.0,
+            y=8.75,
+            z=0.3,
+        )
+        runtime._crossing_worker_start_elapsed_s = 1.0
+        runtime._spawn_work_zone_worker = mock.Mock(return_value=recovered)
+
+        runtime._update_worker_crossing(
+            ego_route_s_m=3230.0,
+            elapsed_s=2.0,
+        )
+
+        runtime._spawn_work_zone_worker.assert_called_once()
+        self.assertIs(runtime._crossing_worker, recovered)
+        self.assertEqual(runtime._crossing_worker_respawn_count, 1)
+        self.assertEqual(actor_sink, [recovered])
+        recovered.set_location.assert_called_once()
+
     def test_ego_starts_with_automatic_lane_changes_disabled(
         self,
     ):
