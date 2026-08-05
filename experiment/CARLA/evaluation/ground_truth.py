@@ -287,8 +287,36 @@ def _binding_evidence(
     roles, prefixes, flags = _requirements(event)
     observed: list[str] = []
     missing: list[str] = []
+    out_of_range: list[str] = []
+    contract = event.get("ground_truth", {})
+    max_actor_distance_m = contract.get("max_actor_distance_m")
+    max_actor_lateral_m = contract.get("max_actor_lateral_m")
+
+    def actor_is_in_range(role: str) -> bool:
+        snapshot = snapshots.get(role)
+        if snapshot is None:
+            return False
+        relation = snapshot.get("relation_to_ego", {})
+        distance = relation.get("euclidean_distance_m")
+        lateral = relation.get("lateral_m")
+        if (
+            max_actor_distance_m is not None
+            and distance is not None
+            and float(distance) > float(max_actor_distance_m)
+        ):
+            out_of_range.append(role)
+            return False
+        if (
+            max_actor_lateral_m is not None
+            and lateral is not None
+            and abs(float(lateral)) > float(max_actor_lateral_m)
+        ):
+            out_of_range.append(role)
+            return False
+        return True
+
     for role in roles:
-        if role in snapshots:
+        if actor_is_in_range(role):
             observed.append(role)
         else:
             missing.append(role)
@@ -296,7 +324,7 @@ def _binding_evidence(
         matches = sorted(
             role
             for role in snapshots
-            if role.startswith(prefix)
+            if role.startswith(prefix) and actor_is_in_range(role)
         )
         if matches:
             observed.extend(matches)
@@ -313,6 +341,7 @@ def _binding_evidence(
         + ["runtime:" + flag for flag in flags],
         "observed": sorted(set(observed)),
         "missing": sorted(set(missing)),
+        "out_of_range": sorted(set(out_of_range)),
     }
 
 

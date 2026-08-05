@@ -326,6 +326,51 @@ class GroundTruthRecorderTests(unittest.TestCase):
         )
         self.assertFalse(record["claim_eligible"])
 
+    def test_far_actor_is_not_claim_eligible(self) -> None:
+        event = {
+            "id": "event_a",
+            "ground_truth": {
+                "evidence_mode": "observed",
+                "actor_roles": ["hazard_vehicle"],
+                "max_actor_distance_m": 70.0,
+                "max_actor_lateral_m": 8.0,
+            },
+        }
+        ego = Actor(1, 0.0, 0.0, 0.0, -2, "hero")
+        hazard = Actor(
+            2,
+            20.0,
+            150.0,
+            5.0,
+            -2,
+            "hazard_vehicle",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            recorder = FrameGroundTruthRecorder(
+                Path(temporary) / "truth.jsonl",
+                scene_id="test_scene",
+                events=[event],
+            )
+            record = recorder.record(
+                world=World(),
+                ego=ego,
+                simulation_frame=1,
+                timestamp_s=0.05,
+                route_s_m=1.0,
+                event_states={"event_a": "ACTIVE"},
+                actor_bindings={"hazard_vehicle": hazard},
+            )
+            recorder.close()
+        self.assertEqual(
+            record["frame_truth_quality"],
+            "SCHEDULE_ONLY",
+        )
+        self.assertFalse(record["claim_eligible"])
+        self.assertEqual(
+            record["active_events"][0]["evidence"]["out_of_range"],
+            ["hazard_vehicle"],
+        )
+
     def test_duplicate_frame_is_rejected(self) -> None:
         with self.assertRaisesRegex(
             ValueError,

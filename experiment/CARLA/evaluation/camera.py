@@ -3,6 +3,7 @@
 from collections import deque
 import math
 import os
+from pathlib import Path
 import queue
 import time
 
@@ -27,6 +28,7 @@ class ExperimentCamera:
         video_overlay=False,
         camera_attributes=None,
         camera_pose=None,
+        hud_font_path=None,
     ):
         self.world = world
         self.ego_vehicle = ego_vehicle
@@ -44,6 +46,11 @@ class ExperimentCamera:
         self.video_overlay = bool(video_overlay)
         self.camera_attributes = dict(
             camera_attributes or {}
+        )
+        self.hud_font_path = (
+            str(hud_font_path)
+            if hud_font_path
+            else os.environ.get("CARLA_HUD_FONT")
         )
         self.camera_pose = tuple(
             camera_pose
@@ -68,6 +75,92 @@ class ExperimentCamera:
         self._images = queue.Queue()
         self._pending_images = {}
         self._speed_history = deque()
+        self._font_cache = {}
+        self._hud_font_supports_cjk = None
+
+    @staticmethod
+    def _contains_cjk(value):
+        return any(
+            "\u3400" <= character <= "\u9fff"
+            for character in str(value)
+        )
+
+    def _font_candidates(self, bold=False):
+        names = (
+            (
+                "NotoSansCJK-Bold.ttc",
+                "NotoSansCJKsc-Bold.otf",
+                "wqy-zenhei.ttc",
+                "simhei.ttf",
+                "DejaVuSans-Bold.ttf",
+            )
+            if bold
+            else (
+                "NotoSansCJK-Regular.ttc",
+                "NotoSansCJKsc-Regular.otf",
+                "wqy-zenhei.ttc",
+                "simsun.ttc",
+                "DejaVuSans.ttf",
+            )
+        )
+        candidates = []
+        if self.hud_font_path:
+            candidates.append(self.hud_font_path)
+        roots = (
+            "/usr/share/fonts/opentype/noto",
+            "/usr/share/fonts/truetype/noto",
+            "/usr/share/fonts/truetype/wqy",
+            "/usr/share/fonts/truetype/arphic",
+            "/usr/share/fonts/truetype/msttcorefonts",
+            str(Path(__file__).resolve().parent / "fonts"),
+        )
+        for root in roots:
+            for name in names:
+                candidates.append(str(Path(root) / name))
+        return candidates
+
+    def _font(self, size, bold=False):
+        from PIL import ImageFont
+
+        key = (int(size), bool(bold))
+        cached = self._font_cache.get(key)
+        if cached is not None:
+            return cached
+        for path in self._font_candidates(bold=bold):
+            try:
+                loaded = ImageFont.truetype(path, int(size))
+            except OSError:
+                continue
+            self._font_cache[key] = loaded
+            if self._hud_font_supports_cjk is None:
+                try:
+                    first = loaded.getmask("汉", mode="L")
+                    second = loaded.getmask("语", mode="L")
+                    self._hud_font_supports_cjk = (
+                        first.size != second.size
+                        or bytes(first) != bytes(second)
+                    )
+                except (AttributeError, UnicodeError):
+                    self._hud_font_supports_cjk = False
+            return loaded
+        loaded = ImageFont.load_default()
+        self._font_cache[key] = loaded
+        if self._hud_font_supports_cjk is None:
+            self._hud_font_supports_cjk = False
+        return loaded
+
+    def _overlay_text(self, overlay, key, fallback_key=None):
+        value = str(overlay.get(key, ""))
+        if not self._contains_cjk(value):
+            return value
+        self._font(20)
+        if self._hud_font_supports_cjk:
+            return value
+        if fallback_key:
+            fallback = str(overlay.get(fallback_key, "")).strip()
+            if fallback:
+                return fallback
+        return "Voice command available in JSONL log"
 
     def start(self):
         import carla
@@ -147,20 +240,12 @@ class ExperimentCamera:
     ):
         """Persist the front image belonging to a completed world tick."""
 
-        if (
-            not self.save_images
-            and self.video_writer is None
-        ):
-            return False
         frame = int(frame)
         save_image = (
             self.save_images
             and frame % self.every_n_frames == 0
         )
         write_video = self.video_writer is not None
-        # Image sampling and direct video have independent cadences.  A
-        # sparse --record-every-n value must not turn a 20 FPS recording
-        # into a handful of still frames.
         if not save_image and not write_video:
             return False
         image = self._pending_images.pop(
@@ -220,11 +305,7 @@ class ExperimentCamera:
         )
 
     def _render_overlay(self, raw_frame, overlay):
-        from PIL import (
-            Image,
-            ImageDraw,
-            ImageFont,
-        )
+        from PIL import Image, ImageDraw
 
         image = Image.frombuffer(
             "RGBA",
@@ -237,31 +318,7 @@ class ExperimentCamera:
         ).copy()
         draw = ImageDraw.Draw(image, "RGBA")
 
-        def font(size, bold=False):
-            candidates = (
-                [
-                    "/usr/share/fonts/opentype/noto/"
-                    "NotoSansCJK-Bold.ttc",
-                    "/usr/share/fonts/truetype/"
-                    "dejavu/DejaVuSans-Bold.ttf",
-                ]
-                if bold
-                else [
-                    "/usr/share/fonts/opentype/noto/"
-                    "NotoSansCJK-Regular.ttc",
-                    "/usr/share/fonts/truetype/"
-                    "dejavu/DejaVuSans.ttf",
-                ]
-            )
-            for path in candidates:
-                try:
-                    return ImageFont.truetype(
-                        path,
-                        size,
-                    )
-                except OSError:
-                    continue
-            return ImageFont.load_default()
+        font = self._font
 
         status = str(
             overlay.get("status", "RUNNING")
@@ -447,15 +504,17 @@ class ExperimentCamera:
         )
         draw.text(
             (rx, 62),
-            str(
-                overlay.get("asr_text", "")
-            )[:42],
+            self._overlay_text(
+                overlay,
+                "asr_text",
+                "asr_text_ascii",
+            )[:58],
             font=font(21, bold=True),
             fill=text_color,
         )
         draw.text(
             (rx, 95),
-            "SCENARIO INTENT (REFERENCE)",
+            "STRUCTURED INTENT (RULE)",
             font=font(16, bold=True),
             fill=muted_color,
         )
