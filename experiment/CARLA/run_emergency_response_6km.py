@@ -1313,8 +1313,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--vla-decision-every-n",
         type=int,
-        default=4,
+        default=2,
         help="Run one online VLA decision every N simulation frames",
+    )
+    parser.add_argument(
+        "--vla-record-training-data",
+        type=Path,
+        help=(
+            "Optional directory for exact-frame four-view VLA training samples"
+        ),
     )
     parser.add_argument(
         "--stationary-ego",
@@ -2966,6 +2973,17 @@ def main(
                 device=args.vla_device,
                 precision=args.vla_precision,
                 decision_interval_frames=args.vla_decision_every_n,
+                camera_attributes=(
+                    DIRECT_PRESENTATION_CAMERA_ATTRIBUTES
+                    if args.presentation_lighting != "official-rainy-night"
+                    else runtime_config["sensors"].get("low_signal_rgb", {})
+                ),
+                fixed_delta_seconds=args.fixed_delta_seconds,
+                training_data_output=(
+                    args.vla_record_training_data.expanduser().resolve()
+                    if args.vla_record_training_data is not None
+                    else None
+                ),
             )
             print("Scene3 online text-to-VLA controller assigned")
         if args.record_ground_truth:

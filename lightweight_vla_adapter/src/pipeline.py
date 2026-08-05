@@ -35,6 +35,10 @@ class LightweightVLAPipeline:
         def floating(tensor: torch.Tensor) -> torch.Tensor:
             return tensor.to(device=self.device, dtype=self.dtype)
 
+        def images(tensor: torch.Tensor) -> torch.Tensor:
+            moved = tensor.to(device=self.device, dtype=self.dtype)
+            return moved.div_(255.0) if not tensor.is_floating_point() else moved
+
         return SensorTensorBatch(
             camera_bev=floating(batch.camera_bev),
             lidar_bev=floating(batch.lidar_bev),
@@ -43,7 +47,37 @@ class LightweightVLAPipeline:
             candidate_mask=batch.candidate_mask.to(self.device),
             intent_tokens=floating(batch.intent_tokens),
             intent_mask=batch.intent_mask.to(self.device),
+            camera_images=(
+                images(batch.camera_images)
+                if batch.camera_images is not None
+                else None
+            ),
+            camera_view_mask=(
+                batch.camera_view_mask.to(self.device)
+                if batch.camera_view_mask is not None
+                else None
+            ),
+            environment_features=(
+                floating(batch.environment_features)
+                if batch.environment_features is not None
+                else None
+            ),
         )
+
+    @staticmethod
+    def _model_inputs(batch: SensorTensorBatch) -> dict[str, torch.Tensor | None]:
+        return {
+            "camera_bev": batch.camera_bev,
+            "lidar_bev": batch.lidar_bev,
+            "ego_features": batch.ego_features,
+            "candidate_features": batch.candidate_features,
+            "candidate_mask": batch.candidate_mask,
+            "intent_tokens": batch.intent_tokens,
+            "intent_mask": batch.intent_mask,
+            "camera_images": batch.camera_images,
+            "camera_view_mask": batch.camera_view_mask,
+            "environment_features": batch.environment_features,
+        }
 
     def predict_proposal(
         self,
@@ -69,15 +103,7 @@ class LightweightVLAPipeline:
             torch.cuda.synchronize(self.device)
         started = time.perf_counter()
         with torch.inference_mode():
-            output = self.model(
-                camera_bev=moved.camera_bev,
-                lidar_bev=moved.lidar_bev,
-                ego_features=moved.ego_features,
-                candidate_features=moved.candidate_features,
-                candidate_mask=moved.candidate_mask,
-                intent_tokens=moved.intent_tokens,
-                intent_mask=moved.intent_mask,
-            )
+            output = self.model(**self._model_inputs(moved))
         if self.device.type == "cuda":
             torch.cuda.synchronize(self.device)
         latency_ms = (time.perf_counter() - started) * 1000.0
@@ -108,15 +134,7 @@ class LightweightVLAPipeline:
         moved = self._move(batch)
         with torch.inference_mode():
             for _ in range(iterations):
-                self.model(
-                    camera_bev=moved.camera_bev,
-                    lidar_bev=moved.lidar_bev,
-                    ego_features=moved.ego_features,
-                    candidate_features=moved.candidate_features,
-                    candidate_mask=moved.candidate_mask,
-                    intent_tokens=moved.intent_tokens,
-                    intent_mask=moved.intent_mask,
-                )
+                self.model(**self._model_inputs(moved))
         if self.device.type == "cuda":
             torch.cuda.synchronize(self.device)
 
@@ -162,9 +180,17 @@ class LightweightVLAPipeline:
         device: str | torch.device = "cuda",
         dtype: torch.dtype | None = None,
         temporal_supervisor: TemporalProposalSupervisor | None = None,
+        strict_checkpoint: bool = True,
     ) -> "LightweightVLAPipeline":
         state = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
-        model.load_state_dict(state)
+        incompatible = model.load_state_dict(state, strict=strict_checkpoint)
+        if not strict_checkpoint:
+            unexpected = list(incompatible.unexpected_keys)
+            if unexpected:
+                raise RuntimeError(
+                    "legacy checkpoint contains unexpected parameters: "
+                    + ", ".join(unexpected)
+                )
         return cls(
             model,
             model_name=model_name,

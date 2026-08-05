@@ -9,6 +9,7 @@ from torch import nn
 
 from .bev_encoder import LightweightBEVEncoder
 from .contracts import ACTION_LABELS, VLA_PROPOSAL_SCHEMA_VERSION
+from .raw_sensor_encoder import MultiviewImageEncoder
 
 
 class CrossAttentionBlock(nn.Module):
@@ -60,6 +61,7 @@ class AdapterOutput:
     confidence_logits: torch.Tensor
     confidence: torch.Tensor
     decision_embedding: torch.Tensor
+    visual_risk_logits: torch.Tensor
 
 
 class LightweightDecisionAdapter(nn.Module):
@@ -78,6 +80,13 @@ class LightweightDecisionAdapter(nn.Module):
         num_heads: int = 8,
         dropout: float = 0.1,
         bev_grid: tuple[int, int] = (8, 8),
+        environment_dim: int = 12,
+        num_camera_views: int = 4,
+        raw_camera_token_grid: tuple[int, int] = (2, 2),
+        require_raw_camera: bool = False,
+        use_raw_camera: bool = True,
+        use_environment: bool = True,
+        use_structured_bev: bool = True,
     ) -> None:
         super().__init__()
         if not 4 <= num_layers <= 6:
@@ -93,6 +102,12 @@ class LightweightDecisionAdapter(nn.Module):
         self.intent_projection = nn.Linear(intent_dim, hidden_size)
         self.candidate_projection = nn.Linear(candidate_dim, hidden_size)
         self.ego_projection = nn.Linear(ego_dim, hidden_size)
+        self.environment_projection = nn.Linear(environment_dim, hidden_size)
+        self.raw_camera_encoder = MultiviewImageEncoder(
+            hidden_size,
+            num_views=num_camera_views,
+            token_grid=raw_camera_token_grid,
+        )
         self.query_tokens = nn.Parameter(torch.empty(2, hidden_size))
         nn.init.normal_(self.query_tokens, std=0.02)
         self.layers = nn.ModuleList(
@@ -103,9 +118,14 @@ class LightweightDecisionAdapter(nn.Module):
         self.speed_head = nn.Linear(hidden_size, 1)
         self.lane_head = nn.Linear(hidden_size, 3)
         self.confidence_head = nn.Linear(hidden_size, 1)
+        self.visual_risk_head = nn.Linear(hidden_size, 3)
         self.target_query = nn.Linear(hidden_size, hidden_size)
         self.hidden_size = hidden_size
         self.num_layers = num_layers
+        self.require_raw_camera = bool(require_raw_camera)
+        self.use_raw_camera = bool(use_raw_camera)
+        self.use_environment = bool(use_environment)
+        self.use_structured_bev = bool(use_structured_bev)
 
     def forward(
         self,
@@ -117,24 +137,85 @@ class LightweightDecisionAdapter(nn.Module):
         candidate_mask: torch.Tensor,
         intent_tokens: torch.Tensor,
         intent_mask: torch.Tensor,
+        camera_images: torch.Tensor | None = None,
+        camera_view_mask: torch.Tensor | None = None,
+        environment_features: torch.Tensor | None = None,
     ) -> AdapterOutput:
         batch = camera_bev.shape[0]
-        bev_tokens = self.bev_encoder(camera_bev, lidar_bev)
+        if self.require_raw_camera and camera_images is None:
+            raise ValueError("this checkpoint requires synchronized raw camera input")
+        bev_tokens = (
+            self.bev_encoder(camera_bev, lidar_bev)
+            if self.use_structured_bev
+            else camera_bev.new_zeros((batch, 0, self.hidden_size))
+        )
+        if camera_images is not None and self.use_raw_camera:
+            raw_camera_tokens, raw_camera_mask = self.raw_camera_encoder(
+                camera_images, camera_view_mask
+            )
+        else:
+            raw_camera_tokens = camera_bev.new_zeros(
+                (batch, 0, self.hidden_size)
+            )
+            raw_camera_mask = torch.zeros(
+                (batch, 0), dtype=torch.bool, device=camera_bev.device
+            )
+        if raw_camera_tokens.shape[1] > 0:
+            valid_visual = raw_camera_mask.sum(dim=1, keepdim=True).clamp_min(1)
+            visual_summary = (
+                raw_camera_tokens * raw_camera_mask.unsqueeze(-1)
+            ).sum(dim=1) / valid_visual
+        else:
+            visual_summary = camera_bev.new_zeros(
+                (batch, self.hidden_size)
+            )
         intent_tokens = self.intent_projection(intent_tokens)
         candidate_tokens = self.candidate_projection(candidate_features)
         ego_token = self.ego_projection(ego_features).unsqueeze(1)
+        if self.use_environment:
+            if environment_features is None:
+                environment_features = ego_features.new_zeros(
+                    (batch, self.environment_projection.in_features)
+                )
+            environment_token = self.environment_projection(
+                environment_features
+            ).unsqueeze(1)
+        else:
+            environment_token = ego_features.new_zeros(
+                (batch, 0, self.hidden_size)
+            )
 
         candidate_mask = candidate_mask.to(dtype=torch.bool)
         intent_mask = intent_mask.to(dtype=torch.bool)
         memory = torch.cat(
-            [bev_tokens, intent_tokens, candidate_tokens, ego_token], dim=1
+            [
+                bev_tokens,
+                raw_camera_tokens,
+                intent_tokens,
+                candidate_tokens,
+                ego_token,
+                environment_token,
+            ],
+            dim=1,
         )
         bev_mask = torch.zeros(
             (batch, bev_tokens.shape[1]), dtype=torch.bool, device=memory.device
         )
         ego_mask = torch.zeros((batch, 1), dtype=torch.bool, device=memory.device)
         memory_padding_mask = torch.cat(
-            [bev_mask, ~intent_mask, ~candidate_mask, ego_mask], dim=1
+            [
+                bev_mask,
+                ~raw_camera_mask,
+                ~intent_mask,
+                ~candidate_mask,
+                ego_mask,
+                torch.zeros(
+                    (batch, environment_token.shape[1]),
+                    dtype=torch.bool,
+                    device=memory.device,
+                ),
+            ],
+            dim=1,
         )
         query = self.query_tokens.unsqueeze(0).expand(batch, -1, -1)
         valid_intent_count = intent_mask.sum(dim=1, keepdim=True).clamp_min(1)
@@ -165,6 +246,7 @@ class LightweightDecisionAdapter(nn.Module):
             confidence_logits=confidence_logits,
             confidence=torch.sigmoid(confidence_logits),
             decision_embedding=decision_token,
+            visual_risk_logits=self.visual_risk_head(visual_summary),
         )
 
 

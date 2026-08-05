@@ -45,6 +45,15 @@ def build_model(config: dict) -> LightweightDecisionAdapter:
         num_heads=config["num_heads"],
         dropout=config["dropout"],
         bev_grid=tuple(config["bev_grid"]),
+        environment_dim=int(config.get("environment_dim", 12)),
+        num_camera_views=int(config.get("num_camera_views", 4)),
+        raw_camera_token_grid=tuple(
+            config.get("raw_camera_token_grid", (2, 2))
+        ),
+        require_raw_camera=bool(config.get("require_raw_camera", False)),
+        use_raw_camera=bool(config.get("use_raw_camera", True)),
+        use_environment=bool(config.get("use_environment", True)),
+        use_structured_bev=bool(config.get("use_structured_bev", True)),
     )
 
 
@@ -63,6 +72,9 @@ def main() -> None:
         candidate_mask=tensors["candidate_mask"],
         intent_tokens=tensors["intent_tokens"],
         intent_mask=tensors["intent_mask"],
+        camera_images=tensors.get("camera_images"),
+        camera_view_mask=tensors.get("camera_view_mask"),
+        environment_features=tensors.get("environment_features"),
     )
     pipeline = LightweightVLAPipeline.from_checkpoint(
         build_model(config),

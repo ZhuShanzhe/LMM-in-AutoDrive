@@ -123,7 +123,7 @@ class Scene3VlaControllerTests(unittest.TestCase):
         self.assertEqual(decision["target_lane"], "left")
         self.assertEqual(validate_control_decision(decision), [])
 
-    def test_liveness_gate_rejects_unprompted_low_risk_stop(self):
+    def test_liveness_gate_does_not_hide_low_risk_model_error(self):
         canonical = build_canonical_decision(
             command_id="scene3_cruise",
             frame_id="carla_30",
@@ -153,8 +153,8 @@ class Scene3VlaControllerTests(unittest.TestCase):
                 "recommended_action": "keep_lane",
             },
         )
-        self.assertEqual(override, "unprompted_stop")
-        self.assertEqual(decision["action"], "keep_lane")
+        self.assertIsNone(override)
+        self.assertEqual(decision["action"], "stop")
 
 
 if __name__ == "__main__":

@@ -199,6 +199,9 @@ class SensorTensorBatch:
     candidate_mask: torch.Tensor
     intent_tokens: torch.Tensor
     intent_mask: torch.Tensor
+    camera_images: torch.Tensor | None = None
+    camera_view_mask: torch.Tensor | None = None
+    environment_features: torch.Tensor | None = None
 
     def validate(self) -> None:
         tensors = {
@@ -229,3 +232,30 @@ class SensorTensorBatch:
             raise ValueError("intent_tokens must have shape [B,L,D]")
         if self.intent_mask.shape != self.intent_tokens.shape[:2]:
             raise ValueError("intent_mask must have shape [B,L]")
+        if self.camera_images is not None:
+            if not isinstance(self.camera_images, torch.Tensor):
+                raise TypeError("camera_images must be a torch tensor")
+            if (
+                self.camera_images.ndim != 5
+                or self.camera_images.shape[0] != batch
+                or self.camera_images.shape[2] != 3
+            ):
+                raise ValueError(
+                    "camera_images must have shape [B,V,3,H,W]"
+                )
+            if self.camera_view_mask is None:
+                raise ValueError("camera_view_mask is required with camera_images")
+            if self.camera_view_mask.shape != self.camera_images.shape[:2]:
+                raise ValueError("camera_view_mask must have shape [B,V]")
+        elif self.camera_view_mask is not None:
+            raise ValueError("camera_images is required with camera_view_mask")
+        if self.environment_features is not None:
+            if not isinstance(self.environment_features, torch.Tensor):
+                raise TypeError("environment_features must be a torch tensor")
+            if (
+                self.environment_features.ndim != 2
+                or self.environment_features.shape[0] != batch
+            ):
+                raise ValueError(
+                    "environment_features must have shape [B,E]"
+                )

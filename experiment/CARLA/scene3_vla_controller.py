@@ -1,10 +1,4 @@
-"""Online text-to-VLA high-level controller for CARLA Scene 3.
-
-The learned adapter proposes a high-level action and speed.  A deterministic
-safety envelope gates that proposal before the existing route planner and PID
-controller execute it.  Sensor features use the repository's documented
-StructuredBEVRasterizer CARLA-state proxy; they are not raw RGB/LiDAR BEV.
-"""
+"""Online text + raw multiview + state VLA controller for CARLA Scene 3."""
 
 from __future__ import annotations
 
@@ -28,6 +22,86 @@ from lightweight_vla_adapter.src.pipeline import LightweightVLAPipeline
 from lightweight_vla_adapter.src.safety_bridge import gate_vla_proposal
 from lightweight_vla_adapter.src.structured_bev import StructuredBEVRasterizer
 from structured_command_parser.src.modernbert_service import ModernBertCommandService
+from carla_multiview_sensor import CAMERA_ORDER, SynchronizedMultiviewCameraRig
+
+
+class Scene3TrainingRecorder:
+    """Persist exact-frame multimodal samples and expert supervision."""
+
+    def __init__(self, output_dir: Path) -> None:
+        self.output_dir = output_dir
+        self.image_dir = output_dir / "images"
+        self.tensor_dir = output_dir / "tensors"
+        self.image_dir.mkdir(parents=True, exist_ok=True)
+        self.tensor_dir.mkdir(parents=True, exist_ok=True)
+        self._stream = (output_dir / "manifest.jsonl").open(
+            "w", encoding="utf-8"
+        )
+        self.count = 0
+
+    def record(
+        self,
+        *,
+        frame: int,
+        route_s_m: float,
+        command_id: str,
+        source_text: str,
+        images: torch.Tensor,
+        batch: Any,
+        label: Mapping[str, Any],
+        risk: Mapping[str, Any],
+    ) -> None:
+        from torchvision.io import write_jpeg
+
+        sample_id = f"frame_{frame:08d}"
+        image_paths = []
+        for view_index, view_name in enumerate(CAMERA_ORDER):
+            relative = Path("images") / f"{sample_id}_{view_name}.jpg"
+            write_jpeg(
+                images[0, view_index].contiguous(),
+                str(self.output_dir / relative),
+                quality=88,
+            )
+            image_paths.append(relative.as_posix())
+        tensor_relative = Path("tensors") / f"{sample_id}.pt"
+        torch.save(
+            {
+                "camera_bev": batch.camera_bev[0].cpu(),
+                "lidar_bev": batch.lidar_bev[0].cpu(),
+                "ego_features": batch.ego_features[0].cpu(),
+                "candidate_features": batch.candidate_features[0].cpu(),
+                "candidate_mask": batch.candidate_mask[0].cpu(),
+                "intent_tokens": batch.intent_tokens[0].cpu(),
+                "intent_mask": batch.intent_mask[0].cpu(),
+                "environment_features": batch.environment_features[0].cpu(),
+            },
+            self.output_dir / tensor_relative,
+        )
+        row = {
+            "schema_version": "scene3_multimodal_training_sample/1.0",
+            "sample_id": sample_id,
+            "frame": int(frame),
+            "route_s_m": round(float(route_s_m), 3),
+            "command_id": command_id,
+            "source_text": source_text,
+            "camera_order": list(CAMERA_ORDER),
+            "image_paths": image_paths,
+            "tensor_path": tensor_relative.as_posix(),
+            "label": {
+                "action": label["action"],
+                "target_speed_kmh": float(label["target_speed_kmh"]),
+                "target_lane": label.get("target_lane"),
+            },
+            "risk_level": risk.get("risk_level", "low"),
+            "risk_reason_codes": list(risk.get("reason_codes", [])),
+        }
+        self._stream.write(json.dumps(row, ensure_ascii=False) + "\n")
+        self._stream.flush()
+        self.count += 1
+
+    def close(self) -> None:
+        if not self._stream.closed:
+            self._stream.close()
 
 
 COMMAND_PROFILES = {
@@ -256,6 +330,26 @@ def build_carla_world_state(
     }
 
 
+def environment_feature_tensor(world: Any) -> torch.Tensor:
+    """Return the explicit environment modality used by the learned policy."""
+    weather = world.get_weather()
+    values = (
+        float(weather.cloudiness) / 100.0,
+        float(weather.precipitation) / 100.0,
+        float(weather.precipitation_deposits) / 100.0,
+        float(weather.wind_intensity) / 100.0,
+        float(weather.sun_azimuth_angle) / 360.0,
+        max(-1.0, min(1.0, float(weather.sun_altitude_angle) / 90.0)),
+        float(weather.fog_density) / 100.0,
+        float(weather.fog_distance) / 1000.0,
+        float(weather.fog_falloff) / 10.0,
+        float(weather.wetness) / 100.0,
+        float(getattr(weather, "scattering_intensity", 0.0)) / 10.0,
+        float(getattr(weather, "mie_scattering_scale", 0.0)) / 0.1,
+    )
+    return torch.tensor(values, dtype=torch.float32).unsqueeze(0)
+
+
 def assess_scene3_risk(world_state: Mapping[str, Any]) -> dict[str, Any]:
     """Apply a small deterministic collision and lane-change safety gate."""
     ego_speed = float(world_state["ego"]["speed_mps"])
@@ -387,41 +481,9 @@ def apply_scene3_liveness_gate(
     canonical: Mapping[str, Any],
     risk: Mapping[str, Any],
 ) -> tuple[dict[str, Any], str | None]:
-    """Reject unprompted low-risk stops and bound unusably low cruise speeds."""
-    result = dict(final_decision)
-    if risk.get("recommended_action") != "keep_lane":
-        return result, None
-    canonical_action = str(canonical["action"])
-    if (
-        canonical_action in {"lane_change_left", "lane_change_right"}
-        and result["action"] == canonical_action
-    ):
-        minimum_speed = float(canonical["target_speed_kmh"])
-        if float(result["target_speed_kmh"]) < minimum_speed:
-            result["target_speed_kmh"] = minimum_speed
-            reasons = list(result.get("blocked_reason_codes", []))
-            reasons.append("vla_target_speed_below_scene3_floor")
-            result["blocked_reason_codes"] = list(dict.fromkeys(reasons))
-            result["reason"] = "vla_action_accepted_with_scene3_speed_floor"
-            return result, "speed_floor"
-        return result, None
-    if canonical_action not in {"keep_lane", "accelerate", "decelerate"}:
-        return result, None
-    if result["action"] in {"stop", "emergency_brake"}:
-        result = dict(canonical)
-        result["reason"] = "scene3_liveness_rejected_unprompted_stop"
-        result["blocked_reason_codes"] = ["vla_unprompted_low_risk_stop"]
-        return result, "unprompted_stop"
-    if result["action"] in {"keep_lane", "accelerate", "decelerate"}:
-        minimum_speed = float(canonical["target_speed_kmh"])
-        if float(result["target_speed_kmh"]) < minimum_speed:
-            result["target_speed_kmh"] = minimum_speed
-            reasons = list(result.get("blocked_reason_codes", []))
-            reasons.append("vla_target_speed_below_scene3_floor")
-            result["blocked_reason_codes"] = list(dict.fromkeys(reasons))
-            result["reason"] = "vla_action_accepted_with_scene3_speed_floor"
-            return result, "speed_floor"
-    return result, None
+    """Legacy API retained as an identity function for log compatibility."""
+    del canonical, risk
+    return dict(final_decision), None
 
 
 class Scene3VlaController:
@@ -442,6 +504,9 @@ class Scene3VlaController:
         device: str = "cuda",
         precision: str = "fp16",
         decision_interval_frames: int = 4,
+        camera_attributes: Mapping[str, Any] | None = None,
+        fixed_delta_seconds: float = 0.05,
+        training_data_output: Path | None = None,
     ) -> None:
         if decision_interval_frames < 1:
             raise ValueError("decision_interval_frames must be at least 1")
@@ -464,10 +529,20 @@ class Scene3VlaController:
         self._proposal_actions = Counter()
         self._final_actions = Counter()
         self._latencies_ms = []
+        self._camera_wait_ms = []
+        self._sensor_frame_lag = []
         self._stream = output_path.open("w", encoding="utf-8")
+        self.training_recorder = (
+            Scene3TrainingRecorder(training_data_output)
+            if training_data_output is not None
+            else None
+        )
 
         with config_path.open(encoding="utf-8") as handle:
             config = json.load(handle)
+        self.teacher_force_control = bool(
+            config.get("teacher_force_control", False)
+        )
         dtype = {
             "fp32": torch.float32,
             "fp16": torch.float16,
@@ -479,6 +554,9 @@ class Scene3VlaController:
             model_name=config["model_name"],
             device=device,
             dtype=dtype,
+            strict_checkpoint=not bool(
+                config.get("allow_legacy_checkpoint", False)
+            ),
         )
         self.rasterizer = StructuredBEVRasterizer(
             max_candidates=int(config.get("max_candidates", 32))
@@ -488,6 +566,15 @@ class Scene3VlaController:
             device=device,
         )
         self.parser.warmup()
+        self.camera_rig = SynchronizedMultiviewCameraRig(
+            world,
+            ego,
+            width=int(config.get("camera_input_width", 224)),
+            height=int(config.get("camera_input_height", 224)),
+            fov=float(config.get("camera_input_fov", 100.0)),
+            sensor_tick=float(fixed_delta_seconds) * self.decision_interval_frames,
+            camera_attributes=dict(camera_attributes or {}),
+        )
 
     def _intent_features(self, command: Mapping[str, Any]):
         command_id = str(command["id"])
@@ -551,6 +638,14 @@ class Scene3VlaController:
             intent_tokens=tokens,
             intent_mask=mask,
         )
+        sensor_frame, images, view_mask, camera_wait_ms = self.camera_rig.latest(
+            minimum_frame=frame - self.decision_interval_frames,
+        )
+        batch.camera_images = images
+        batch.camera_view_mask = view_mask
+        batch.environment_features = environment_feature_tensor(self.world)
+        self._camera_wait_ms.append(camera_wait_ms)
+        self._sensor_frame_lag.append(frame - sensor_frame)
         if not self._adapter_warmed:
             self.pipeline.warmup(batch, iterations=10)
             self._adapter_warmed = True
@@ -561,6 +656,17 @@ class Scene3VlaController:
             parse_result=self._parse_cache.get(command_id, {}),
             risk=risk,
         )
+        if self.training_recorder is not None:
+            self.training_recorder.record(
+                frame=frame,
+                route_s_m=progress_m,
+                command_id=command_id,
+                source_text=str(command.get("text", "")),
+                images=images,
+                batch=batch,
+                label=canonical,
+                risk=risk,
+            )
         started = time.perf_counter()
         proposal = self.pipeline.predict_proposal(
             batch,
@@ -577,6 +683,10 @@ class Scene3VlaController:
             canonical,
             risk,
         )
+        if self.teacher_force_control:
+            final_decision = dict(canonical)
+            final_decision["reason"] = "training_teacher_force_control"
+            final_decision["blocked_reason_codes"] = []
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         self.route_controller.set_high_level_decision(
             final_decision,
@@ -585,6 +695,7 @@ class Scene3VlaController:
         accepted = (
             str(gated_decision.get("reason", "")).startswith("vla_accepted_")
             and liveness_override != "unprompted_stop"
+            and not self.teacher_force_control
         )
         self._decision_count += 1
         self._accepted_count += int(accepted)
@@ -599,12 +710,16 @@ class Scene3VlaController:
             "command_id": command_id,
             "source_text": command.get("text", ""),
             "normalized_text": profile["text_en"],
-            "input_mode": "carla_state_structured_bev_proxy",
+            "input_mode": "text_raw_4view_rgb_vehicle_environment",
+            "sensor_frame": sensor_frame,
+            "sensor_frame_lag": frame - sensor_frame,
+            "camera_wait_ms": round(camera_wait_ms, 3),
             "candidate_count": len(entity_ids[0]),
             "risk_assessment": risk,
             "vla_proposal": proposal,
             "control_decision": final_decision,
             "model_output_applied": accepted,
+            "training_teacher_force_control": self.teacher_force_control,
             "liveness_override": liveness_override,
             "full_decision_latency_ms": round(elapsed_ms, 3),
         }
@@ -665,8 +780,9 @@ class Scene3VlaController:
         latencies = self._latencies_ms
         return {
             "controller": "vla-route-pid",
-            "input_mode": "carla_state_structured_bev_proxy",
+            "input_mode": "text_raw_4view_rgb_vehicle_environment",
             "model_output_used": self._accepted_count > 0,
+            "training_teacher_force_control": self.teacher_force_control,
             "decision_count": self._decision_count,
             "model_accepted_count": self._accepted_count,
             "safety_gate_or_canonical_count": (
@@ -681,8 +797,32 @@ class Scene3VlaController:
                 "median": round(statistics.median(latencies), 3) if latencies else None,
                 "max": round(max(latencies), 3) if latencies else None,
             },
+            "camera_wait_ms": {
+                "mean": round(statistics.fmean(self._camera_wait_ms), 3)
+                if self._camera_wait_ms
+                else None,
+                "max": round(max(self._camera_wait_ms), 3)
+                if self._camera_wait_ms
+                else None,
+            },
+            "sensor_frame_lag": {
+                "mean": round(statistics.fmean(self._sensor_frame_lag), 3)
+                if self._sensor_frame_lag
+                else None,
+                "max": max(self._sensor_frame_lag)
+                if self._sensor_frame_lag
+                else None,
+            },
+            "training_samples_recorded": (
+                self.training_recorder.count
+                if self.training_recorder is not None
+                else 0
+            ),
         }
 
     def close(self) -> None:
+        self.camera_rig.close()
+        if self.training_recorder is not None:
+            self.training_recorder.close()
         if not self._stream.closed:
             self._stream.close()

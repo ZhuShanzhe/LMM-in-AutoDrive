@@ -9,19 +9,6 @@ from scene_understanding.src.control_plan_executor import advance_control_plan
 from .contracts import validate_vla_proposal
 
 
-COMPATIBLE_ACTIONS = {
-    "keep_lane": {"keep_lane", "decelerate", "stop"},
-    "accelerate": {"accelerate", "keep_lane", "decelerate", "stop"},
-    "decelerate": {"decelerate", "stop"},
-    "stop": {"stop"},
-    "emergency_brake": {"emergency_brake"},
-    "lane_change_left": {"lane_change_left", "keep_lane", "decelerate", "stop"},
-    "lane_change_right": {"lane_change_right", "keep_lane", "decelerate", "stop"},
-    "turn_left": {"turn_left", "decelerate", "stop"},
-    "turn_right": {"turn_right", "decelerate", "stop"},
-}
-
-
 def _canonical(
     decision: Mapping[str, Any], reason_code: str
 ) -> dict[str, Any]:
@@ -38,7 +25,11 @@ def gate_vla_proposal(
     canonical_decision: dict[str, Any],
     risk_assessment: dict[str, Any],
 ) -> dict[str, Any]:
-    """Constrain a learned proposal with the deterministic decision boundary."""
+    """Apply only safety-critical constraints to a learned proposal.
+
+    Semantic command alignment is deliberately evaluated in the model output;
+    it is not repaired by a rule template at inference time.
+    """
 
     proposal_errors = validate_vla_proposal(proposal)
     if proposal_errors:
@@ -62,14 +53,7 @@ def gate_vla_proposal(
         return _canonical(canonical_decision, "vla_overridden_by_deceleration_risk")
     if canonical_decision["decision_status"] != "READY":
         return _canonical(canonical_decision, "vla_blocked_by_canonical_gate")
-    if canonical_decision["action"] in {"stop", "emergency_brake"}:
-        return _canonical(canonical_decision, "vla_blocked_by_safety_action")
-
-    canonical_action = canonical_decision["action"]
     proposed_action = proposal["action"]
-    if proposed_action not in COMPATIBLE_ACTIONS[canonical_action]:
-        return _canonical(canonical_decision, "vla_incompatible_with_active_intent")
-
     if proposed_action in {"lane_change_left", "lane_change_right"}:
         direction = proposed_action.removeprefix("lane_change_")
         judgment = risk_assessment.get("lane_change", {}).get(direction, {})
@@ -79,10 +63,7 @@ def gate_vla_proposal(
     result = copy.deepcopy(canonical_decision)
     result["action"] = proposed_action
     result["target_speed_kmh"] = round(
-        min(
-            float(proposal["target_speed_kmh"]),
-            float(canonical_decision["target_speed_kmh"]),
-        ),
+        min(max(float(proposal["target_speed_kmh"]), 0.0), 60.0),
         6,
     )
     if proposed_action in {"stop", "emergency_brake"}:
