@@ -1273,7 +1273,20 @@ class SafetyAuditTests(unittest.TestCase):
             SimpleNamespace(frame=12)
         )
         audit.record_lane_invasion(
-            SimpleNamespace(frame=18)
+            SimpleNamespace(
+                frame=18,
+                crossed_lane_markings=[
+                    SimpleNamespace(type="LaneMarkingType.Broken")
+                ],
+            )
+        )
+        audit.record_lane_invasion(
+            SimpleNamespace(
+                frame=19,
+                crossed_lane_markings=[
+                    SimpleNamespace(type="LaneMarkingType.Solid")
+                ],
+            )
         )
         for lane_id in (-1, -2, -3, -4, 0):
             audit.record_lane_id(lane_id)
@@ -1283,8 +1296,22 @@ class SafetyAuditTests(unittest.TestCase):
             {
                 "collision_count": 1,
                 "collision_frames": [12],
-                "lane_invasion_event_count": 1,
-                "lane_invasion_frames": [18],
+                "lane_invasion_event_count": 2,
+                "lane_invasion_frames": [18, 19],
+                "lane_invasion_events": [
+                    {
+                        "frame": 18,
+                        "markings": ["Broken"],
+                        "restricted": False,
+                    },
+                    {
+                        "frame": 19,
+                        "markings": ["Solid"],
+                        "restricted": True,
+                    },
+                ],
+                "restricted_lane_invasion_event_count": 1,
+                "restricted_lane_invasion_frames": [19],
                 "invalid_lane_samples": 2,
             },
         )

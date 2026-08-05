@@ -62,6 +62,30 @@ EGO_BLUEPRINT_IDS = (
     "vehicle.audi.tt",
 )
 
+RESTRICTED_LANE_MARKINGS = {
+    "Solid",
+    "SolidSolid",
+    "SolidBroken",
+    "BrokenSolid",
+    "Curb",
+    "Grass",
+}
+
+
+def lane_marking_name(value: Any) -> str:
+    """Return the stable suffix of a CARLA lane-marking enum."""
+
+    return str(value).rsplit(".", 1)[-1]
+
+
+def lane_invasion_is_restricted(event: Mapping[str, Any]) -> bool:
+    """Distinguish prohibited boundaries from legal broken-line crossings."""
+
+    return any(
+        lane_marking_name(marking) in RESTRICTED_LANE_MARKINGS
+        for marking in event.get("markings", [])
+    )
+
 CAMERA_TRANSFORMS = {
     "front_rgb": (
         1.6,
@@ -426,6 +450,7 @@ class SafetyAuditState:
         self._lock = threading.Lock()
         self._collision_frames: list[int] = []
         self._lane_invasion_frames: list[int] = []
+        self._lane_invasion_events: list[dict[str, Any]] = []
         self._invalid_lane_samples = 0
 
     def record_collision(
@@ -449,10 +474,17 @@ class SafetyAuditState:
         self,
         event: Any,
     ) -> None:
+        payload = {
+            "frame": int(event.frame),
+            "markings": [
+                lane_marking_name(marking.type)
+                for marking in getattr(event, "crossed_lane_markings", [])
+            ],
+        }
+        payload["restricted"] = lane_invasion_is_restricted(payload)
         with self._lock:
-            self._lane_invasion_frames.append(
-                int(event.frame)
-            )
+            self._lane_invasion_frames.append(payload["frame"])
+            self._lane_invasion_events.append(payload)
 
     def record_lane_id(
         self,
@@ -511,6 +543,9 @@ class SafetyAuditState:
             lane_invasion_frames = list(
                 self._lane_invasion_frames
             )
+            lane_invasion_events = [
+                dict(event) for event in self._lane_invasion_events
+            ]
             invalid_lane_samples = (
                 self._invalid_lane_samples
             )
@@ -525,6 +560,16 @@ class SafetyAuditState:
             "lane_invasion_frames": (
                 lane_invasion_frames
             ),
+            "lane_invasion_events": lane_invasion_events,
+            "restricted_lane_invasion_event_count": sum(
+                bool(event["restricted"])
+                for event in lane_invasion_events
+            ),
+            "restricted_lane_invasion_frames": [
+                int(event["frame"])
+                for event in lane_invasion_events
+                if event["restricted"]
+            ],
             "invalid_lane_samples": (
                 invalid_lane_samples
             ),
@@ -836,6 +881,10 @@ def make_video_overlay(
         and event_summary["RESOLVED"] == 7
         and safety_summary["collision_count"] == 0
         and safety_summary["invalid_lane_samples"]
+        == 0
+        and safety_summary[
+            "restricted_lane_invasion_event_count"
+        ]
         == 0
     ):
         status = "SUCCESS"
@@ -3137,6 +3186,10 @@ def main(
                 "invalid_lane_samples"
             ]
             == 0
+            and safety_summary[
+                "restricted_lane_invasion_event_count"
+            ]
+            == 0
         )
         scene_summary_path = (
             output_dir / "scene_summary.json"
@@ -3258,6 +3311,12 @@ def main(
             ]:
                 incomplete_reasons.append(
                     "invalid lane occupancy"
+                )
+            if safety_summary[
+                "restricted_lane_invasion_event_count"
+            ]:
+                incomplete_reasons.append(
+                    "restricted lane marking crossed"
                 )
             if (
                 args.ego_controller == "vla-route-pid"
