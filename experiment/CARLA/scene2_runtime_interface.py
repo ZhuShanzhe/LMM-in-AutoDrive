@@ -24,6 +24,46 @@ CONTROL_ACTIONS = {
 }
 
 
+def _scene2_step_contract(encoded: Any) -> tuple[str, dict[str, Any], str]:
+    """Normalize one compact Scene 2 step into the shared intent contract."""
+
+    action, separator, raw_parameter = str(encoded).partition(":")
+    action = action.strip().upper()
+    parameter = raw_parameter.strip().upper() if separator else ""
+    parameters: dict[str, Any] = {}
+    wait_actions = {"CHECK", "WAIT", "CONFIRM", "YIELD"}
+
+    if action == "SET_SPEED":
+        value = parameter.removesuffix("MPS")
+        try:
+            parameters["target_speed_mps"] = float(value)
+        except ValueError as error:
+            raise ValueError(
+                "SET_SPEED requires a numeric mps value: {0}".format(encoded)
+            ) from error
+    elif action == "ADJUST_SPEED":
+        parameters["change"] = parameter or "HOLD"
+    elif action in {"CHANGE_LANE", "TURN", "PULL_OVER"}:
+        direction = parameter
+        if parameter == "RETURN_WHEN_SAFE":
+            direction = "RIGHT"
+        elif parameter.endswith("_WHEN_SAFE"):
+            direction = parameter.removesuffix("_WHEN_SAFE")
+        parameters["direction"] = direction
+    elif action == "KEEP_LANE" and parameter:
+        parameters["direction"] = parameter
+    elif parameter:
+        parameters["condition"] = parameter
+
+    on_blocked = (
+        "WAIT_FOR_SAFE"
+        if action in wait_actions
+        or parameter.endswith("_WHEN_SAFE")
+        else "SAFE_STOP"
+    )
+    return action, parameters, on_blocked
+
+
 def build_scheduled_driving_intent(
     command: Mapping[str, Any],
     simulation_frame: int,
@@ -34,22 +74,21 @@ def build_scheduled_driving_intent(
 
     steps = []
     encoded_steps: Sequence[Any] = command.get("steps", [])
+    previous_step_id = None
     for index, encoded in enumerate(encoded_steps, start=1):
-        action, _, parameter = str(encoded).partition(":")
-        parameters: dict[str, Any] = {}
-        if parameter:
-            parameters["contract_value"] = parameter
+        action, parameters, on_blocked = _scene2_step_contract(encoded)
+        step_id = "{0}_step_{1:02d}".format(command["id"], index)
         steps.append(
             {
-                "step_id": "{0}_step_{1:02d}".format(
-                    command["id"],
-                    index,
-                ),
+                "step_id": step_id,
                 "action": action,
                 "parameters": parameters,
+                "depends_on": [previous_step_id] if previous_step_id else [],
+                "on_blocked": on_blocked,
                 "status": "PENDING",
             }
         )
+        previous_step_id = step_id
     return {
         "schema_version": DRIVING_INTENT_SCHEMA,
         "request_id": "{0}-frame-{1}".format(

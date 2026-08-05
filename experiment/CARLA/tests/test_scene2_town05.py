@@ -29,7 +29,11 @@ from evaluation.multimodal import (
     ExactFrameSensorSuite,
     REQUIRED_SENSOR_NAMES,
 )
-from scene2_runtime_interface import build_multimodal_frame_bundle
+from scene2_runtime_interface import (
+    build_multimodal_frame_bundle,
+    build_scheduled_driving_intent,
+)
+from scene_understanding.src.control_decision import _map_step_action
 from scenarios.complex.town05_scene2 import (
     RouteProgressTracker,
     ScriptedWalker,
@@ -66,6 +70,70 @@ def route_at(*coordinates: tuple[float, float]):
 
 
 class Scene2Town05Tests(unittest.TestCase):
+    def test_all_competition_steps_normalize_to_executable_actions(self):
+        config = load_config(
+            ROOT / "configs" / "scene_2_town05_runtime.json"
+        )
+        normalized_actions = set()
+        for command in config["commands"]:
+            intent = build_scheduled_driving_intent(
+                command,
+                simulation_frame=100,
+                route_s_m=float(command["announce_at_m"]),
+                timestamp_s=5.0,
+            )
+            previous_step_id = None
+            for step in intent["intent"]["steps"]:
+                action, speed, lane, _location = _map_step_action(
+                    step,
+                    current_speed_kmh=35.0,
+                )
+                normalized_actions.add(action)
+                self.assertGreaterEqual(speed, 0.0)
+                self.assertEqual(
+                    step["depends_on"],
+                    [previous_step_id] if previous_step_id else [],
+                )
+                if action.startswith("lane_change_"):
+                    self.assertIn(lane, {"left", "right"})
+                previous_step_id = step["step_id"]
+
+        self.assertTrue(
+            {
+                "keep_lane",
+                "decelerate",
+                "stop",
+                "accelerate",
+                "lane_change_left",
+                "lane_change_right",
+                "turn_right",
+            }.issubset(normalized_actions)
+        )
+
+    def test_scene2_speed_and_wait_steps_use_typed_parameters(self):
+        command = {
+            "id": "typed",
+            "category": "NAVIGATION",
+            "urgency": "NORMAL",
+            "spoken_text": "typed test",
+            "steps": [
+                "SET_SPEED:12.50mps",
+                "CHECK:PATH_CLEAR",
+                "WAIT:PEDESTRIAN_CLEAR",
+            ],
+        }
+        intent = build_scheduled_driving_intent(
+            command,
+            simulation_frame=1,
+            route_s_m=0.0,
+            timestamp_s=0.0,
+        )
+        steps = intent["intent"]["steps"]
+        self.assertEqual(steps[0]["parameters"], {"target_speed_mps": 12.5})
+        self.assertEqual(steps[1]["parameters"], {"condition": "PATH_CLEAR"})
+        self.assertEqual(steps[1]["on_blocked"], "WAIT_FOR_SAFE")
+        self.assertEqual(steps[2]["on_blocked"], "WAIT_FOR_SAFE")
+
     def test_scripted_walker_restores_hidden_staging_on_start(self):
         class FakeActor:
             is_alive = True
