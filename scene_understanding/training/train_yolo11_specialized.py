@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 
@@ -35,18 +36,21 @@ def main() -> None:
     from ultralytics import YOLO
 
     args = parse_args()
-    if not args.data.is_file():
-        raise FileNotFoundError(args.data)
-    if not args.model.is_file():
-        raise FileNotFoundError(args.model)
-    run_dir = args.project / args.name
+    data_path = args.data.expanduser().resolve()
+    model_path = args.model.expanduser().resolve()
+    project_path = args.project.expanduser().resolve()
+    if not data_path.is_file():
+        raise FileNotFoundError(data_path)
+    if not model_path.is_file():
+        raise FileNotFoundError(model_path)
+    run_dir = project_path / args.name
     if run_dir.exists():
         raise SystemExit(f"training run already exists: {run_dir}")
-    args.project.mkdir(parents=True, exist_ok=True)
+    project_path.mkdir(parents=True, exist_ok=True)
     config = {
-        "data": str(args.data),
-        "model": str(args.model),
-        "project": str(args.project),
+        "data": str(data_path),
+        "model": str(model_path),
+        "project": str(project_path),
         "name": args.name,
         "epochs": args.epochs,
         "batch": args.batch,
@@ -69,11 +73,19 @@ def main() -> None:
         "save": True,
         "verbose": True,
     }
-    (args.project / f"{args.name}_launch.json").write_text(
+    (project_path / f"{args.name}_launch.json").write_text(
         json.dumps(config, indent=2) + "\n", encoding="utf-8"
     )
-    model = YOLO(str(args.model))
-    result = model.train(**config)
+    model = YOLO(str(model_path))
+    # Ultralytics resolves a portable YAML ``path: .`` against the process
+    # working directory, not the YAML location.  Run from the dataset root so
+    # relative image paths remain portable across Linux machines.
+    original_working_directory = Path.cwd()
+    try:
+        os.chdir(data_path.parent)
+        result = model.train(**config)
+    finally:
+        os.chdir(original_working_directory)
     print(result)
 
 
