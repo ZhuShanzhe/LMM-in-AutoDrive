@@ -20,6 +20,7 @@ from lightweight_vla_adapter.scripts.train_scene3_multimodal import (
     Scene3Dataset,
     load_rows,
     model_kwargs,
+    split_rows,
 )
 from lightweight_vla_adapter.src.contracts import ACTION_LABELS
 
@@ -47,6 +48,17 @@ def apply_ablation(inputs: dict[str, torch.Tensor], mode: str) -> None:
     elif mode.startswith("no_view_"):
         view = int(mode.rsplit("_", 1)[1])
         inputs["camera_view_mask"][:, view] = False
+    elif mode == "shuffled_images":
+        inputs["camera_images"] = inputs["camera_images"].roll(1, dims=0)
+    elif mode == "shuffled_text":
+        inputs["intent_tokens"] = inputs["intent_tokens"].roll(1, dims=0)
+        inputs["intent_mask"] = inputs["intent_mask"].roll(1, dims=0)
+    elif mode == "shuffled_vehicle_state":
+        inputs["ego_features"] = inputs["ego_features"].roll(1, dims=0)
+    elif mode == "shuffled_environment":
+        inputs["environment_features"] = inputs["environment_features"].roll(
+            1, dims=0
+        )
 
 
 def run(
@@ -62,6 +74,7 @@ def run(
     risk_labels = []
     speed_labels = []
     per_action = defaultdict(lambda: [0, 0])
+    environment_pairs = defaultdict(dict)
     with torch.inference_mode():
         for batch in loader:
             inputs = model_kwargs(batch, device)
@@ -80,12 +93,35 @@ def run(
                 name = ACTION_LABELS[int(label)]
                 per_action[name][1] += 1
                 per_action[name][0] += int(label == prediction)
+            for set_id, variant, predicted_speed, target_speed in zip(
+                batch["counterfactual_set_id"],
+                batch["variant_type"],
+                output.target_speed_kmh.detach().cpu().tolist(),
+                batch["speed_label"].tolist(),
+            ):
+                if str(variant).startswith("environment_pair_"):
+                    environment_pairs[str(set_id)][str(variant)] = (
+                        float(predicted_speed), float(target_speed)
+                    )
     action_probs = torch.cat(action_probs)
     risk_probs = torch.cat(risk_probs)
     speeds = torch.cat(speeds)
     action_labels = torch.cat(action_labels)
     risk_labels = torch.cat(risk_labels)
     speed_labels = torch.cat(speed_labels)
+    pair_count = 0
+    pair_order_correct = 0
+    pair_delta_error = 0.0
+    for pair in environment_pairs.values():
+        observed = pair.get("environment_pair_observed")
+        counterfactual = pair.get("environment_pair_counterfactual")
+        if observed is None or counterfactual is None:
+            continue
+        pair_count += 1
+        predicted_delta = counterfactual[0] - observed[0]
+        target_delta = counterfactual[1] - observed[1]
+        pair_order_correct += int(predicted_delta * target_delta > 0.0)
+        pair_delta_error += abs(predicted_delta - target_delta)
     return {
         "mode": mode,
         "samples": int(action_labels.numel()),
@@ -96,6 +132,9 @@ def run(
             (risk_probs.argmax(-1) == risk_labels).float().mean()
         ),
         "speed_mae_kmh": float((speeds - speed_labels).abs().mean()),
+        "environment_pair_count": pair_count,
+        "environment_pair_order_accuracy": pair_order_correct / max(1, pair_count),
+        "environment_pair_delta_mae_kmh": pair_delta_error / max(1, pair_count),
         "per_action_accuracy": {
             name: {"correct": values[0], "samples": values[1],
                    "accuracy": values[0] / values[1]}
@@ -112,10 +151,11 @@ def main() -> None:
     device = torch.device(args.device)
     config = json.loads(args.config.read_text(encoding="utf-8"))
     rows = load_rows(args.dataset)
-    validation_rows = [row for index, row in enumerate(rows) if index % 5 == 0]
+    _, validation_rows, test_rows = split_rows(rows)
+    evaluation_rows = test_rows or validation_rows
     dataset = Scene3Dataset(
         args.dataset,
-        validation_rows,
+        evaluation_rows,
         augment=False,
         intent_max_length=int(config.get("intent_max_length", 32)),
     )
@@ -129,6 +169,8 @@ def main() -> None:
     modes = [
         "baseline", "no_images", "no_text", "no_vehicle_state",
         "no_environment", "no_view_0", "no_view_1", "no_view_2", "no_view_3",
+        "shuffled_images", "shuffled_text", "shuffled_vehicle_state",
+        "shuffled_environment",
     ]
     results = [run(model, loader, device, mode) for mode in modes]
     baseline = results[0]
@@ -150,7 +192,7 @@ def main() -> None:
     report = {
         "schema_version": "scene3_modality_ablation/1.0",
         "checkpoint": str(args.checkpoint),
-        "validation_split": "index_mod_5_equals_0",
+        "evaluation_split": "test" if test_rows else "validation",
         "results": results,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

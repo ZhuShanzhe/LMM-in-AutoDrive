@@ -1,0 +1,24 @@
+{
+  "schema_version": "scene3_counterfactual_collection/1.0",
+  "runtime_config": "experiment/CARLA/configs/scene_3_emergency_6km_runtime.json",
+  "group_size_m": 500.0,
+  "truth_alignment_tolerance_frames": 12,
+  "split_seed": 20260806,
+  "split_ratios": {"train": 0.70, "validation": 0.15, "test": 0.15},
+  "captures": [
+    {
+      "trajectory_id": "historic_rainy_night_40",
+      "capture_dir": "experiment/CARLA/outputs/scene3_model_capture_20260804",
+      "weather_profile": "official-rainy-night",
+      "control_speed_cap_kmh": 40.0
+    },
+    {
+      "trajectory_id": "rainy_night_seed101_25",
+      "capture_dir": "experiment/CARLA/outputs/scene3_cf_rainy_night_seed101_20260805",
+      "weather_profile": "official-rainy-night",
+      "control_speed_cap_kmh": 25.0,
+      "allow_incomplete": true,
+      "capture_role": "labeled_hard_negative"
+    }
+  ]
+}

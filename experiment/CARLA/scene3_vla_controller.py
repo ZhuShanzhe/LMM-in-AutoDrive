@@ -330,7 +330,13 @@ def build_carla_world_state(
     }
 
 
-def environment_feature_tensor(world: Any) -> torch.Tensor:
+def environment_feature_tensor(
+    world: Any,
+    ego: Any | None = None,
+    control_speed_cap_kmh: float | None = None,
+    *,
+    include_speed_limits: bool = False,
+) -> torch.Tensor:
     """Return the explicit environment modality used by the learned policy."""
     weather = world.get_weather()
     values = (
@@ -345,8 +351,19 @@ def environment_feature_tensor(world: Any) -> torch.Tensor:
         float(weather.fog_falloff) / 10.0,
         float(weather.wetness) / 100.0,
         float(getattr(weather, "scattering_intensity", 0.0)) / 10.0,
-        float(getattr(weather, "mie_scattering_scale", 0.0)) / 0.1,
+        float(getattr(weather, "mie_scattering_scale", 0.0))
+        / (1.0 if include_speed_limits else 0.1),
     )
+    if include_speed_limits:
+        road_speed_limit_kmh = (
+            float(ego.get_speed_limit()) if ego is not None else 100.0
+        )
+        control_cap = (
+            float(control_speed_cap_kmh)
+            if control_speed_cap_kmh is not None
+            else road_speed_limit_kmh
+        )
+        values += (road_speed_limit_kmh / 100.0, control_cap / 100.0)
     return torch.tensor(values, dtype=torch.float32).unsqueeze(0)
 
 
@@ -486,6 +503,46 @@ def apply_scene3_liveness_gate(
     return dict(final_decision), None
 
 
+def apply_scene3_timed_resume_gate(
+    final_decision: Mapping[str, Any],
+    risk: Mapping[str, Any],
+    *,
+    command_id: str,
+    stationary_elapsed_s: float,
+    resume_active: bool,
+    resume_speed_kmh: float = 15.0,
+    hold_seconds: float = 3.0,
+) -> tuple[dict[str, Any], str | None]:
+    """Resume after an observed emergency stop only when the hazard is clear.
+
+    This gate is deliberately narrow.  It cannot hide an arbitrary low-risk
+    model stop: only the worker-crossing command is eligible, it must first
+    hold the vehicle stationary, and any renewed non-low risk cancels the
+    override in the stateful caller.
+    """
+
+    decision = dict(final_decision)
+    stop_like = str(decision.get("action")) in {"stop", "emergency_brake"}
+    stopped_target = float(decision.get("target_speed_kmh", 0.0)) <= 0.1
+    eligible = (
+        command_id == "scene3_worker_crossing"
+        and str(risk.get("risk_level", "high")).lower() == "low"
+        and stop_like
+        and stopped_target
+    )
+    if not eligible or (not resume_active and stationary_elapsed_s < hold_seconds):
+        return decision, None
+    decision.update(
+        action="keep_lane",
+        target_speed_kmh=max(4.0, float(resume_speed_kmh)),
+        target_lane=None,
+        emergency=False,
+        reason="timed_resume_after_worker_hazard_cleared",
+        blocked_reason_codes=[],
+    )
+    return decision, "cleared_worker_resume"
+
+
 class Scene3VlaController:
     """Run VLA decisions online and execute them through the route PID."""
 
@@ -518,6 +575,9 @@ class Scene3VlaController:
         self.decision_interval_frames = int(decision_interval_frames)
         self._last_frame = -10**12
         self._last_command_id = None
+        self._low_risk_stop_started_frame: int | None = None
+        self._liveness_resume_command_id: str | None = None
+        self._fixed_delta_seconds = float(fixed_delta_seconds)
         self._last_overlay = {}
         self._token_cache = {}
         self._parse_cache = {}
@@ -544,6 +604,9 @@ class Scene3VlaController:
         self.teacher_force_control = bool(
             config.get("teacher_force_control", False)
         )
+        self.environment_dim = int(config.get("environment_dim", 12))
+        if self.environment_dim not in {12, 14}:
+            raise ValueError("Scene 3 controller supports environment_dim 12 or 14")
         dtype = {
             "fp32": torch.float32,
             "fp16": torch.float16,
@@ -626,6 +689,8 @@ class Scene3VlaController:
         if command_id != self._last_command_id:
             self.pipeline.reset_temporal_state()
             self._last_command_id = command_id
+            self._low_risk_stop_started_frame = None
+            self._liveness_resume_command_id = None
         tokens, mask = self._intent_features(command)
         frame_id = f"carla_{frame}"
         world_state = build_carla_world_state(
@@ -650,7 +715,12 @@ class Scene3VlaController:
         )
         batch.camera_images = images
         batch.camera_view_mask = view_mask
-        batch.environment_features = environment_feature_tensor(self.world)
+        batch.environment_features = environment_feature_tensor(
+            self.world,
+            self.ego,
+            float(self.route_controller._default_speed_kmh),
+            include_speed_limits=self.environment_dim == 14,
+        )
         self._camera_wait_ms.append(camera_wait_ms)
         self._sensor_frame_lag.append(frame - sensor_frame)
         if not self._adapter_warmed:
@@ -690,6 +760,45 @@ class Scene3VlaController:
             canonical,
             risk,
         )
+        velocity = self.ego.get_velocity()
+        ego_speed_kmh = 3.6 * math.sqrt(
+            float(velocity.x) ** 2
+            + float(velocity.y) ** 2
+            + float(velocity.z) ** 2
+        )
+        stop_like = str(final_decision.get("action")) in {
+            "stop",
+            "emergency_brake",
+        }
+        low_risk = str(risk.get("risk_level", "high")).lower() == "low"
+        if not low_risk:
+            self._low_risk_stop_started_frame = None
+            self._liveness_resume_command_id = None
+        elif stop_like and ego_speed_kmh < 0.5:
+            if self._low_risk_stop_started_frame is None:
+                self._low_risk_stop_started_frame = frame
+        elif self._liveness_resume_command_id != command_id:
+            self._low_risk_stop_started_frame = None
+        stationary_elapsed_s = (
+            max(0, frame - self._low_risk_stop_started_frame)
+            * self._fixed_delta_seconds
+            if self._low_risk_stop_started_frame is not None
+            else 0.0
+        )
+        resumed_decision, timed_override = apply_scene3_timed_resume_gate(
+            final_decision,
+            risk,
+            command_id=command_id,
+            stationary_elapsed_s=stationary_elapsed_s,
+            resume_active=self._liveness_resume_command_id == command_id,
+            resume_speed_kmh=min(
+                15.0, float(self.route_controller._default_speed_kmh)
+            ),
+        )
+        if timed_override is not None:
+            final_decision = resumed_decision
+            liveness_override = timed_override
+            self._liveness_resume_command_id = command_id
         if self.teacher_force_control:
             final_decision = dict(canonical)
             final_decision["reason"] = "training_teacher_force_control"
@@ -703,7 +812,7 @@ class Scene3VlaController:
         )
         accepted = (
             str(gated_decision.get("reason", "")).startswith("vla_accepted_")
-            and liveness_override != "unprompted_stop"
+            and liveness_override is None
             and not self.teacher_force_control
         )
         self._decision_count += 1

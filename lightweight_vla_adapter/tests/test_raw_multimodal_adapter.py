@@ -8,7 +8,9 @@ from lightweight_vla_adapter.src.contracts import SensorTensorBatch
 from lightweight_vla_adapter.src.decision_adapter import LightweightDecisionAdapter
 
 
-def build_batch(with_images: bool = True) -> SensorTensorBatch:
+def build_batch(
+    with_images: bool = True, environment_dim: int = 12
+) -> SensorTensorBatch:
     return SensorTensorBatch(
         camera_bev=torch.zeros(1, 8, 16, 16),
         lidar_bev=torch.zeros(1, 4, 16, 16),
@@ -25,7 +27,7 @@ def build_batch(with_images: bool = True) -> SensorTensorBatch:
         camera_view_mask=(
             torch.ones(1, 4, dtype=torch.bool) if with_images else None
         ),
-        environment_features=torch.zeros(1, 12),
+        environment_features=torch.zeros(1, environment_dim),
     )
 
 
@@ -139,6 +141,87 @@ class RawMultimodalAdapterTests(unittest.TestCase):
                 torch.equal(getattr(outputs[0], field), getattr(outputs[1], field)),
                 field,
             )
+
+    def test_environment_speed_cap_is_a_hard_model_bound(self):
+        model = LightweightDecisionAdapter(
+            camera_channels=8,
+            lidar_channels=4,
+            candidate_dim=12,
+            ego_dim=8,
+            intent_dim=16,
+            environment_dim=14,
+            hidden_size=32,
+            num_layers=4,
+            num_heads=4,
+            dropout=0.0,
+            require_raw_camera=True,
+            use_structured_bev=False,
+            speed_cap_environment_index=13,
+        ).eval()
+        batch = build_batch(environment_dim=14)
+        batch.environment_features[:, 13] = 0.25
+        with torch.inference_mode():
+            output = model(
+                camera_bev=batch.camera_bev,
+                lidar_bev=batch.lidar_bev,
+                ego_features=batch.ego_features,
+                candidate_features=batch.candidate_features,
+                candidate_mask=batch.candidate_mask,
+                intent_tokens=batch.intent_tokens,
+                intent_mask=batch.intent_mask,
+                camera_images=batch.camera_images,
+                camera_view_mask=batch.camera_view_mask,
+                environment_features=batch.environment_features,
+            )
+        self.assertGreaterEqual(float(output.target_speed_kmh), 0.0)
+        self.assertLessEqual(float(output.target_speed_kmh), 25.0)
+
+    def test_visual_risk_probabilities_condition_decision_token(self):
+        torch.manual_seed(11)
+        model = LightweightDecisionAdapter(
+            camera_channels=8,
+            lidar_channels=4,
+            candidate_dim=12,
+            ego_dim=8,
+            intent_dim=16,
+            hidden_size=32,
+            num_layers=4,
+            num_heads=4,
+            dropout=0.0,
+            require_raw_camera=True,
+            use_structured_bev=False,
+            condition_decision_on_visual_risk=True,
+        ).eval()
+        batch = build_batch()
+        with torch.inference_mode():
+            model.visual_risk_head.weight.zero_()
+            model.visual_risk_head.bias.copy_(torch.tensor([12.0, 0.0, 0.0]))
+            low_risk = model(
+                camera_bev=batch.camera_bev,
+                lidar_bev=batch.lidar_bev,
+                ego_features=batch.ego_features,
+                candidate_features=batch.candidate_features,
+                candidate_mask=batch.candidate_mask,
+                intent_tokens=batch.intent_tokens,
+                intent_mask=batch.intent_mask,
+                camera_images=batch.camera_images,
+                camera_view_mask=batch.camera_view_mask,
+                environment_features=batch.environment_features,
+            )
+            model.visual_risk_head.bias.copy_(torch.tensor([0.0, 0.0, 12.0]))
+            high_risk = model(
+                camera_bev=batch.camera_bev,
+                lidar_bev=batch.lidar_bev,
+                ego_features=batch.ego_features,
+                candidate_features=batch.candidate_features,
+                candidate_mask=batch.candidate_mask,
+                intent_tokens=batch.intent_tokens,
+                intent_mask=batch.intent_mask,
+                camera_images=batch.camera_images,
+                camera_view_mask=batch.camera_view_mask,
+                environment_features=batch.environment_features,
+            )
+        self.assertFalse(torch.equal(low_risk.action_logits, high_risk.action_logits))
 
 
 if __name__ == "__main__":

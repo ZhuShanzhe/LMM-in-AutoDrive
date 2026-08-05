@@ -1,0 +1,15 @@
+{
+  "schema_version": "waymo_v2_subset/1.0",
+  "bucket": "waymo_open_dataset_v_2_0_1",
+  "components": ["camera_image", "camera_box", "camera_calibration", "stats"],
+  "splits": {
+    "training": [
+      "16951470340360921766_2840_000_2860_000",
+      "4348478035380346090_1000_000_1020_000",
+      "11252086830380107152_1540_000_1560_000"
+    ],
+    "validation": [
+      "17791493328130181905_1480_000_1500_000"
+    ]
+  }
+}

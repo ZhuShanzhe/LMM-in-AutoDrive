@@ -88,6 +88,8 @@ class LightweightDecisionAdapter(nn.Module):
         use_environment: bool = True,
         use_candidate_entities: bool = True,
         use_structured_bev: bool = True,
+        condition_decision_on_visual_risk: bool = False,
+        speed_cap_environment_index: int | None = None,
     ) -> None:
         super().__init__()
         if not 4 <= num_layers <= 6:
@@ -120,6 +122,7 @@ class LightweightDecisionAdapter(nn.Module):
         self.lane_head = nn.Linear(hidden_size, 3)
         self.confidence_head = nn.Linear(hidden_size, 1)
         self.visual_risk_head = nn.Linear(hidden_size, 3)
+        self.visual_risk_projection = nn.Linear(3, hidden_size)
         self.target_query = nn.Linear(hidden_size, hidden_size)
         self.hidden_size = hidden_size
         self.num_layers = num_layers
@@ -128,6 +131,14 @@ class LightweightDecisionAdapter(nn.Module):
         self.use_environment = bool(use_environment)
         self.use_candidate_entities = bool(use_candidate_entities)
         self.use_structured_bev = bool(use_structured_bev)
+        self.condition_decision_on_visual_risk = bool(
+            condition_decision_on_visual_risk
+        )
+        self.speed_cap_environment_index = speed_cap_environment_index
+        if speed_cap_environment_index is not None and not (
+            0 <= speed_cap_environment_index < environment_dim
+        ):
+            raise ValueError("speed_cap_environment_index is out of range")
 
     def forward(
         self,
@@ -241,6 +252,12 @@ class LightweightDecisionAdapter(nn.Module):
 
         decision_token = query[:, 0]
         target_token = query[:, 1]
+        visual_risk_logits = self.visual_risk_head(visual_summary)
+        if self.condition_decision_on_visual_risk:
+            visual_risk_probabilities = torch.softmax(visual_risk_logits, dim=-1)
+            decision_token = decision_token + self.visual_risk_projection(
+                visual_risk_probabilities
+            )
         target_pointer_logits = torch.einsum(
             "bd,bnd->bn",
             self.target_query(target_token),
@@ -250,16 +267,30 @@ class LightweightDecisionAdapter(nn.Module):
             ~candidate_mask, torch.finfo(target_pointer_logits.dtype).min
         )
         confidence_logits = self.confidence_head(decision_token).squeeze(-1)
+        normalized_target_speed = torch.sigmoid(
+            self.speed_head(decision_token)
+        ).squeeze(-1)
+        target_speed_kmh = normalized_target_speed * 100.0
+        if self.speed_cap_environment_index is not None:
+            if environment_features is None:
+                raise ValueError(
+                    "environment features are required for speed-cap conditioning"
+                )
+            speed_cap_kmh = (
+                environment_features[:, self.speed_cap_environment_index]
+                .clamp(min=0.0, max=1.0)
+                * 100.0
+            )
+            target_speed_kmh = normalized_target_speed * speed_cap_kmh
         return AdapterOutput(
             action_logits=self.action_head(decision_token),
-            target_speed_kmh=torch.sigmoid(self.speed_head(decision_token)).squeeze(-1)
-            * 100.0,
+            target_speed_kmh=target_speed_kmh,
             target_lane_logits=self.lane_head(decision_token),
             target_pointer_logits=target_pointer_logits,
             confidence_logits=confidence_logits,
             confidence=torch.sigmoid(confidence_logits),
             decision_embedding=decision_token,
-            visual_risk_logits=self.visual_risk_head(visual_summary),
+            visual_risk_logits=visual_risk_logits,
         )
 
 

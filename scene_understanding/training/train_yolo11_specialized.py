@@ -21,6 +21,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="0")
     parser.add_argument("--seed", type=int, default=2026)
     parser.add_argument("--fraction", type=float, default=1.0)
+    parser.add_argument("--learning-rate", type=float, default=1e-3)
+    parser.add_argument(
+        "--freeze",
+        type=int,
+        default=0,
+        help="Freeze this many leading model layers (0 trains every layer).",
+    )
     return parser.parse_args()
 
 
@@ -48,6 +55,8 @@ def main() -> None:
         "device": args.device,
         "seed": args.seed,
         "fraction": args.fraction,
+        "lr0": args.learning_rate,
+        "freeze": args.freeze,
         "deterministic": True,
         "pretrained": True,
         "amp": True,

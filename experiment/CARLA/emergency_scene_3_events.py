@@ -564,6 +564,11 @@ class EmergencySceneActorRuntime:
             except RuntimeError:
                 continue
         self._background_vehicles.clear()
+        # Gap-control vehicles are part of the background fleet.  Keeping
+        # their handles after retirement makes the next scheduler tick call
+        # get_location() on destroyed CARLA actors near the 5 km recovery
+        # event, terminating an otherwise valid 6 km run.
+        self._gap_control_vehicles.clear()
         if retire_pending:
             self._background_spawned_roles.update(
                 str(plan["role_name"])

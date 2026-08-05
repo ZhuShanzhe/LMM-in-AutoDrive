@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import random
+import statistics
 import sys
 from collections import Counter
 from pathlib import Path
@@ -48,18 +50,32 @@ class Scene3Dataset(Dataset):
         saved = torch.load(
             self.root / row["tensor_path"], map_location="cpu", weights_only=True
         )
-        images = torch.stack(
-            [
-                read_image(str(self.root / path))[:3]
-                for path in row["image_paths"]
-            ]
-        ).float().div_(255.0)
-        images = F.interpolate(
-            images,
-            size=(224, 224),
-            mode="bilinear",
-            align_corners=False,
-        )
+        if row.get("intent_tensor_path"):
+            intent = torch.load(
+                self.root / row["intent_tensor_path"],
+                map_location="cpu",
+                weights_only=True,
+            )
+            saved.update(intent)
+        if row.get("image_tensor_path"):
+            images = torch.load(
+                self.root / row["image_tensor_path"],
+                map_location="cpu",
+                weights_only=True,
+            ).float().div_(255.0)
+        else:
+            images = torch.stack(
+                [
+                    read_image(str(self.root / path))[:3]
+                    for path in row["image_paths"]
+                ]
+            ).float().div_(255.0)
+            images = F.interpolate(
+                images,
+                size=(224, 224),
+                mode="bilinear",
+                align_corners=False,
+            )
         if self.augment:
             brightness = random.uniform(0.70, 1.25)
             contrast = random.uniform(0.75, 1.25)
@@ -90,6 +106,13 @@ class Scene3Dataset(Dataset):
             "speed_label": torch.tensor(row["label"]["target_speed_kmh"]),
             "lane_label": torch.tensor(LANE_LABELS[row["label"]["target_lane"]]),
             "risk_label": torch.tensor(RISK_LABELS[row["risk_level"]]),
+            "speed_cap_label": torch.tensor(
+                float(row.get("control_speed_cap_kmh", 100.0))
+            ),
+            "variant_type": str(row.get("variant_type", "observed_command")),
+            "counterfactual_set_id": str(
+                row.get("counterfactual_set_id", row.get("sample_id", index))
+            ),
         }
 
 
@@ -104,6 +127,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--learning-rate", type=float, default=3e-4)
+    parser.add_argument(
+        "--balance-power",
+        type=float,
+        default=0.75,
+        help="Inverse joint action/risk frequency exponent used by the sampler.",
+    )
     parser.add_argument("--seed", type=int, default=20260805)
     parser.add_argument("--device", default="cuda")
     return parser.parse_args()
@@ -112,6 +141,27 @@ def parse_args() -> argparse.Namespace:
 def load_rows(root: Path) -> list[dict]:
     with (root / "manifest.jsonl").open(encoding="utf-8") as handle:
         return [json.loads(line) for line in handle if line.strip()]
+
+
+def split_rows(rows: list[dict]) -> tuple[list[dict], list[dict], list[dict]]:
+    explicit = {str(row.get("split", "")) for row in rows}
+    if explicit - {"", "train", "validation", "test"}:
+        raise ValueError(f"invalid explicit dataset splits: {sorted(explicit)}")
+    if explicit - {""}:
+        if "" in explicit:
+            raise ValueError("dataset mixes explicit and implicit splits")
+        result = tuple(
+            [row for row in rows if row["split"] == name]
+            for name in ("train", "validation", "test")
+        )
+        if any(not subset for subset in result):
+            raise ValueError("train, validation, and test splits must be non-empty")
+        return result
+    return (
+        [row for index, row in enumerate(rows) if index % 5 != 0],
+        [row for index, row in enumerate(rows) if index % 5 == 0],
+        [],
+    )
 
 
 def model_kwargs(batch: dict[str, torch.Tensor], device: torch.device):
@@ -131,7 +181,12 @@ def model_kwargs(batch: dict[str, torch.Tensor], device: torch.device):
 def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> dict:
     model.eval()
     totals = Counter()
+    action_totals = Counter()
+    action_correct = Counter()
+    risk_totals = Counter()
+    risk_correct = Counter()
     speed_error = 0.0
+    environment_pair_predictions: dict[str, dict[str, tuple[float, float]]] = {}
     with torch.inference_mode():
         for batch in loader:
             output = model(**model_kwargs(batch, device))
@@ -144,16 +199,98 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> dict
             totals["risk_correct"] += int(
                 (output.visual_risk_logits.argmax(-1) == risk).sum()
             )
+            predicted_risk = output.visual_risk_logits.argmax(-1)
+            for label, prediction in zip(
+                risk.detach().cpu(), predicted_risk.detach().cpu()
+            ):
+                name = next(name for name, value in RISK_LABELS.items() if value == int(label))
+                risk_totals[name] += 1
+                risk_correct[name] += int(label == prediction)
+            predicted = output.action_logits.argmax(-1)
+            for label, prediction, variant in zip(
+                action.detach().cpu(),
+                predicted.detach().cpu(),
+                batch["variant_type"],
+            ):
+                name = ACTION_LABELS[int(label)]
+                action_totals[name] += 1
+                action_correct[name] += int(label == prediction)
+                if variant == "visual_counterfactual":
+                    totals["visual_counterfactual_count"] += 1
+                    totals["visual_counterfactual_correct"] += int(
+                        label == prediction
+                    )
             speed_error += float(
                 (output.target_speed_kmh - batch["speed_label"].to(device))
                 .abs().sum()
             )
+            for set_id, variant, predicted_speed, target_speed in zip(
+                batch["counterfactual_set_id"],
+                batch["variant_type"],
+                output.target_speed_kmh.detach().cpu().tolist(),
+                batch["speed_label"].tolist(),
+            ):
+                if str(variant).startswith("environment_pair_"):
+                    environment_pair_predictions.setdefault(str(set_id), {})[
+                        str(variant)
+                    ] = (float(predicted_speed), float(target_speed))
+            totals["speed_cap_violations"] += int(
+                (
+                    output.target_speed_kmh
+                    > batch["speed_cap_label"].to(device) + 1e-4
+                ).sum()
+            )
     count = max(1, totals["count"])
+    per_action = {
+        name: {
+            "correct": action_correct[name],
+            "samples": action_totals[name],
+            "accuracy": action_correct[name] / action_totals[name],
+        }
+        for name in sorted(action_totals)
+    }
+    per_risk = {
+        name: {
+            "correct": risk_correct[name],
+            "samples": risk_totals[name],
+            "accuracy": risk_correct[name] / risk_totals[name],
+        }
+        for name in sorted(risk_totals)
+    }
+    pair_count = 0
+    pair_order_correct = 0
+    pair_delta_error = 0.0
+    for pair in environment_pair_predictions.values():
+        observed = pair.get("environment_pair_observed")
+        counterfactual = pair.get("environment_pair_counterfactual")
+        if observed is None or counterfactual is None:
+            continue
+        pair_count += 1
+        predicted_delta = counterfactual[0] - observed[0]
+        target_delta = counterfactual[1] - observed[1]
+        pair_order_correct += int(predicted_delta * target_delta > 0.0)
+        pair_delta_error += abs(predicted_delta - target_delta)
     return {
         "samples": totals["count"],
         "action_accuracy": totals["action_correct"] / count,
+        "macro_action_accuracy": statistics.fmean(
+            item["accuracy"] for item in per_action.values()
+        ),
+        "per_action_accuracy": per_action,
         "visual_risk_accuracy": totals["risk_correct"] / count,
+        "visual_risk_macro_accuracy": statistics.fmean(
+            item["accuracy"] for item in per_risk.values()
+        ),
+        "per_risk_accuracy": per_risk,
         "speed_mae_kmh": speed_error / count,
+        "visual_counterfactual_accuracy": (
+            totals["visual_counterfactual_correct"]
+            / max(1, totals["visual_counterfactual_count"])
+        ),
+        "speed_cap_violation_rate": totals["speed_cap_violations"] / count,
+        "environment_pair_count": pair_count,
+        "environment_pair_order_accuracy": pair_order_correct / max(1, pair_count),
+        "environment_pair_delta_mae_kmh": pair_delta_error / max(1, pair_count),
     }
 
 
@@ -166,19 +303,45 @@ def main() -> None:
     rows = load_rows(args.dataset)
     if len(rows) < 50:
         raise ValueError("at least 50 synchronized training samples are required")
-    train_rows = [row for index, row in enumerate(rows) if index % 5 != 0]
-    validation_rows = [row for index, row in enumerate(rows) if index % 5 == 0]
+    train_rows, validation_rows, test_rows = split_rows(rows)
     model = build_model(config)
+    initialization = None
     if args.initialize_from is not None:
         state = torch.load(args.initialize_from, map_location="cpu", weights_only=True)
-        incompatible = model.load_state_dict(state, strict=False)
+        current = model.state_dict()
+        compatible = {
+            key: value
+            for key, value in state.items()
+            if key in current and current[key].shape == value.shape
+        }
+        incompatible = model.load_state_dict(compatible, strict=False)
         if incompatible.unexpected_keys:
             raise RuntimeError(str(incompatible.unexpected_keys))
-    model.raw_camera_encoder.load_imagenet_initialization()
+        initialization = {
+            "checkpoint": str(args.initialize_from),
+            "compatible_parameters": len(compatible),
+            "skipped_parameters": sorted(set(state) - set(compatible)),
+        }
+    else:
+        model.raw_camera_encoder.load_imagenet_initialization()
     model.raw_camera_encoder.freeze_backbone(True)
     model.to(device)
     counts = Counter(row["label"]["action"] for row in train_rows)
-    sample_weights = [1.0 / counts[row["label"]["action"]] for row in train_rows]
+    risk_counts = Counter(row["risk_level"] for row in train_rows)
+    joint_counts = Counter(
+        (row["label"]["action"], row["risk_level"])
+        for row in train_rows
+    )
+    if not 0.0 <= args.balance_power <= 1.0:
+        raise ValueError("--balance-power must be in [0, 1]")
+    sample_weights = [
+        1.0
+        / (
+            joint_counts[(row["label"]["action"], row["risk_level"])]
+            ** args.balance_power
+        )
+        for row in train_rows
+    ]
     sampler = WeightedRandomSampler(sample_weights, len(train_rows), replacement=True)
     train_loader = DataLoader(
         Scene3Dataset(
@@ -200,10 +363,45 @@ def main() -> None:
         batch_size=args.batch_size, shuffle=False, num_workers=2,
         pin_memory=True, persistent_workers=True,
     )
+    test_loader = (
+        DataLoader(
+            Scene3Dataset(
+                args.dataset,
+                test_rows,
+                augment=False,
+                intent_max_length=int(config.get("intent_max_length", 32)),
+            ),
+            batch_size=args.batch_size,
+            shuffle=False,
+            num_workers=2,
+            pin_memory=True,
+            persistent_workers=True,
+        )
+        if test_rows
+        else None
+    )
     optimizer = torch.optim.AdamW(
         [parameter for parameter in model.parameters() if parameter.requires_grad],
         lr=args.learning_rate, weight_decay=0.02,
     )
+    action_loss_weights = torch.tensor(
+        [
+            math.sqrt(max(counts.values()) / max(1, counts[action]))
+            for action in ACTION_LABELS
+        ],
+        dtype=torch.float32,
+        device=device,
+    ).clamp_(max=10.0)
+    action_loss_weights.div_(action_loss_weights.mean())
+    risk_loss_weights = torch.tensor(
+        [
+            max(risk_counts.values()) / max(1, risk_counts[risk])
+            for risk in RISK_LABELS
+        ],
+        dtype=torch.float32,
+        device=device,
+    ).clamp_(max=30.0)
+    risk_loss_weights.div_(risk_loss_weights.mean())
     best_score = -float("inf")
     history = []
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -230,10 +428,18 @@ def main() -> None:
             lane = batch["lane_label"].to(device)
             risk = batch["risk_label"].to(device)
             loss = (
-                F.cross_entropy(output.action_logits, action)
+                F.cross_entropy(
+                    output.action_logits,
+                    action,
+                    weight=action_loss_weights,
+                    label_smoothing=0.02,
+                )
                 + 0.035 * F.smooth_l1_loss(output.target_speed_kmh, speed)
                 + 0.25 * F.cross_entropy(output.target_lane_logits, lane)
-                + 0.40 * F.cross_entropy(output.visual_risk_logits, risk)
+                + 0.40
+                * F.cross_entropy(
+                    output.visual_risk_logits, risk, weight=risk_loss_weights
+                )
             )
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
@@ -242,9 +448,19 @@ def main() -> None:
             loss_sum += float(loss.detach())
         metrics = evaluate(model, validation_loader, device)
         metrics.update(epoch=epoch, train_loss=loss_sum / max(1, len(train_loader)))
+        emergency_accuracy = metrics["per_action_accuracy"].get(
+            "emergency_brake", {"accuracy": 0.0}
+        )["accuracy"]
+        high_risk_accuracy = metrics["per_risk_accuracy"].get(
+            "high", {"accuracy": 0.0}
+        )["accuracy"]
         metrics["selection_score"] = (
-            metrics["action_accuracy"]
-            + 0.15 * metrics["visual_risk_accuracy"]
+            0.20 * metrics["macro_action_accuracy"]
+            + 0.10 * metrics["visual_counterfactual_accuracy"]
+            + 0.10 * metrics["visual_risk_macro_accuracy"]
+            + 0.10 * metrics["environment_pair_order_accuracy"]
+            + 0.25 * emergency_accuracy
+            + 0.25 * high_risk_accuracy
             - 0.005 * metrics["speed_mae_kmh"]
         )
         history.append(metrics)
@@ -253,13 +469,38 @@ def main() -> None:
         if metrics["selection_score"] > best_score:
             best_score = metrics["selection_score"]
             torch.save(model.state_dict(), args.output_dir / "model.pt")
+    if test_loader:
+        best_state = torch.load(
+            args.output_dir / "model.pt", map_location=device, weights_only=True
+        )
+        model.load_state_dict(best_state)
+        test_metrics = evaluate(model, test_loader, device)
+    else:
+        test_metrics = None
     report = {
         "schema_version": "scene3_multimodal_training/1.0",
         "dataset": str(args.dataset),
         "train_samples": len(train_rows),
         "validation_samples": len(validation_rows),
+        "test_samples": len(test_rows),
         "action_counts": dict(counts),
+        "risk_counts": dict(risk_counts),
+        "joint_action_risk_counts": {
+            f"{action}|{risk}": count
+            for (action, risk), count in sorted(joint_counts.items())
+        },
+        "balance_power": args.balance_power,
+        "action_loss_weights": {
+            action: float(weight)
+            for action, weight in zip(ACTION_LABELS, action_loss_weights.cpu())
+        },
+        "risk_loss_weights": {
+            risk: float(risk_loss_weights[index])
+            for risk, index in RISK_LABELS.items()
+        },
         "best_selection_score": best_score,
+        "test_metrics": test_metrics,
+        "initialization": initialization,
         "history": history,
         "seed": args.seed,
     }

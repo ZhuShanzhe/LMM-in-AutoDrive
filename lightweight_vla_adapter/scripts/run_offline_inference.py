@@ -57,6 +57,10 @@ def build_model(config: dict) -> LightweightDecisionAdapter:
             config.get("use_candidate_entities", True)
         ),
         use_structured_bev=bool(config.get("use_structured_bev", True)),
+        condition_decision_on_visual_risk=bool(
+            config.get("condition_decision_on_visual_risk", False)
+        ),
+        speed_cap_environment_index=config.get("speed_cap_environment_index"),
     )
 
 
