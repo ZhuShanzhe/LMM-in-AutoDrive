@@ -86,6 +86,7 @@ class LightweightDecisionAdapter(nn.Module):
         require_raw_camera: bool = False,
         use_raw_camera: bool = True,
         use_environment: bool = True,
+        use_candidate_entities: bool = True,
         use_structured_bev: bool = True,
     ) -> None:
         super().__init__()
@@ -125,6 +126,7 @@ class LightweightDecisionAdapter(nn.Module):
         self.require_raw_camera = bool(require_raw_camera)
         self.use_raw_camera = bool(use_raw_camera)
         self.use_environment = bool(use_environment)
+        self.use_candidate_entities = bool(use_candidate_entities)
         self.use_structured_bev = bool(use_structured_bev)
 
     def forward(
@@ -170,7 +172,18 @@ class LightweightDecisionAdapter(nn.Module):
                 (batch, self.hidden_size)
             )
         intent_tokens = self.intent_projection(intent_tokens)
-        candidate_tokens = self.candidate_projection(candidate_features)
+        if self.use_candidate_entities:
+            projected_candidate_tokens = self.candidate_projection(
+                candidate_features
+            )
+            candidate_tokens = projected_candidate_tokens
+            candidate_memory_mask = candidate_mask.to(dtype=torch.bool)
+        else:
+            projected_candidate_tokens = candidate_features.new_zeros(
+                (*candidate_features.shape[:2], self.hidden_size)
+            )
+            candidate_tokens = projected_candidate_tokens[:, :0]
+            candidate_memory_mask = candidate_mask[:, :0].to(dtype=torch.bool)
         ego_token = self.ego_projection(ego_features).unsqueeze(1)
         if self.use_environment:
             if environment_features is None:
@@ -207,7 +220,7 @@ class LightweightDecisionAdapter(nn.Module):
                 bev_mask,
                 ~raw_camera_mask,
                 ~intent_mask,
-                ~candidate_mask,
+                ~candidate_memory_mask,
                 ego_mask,
                 torch.zeros(
                     (batch, environment_token.shape[1]),
@@ -231,7 +244,7 @@ class LightweightDecisionAdapter(nn.Module):
         target_pointer_logits = torch.einsum(
             "bd,bnd->bn",
             self.target_query(target_token),
-            candidate_tokens,
+            projected_candidate_tokens,
         ) / math.sqrt(self.hidden_size)
         target_pointer_logits = target_pointer_logits.masked_fill(
             ~candidate_mask, torch.finfo(target_pointer_logits.dtype).min

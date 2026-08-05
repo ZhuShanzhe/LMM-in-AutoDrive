@@ -22,6 +22,7 @@
   "require_raw_camera": true,
   "use_raw_camera": true,
   "use_environment": true,
+  "use_candidate_entities": false,
   "use_structured_bev": false,
   "allow_legacy_checkpoint": false,
   "required_modalities": [
@@ -33,7 +34,8 @@
     "vehicle_state",
     "environment_state"
   ],
-  "optional_modalities": ["lidar_bev", "candidate_entities"],
+  "optional_modalities": ["lidar_bev"],
+  "disabled_modalities": ["candidate_entities", "structured_bev"],
   "deployment": {
     "precision": "fp16",
     "adapter_latency_budget_ms": 70,

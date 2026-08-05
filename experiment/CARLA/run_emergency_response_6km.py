@@ -2003,6 +2003,11 @@ class Scene3RouteController:
             self.target_speed_kmh = 0.0
         if action in {"lane_change_left", "lane_change_right"}:
             self._lane_change_authorized = True
+        elif command_id == "scene3_blocked_lane_change_left":
+            # A later safety-gate rejection must immediately cancel a lane
+            # change that was authorized by an earlier proposal.  The gate
+            # can re-authorize it when the adjacent-lane observation is safe.
+            self._lane_change_authorized = False
 
     def _target_waypoint(self, speed_kmh: float) -> Any:
         return self._waypoint_ahead(

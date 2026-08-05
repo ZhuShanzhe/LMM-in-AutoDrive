@@ -91,6 +91,55 @@ class RawMultimodalAdapterTests(unittest.TestCase):
         self.assertEqual(tuple(output.action_logits.shape), (1, 9))
         self.assertEqual(tuple(output.visual_risk_logits.shape), (1, 3))
 
+    def test_disabled_candidate_entities_cannot_change_driving_outputs(self):
+        torch.manual_seed(7)
+        model = LightweightDecisionAdapter(
+            camera_channels=8,
+            lidar_channels=4,
+            candidate_dim=12,
+            ego_dim=8,
+            intent_dim=16,
+            hidden_size=32,
+            num_layers=4,
+            num_heads=4,
+            dropout=0.0,
+            require_raw_camera=True,
+            use_candidate_entities=False,
+            use_structured_bev=False,
+        ).eval()
+        first = build_batch()
+        second = build_batch()
+        second.candidate_features.random_(-100, 100)
+        with torch.inference_mode():
+            outputs = []
+            for batch in (first, second):
+                outputs.append(
+                    model(
+                        camera_bev=batch.camera_bev,
+                        lidar_bev=batch.lidar_bev,
+                        ego_features=batch.ego_features,
+                        candidate_features=batch.candidate_features,
+                        candidate_mask=batch.candidate_mask,
+                        intent_tokens=batch.intent_tokens,
+                        intent_mask=batch.intent_mask,
+                        camera_images=batch.camera_images,
+                        camera_view_mask=batch.camera_view_mask,
+                        environment_features=batch.environment_features,
+                    )
+                )
+        for field in (
+            "action_logits",
+            "target_speed_kmh",
+            "target_lane_logits",
+            "target_pointer_logits",
+            "confidence_logits",
+            "visual_risk_logits",
+        ):
+            self.assertTrue(
+                torch.equal(getattr(outputs[0], field), getattr(outputs[1], field)),
+                field,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

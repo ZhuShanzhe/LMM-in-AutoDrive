@@ -531,6 +531,7 @@ class Scene3VlaController:
         self._latencies_ms = []
         self._camera_wait_ms = []
         self._sensor_frame_lag = []
+        self._response_latency_ms = []
         self._stream = output_path.open("w", encoding="utf-8")
         self.training_recorder = (
             Scene3TrainingRecorder(training_data_output)
@@ -638,8 +639,14 @@ class Scene3VlaController:
             intent_tokens=tokens,
             intent_mask=mask,
         )
+        safety_observation_candidate_count = len(entity_ids[0])
+        if not getattr(self.pipeline.model, "use_candidate_entities", True):
+            batch.candidate_features.zero_()
+            batch.candidate_mask.zero_()
+            entity_ids = [[] for _ in entity_ids]
         sensor_frame, images, view_mask, camera_wait_ms = self.camera_rig.latest(
             minimum_frame=frame - self.decision_interval_frames,
+            timeout_s=0.02,
         )
         batch.camera_images = images
         batch.camera_view_mask = view_mask
@@ -688,6 +695,8 @@ class Scene3VlaController:
             final_decision["reason"] = "training_teacher_force_control"
             final_decision["blocked_reason_codes"] = []
         elapsed_ms = (time.perf_counter() - started) * 1000.0
+        response_latency_ms = camera_wait_ms + elapsed_ms
+        self._response_latency_ms.append(response_latency_ms)
         self.route_controller.set_high_level_decision(
             final_decision,
             command_id=command_id,
@@ -715,6 +724,9 @@ class Scene3VlaController:
             "sensor_frame_lag": frame - sensor_frame,
             "camera_wait_ms": round(camera_wait_ms, 3),
             "candidate_count": len(entity_ids[0]),
+            "safety_observation_candidate_count": (
+                safety_observation_candidate_count
+            ),
             "risk_assessment": risk,
             "vla_proposal": proposal,
             "control_decision": final_decision,
@@ -722,6 +734,7 @@ class Scene3VlaController:
             "training_teacher_force_control": self.teacher_force_control,
             "liveness_override": liveness_override,
             "full_decision_latency_ms": round(elapsed_ms, 3),
+            "sensor_to_decision_response_ms": round(response_latency_ms, 3),
         }
         self._stream.write(json.dumps(record, ensure_ascii=False) + "\n")
         self._stream.flush()
@@ -811,6 +824,38 @@ class Scene3VlaController:
                 else None,
                 "max": max(self._sensor_frame_lag)
                 if self._sensor_frame_lag
+                else None,
+            },
+            "sensor_to_decision_response_ms": {
+                "mean": round(statistics.fmean(self._response_latency_ms), 3)
+                if self._response_latency_ms
+                else None,
+                "median": round(statistics.median(self._response_latency_ms), 3)
+                if self._response_latency_ms
+                else None,
+                "p95": round(
+                    statistics.quantiles(
+                        self._response_latency_ms,
+                        n=100,
+                        method="inclusive",
+                    )[94],
+                    3,
+                )
+                if len(self._response_latency_ms) >= 2
+                else (
+                    round(self._response_latency_ms[0], 3)
+                    if self._response_latency_ms
+                    else None
+                ),
+                "max": round(max(self._response_latency_ms), 3)
+                if self._response_latency_ms
+                else None,
+                "within_120_ms_rate": round(
+                    sum(value <= 120.0 for value in self._response_latency_ms)
+                    / len(self._response_latency_ms),
+                    6,
+                )
+                if self._response_latency_ms
                 else None,
             },
             "training_samples_recorded": (

@@ -107,11 +107,16 @@ class LightweightVLAPipeline:
         if self.device.type == "cuda":
             torch.cuda.synchronize(self.device)
         latency_ms = (time.perf_counter() - started) * 1000.0
+        effective_candidate_ids = (
+            candidate_entity_ids
+            if self.model.use_candidate_entities
+            else [[] for _ in range(batch.camera_bev.shape[0])]
+        )
         proposal = decode_proposal(
             output,
             request_id=request_id,
             frame_id=frame_id,
-            candidate_entity_ids=candidate_entity_ids,
+            candidate_entity_ids=effective_candidate_ids,
             model_name=self.model_name,
             latency_ms=latency_ms,
         )[0]

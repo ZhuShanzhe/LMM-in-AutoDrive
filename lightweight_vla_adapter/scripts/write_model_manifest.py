@@ -62,7 +62,9 @@ def main() -> None:
         ),
         "required_modalities": config.get("required_modalities", []),
         "optional_modalities": config.get("optional_modalities", []),
+        "disabled_modalities": config.get("disabled_modalities", []),
         "require_raw_camera": config.get("require_raw_camera"),
+        "use_candidate_entities": config.get("use_candidate_entities"),
         "use_structured_bev": config.get("use_structured_bev"),
         "training_summary": (
             {

@@ -11,10 +11,18 @@ other two tracks.
 The released checkpoint must be built with
 `configs/scene3_multimodal_v2.json`.  It has `require_raw_camera=true` and
 `use_structured_bev=false`; inference fails closed if the four-view bundle is
-missing.  The camera order is `front,left,right,rear`, each RGB tensor is
+missing.  It also sets `use_candidate_entities=false`, so CARLA actor-truth
+candidate tokens cannot enter the learned policy.  The camera order is
+`front,left,right,rear`, each RGB tensor is
 `[3,224,224]`, and all four images in a decision originate from one CARLA
 frame.  Environment and ego-state vectors have 12 and 8 elements,
 respectively.
+
+The CARLA controller may still count nearby actors for the independent safety
+audit.  When candidate entities are disabled, it zeros the candidate tensors
+and masks before inference and passes no entity IDs to the decoder.  Runtime
+logs separate `candidate_count` (actual VLA input) from
+`safety_observation_candidate_count` (safety-layer diagnostics).
 
 The deterministic layer is not a second semantic policy.  It may intervene
 only for imminent collision risk, an occupied target lane, an invalid

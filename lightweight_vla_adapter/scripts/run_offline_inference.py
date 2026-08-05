@@ -53,6 +53,9 @@ def build_model(config: dict) -> LightweightDecisionAdapter:
         require_raw_camera=bool(config.get("require_raw_camera", False)),
         use_raw_camera=bool(config.get("use_raw_camera", True)),
         use_environment=bool(config.get("use_environment", True)),
+        use_candidate_entities=bool(
+            config.get("use_candidate_entities", True)
+        ),
         use_structured_bev=bool(config.get("use_structured_bev", True)),
     )
 
