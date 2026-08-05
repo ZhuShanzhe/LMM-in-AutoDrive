@@ -49,6 +49,59 @@ def load_road_generator():
 road_generator = load_road_generator()
 
 
+class RouteObstacleLaneTests(unittest.TestCase):
+    def test_adjacent_lane_actor_does_not_block_ego(self):
+        ego = SimpleNamespace(
+            road_id=7,
+            section_id=0,
+            lane_id=-2,
+            is_junction=False,
+        )
+        adjacent = SimpleNamespace(
+            road_id=7,
+            section_id=0,
+            lane_id=-1,
+            is_junction=False,
+        )
+        self.assertFalse(
+            runner.actor_can_block_ego_lane(ego, adjacent, 2.8)
+        )
+
+    def test_same_lane_actor_blocks_ego(self):
+        ego = SimpleNamespace(
+            road_id=7,
+            section_id=0,
+            lane_id=-2,
+            is_junction=False,
+        )
+        ahead = SimpleNamespace(
+            road_id=7,
+            section_id=0,
+            lane_id=-2,
+            is_junction=False,
+        )
+        self.assertTrue(
+            runner.actor_can_block_ego_lane(ego, ahead, 0.2)
+        )
+
+    def test_close_actor_at_road_boundary_uses_geometry(self):
+        ego = SimpleNamespace(
+            road_id=7,
+            section_id=0,
+            lane_id=-2,
+            is_junction=False,
+        )
+        ahead = SimpleNamespace(
+            road_id=8,
+            section_id=0,
+            lane_id=-2,
+            is_junction=False,
+        )
+        self.assertTrue(
+            runner.actor_can_block_ego_lane(ego, ahead, 0.3)
+        )
+
+
 class RecordingEventHandler:
     def __init__(self):
         self.activated = []

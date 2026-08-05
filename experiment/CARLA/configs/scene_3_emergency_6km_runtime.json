@@ -95,10 +95,12 @@
     }
   },
   "voice_input": {
+    "evaluation_modality": "text",
+    "audio_used": false,
     "language": "zh-CN",
     "command_style": "ambiguous_emergency",
     "environment_noise": {
-      "enabled": true,
+      "enabled": false,
       "type": "light_rain_cabin_road_noise",
       "snr_db": 18.0,
       "maximum_peak_dbfs": -3.0
@@ -107,48 +109,56 @@
       {
         "id": "scene3_general_hazard",
         "trigger_progress_m": 900.0,
+        "end_progress_m": 1250.0,
         "text": "前方路况危险，保持安全车速",
         "semantic_goal": ["decelerate", "monitor", "keep_lane"]
       },
       {
         "id": "scene3_cut_in_decelerate",
         "trigger_progress_m": 1250.0,
+        "end_progress_m": 1550.0,
         "text": "突发车辆加塞，紧急避让",
         "semantic_goal": ["decelerate", "yield", "avoid_collision"]
       },
       {
         "id": "scene3_work_zone_warning",
         "trigger_progress_m": 2850.0,
+        "end_progress_m": 3050.0,
         "text": "前方进入施工区域，注意观察",
         "semantic_goal": ["decelerate", "monitor"]
       },
       {
         "id": "scene3_right_lane_closure",
         "trigger_progress_m": 2975.0,
+        "end_progress_m": 3150.0,
         "text": "施工路段，减速并道至左侧车道",
         "semantic_goal": ["decelerate", "lane_change_left"]
       },
       {
         "id": "scene3_pass_work_zone",
         "trigger_progress_m": 3100.0,
+        "end_progress_m": 3450.0,
         "text": "前方路况危险，保持安全车速",
         "semantic_goal": ["decelerate", "monitor", "keep_lane"]
       },
       {
         "id": "scene3_worker_crossing",
         "trigger_progress_m": 3250.0,
+        "end_progress_m": 3425.0,
         "text": "有人突然横穿，立即减速让行",
         "semantic_goal": ["decelerate", "yield", "stop_if_needed"]
       },
       {
         "id": "scene3_blocked_lane_change_left",
         "trigger_progress_m": 4700.0,
+        "end_progress_m": 5000.0,
         "text": "前方车道受阻，确认安全后向左避让",
         "semantic_goal": ["decelerate", "wait_for_gap", "lane_change_left"]
       },
       {
         "id": "scene3_resume_normal_driving",
         "trigger_progress_m": 5000.0,
+        "end_progress_m": 6000.0,
         "text": "危险路段结束，保持安全并逐步恢复车速",
         "semantic_goal": ["keep_lane", "resume_speed"]
       }

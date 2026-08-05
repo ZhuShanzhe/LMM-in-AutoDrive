@@ -4,6 +4,8 @@
 
 本目录保存 Linux、CARLA 0.9.16、Python 3.12.13 下的场景构建、控制协议、日志和评估入口。数据集、传感器图片、视频、逐帧日志和运行输出不提交 Git。
 
+场景三文本到 VLA 在线闭环已完成 6 km 严格测试；复现命令、结果和模型不足见 [SCENE_3_VLA_CLOSED_LOOP_TEST_20260805.md](SCENE_3_VLA_CLOSED_LOOP_TEST_20260805.md)。该测试不使用音频或 ASR，当前 BEV 输入来自实时 CARLA 状态代理，不等同于原始 RGB/LiDAR 端到端感知。
+
 CARLA 控制端只消费稳定的 `ControlDecision 1.0`，因此同时兼容：
 
 1. 原规则链路：场景理解生成 canonical high-level action，经风险门控和 FSM 输出 `ControlDecision`；

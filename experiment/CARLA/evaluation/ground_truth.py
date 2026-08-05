@@ -500,6 +500,7 @@ class FrameGroundTruthRecorder:
         scene_id: str,
         events: Sequence[Mapping[str, Any]],
         every_n_frames: int = 1,
+        model_output_used: bool = False,
     ) -> None:
         if every_n_frames < 1:
             raise ValueError(
@@ -520,6 +521,7 @@ class FrameGroundTruthRecorder:
             for event in events
         ]
         self.every_n_frames = int(every_n_frames)
+        self.model_output_used = bool(model_output_used)
         self.record_count = 0
         self._seen_frames: set[int] = set()
         self._quality_counts: Counter[str] = Counter()
@@ -700,7 +702,7 @@ class FrameGroundTruthRecorder:
             "provenance": {
                 "source": "CARLA_SIMULATOR_STATE",
                 "event_phase_source": "ROUTE_SCHEDULE",
-                "model_output_used": False,
+                "model_output_used": self.model_output_used,
                 "adjacent_frame_fill_used": False,
                 "synchronization_key": "simulation_frame",
             },
@@ -753,7 +755,7 @@ class FrameGroundTruthRecorder:
                 )
                 if mode == "OBSERVED"
             ),
-            "model_output_used": False,
+            "model_output_used": self.model_output_used,
         }
 
     def close(self) -> None:

@@ -20,7 +20,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 from carla_bootstrap import setup_carla_api
 from emergency_scene_3_events import (
@@ -804,6 +804,7 @@ def make_video_overlay(
     simulation_frame: int,
     elapsed_s: float,
     cruise_speed_kmh: float,
+    controller_overlay: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the per-tick HUD payload used by ExperimentCamera."""
 
@@ -823,6 +824,8 @@ def make_video_overlay(
                 {},
             )
         )
+    if controller_overlay:
+        intent.update(controller_overlay)
 
     control = ego.get_control()
     event_summary = scheduler.summary()
@@ -1046,15 +1049,16 @@ def load_runtime_config(
         raise ValueError("runtime config voice_input must be an object")
     commands = voice_input.get("commands")
     if not isinstance(commands, list) or len(commands) < 6:
-        raise ValueError("Scene 3 requires ambiguous/emergency voice commands")
+        raise ValueError("Scene 3 requires ambiguous/emergency text commands")
     command_ids = {str(item.get("id")) for item in commands if isinstance(item, dict)}
     referenced_ids = {str(event.get("voice_command_id")) for event in events}
     if not referenced_ids.issubset(command_ids):
         missing = sorted(referenced_ids - command_ids)
         raise ValueError("voice command definitions missing: " + ", ".join(missing))
-    noise = voice_input.get("environment_noise", {})
-    if noise.get("enabled") is not True or float(noise.get("snr_db", 99.0)) > 25.0:
-        raise ValueError("Scene 3 voice input must include light environment noise")
+    if voice_input.get("evaluation_modality") != "text":
+        raise ValueError("Scene 3 evaluation modality must be text")
+    if voice_input.get("audio_used") is not False:
+        raise ValueError("Scene 3 text evaluation must not use audio")
 
     success = data.get("success_conditions", {})
     if float(success.get("maximum_emergency_response_latency_ms", 999.0)) > 120.0:
@@ -1265,6 +1269,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--ego-controller",
         choices=(
             "route-pid",
+            "vla-route-pid",
             "behavior-agent",
             "external",
         ),
@@ -1272,9 +1277,44 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Ego control backend. route-pid follows the checked-in "
             "Scene 3 plan deterministically; behavior-agent is the CARLA "
-            "baseline; external leaves role_name=hero available to a model "
-            "or ROS/CARLA client."
+            "baseline; vla-route-pid uses text-conditioned VLA high-level "
+            "decisions with the route/PID executor; external leaves "
+            "role_name=hero available to another client."
         ),
+    )
+    parser.add_argument(
+        "--vla-checkpoint",
+        type=Path,
+        default=(Path(os.environ["VLA_CHECKPOINT"]) if os.environ.get("VLA_CHECKPOINT") else None),
+        help="VLA model.pt; may also be set with VLA_CHECKPOINT",
+    )
+    parser.add_argument(
+        "--vla-config",
+        type=Path,
+        default=(
+            Path(__file__).resolve().parents[2]
+            / "lightweight_vla_adapter"
+            / "configs"
+            / "student_base.json"
+        ),
+    )
+    parser.add_argument(
+        "--vla-parser-model",
+        type=Path,
+        default=(Path(os.environ["MODERNBERT_MODEL"]) if os.environ.get("MODERNBERT_MODEL") else None),
+        help="ModernBERT model directory; may also be set with MODERNBERT_MODEL",
+    )
+    parser.add_argument("--vla-device", default="cuda")
+    parser.add_argument(
+        "--vla-precision",
+        choices=("fp32", "fp16", "bf16"),
+        default="fp16",
+    )
+    parser.add_argument(
+        "--vla-decision-every-n",
+        type=int,
+        default=4,
+        help="Run one online VLA decision every N simulation frames",
     )
     parser.add_argument(
         "--stationary-ego",
@@ -1307,28 +1347,24 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def write_voice_command_schedule(
+def write_text_command_schedule(
     output_path: Path,
-    voice_config: dict[str, Any],
+    text_config: dict[str, Any],
 ) -> None:
-    """Materialize the ASR/audio-injection contract used by the preview run."""
+    """Materialize the text-only command schedule used by the VLA run."""
 
-    noise = dict(voice_config["environment_noise"])
     rows = []
-    for command in voice_config["commands"]:
+    for command in text_config["commands"]:
         rows.append(
             {
-                "schema_version": "scene3_voice_command/1.0",
+                "schema_version": "scene3_text_command/1.0",
                 "command_id": command["id"],
                 "trigger_progress_m": float(command["trigger_progress_m"]),
+                "end_progress_m": float(command["end_progress_m"]),
                 "text": command["text"],
                 "semantic_goal": list(command["semantic_goal"]),
-                "audio_injection": {
-                    "enabled": bool(noise["enabled"]),
-                    "noise_type": noise["type"],
-                    "snr_db": float(noise["snr_db"]),
-                    "maximum_peak_dbfs": float(noise["maximum_peak_dbfs"]),
-                },
+                "input_modality": "text",
+                "audio_used": False,
             }
         )
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1393,6 +1429,20 @@ def validate_args(
         raise ValueError(
             "--ego-speed-kmh must be positive"
         )
+    if args.vla_decision_every_n < 1:
+        raise ValueError("--vla-decision-every-n must be at least 1")
+    if args.ego_controller == "vla-route-pid":
+        if args.vla_checkpoint is None:
+            raise ValueError("vla-route-pid requires --vla-checkpoint")
+        if args.vla_parser_model is None:
+            raise ValueError("vla-route-pid requires --vla-parser-model")
+        for label, path in (
+            ("VLA checkpoint", args.vla_checkpoint),
+            ("VLA config", args.vla_config),
+            ("ModernBERT model", args.vla_parser_model),
+        ):
+            if not path.expanduser().exists():
+                raise ValueError(f"{label} does not exist: {path}")
     if (
         args.presentation_lighting
         != "official-rainy-night"
@@ -1794,6 +1844,31 @@ def _speed_kmh(actor: Any) -> float:
     )
 
 
+def actor_can_block_ego_lane(
+    ego_waypoint: Any | None,
+    actor_waypoint: Any | None,
+    lateral_distance_m: float,
+) -> bool:
+    """Return whether a forward actor geometrically occupies the ego lane."""
+    same_lane = bool(
+        ego_waypoint is not None
+        and actor_waypoint is not None
+        and int(ego_waypoint.road_id) == int(actor_waypoint.road_id)
+        and int(ego_waypoint.section_id) == int(actor_waypoint.section_id)
+        and int(ego_waypoint.lane_id) == int(actor_waypoint.lane_id)
+    )
+    if same_lane:
+        return True
+    waypoint_ambiguous = bool(
+        ego_waypoint is None
+        or actor_waypoint is None
+        or bool(getattr(ego_waypoint, "is_junction", False))
+        or bool(getattr(actor_waypoint, "is_junction", False))
+        or int(ego_waypoint.road_id) != int(actor_waypoint.road_id)
+    )
+    return waypoint_ambiguous and lateral_distance_m <= 1.65
+
+
 class Scene3RouteController:
     """Small deterministic controller over the shared Scene 3 route plan.
 
@@ -1819,6 +1894,9 @@ class Scene3RouteController:
         self.route_context = route_context
         self.route_plan = list(route_plan)
         self.target_speed_kmh = float(target_speed_kmh)
+        self._default_speed_kmh = float(target_speed_kmh)
+        self._high_level_command_id: str | None = None
+        self._lane_change_authorized = False
         from agents.navigation.controller import VehiclePIDController
 
         dt = float(fixed_delta_seconds)
@@ -1852,7 +1930,72 @@ class Scene3RouteController:
             progress_m + lookahead_m,
         )
         target_index = min(target_index, len(self.route_plan) - 1)
-        return self.route_plan[target_index][0]
+        planned = self.route_plan[target_index][0]
+        if (
+            self._high_level_command_id
+            != "scene3_blocked_lane_change_left"
+            or self._lane_change_authorized
+            or bool(
+            getattr(planned, "is_junction", False)
+            )
+        ):
+            return planned
+        try:
+            current = self.route_context.adapter.get_waypoint(
+                self.ego.get_location(),
+                project_to_road=True,
+                lane_type=carla.LaneType.Driving,
+            )
+        except RuntimeError:
+            return planned
+        if current is None or int(current.lane_id) == int(planned.lane_id):
+            return planned
+        progress_m = float(
+            self.route_context.distances_m[self.route_context.tracker.index]
+        )
+        current_logical_lane = next(
+            (
+                logical_lane
+                for logical_lane in (-1, -2, -3)
+                if self.route_context.adapter.waypoint_matches_logical_lane(
+                    current,
+                    logical_lane,
+                    progress_m,
+                )
+            ),
+            None,
+        )
+        if current_logical_lane is None:
+            return planned
+        same_lane = self.route_context.adapter.logical_waypoint(
+            current_logical_lane,
+            float(self.route_context.distances_m[target_index]),
+        )
+        return same_lane or planned
+
+    def set_high_level_decision(
+        self,
+        decision: Mapping[str, Any],
+        *,
+        command_id: str,
+    ) -> None:
+        """Apply one VLA/safety-gated decision to the route/PID executor."""
+        if command_id != self._high_level_command_id:
+            self._high_level_command_id = command_id
+            self._lane_change_authorized = False
+        action = str(decision.get("action", "stop"))
+        try:
+            target_speed = float(decision.get("target_speed_kmh", 0.0))
+        except (TypeError, ValueError):
+            target_speed = 0.0
+        self.target_speed_kmh = max(
+            0.0,
+            min(self._default_speed_kmh, target_speed),
+        )
+        if action in {"stop", "emergency_brake"}:
+            self.target_speed_kmh = 0.0
+        if action in {"lane_change_left", "lane_change_right"}:
+            self._lane_change_authorized = True
 
     def _target_waypoint(self, speed_kmh: float) -> Any:
         return self._waypoint_ahead(
@@ -1864,6 +2007,14 @@ class Scene3RouteController:
         origin = transform.location
         forward = transform.get_forward_vector()
         right = transform.get_right_vector()
+        try:
+            ego_waypoint = self.route_context.adapter.get_waypoint(
+                origin,
+                project_to_road=True,
+                lane_type=carla.LaneType.Driving,
+            )
+        except RuntimeError:
+            ego_waypoint = None
         closest: float | None = None
         for pattern in ("vehicle.*", "walker.pedestrian.*"):
             for actor in self.world.get_actors().filter(pattern):
@@ -1880,7 +2031,27 @@ class Scene3RouteController:
                 lateral = abs(dx * float(right.x) + dy * float(right.y))
                 if longitudinal <= 0.0 or longitudinal > 55.0:
                     continue
-                if abs(dz) > 2.5 or lateral > 3.0:
+                if abs(dz) > 2.5:
+                    continue
+                # Do not brake for traffic in an adjacent lane.  The former
+                # three-metre lateral-only test overlaps a normal Town05 lane
+                # and can deadlock the ego beside a stopped vehicle.  CARLA's
+                # lane identity is authoritative away from junction/road
+                # boundaries; the tighter geometric fallback covers actors
+                # immediately ahead while either waypoint is ambiguous.
+                try:
+                    actor_waypoint = self.route_context.adapter.get_waypoint(
+                        location,
+                        project_to_road=True,
+                        lane_type=carla.LaneType.Driving,
+                    )
+                except RuntimeError:
+                    actor_waypoint = None
+                if not actor_can_block_ego_lane(
+                    ego_waypoint,
+                    actor_waypoint,
+                    lateral,
+                ):
                     continue
                 distance = math.sqrt(dx * dx + dy * dy + dz * dz)
                 if closest is None or distance < closest:
@@ -2376,6 +2547,14 @@ def run_simulation(
                     cruise_speed_kmh=(
                         cruise_speed_kmh
                     ),
+                    controller_overlay=(
+                        ego_controller.overlay()
+                        if (
+                            ego_controller is not None
+                            and hasattr(ego_controller, "overlay")
+                        )
+                        else None
+                    ),
                 ),
             )
         if index % 20 == 0:
@@ -2595,7 +2774,7 @@ def main(
                 route_context,
                 runtime_config["events"],
             )
-            if args.ego_controller == "route-pid":
+            if args.ego_controller in {"route-pid", "vla-route-pid"}:
                 ego_controller = Scene3RouteController(
                     world,
                     ego,
@@ -2605,7 +2784,7 @@ def main(
                     args.fixed_delta_seconds,
                 )
                 print(
-                    "Scene3 route-PID controller assigned: "
+                    "Scene3 route-PID executor assigned: "
                     f"waypoints={len(ego_plan)}"
                 )
             elif args.ego_controller == "behavior-agent":
@@ -2636,8 +2815,8 @@ def main(
             parents=True,
             exist_ok=True,
         )
-        write_voice_command_schedule(
-            output_dir / "voice_command_schedule.jsonl",
+        write_text_command_schedule(
+            output_dir / "text_command_schedule.jsonl",
             runtime_config["voice_input"],
         )
         vehicle_state_recorder = VehicleStateRecorder(
@@ -2771,6 +2950,24 @@ def main(
             ),
             event_handler=event_actor_runtime,
         )
+        if args.ego_controller == "vla-route-pid":
+            from scene3_vla_controller import Scene3VlaController
+
+            ego_controller = Scene3VlaController(
+                world=world,
+                ego=ego,
+                route_context=route_context,
+                route_controller=ego_controller,
+                commands=runtime_config["voice_input"]["commands"],
+                checkpoint_path=args.vla_checkpoint.expanduser().resolve(),
+                config_path=args.vla_config.expanduser().resolve(),
+                parser_model_path=args.vla_parser_model.expanduser().resolve(),
+                output_path=output_dir / "vla_control_decisions.jsonl",
+                device=args.vla_device,
+                precision=args.vla_precision,
+                decision_interval_frames=args.vla_decision_every_n,
+            )
+            print("Scene3 online text-to-VLA controller assigned")
         if args.record_ground_truth:
             ground_truth = FrameGroundTruthRecorder(
                 output_dir
@@ -2779,6 +2976,9 @@ def main(
                 events=runtime_config["events"],
                 every_n_frames=(
                     args.ground_truth_every_n
+                ),
+                model_output_used=(
+                    args.ego_controller == "vla-route-pid"
                 ),
             )
             print(
@@ -2886,6 +3086,14 @@ def main(
                 + ", ".join(missing)
             )
 
+        vla_summary = (
+            ego_controller.summary()
+            if (
+                ego_controller is not None
+                and hasattr(ego_controller, "summary")
+            )
+            else None
+        )
         complete_scene_success = (
             route_completed
             and event_summary["RESOLVED"]
@@ -2894,6 +3102,14 @@ def main(
                 "collision_count"
             ]
             == 0
+            and (
+                args.ego_controller != "vla-route-pid"
+                or (
+                    vla_summary is not None
+                    and vla_summary["model_output_used"]
+                    and vla_summary["fallback_count"] == 0
+                )
+            )
             and safety_summary[
                 "invalid_lane_samples"
             ]
@@ -2976,6 +3192,9 @@ def main(
                         if ground_truth is not None
                         else None
                     ),
+                    "vla_control": (
+                        vla_summary
+                    ),
                     "complete_scene_success": (
                         complete_scene_success
                     ),
@@ -3017,6 +3236,17 @@ def main(
                 incomplete_reasons.append(
                     "invalid lane occupancy"
                 )
+            if (
+                args.ego_controller == "vla-route-pid"
+                and (
+                    vla_summary is None
+                    or not vla_summary["model_output_used"]
+                    or vla_summary["fallback_count"]
+                )
+            ):
+                incomplete_reasons.append(
+                    "VLA output was not applied cleanly"
+                )
             raise RuntimeError(
                 "complete scene requirement failed: "
                 + ", ".join(incomplete_reasons)
@@ -3043,6 +3273,7 @@ def main(
         print("Interrupted by user")
         result = 130
     except (
+        ImportError,
         OSError,
         RuntimeError,
         ValueError,
@@ -3054,6 +3285,8 @@ def main(
         result = 1
     finally:
         # Release navigation helpers while their actor handles are alive.
+        if ego_controller is not None and hasattr(ego_controller, "close"):
+            ego_controller.close()
         ego_controller = None
         event_actor_runtime = None
         import gc
