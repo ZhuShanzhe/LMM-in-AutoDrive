@@ -51,14 +51,16 @@ road_generator = load_road_generator()
 
 class RouteObstacleLaneTests(unittest.TestCase):
     def test_route_pid_uses_short_bounded_lookahead(self):
-        self.assertAlmostEqual(runner.route_pid_lookahead_m(0.0), 2.8)
-        self.assertAlmostEqual(runner.route_pid_lookahead_m(20.0), 4.7)
+        self.assertAlmostEqual(runner.route_pid_lookahead_m(0.0), 5.0)
+        self.assertAlmostEqual(runner.route_pid_lookahead_m(20.0), 6.5)
         self.assertAlmostEqual(runner.route_pid_lookahead_m(100.0), 7.0)
+        self.assertAlmostEqual(runner.route_pid_lookahead_m(10.0, True), 3.2)
+        self.assertAlmostEqual(runner.route_pid_lookahead_m(0.0, True), 5.0)
 
     def test_route_pid_caps_junction_speed(self):
         self.assertEqual(
             runner.route_pid_curve_speed_kmh(32.0, 0.0, True),
-            11.0,
+            9.0,
         )
 
     def test_route_pid_reduces_tight_curve_speed(self):

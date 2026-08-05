@@ -1925,10 +1925,17 @@ def actor_can_block_ego_lane(
     return waypoint_ambiguous and lateral_distance_m <= 1.65
 
 
-def route_pid_lookahead_m(speed_kmh: float) -> float:
+def route_pid_lookahead_m(
+    speed_kmh: float,
+    junction_or_road_transition_ahead: bool = False,
+) -> float:
     """Use a short pure-pursuit horizon so tight Town05 turns stay centred."""
 
-    return min(7.0, max(2.8, 2.5 + float(speed_kmh) * 0.11))
+    speed = max(0.0, float(speed_kmh))
+    normal = min(7.0, max(5.0, 4.5 + speed * 0.10))
+    if junction_or_road_transition_ahead and speed >= 3.0:
+        return min(normal, 3.2)
+    return normal
 
 
 def route_pid_curve_speed_kmh(
@@ -1945,7 +1952,7 @@ def route_pid_curve_speed_kmh(
         curve_fraction = max(0.30, 1.0 - 1.70 * error)
         capped = min(capped, max(9.0, requested * curve_fraction))
     if junction_or_road_transition_ahead:
-        capped = min(capped, 11.0)
+        capped = min(capped, 9.0)
     return capped
 
 
@@ -1983,8 +1990,8 @@ class Scene3RouteController:
         self._vehicle_pid = VehiclePIDController(
             ego,
             args_lateral={
-                "K_P": 1.75,
-                "K_D": 0.16,
+                "K_P": 1.60,
+                "K_D": 0.14,
                 "K_I": 0.02,
                 "dt": dt,
             },
@@ -2082,12 +2089,21 @@ class Scene3RouteController:
             # can re-authorize it when the adjacent-lane observation is safe.
             self._lane_change_authorized = False
 
-    def _target_waypoint(self, speed_kmh: float) -> Any:
-        return self._waypoint_ahead(route_pid_lookahead_m(speed_kmh))
+    def _target_waypoint(
+        self,
+        speed_kmh: float,
+        junction_or_road_transition_ahead: bool = False,
+    ) -> Any:
+        return self._waypoint_ahead(
+            route_pid_lookahead_m(
+                speed_kmh,
+                junction_or_road_transition_ahead,
+            )
+        )
 
     def _junction_or_road_transition_ahead(
         self,
-        lookahead_m: float = 24.0,
+        lookahead_m: float = 40.0,
     ) -> bool:
         index = int(self.route_context.tracker.index)
         progress_m = float(self.route_context.distances_m[index])
@@ -2178,7 +2194,13 @@ class Scene3RouteController:
 
     def run_step(self) -> Any:
         speed_kmh = _speed_kmh(self.ego)
-        target_waypoint = self._target_waypoint(speed_kmh)
+        junction_or_transition_ahead = (
+            self._junction_or_road_transition_ahead()
+        )
+        target_waypoint = self._target_waypoint(
+            speed_kmh,
+            junction_or_transition_ahead,
+        )
         target = target_waypoint.transform.location
         transform = self.ego.get_transform()
         origin = transform.location
@@ -2206,7 +2228,7 @@ class Scene3RouteController:
         target_speed_kmh = route_pid_curve_speed_kmh(
             target_speed_kmh,
             curve_error,
-            self._junction_or_road_transition_ahead(),
+            junction_or_transition_ahead,
         )
         obstacle_distance_m = self._obstacle_distance_m()
         if obstacle_distance_m is not None:
