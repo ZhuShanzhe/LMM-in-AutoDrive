@@ -83,6 +83,30 @@ indices are intentionally retained as held-out evaluation episodes; their
 actor parameters are different but their trigger locations, command schedule
 and scoring interfaces remain identical.
 
+## Existing v3 checkpoint adaptation audit
+
+The Scene 3 v3 checkpoint was tested against all 15 Scene 2 commands using
+captured exact frame 46906: four synchronized raw RGB views, recorded vehicle
+state (10.856 km/h) and the configured cloudy-dusk environment. Each command
+uses the original Chinese text. This deliberately tests the checkpoint that is
+currently available for submission; it does not substitute a translated or
+teacher-forced command.
+
+- Output: `experiment/CARLA/outputs/scene2_vla_adaptation_audit_20260805.json`
+- Reproducer: `experiment/CARLA/tools/audit_scene2_vla_offline.py`
+- First executable action compatible: 7/15 (46.67%)
+- Parser states: 1 `VALID`, 13 `NEEDS_CLARIFICATION`, 1 `UNSUPPORTED`
+- Proposal distribution: 14 `keep_lane`, 1 `decelerate`
+- No lane-change or turn proposal was produced
+- Mean inference time after the first warm-up call: 25.234 ms
+
+The 46.67% figure is a deliberately permissive first-action compatibility
+diagnostic, not the competition's command-accuracy metric. A compound command
+can count as compatible here even though the checkpoint has no mechanism to
+retain and complete its later dependent steps. Therefore the audit proves that
+the checkpoint is below the 96% requirement; it cannot establish a lower bound
+for formal 8 km accuracy or semantic alignment.
+
 ## Model and chain deficiencies exposed by this review
 
 1. The Scene 2 runner's `--competition-run` correctly requires external ego
@@ -91,17 +115,21 @@ and scoring interfaces remain identical.
    `VLAActionProposal`, safety-gate decisions and step feedback for all 15
    commands. Therefore no formal 96% command-accuracy or 98.5% semantic-
    alignment claim is made from the preview run.
-2. Scene 3 VLA training is safety-skewed and does not cover the full Scene 2
-   compound-action inventory. A future Scene 2 checkpoint should train on the
-   normalized multi-step plans, especially lane-return, intersection chaining
-   and wait/confirm transitions.
-3. The perception audit shows 0/12 pedestrian-presence recall in the rainy-
+2. The measured 7/15 adaptation result confirms that Scene 3 VLA training is
+   safety-skewed and does not cover the full Scene 2 compound-action inventory.
+   The checkpoint collapses toward `keep_lane` and never proposes lane changes
+   or turns for these commands.
+3. Scene 2 needs a plan-state executor that retains dependent steps and advances
+   them from event/safety feedback. A single flat action head cannot represent
+   sequences such as yield, change lane, overtake and return, or two turns
+   separated by a straight junction traversal.
+4. The perception audit shows 0/12 pedestrian-presence recall in the rainy-
    night capture. Until mixed-domain retraining fixes this, simulator ground
    truth and deterministic safety gates remain necessary for testing.
 
 ## Automated regression
 
-The integrated repository passed 446 pytest cases and 169 subtests. This
+The integrated non-audio repository passed 450 pytest cases and 169 subtests. This
 includes route-command alignment, three-variant determinism, exact-frame bundle
 contracts, all 15 normalized command plans, control safety, VLA interfaces and
 Scene 3 audit tests.
