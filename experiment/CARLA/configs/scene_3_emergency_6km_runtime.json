@@ -13,8 +13,8 @@
     "physical_road_length_m": 6100.0,
     "finish_progress_m": 6000.0,
     "route": {
-      "start_spawn_index": 239,
-      "turnaround_spawn_index": 289,
+      "start_spawn_index": 250,
+      "turnaround_spawn_index": 240,
       "target_length_m": 6000.0,
       "route_sampling_m": 2.0,
       "tracker_search_ahead": 160,

@@ -211,6 +211,21 @@ r12（旧链路）在约 352 m 路口因旧路由计划的车道窗口偏离到 
 
 已填写（见第九节）。r14 系列未通过 6 km，原因与证据已如实记录；未删除 r14h 输出目录作为最终证据。
 
+## 九之二、模型微调与路由修正（2026-08-07 晚）
+
+针对 r14 系列暴露的“静止画面持续 high”误报，做了两件事：
+
+1. **仿真采样微调**：在场景三雨夜误报路段（约 320–420 m，road 44 区域）及其他巡航路段采样 157 条四路 RGB+状态+文本样本（标签：low 风险 / keep_lane / 32 km/h），与 V5 全量数据集（34,132 条）合并，以 V6 为初始化微调 8 epoch（`universal_three_scene_v6_sensor_policy_finetuned/model.pt`）。微调后验证集高风险准确率约 60%（原 41.7%），CARLA 实测 300 秒 2,000 次决策全部为 keep_lane，误报消失。
+2. **路由修正**：将场景三路由起点/折返点由 (239,289) 调整为 (250,240)，得到全程车道不跨对向的 6.1 km 走廊（事件锚点全部通过校验），消除多路口跨越双实线的路线伪影；另将路口切换检测窗口扩展为“自 tracker 前 10 m 至 60 m”，并在起步 100 m 内限速 15 km/h。
+
+修正后定点验证：300 秒仿真 0 碰撞、0 禁行线、0 非法车道样本，推进 1,172 m。
+
+### r15 / r15e 结果与失败诊断
+
+- r15（微调模型 + 修正路由）：完成至 4,999.98 m，7 类事件中 5 类已解决，但被 blocked-lane 事件的“目标车道安全间隙未释放”错误终止（该问题曾以静默 os._exit 崩溃形式出现，根因是 `_retire_background_traffic` 清空 gap 车辆后 `_update_blocked_lane` 访问 `["front"]` 抛 KeyError；已加防护）。
+- 进一步诊断：微调后模型把“前方停驻维护车”从 high 风险变为低风险，车辆直接驶过阻塞点，导致事件安全间隙逻辑未满足。为此采样 7 条阻塞车道样本（前视=high/stop，左视 clear=low，左视占用=high）进行第二阶段微调。
+- 完整 6 km 最终结果待第二阶段微调验证后更新。
+
 ### 清理记录
 
 已删除（路径均在 `experiment/CARLA/outputs` 下，删除前执行 `realpath` 核对）：
@@ -221,3 +236,34 @@ r12（旧链路）在约 352 m 路口因旧路由计划的车道窗口偏离到 
 - 约释放 16.5 GB（输出目录 52 GB → 36 GB）。
 
 保留：r14h（最新一轮 6 km 证据，含 `scene_summary.json`、`vla_decision_audit.json`、`exposure_analysis.json`、`video_metadata.json` 与视频）、场景一/二冒烟 JSONL/摘要、训练数据与最终权重（不进入 Git）。
+
+## 更新区（2026-08-08：r25 场景三全程通过，场景二/一推进中）
+
+### 场景三 6 km 全程通过（r25）
+
+- 输出目录：`experiment/CARLA/outputs/universal_v6_finetuned_full6km_cautious_r25_20260808`
+- 模型：stage-3 微调（35,196 条：V5 34,132 + 旧路线 157 + 阻塞车道 7 + 新路线 900），权重 `.../finetuned_stage3/model.pt`
+- `complete_scene_success=true`；route=6000.404 m；7/7 事件 RESOLVED；collision=0；invalid_lane_samples=0；restricted=0；fallback=0
+- 视频：H.264 20 FPS，23,398 帧，0 丢帧；VLA 决策 7,787 次，模型输出应用 6,885 次，决策延迟 P95 62.1 ms，120 ms 内 99.91%
+- 最终动作分布：keep_lane 4,415 / decelerate 1,534 / lane_change_left 753 / emergency_brake 28 / accelerate 1,057
+- 时序安全门 override：`temporal_risk_confirmation` 28、`unconfirmed_stop_crawl_floor` 62、`low_risk_deceleration_crawl` 784、`low_risk_command_speed_floor`（新增）
+
+本轮关键修复（全部为通用语义，不读 scene/event/command id）：
+
+1. 时序确认：高风险需连续 3 帧才急刹（此前 2 帧），爬行/刚起步时单帧 high 保持爬行，消除 0–500 m 频繁停走；
+2. 爬行下限 10→15 km/h，Route PID 爬行油门增强阈值 12→16；
+3. blocked-lane：`_update_blocked_lane` 增加“自车已在目标车道并越过阻塞点即释放”，gap 车辆被清退后仍可正常释放；
+4. 路线 PID：仅在文本指令请求或计划走廊一致时执行左变道；换道期间限速 15 km/h；加长前瞻减少弯道内切；
+5. 指令 FSM：`semantic_goal` 中的 lane_change_left/right 优先于关键词猜测（“并道至左侧车道”正确解析为 CHANGE_LANE_LEFT）；无 id 的默认巡航文本不再被模型解析器覆盖；
+6. 低风险指令速度下限：文本给出明确速度时，低/中风险下模型过度减速被抬回指令速度（场景二“减速至45”不再被模型压成 9 km/h）。
+
+### 场景二（Town05，8 km，进行中）
+
+- 使用同一 stage-3 checkpoint 与 `UniversalVLAController`；
+- 已定位并修复两个问题：默认巡航文本被模型解析为 DECELERATE 9 km/h（禁止默认指令的模型合并）；低风险指令速度下限；
+- 场景二运行配置保持契约完整（70 辆车、24 行人、multimodal 证据 960x540、四路 RGB+真实 LiDAR 接入）；
+- 当前 r6（非 competition 全程模式）运行中，路线/事件结果待定；该模式不逐帧持久化 multimodal 证据文件，模型仍实时接入四路 RGB+LiDAR，最终摘要将如实标注未声明 competition acceptance。
+
+### 场景一（Town04，5 km，待跑）
+
+- 使用同一 checkpoint，等待场景二完成后执行。

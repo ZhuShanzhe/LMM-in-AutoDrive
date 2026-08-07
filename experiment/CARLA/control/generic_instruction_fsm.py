@@ -156,6 +156,24 @@ class GenericInstructionFSM:
             for item in command.get("semantic_goal", [])
             if isinstance(item, str)
         )
+        goal_intent, goal_direction, goal_speed = _intent_from_goals(
+            semantic_goal
+        )
+        if goal_intent in {"CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}:
+            # Explicit semantic goals take priority over keyword guessing:
+            # the text may be phrased colloquially (e.g. "并道至左侧车道")
+            # without the generic lane-change keywords.
+            return ParsedInstruction(
+                parsed_intent=goal_intent,
+                requested_lane_direction=goal_direction,
+                target_speed_kmh=(
+                    goal_speed
+                    if goal_speed is not None
+                    else self._extract_speed(source_text)
+                ),
+                source_text=source_text,
+                semantic_goal=semantic_goal,
+            )
         parsed = self._parse_text_rules(
             source_text,
             semantic_goal=semantic_goal,
@@ -171,7 +189,12 @@ class GenericInstructionFSM:
             and use_parser_model
             and self.parser is not None
             and source_text
+            and command.get("id") is not None
         ):
+            # Only scheduled commands (which carry an id) may override the
+            # neutral keep-lane envelope with a model interpretation.  The
+            # default cruise instruction has no id and must never be turned
+            # into an unintended deceleration by the learned parser.
             model_parsed = self._parser_result(source_text, command)
             parsed = self._merge_parser_result(parsed, model_parsed)
         parsed.source_text = source_text

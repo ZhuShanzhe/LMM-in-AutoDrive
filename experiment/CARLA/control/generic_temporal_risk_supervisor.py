@@ -26,6 +26,7 @@ OVERRIDE_CAUTIOUS_RESUME = "cautious_hazard_resume"
 OVERRIDE_LANE_CLEARANCE = "target_lane_visual_clearance"
 OVERRIDE_RISK_CONFIRMATION = "temporal_risk_confirmation"
 OVERRIDE_UNCONFIRMED_STOP = "unconfirmed_stop_crawl_floor"
+OVERRIDE_COMMAND_SPEED_FLOOR = "low_risk_command_speed_floor"
 
 
 @dataclass(frozen=True)
@@ -34,9 +35,13 @@ class TemporalRiskSupervisorConfig:
     hold_seconds: float = 20.0
     low_fraction: float = 0.8
     high_free_tail: int = 5
-    crawl_speed_kmh: float = 10.0
+    crawl_speed_kmh: float = 15.0
     min_samples: int = 20
     max_stop_gap_s: float = 2.0
+    min_move_s: float = 2.0
+    decision_history_size: int = 40
+    high_confirm_frames: int = 3
+    stopped_speed_kmh: float = 0.5
 
     def __post_init__(self) -> None:
         if self.history_size < 1:
@@ -49,6 +54,15 @@ class TemporalRiskSupervisorConfig:
             raise ValueError("high_free_tail must be positive")
         if not math.isfinite(self.crawl_speed_kmh) or self.crawl_speed_kmh <= 0:
             raise ValueError("crawl_speed_kmh must be positive")
+        if not math.isfinite(self.min_move_s) or self.min_move_s <= 0:
+            raise ValueError("min_move_s must be positive")
+        if self.high_confirm_frames < 2:
+            raise ValueError("high_confirm_frames must be at least 2")
+        if (
+            not math.isfinite(self.stopped_speed_kmh)
+            or self.stopped_speed_kmh < 0.0
+        ):
+            raise ValueError("stopped_speed_kmh must be non-negative")
 
 
 class GenericTemporalRiskSupervisor:
@@ -68,6 +82,11 @@ class GenericTemporalRiskSupervisor:
         self._resume_intent: str | None = None
         self._crawl_pending = False
         self._high_confirm_count = 0
+        self._moving_since_frame: int | None = None
+        self._decision_history: deque[dict[str, Any]] = deque(
+            maxlen=self.config.decision_history_size
+        )
+        self._last_decision_frame: int | None = None
         self._last_frame: int | None = None
         self._last_timestamp_s: float | None = None
         self._override_counts: Counter[str] = Counter()
@@ -80,6 +99,9 @@ class GenericTemporalRiskSupervisor:
         self._resume_intent = None
         self._crawl_pending = False
         self._high_confirm_count = 0
+        self._moving_since_frame = None
+        self._decision_history.clear()
+        self._last_decision_frame = None
         self._last_frame = None
         self._last_timestamp_s = None
 
@@ -130,6 +152,10 @@ class GenericTemporalRiskSupervisor:
             parsed_intent in HAZARD_STOP_INTENTS
             or parsed_intent in LANE_CHANGE_INTENTS
         )
+        if ego_speed_kmh >= 1.0 and self._moving_since_frame is None:
+            self._moving_since_frame = int(frame)
+        if ego_speed_kmh < 0.5:
+            self._moving_since_frame = None
         if stop_like_intent and ego_speed_kmh < 0.5:
             if self._stopped_since_frame is None:
                 self._stopped_since_frame = int(frame)
@@ -143,6 +169,41 @@ class GenericTemporalRiskSupervisor:
         self._last_frame = int(frame)
         self._last_timestamp_s = (
             float(timestamp_s) if timestamp_s is not None else None
+        )
+
+    def record_decision(
+        self,
+        *,
+        frame: int,
+        risk_level: str,
+        action: str,
+        target_speed_kmh: float,
+        override: str | None,
+    ) -> None:
+        """Record the recent risk/action timeline for the temporal gate."""
+
+        self._decision_history.append(
+            {
+                "frame": int(frame),
+                "risk_level": str(risk_level).lower(),
+                "action": action,
+                "target_speed_kmh": float(target_speed_kmh),
+                "override": override,
+            }
+        )
+        self._last_decision_frame = int(frame)
+
+    def moving_elapsed_s(
+        self,
+        frame: int,
+        fixed_delta_seconds: float,
+    ) -> float:
+        if self._moving_since_frame is None:
+            return 0.0
+        return max(
+            0.0,
+            (int(frame) - int(self._moving_since_frame))
+            * float(fixed_delta_seconds),
         )
 
     def stationary_elapsed_s(
@@ -189,10 +250,17 @@ class GenericTemporalRiskSupervisor:
         resume_active: bool,
         resume_speed_kmh: float,
         hold_seconds: float | None = None,
+        frame: int | None = None,
+        fixed_delta_seconds: float = 0.05,
     ) -> tuple[dict[str, Any], str | None]:
         """Apply the generic crawl/resume/lane-clearance gates."""
 
         decision = dict(final_decision)
+        current_frame = (
+            int(frame)
+            if frame is not None
+            else (self._last_decision_frame or 0)
+        )
         hold = (
             float(hold_seconds)
             if hold_seconds is not None
@@ -202,6 +270,7 @@ class GenericTemporalRiskSupervisor:
         low_risk = risk_level == "low"
         stop_like = str(decision.get("action")) in {"stop", "emergency_brake"}
         stopped_target = float(decision.get("target_speed_kmh", 0.0)) <= 0.1
+        moving = self._moving_since_frame is not None
 
         # Generic unconfirmed-stop crawl floor: when the learned risk head says
         # low/medium and the text envelope does not request a stop, a model
@@ -224,12 +293,46 @@ class GenericTemporalRiskSupervisor:
             self._override_counts[OVERRIDE_UNCONFIRMED_STOP] += 1
             return decision, OVERRIDE_UNCONFIRMED_STOP
 
-        # Generic temporal confirmation of a high-risk signal while the ego is
-        # already creeping in a cautious crawl.  A single unconfirmed high
-        # frame does not cancel the crawl; two consecutive high frames do.
+        # Generic low-risk command-speed floor: when the text command defines
+        # an explicit speed envelope and the learned risk head says low or
+        # medium (no hazard), a model over-deceleration below that envelope is
+        # treated as a cautious flicker and floored back to the commanded
+        # speed.  Explicit stop/yield commands are never floored.
+        canonical_speed = float(canonical.get("target_speed_kmh", 0.0) or 0.0)
+        model_decelerates = str(decision.get("action")) == "decelerate"
+        model_speed = float(decision.get("target_speed_kmh", 0.0) or 0.0)
+        if (
+            low_risk
+            and model_decelerates
+            and not stopped_target
+            and str(canonical.get("action"))
+            not in {"stop", "emergency_brake"}
+            and canonical_speed > 0.0
+            and model_speed < canonical_speed
+        ):
+            decision.update(
+                target_speed_kmh=canonical_speed,
+                reason="low_risk_command_speed_floor",
+            )
+            self._override_counts[OVERRIDE_COMMAND_SPEED_FLOOR] += 1
+            return decision, OVERRIDE_COMMAND_SPEED_FLOOR
+
+        # Generic temporal confirmation of a high-risk signal.  A noisy high
+        # frame does not slam the brakes while the ego is moving: the first
+        # N-1 consecutive high decisions are held as a cautious crawl, and
+        # only the Nth consecutive high decision escalates to an emergency
+        # stop.  Text that explicitly demands a stop, or a high risk while
+        # the ego is already stationary, is never delayed.
         if risk_level == "high":
-            if self._crawl_pending and self._high_confirm_count == 0:
-                self._high_confirm_count = 1
+            stop_intent = parsed_intent in HAZARD_STOP_INTENTS
+            if (
+                moving
+                and not stop_intent
+                and self._high_confirm_count + 1
+                < self.config.high_confirm_frames
+            ):
+                self._high_confirm_count += 1
+                self._crawl_pending = True
                 decision.update(
                     action="decelerate",
                     target_speed_kmh=self.config.crawl_speed_kmh,
@@ -240,8 +343,8 @@ class GenericTemporalRiskSupervisor:
                 )
                 self._override_counts[OVERRIDE_RISK_CONFIRMATION] += 1
                 return decision, OVERRIDE_RISK_CONFIRMATION
-            self._crawl_pending = False
             self._high_confirm_count = 0
+            self._crawl_pending = False
         else:
             crawl_decision = (
                 str(decision.get("action")) == "decelerate"
@@ -378,4 +481,6 @@ class GenericTemporalRiskSupervisor:
             "crawl_pending": self._crawl_pending,
             "high_confirm_count": self._high_confirm_count,
             "override_counts": dict(self._override_counts),
+            "decision_history": list(self._decision_history),
+            "moving_since_frame": self._moving_since_frame,
         }

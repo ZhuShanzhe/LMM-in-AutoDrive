@@ -1595,6 +1595,37 @@ class EmergencySceneActorRuntime:
             or self._target_lane_released
         ):
             return
+        blockage = self._blocked_lane_event["blockage"]
+        target_lane_id = int(blockage["target_lane_id"])
+        if self._ego_actor is not None and ego_route_s_m >= float(
+            blockage["s_m"]
+        ):
+            ego_waypoint = self._map.get_waypoint(
+                self._ego_actor.get_location(),
+                project_to_road=True,
+                lane_type=self._carla.LaneType.Driving,
+            )
+            if (
+                ego_waypoint is not None
+                and self._map.waypoint_matches_logical_lane(
+                    ego_waypoint,
+                    target_lane_id,
+                    ego_route_s_m,
+                )
+            ):
+                self._target_lane_released = True
+                print(
+                    "BLOCKED-LANE PASSED IN TARGET LANE | "
+                    f"route={ego_route_s_m:.1f} m | "
+                    f"target_lane={target_lane_id}"
+                )
+                return
+        if not self._gap_control_vehicles:
+            # Gap-control traffic may already have been retired by the
+            # work-zone diversity window.  In that case the target lane
+            # release can only be established by the ego having actually
+            # passed the blockage in the target lane (checked above).
+            return
         release_after_s = float(
             self._blocked_lane_event.get("blockage", {}).get(
                 "release_target_lane_after_s",

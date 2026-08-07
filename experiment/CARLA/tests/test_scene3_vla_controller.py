@@ -111,7 +111,7 @@ class GenericControllerTests(unittest.TestCase):
         )
         self.assertEqual(override, "unconfirmed_stop_crawl_floor")
         self.assertEqual(decision["action"], "decelerate")
-        self.assertEqual(decision["target_speed_kmh"], 10.0)
+        self.assertEqual(decision["target_speed_kmh"], 15.0)
 
         # High risk still stops immediately.
         decision, override = supervisor.apply(
@@ -146,7 +146,7 @@ class GenericControllerTests(unittest.TestCase):
         )
         self.assertEqual(override, "low_risk_deceleration_crawl")
         self.assertEqual(decision["action"], "decelerate")
-        self.assertEqual(decision["target_speed_kmh"], 10.0)
+        self.assertEqual(decision["target_speed_kmh"], 15.0)
 
     def test_generic_liveness_gate_never_floors_non_low_risk_deceleration(self):
         supervisor = GenericTemporalRiskSupervisor()
@@ -270,7 +270,7 @@ class GenericControllerTests(unittest.TestCase):
         self.assertEqual(override, "target_lane_visual_clearance")
         self.assertEqual(changed["action"], "lane_change_left")
         self.assertEqual(changed["target_lane"], "left")
-        self.assertEqual(changed["target_speed_kmh"], 10.0)
+        self.assertEqual(changed["target_speed_kmh"], 15.0)
 
 
 if __name__ == "__main__":

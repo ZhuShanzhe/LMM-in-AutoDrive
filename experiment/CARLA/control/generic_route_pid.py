@@ -176,11 +176,47 @@ class GenericRoutePID:
             "lane_change_left",
             "lane_change_right",
         }
-        if (
-            self.logical_lane_adapter is not None
-            and not lane_change_active
-        ):
+        if self.logical_lane_adapter is not None:
+            current_waypoint = self.logical_lane_adapter.get_waypoint(
+                self.ego.get_location(),
+                project_to_road=True,
+                lane_type=carla.LaneType.Driving,
+            )
+            current_logical = (
+                self._current_logical_lane(current_waypoint)
+                if current_waypoint is not None
+                else None
+            )
             target_logical = self._target_logical_lane(progress_m)
+            if (
+                lane_change_active
+                and self._target_lane in {"left", "right"}
+                and current_logical is not None
+            ):
+                # A commanded lane change is only executed when the planned
+                # corridor agrees with the commanded direction.  This keeps
+                # text-driven changes aligned with the route geometry (and
+                # avoids desynchronising the progress tracker by merging
+                # early into a lane the plan has not reached yet).
+                if self._target_lane == "left":
+                    intended = (
+                        current_logical
+                        if current_logical == -1
+                        else current_logical + 1
+                    )
+                else:
+                    intended = (
+                        current_logical
+                        if current_logical == -3
+                        else current_logical - 1
+                    )
+                plan_lane = self._plan_logical_lane(
+                    progress_m + lookahead_m
+                )
+                if plan_lane == intended:
+                    target_logical = intended
+                else:
+                    target_logical = current_logical
             if target_logical is not None:
                 translated = self.logical_lane_adapter.logical_waypoint(
                     target_logical,
@@ -198,7 +234,10 @@ class GenericRoutePID:
 
     def _route_target(self) -> dict[str, Any] | None:
         speed_kmh = self._current_speed_kmh()
-        lookahead_m = max(5.0, min(7.0, 4.5 + speed_kmh * 0.10))
+        # Longer lookahead keeps the ego centred on sweeping curves, where a
+        # short pure-pursuit horizon cuts the inside edge and clips solid
+        # lane boundaries.  Junction turns still use the short horizon below.
+        lookahead_m = max(5.0, min(10.0, 3.0 + speed_kmh * 0.25))
         if self._junction_or_road_transition_ahead() and speed_kmh >= 3.0:
             # Short pure-pursuit horizon keeps tight Town05 junction turns
             # centred without cutting into an adjacent branch.
@@ -260,6 +299,27 @@ class GenericRoutePID:
         road_ids = {int(waypoint.road_id) for waypoint in window}
         return len(road_ids) > 1
 
+    def _lane_transition_ahead(self) -> bool:
+        """True while the planned corridor moves to a different logical lane."""
+
+        if self.logical_lane_adapter is None or self.route_context is None:
+            return False
+        try:
+            current_waypoint = self.logical_lane_adapter.get_waypoint(
+                self.ego.get_location(),
+                project_to_road=True,
+                lane_type=carla.LaneType.Driving,
+            )
+        except RuntimeError:
+            return False
+        if current_waypoint is None:
+            return False
+        current_logical = self._current_logical_lane(current_waypoint)
+        if current_logical is None:
+            return False
+        planned = self._plan_logical_lane(self.progress_m() + 15.0)
+        return planned is not None and planned != current_logical
+
     def run_step(self) -> carla.VehicleControl:
         intent = {
             "schema_version": "1.0.0",
@@ -277,6 +337,13 @@ class GenericRoutePID:
             intent["target_speed_kmh"] = min(
                 float(intent["target_speed_kmh"]),
                 9.0,
+            )
+        if self._lane_transition_ahead():
+            # Generic cautious speed during any lane transition: keep the
+            # lateral manoeuvre stable and avoid clipping lane boundaries.
+            intent["target_speed_kmh"] = min(
+                float(intent["target_speed_kmh"]),
+                15.0,
             )
         route_target = self._route_target()
         if route_target is not None:

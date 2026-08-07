@@ -71,7 +71,7 @@ class EgoPIDController:
         target_speed = min(target_speed, self._curvature_speed_cap(intent))
         current_speed = self._get_speed_kmh()
         self._crawl_active = (
-            target_speed <= 12.0 and current_speed < 2.0
+            target_speed <= 16.0 and current_speed < 2.0
         )
         throttle, brake = self._longitudinal_control(target_speed, current_speed, dt)
         lateral_intent = self._lateral_intent_for_control(intent)

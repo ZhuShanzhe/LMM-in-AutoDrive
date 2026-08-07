@@ -288,6 +288,21 @@ def test_generic_yield_resume_does_not_depend_on_command_id():
     assert final["target_speed_kmh"] >= 10.0
 
 
+def test_fsm_semantic_goal_lane_change_takes_priority():
+    from control.generic_instruction_fsm import GenericInstructionFSM
+
+    fsm = GenericInstructionFSM(default_speed_kmh=32.0)
+    parsed = fsm.parse(
+        {
+            "text": "施工路段，减速并道至左侧车道",
+            "semantic_goal": ["decelerate", "lane_change_left"],
+        },
+        use_parser_model=False,
+    )
+    assert parsed.parsed_intent == "CHANGE_LANE_LEFT"
+    assert parsed.requested_lane_direction == "left"
+
+
 def test_generic_left_lane_clearance_does_not_depend_on_event_id():
     from control.generic_temporal_risk_supervisor import (
         GenericTemporalRiskSupervisor,
@@ -383,6 +398,15 @@ def test_cautious_crawl_holds_single_high_frame_once():
     supervisor = GenericTemporalRiskSupervisor(
         TemporalRiskSupervisorConfig(hold_seconds=1.0, min_samples=3)
     )
+    supervisor.observe(
+        frame=10,
+        timestamp_s=0.5,
+        parsed_intent="KEEP_LANE",
+        risk_level="medium",
+        target_lane_risk_level=None,
+        ego_speed_kmh=8.0,
+        requested_lane_direction=None,
+    )
     crawl = {
         "action": "decelerate",
         "target_speed_kmh": 4.0,
@@ -420,7 +444,21 @@ def test_cautious_crawl_holds_single_high_frame_once():
     )
     assert override == "temporal_risk_confirmation"
     assert final["action"] == "decelerate"
-    # A second consecutive high frame escalates to emergency.
+    # The second consecutive high frame still holds the crawl; only the
+    # third consecutive high frame escalates to emergency.
+    final, override = supervisor.apply(
+        emergency,
+        emergency,
+        {"risk_level": "high", "recommended_action": "emergency_brake"},
+        parsed_intent="KEEP_LANE",
+        requested_lane_direction=None,
+        target_lane_risk=None,
+        stationary_elapsed_s=0.0,
+        resume_active=False,
+        resume_speed_kmh=32.0,
+    )
+    assert override == "temporal_risk_confirmation"
+    assert final["action"] == "decelerate"
     final, override = supervisor.apply(
         emergency,
         emergency,
@@ -445,6 +483,15 @@ def test_unconfirmed_stop_at_low_risk_uses_crawl_floor():
     supervisor = GenericTemporalRiskSupervisor(
         TemporalRiskSupervisorConfig(hold_seconds=1.0, min_samples=3)
     )
+    supervisor.observe(
+        frame=10,
+        timestamp_s=0.5,
+        parsed_intent="KEEP_LANE",
+        risk_level="low",
+        target_lane_risk_level=None,
+        ego_speed_kmh=12.0,
+        requested_lane_direction=None,
+    )
     emergency = {
         "action": "emergency_brake",
         "target_speed_kmh": 0.0,
@@ -464,8 +511,146 @@ def test_unconfirmed_stop_at_low_risk_uses_crawl_floor():
     )
     assert override == "unconfirmed_stop_crawl_floor"
     assert final["action"] == "decelerate"
-    assert final["target_speed_kmh"] == 10.0
-    # High risk still stops immediately.
+    assert final["target_speed_kmh"] == 15.0
+    # High risk while moving is held as crawl until confirmed.
+    final, override = supervisor.apply(
+        emergency,
+        cruise,
+        {"risk_level": "high", "recommended_action": "emergency_brake"},
+        parsed_intent="KEEP_LANE",
+        requested_lane_direction=None,
+        target_lane_risk=None,
+        stationary_elapsed_s=0.0,
+        resume_active=False,
+        resume_speed_kmh=32.0,
+    )
+    assert override == "temporal_risk_confirmation"
+    assert final["action"] == "decelerate"
+    final, override = supervisor.apply(
+        emergency,
+        cruise,
+        {"risk_level": "high", "recommended_action": "emergency_brake"},
+        parsed_intent="KEEP_LANE",
+        requested_lane_direction=None,
+        target_lane_risk=None,
+        stationary_elapsed_s=0.0,
+        resume_active=False,
+        resume_speed_kmh=32.0,
+    )
+    assert override == "temporal_risk_confirmation"
+    assert final["action"] == "decelerate"
+    final, override = supervisor.apply(
+        emergency,
+        cruise,
+        {"risk_level": "high", "recommended_action": "emergency_brake"},
+        parsed_intent="KEEP_LANE",
+        requested_lane_direction=None,
+        target_lane_risk=None,
+        stationary_elapsed_s=0.0,
+        resume_active=False,
+        resume_speed_kmh=32.0,
+    )
+    assert override is None
+    assert final["action"] == "emergency_brake"
+
+
+def test_low_risk_command_speed_floor_holds_commanded_envelope():
+    from control.generic_temporal_risk_supervisor import (
+        GenericTemporalRiskSupervisor,
+        TemporalRiskSupervisorConfig,
+    )
+
+    supervisor = GenericTemporalRiskSupervisor(
+        TemporalRiskSupervisorConfig(hold_seconds=1.0, min_samples=3)
+    )
+    model = {
+        "action": "decelerate",
+        "target_speed_kmh": 9.0,
+        "emergency": False,
+    }
+    canonical = {"action": "decelerate", "target_speed_kmh": 45.0}
+    final, override = supervisor.apply(
+        model,
+        canonical,
+        {"risk_level": "low", "recommended_action": "keep_lane"},
+        parsed_intent="DECELERATE",
+        requested_lane_direction=None,
+        target_lane_risk=None,
+        stationary_elapsed_s=0.0,
+        resume_active=False,
+        resume_speed_kmh=45.0,
+    )
+    assert override == "low_risk_command_speed_floor"
+    assert final["action"] == "decelerate"
+    assert final["target_speed_kmh"] == 45.0
+
+    # An explicit stop command is never floored upward.
+    stop_canonical = {"action": "stop", "target_speed_kmh": 0.0}
+    final, override = supervisor.apply(
+        model,
+        stop_canonical,
+        {"risk_level": "low", "recommended_action": "keep_lane"},
+        parsed_intent="STOP",
+        requested_lane_direction=None,
+        target_lane_risk=None,
+        stationary_elapsed_s=0.0,
+        resume_active=False,
+        resume_speed_kmh=45.0,
+    )
+    assert override is None
+    assert final["target_speed_kmh"] == 9.0
+
+
+def test_just_resumed_single_high_frame_holds_once():
+    from control.generic_temporal_risk_supervisor import (
+        GenericTemporalRiskSupervisor,
+        TemporalRiskSupervisorConfig,
+    )
+
+    supervisor = GenericTemporalRiskSupervisor(
+        TemporalRiskSupervisorConfig(hold_seconds=1.0, min_samples=3)
+    )
+    supervisor.observe(
+        frame=100,
+        timestamp_s=5.0,
+        parsed_intent="KEEP_LANE",
+        risk_level="low",
+        target_lane_risk_level=None,
+        ego_speed_kmh=5.0,
+        requested_lane_direction=None,
+    )
+    cruise = {"action": "keep_lane", "target_speed_kmh": 32.0}
+    emergency = {
+        "action": "emergency_brake",
+        "target_speed_kmh": 0.0,
+        "emergency": True,
+    }
+    final, override = supervisor.apply(
+        emergency,
+        cruise,
+        {"risk_level": "high", "recommended_action": "emergency_brake"},
+        parsed_intent="KEEP_LANE",
+        requested_lane_direction=None,
+        target_lane_risk=None,
+        stationary_elapsed_s=0.0,
+        resume_active=False,
+        resume_speed_kmh=32.0,
+    )
+    assert override == "temporal_risk_confirmation"
+    assert final["action"] == "decelerate"
+    final, override = supervisor.apply(
+        emergency,
+        cruise,
+        {"risk_level": "high", "recommended_action": "emergency_brake"},
+        parsed_intent="KEEP_LANE",
+        requested_lane_direction=None,
+        target_lane_risk=None,
+        stationary_elapsed_s=0.0,
+        resume_active=False,
+        resume_speed_kmh=32.0,
+    )
+    assert override == "temporal_risk_confirmation"
+    assert final["action"] == "decelerate"
     final, override = supervisor.apply(
         emergency,
         cruise,

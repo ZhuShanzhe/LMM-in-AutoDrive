@@ -465,11 +465,22 @@ class UniversalVLAController:
             resume_speed_kmh=min(
                 40.0, float(self.route_controller.target_speed_kmh)
             ),
+            frame=frame,
+            fixed_delta_seconds=self._fixed_delta_seconds,
         )
         if self.teacher_force_control:
             final_decision = dict(canonical)
             final_decision["reason"] = "training_teacher_force_control"
             final_decision["blocked_reason_codes"] = []
+        self.supervisor.record_decision(
+            frame=frame,
+            risk_level=str(risk.get("risk_level", "high")),
+            action=str(final_decision["action"]),
+            target_speed_kmh=float(
+                final_decision.get("target_speed_kmh", 0.0)
+            ),
+            override=liveness_override,
+        )
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         response_latency_ms = camera_wait_ms + elapsed_ms
         self._latencies_ms.append(elapsed_ms)

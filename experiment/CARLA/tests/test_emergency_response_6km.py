@@ -1266,6 +1266,8 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         runtime._blocked_lane_event = {
             "blockage": {
                 "release_target_lane_after_s": 5.5,
+                "s_m": 4850.0,
+                "target_lane_id": -1,
             },
             "safety": {
                 "minimum_front_gap_m": 30.0,
@@ -1291,6 +1293,60 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         )
 
         traffic_manager.force_lane_change.assert_not_called()
+        self.assertTrue(
+            runtime._target_lane_released
+        )
+        self.assertFalse(
+            runtime._blocked_lane_change_commanded
+        )
+
+    def test_blocked_lane_releases_after_passing_in_target_lane(
+        self,
+    ):
+        ego = mock.Mock()
+        carla_map = mock.Mock()
+        carla_map.get_waypoint.return_value = SimpleNamespace(
+            s=5000.0,
+        )
+        carla_map.waypoint_matches_logical_lane.return_value = True
+        runtime = (
+            scene_events.EmergencySceneActorRuntime(
+                carla_module=SimpleNamespace(
+                    LaneType=SimpleNamespace(
+                        Driving="driving"
+                    )
+                ),
+                world=mock.Mock(),
+                carla_map=carla_map,
+                traffic_manager=mock.Mock(),
+                traffic_manager_port=8000,
+                actor_sink=[],
+                ego_actor=ego,
+            )
+        )
+        runtime._maintenance_vehicle = mock.Mock()
+        runtime._blocked_lane_event = {
+            "blockage": {
+                "release_target_lane_after_s": 5.5,
+                "s_m": 4850.0,
+                "target_lane_id": -1,
+            },
+            "safety": {
+                "minimum_front_gap_m": 30.0,
+                "minimum_rear_gap_m": 25.0,
+            }
+        }
+        runtime._blocked_lane_activation_s = 1.0
+        runtime._gap_release_commanded = True
+        # Gap-control traffic has already been retired by the work-zone
+        # diversity window; only the passed-in-target-lane path can release.
+        runtime._gap_control_vehicles = {}
+
+        runtime._update_blocked_lane(
+            ego_route_s_m=5000.0,
+            elapsed_s=6.5,
+        )
+
         self.assertTrue(
             runtime._target_lane_released
         )

@@ -1914,10 +1914,20 @@ def build_ego_route_plan(
     route plan only provides corridor geometry.
     """
 
-    plan: list[tuple[Any, Any]] = [
-        (waypoint, road_option)
-        for waypoint, road_option in route_context.route
-    ]
+    plan: list[tuple[Any, Any]] = []
+    for (waypoint, road_option), progress_m in zip(
+        route_context.route,
+        route_context.distances_m,
+    ):
+        selected = waypoint
+        if not bool(getattr(waypoint, "is_junction", False)):
+            corridor = route_context.adapter.logical_waypoint(
+                EGO_LANE_ID,
+                float(progress_m),
+            )
+            if corridor is not None:
+                selected = corridor
+        plan.append((selected, road_option))
     if len(plan) < 2:
         raise RuntimeError("Town05 ego route plan is too short")
     return plan
