@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import time
 from typing import Any, Sequence
 
@@ -9,6 +10,68 @@ from .contracts import SensorTensorBatch
 from .decision_adapter import LightweightDecisionAdapter, decode_proposal
 from .safety_bridge import advance_vla_control_plan
 from .temporal_supervisor import TemporalProposalSupervisor
+
+
+VISUAL_RISK_LEVELS = ("low", "medium", "high")
+VISUAL_HIGH_CONFIDENCE_THRESHOLD = 0.55
+
+
+def decode_visual_risk_assessment(
+    logits: torch.Tensor,
+    *,
+    high_confidence_threshold: float = VISUAL_HIGH_CONFIDENCE_THRESHOLD,
+) -> dict[str, Any]:
+    """Convert the learned visual-risk head into the safety-gate contract.
+
+    This adapter deliberately exposes no object identity or metric distance:
+    those values are unavailable from the raw-camera head.  It is therefore a
+    valid sensor-derived safety signal rather than a disguised simulator-truth
+    observation.
+    """
+    if logits.ndim != 2 or logits.shape != (1, len(VISUAL_RISK_LEVELS)):
+        raise ValueError("visual risk logits must have shape [1, 3]")
+    if not 0.0 < high_confidence_threshold < 1.0:
+        raise ValueError("high confidence threshold must be between 0 and 1")
+    probabilities = torch.softmax(logits.detach().float(), dim=-1)[0].cpu()
+    index = int(probabilities.argmax())
+    raw_level = VISUAL_RISK_LEVELS[index]
+    level = (
+        "medium"
+        if raw_level == "high"
+        and float(probabilities[2]) < high_confidence_threshold
+        else raw_level
+    )
+    recommended = {
+        "low": "keep_lane",
+        "medium": "decelerate",
+        "high": "emergency_brake",
+    }[level]
+    lane_safe = level == "low"
+    reason_codes = (
+        [] if level == "low" else [f"learned_visual_risk_{level}"]
+    )
+    return {
+        "risk_level": level,
+        "recommended_action": recommended,
+        "reason_codes": reason_codes,
+        "matched_entity_id": None,
+        "lane_change": {
+            direction: {
+                "is_safe": lane_safe,
+                "reason_codes": (
+                    [] if lane_safe else ["visual_risk_blocks_lane_change"]
+                ),
+            }
+            for direction in ("left", "right")
+        },
+        "source": "learned_raw_camera_visual_risk_head",
+        "raw_argmax_level": raw_level,
+        "high_confidence_threshold": high_confidence_threshold,
+        "probabilities": {
+            name: round(float(probabilities[value]), 6)
+            for value, name in enumerate(VISUAL_RISK_LEVELS)
+        },
+    }
 
 
 class LightweightVLAPipeline:
@@ -30,6 +93,7 @@ class LightweightVLAPipeline:
         self.temporal_supervisor = (
             temporal_supervisor or TemporalProposalSupervisor()
         )
+        self._last_visual_risk_assessment: dict[str, Any] | None = None
 
     def _move(self, batch: SensorTensorBatch) -> SensorTensorBatch:
         def floating(tensor: torch.Tensor) -> torch.Tensor:
@@ -89,6 +153,7 @@ class LightweightVLAPipeline:
         world_state: dict[str, Any] | None = None,
         risk_assessment: dict[str, Any] | None = None,
         stream_id: str | None = None,
+        use_model_risk_assessment: bool = False,
     ) -> dict[str, Any]:
         if not self.checkpoint_loaded:
             raise RuntimeError(
@@ -104,6 +169,9 @@ class LightweightVLAPipeline:
         started = time.perf_counter()
         with torch.inference_mode():
             output = self.model(**self._model_inputs(moved))
+        self._last_visual_risk_assessment = decode_visual_risk_assessment(
+            output.visual_risk_logits
+        )
         if self.device.type == "cuda":
             torch.cuda.synchronize(self.device)
         latency_ms = (time.perf_counter() - started) * 1000.0
@@ -120,14 +188,54 @@ class LightweightVLAPipeline:
             model_name=self.model_name,
             latency_ms=latency_ms,
         )[0]
-        if world_state is not None and risk_assessment is not None:
+        effective_risk = (
+            self._last_visual_risk_assessment
+            if use_model_risk_assessment
+            else risk_assessment
+        )
+        if world_state is not None and effective_risk is not None:
             return self.temporal_supervisor.stabilize(
                 proposal,
                 world_state,
-                risk_assessment,
+                effective_risk,
                 stream_id=stream_id,
             )
         return proposal
+
+    def predict_visual_risk(
+        self,
+        batch: SensorTensorBatch,
+    ) -> dict[str, Any]:
+        """Run the learned risk head without changing proposal temporal state.
+
+        Callers may supply a camera-view mask to obtain sensor-only evidence
+        for a particular direction.  This performs a normal model forward but
+        does not overwrite the primary fused-view risk assessment used by the
+        proposal path.
+        """
+
+        if not self.checkpoint_loaded:
+            raise RuntimeError(
+                "student checkpoint is not loaded; random initialization "
+                "cannot be used for risk inference"
+            )
+        batch.validate()
+        if batch.camera_bev.shape[0] != 1:
+            raise ValueError("runtime predict_visual_risk requires batch size 1")
+        moved = self._move(batch)
+        if self.device.type == "cuda":
+            torch.cuda.synchronize(self.device)
+        with torch.inference_mode():
+            output = self.model(**self._model_inputs(moved))
+        if self.device.type == "cuda":
+            torch.cuda.synchronize(self.device)
+        return decode_visual_risk_assessment(output.visual_risk_logits)
+
+    @property
+    def last_visual_risk_assessment(self) -> dict[str, Any]:
+        if self._last_visual_risk_assessment is None:
+            raise RuntimeError("visual risk is unavailable before model inference")
+        return copy.deepcopy(self._last_visual_risk_assessment)
 
     def reset_temporal_state(self, stream_id: str | None = None) -> None:
         self.temporal_supervisor.reset(stream_id)

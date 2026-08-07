@@ -1,30 +1,32 @@
 # 提交模型目录
 
-模型权重与 Docker 镜像单独提交，不写入 Git。运行脚本应从仓库根目录的相对路径
-`models/` 查找权重，也允许用 `MODEL_ROOT` 指向容器挂载目录。
+模型权重与 Docker 镜像单独提交，不写入 Git。运行脚本从仓库根目录的相对路径 `models/` 查找权重，也允许用 `MODEL_ROOT` 指向容器只读挂载目录。
 
 ```text
 models/
 ├── modernbert-drive-command-compositional/
-├── lightweight_vla_adapter/scene3_multimodal_v3/
-│   ├── model.pt
-│   ├── config.json
-│   ├── model_manifest.json
-│   └── model.sha256
-└── scene_understanding/yolo11s_driving_v2/weights/best.pt
+├── lightweight_vla_adapter/
+│   └── universal_three_scene_v6_sensor_policy/
+│       └── model.pt
+└── scene_understanding/
+    └── yolo11s_specialized_carla_v1/weights/best.pt   # 可选感知审核模块
 ```
 
-Linux 运行时示例：
+权重和配置的固定校验值见 `lightweight_vla_adapter/UNIVERSAL_THREE_SCENE_MODEL.md`。三个场景使用同一份 VLA 权重；场景差异仅体现在题目规定的可用传感器和场景配置，不能切换成三个专用模型。
+
+Linux 运行示例：
 
 ```bash
-REPO_ROOT=$(pwd)
-MODEL_ROOT=${MODEL_ROOT:-"$REPO_ROOT/models"}
+source submission_env.sh
+bash experiment/CARLA/scripts/run_universal_vla.sh scene1
+bash experiment/CARLA/scripts/run_universal_vla.sh scene2
+bash experiment/CARLA/scripts/run_universal_vla.sh scene3
+```
 
-python experiment/CARLA/run_emergency_response_6km.py \
-  --ego-controller vla-route-pid \
-  --vla-checkpoint "$MODEL_ROOT/lightweight_vla_adapter/scene3_multimodal_v3/model.pt" \
-  --vla-config lightweight_vla_adapter/configs/scene3_multimodal_v3.json \
-  --vla-parser-model "$MODEL_ROOT/modernbert-drive-command-compositional"
+自定义 Docker 权重挂载目录：
+
+```bash
+MODEL_ROOT=/models bash experiment/CARLA/scripts/run_universal_vla.sh scene3 /outputs
 ```
 
 提交前在 `models/` 内生成并校验完整哈希：
@@ -34,5 +36,4 @@ find models -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > 
 sha256sum -c models/SHA256SUMS
 ```
 
-最终 Docker 镜像只需包含代码与依赖；权重可随镜像交付，也可只读挂载到同一目录结构。
-不得在配置或清单中保留 `/root/autodl-tmp` 等训练服务器绝对路径。
+不得在配置、脚本或清单中保留训练服务器绝对路径。运行日志可以记录本次容器解析后的绝对路径，便于审计。

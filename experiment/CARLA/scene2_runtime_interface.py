@@ -24,7 +24,9 @@ CONTROL_ACTIONS = {
 }
 
 
-def _scene2_step_contract(encoded: Any) -> tuple[str, dict[str, Any], str]:
+def _scene2_step_contract(
+    encoded: Any,
+) -> tuple[str, dict[str, Any], str, dict[str, Any]]:
     """Normalize one compact Scene 2 step into the shared intent contract."""
 
     action, separator, raw_parameter = str(encoded).partition(":")
@@ -61,7 +63,16 @@ def _scene2_step_contract(encoded: Any) -> tuple[str, dict[str, Any], str]:
         or parameter.endswith("_WHEN_SAFE")
         else "SAFE_STOP"
     )
-    return action, parameters, on_blocked
+    completion_type = {
+        "SET_SPEED": "TARGET_SPEED_REACHED",
+        "CHANGE_LANE": "LANE_CHANGE_COMPLETED",
+        "PULL_OVER": "LANE_CHANGE_COMPLETED",
+        "TURN": "JUNCTION_EXITED",
+        "U_TURN": "JUNCTION_EXITED",
+        "STOP": "VEHICLE_STOPPED",
+        "WAIT": "ACTION_REACHED",
+    }.get(action, "ACTION_REACHED")
+    return action, parameters, on_blocked, {"type": completion_type}
 
 
 def build_scheduled_driving_intent(
@@ -76,7 +87,7 @@ def build_scheduled_driving_intent(
     encoded_steps: Sequence[Any] = command.get("steps", [])
     previous_step_id = None
     for index, encoded in enumerate(encoded_steps, start=1):
-        action, parameters, on_blocked = _scene2_step_contract(encoded)
+        action, parameters, on_blocked, completion = _scene2_step_contract(encoded)
         step_id = "{0}_step_{1:02d}".format(command["id"], index)
         steps.append(
             {
@@ -85,6 +96,9 @@ def build_scheduled_driving_intent(
                 "parameters": parameters,
                 "depends_on": [previous_step_id] if previous_step_id else [],
                 "on_blocked": on_blocked,
+                "trigger": {"type": "IMMEDIATE"},
+                "preconditions": [],
+                "completion": completion,
                 "status": "PENDING",
             }
         )
@@ -98,6 +112,12 @@ def build_scheduled_driving_intent(
         "simulation_frame": int(simulation_frame),
         "route_s_m": round(float(route_s_m), 3),
         "timestamp_s": round(float(timestamp_s), 3),
+        "input": {
+            "modality": "TEXT",
+            "language": "zh-CN",
+            "raw_text": str(command["spoken_text"]),
+            "normalized_text": str(command["spoken_text"]),
+        },
         "parse_result": {
             "status": "VALID",
             "confidence": 1.0,

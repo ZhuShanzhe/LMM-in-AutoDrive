@@ -88,6 +88,7 @@ class LightweightDecisionAdapter(nn.Module):
         use_environment: bool = True,
         use_candidate_entities: bool = True,
         use_structured_bev: bool = True,
+        fuse_structured_visual_risk: bool = False,
         condition_decision_on_visual_risk: bool = False,
         speed_cap_environment_index: int | None = None,
     ) -> None:
@@ -122,6 +123,15 @@ class LightweightDecisionAdapter(nn.Module):
         self.lane_head = nn.Linear(hidden_size, 3)
         self.confidence_head = nn.Linear(hidden_size, 1)
         self.visual_risk_head = nn.Linear(hidden_size, 3)
+        self.visual_risk_fusion = (
+            nn.Sequential(
+                nn.Linear(hidden_size * 3, hidden_size),
+                nn.LayerNorm(hidden_size),
+                nn.GELU(),
+            )
+            if fuse_structured_visual_risk
+            else nn.Identity()
+        )
         self.visual_risk_projection = nn.Linear(3, hidden_size)
         self.target_query = nn.Linear(hidden_size, hidden_size)
         self.hidden_size = hidden_size
@@ -131,6 +141,7 @@ class LightweightDecisionAdapter(nn.Module):
         self.use_environment = bool(use_environment)
         self.use_candidate_entities = bool(use_candidate_entities)
         self.use_structured_bev = bool(use_structured_bev)
+        self.fuse_structured_visual_risk = bool(fuse_structured_visual_risk)
         self.condition_decision_on_visual_risk = bool(
             condition_decision_on_visual_risk
         )
@@ -175,11 +186,11 @@ class LightweightDecisionAdapter(nn.Module):
             )
         if raw_camera_tokens.shape[1] > 0:
             valid_visual = raw_camera_mask.sum(dim=1, keepdim=True).clamp_min(1)
-            visual_summary = (
+            raw_camera_summary = (
                 raw_camera_tokens * raw_camera_mask.unsqueeze(-1)
             ).sum(dim=1) / valid_visual
         else:
-            visual_summary = camera_bev.new_zeros(
+            raw_camera_summary = camera_bev.new_zeros(
                 (batch, self.hidden_size)
             )
         intent_tokens = self.intent_projection(intent_tokens)
@@ -195,6 +206,30 @@ class LightweightDecisionAdapter(nn.Module):
             )
             candidate_tokens = projected_candidate_tokens[:, :0]
             candidate_memory_mask = candidate_mask[:, :0].to(dtype=torch.bool)
+        if bev_tokens.shape[1] > 0:
+            bev_summary = bev_tokens.mean(dim=1)
+        else:
+            bev_summary = camera_bev.new_zeros((batch, self.hidden_size))
+        if self.use_candidate_entities and projected_candidate_tokens.shape[1] > 0:
+            valid_candidates = candidate_memory_mask.sum(
+                dim=1, keepdim=True
+            ).clamp_min(1)
+            candidate_summary = (
+                projected_candidate_tokens
+                * candidate_memory_mask.unsqueeze(-1)
+            ).sum(dim=1) / valid_candidates
+        else:
+            candidate_summary = camera_bev.new_zeros(
+                (batch, self.hidden_size)
+            )
+        if self.fuse_structured_visual_risk:
+            visual_summary = self.visual_risk_fusion(
+                torch.cat(
+                    [raw_camera_summary, bev_summary, candidate_summary], dim=-1
+                )
+            )
+        else:
+            visual_summary = raw_camera_summary
         ego_token = self.ego_projection(ego_features).unsqueeze(1)
         if self.use_environment:
             if environment_features is None:

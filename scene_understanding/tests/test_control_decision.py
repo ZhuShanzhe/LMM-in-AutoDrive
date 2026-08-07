@@ -331,6 +331,33 @@ class ControlDecisionTests(unittest.TestCase):
                 intent, self.world_state, alignment, stale
             )
 
+    def test_accepts_finite_route_heading_and_reference(self):
+        intent = driving_intent("KEEP_LANE")
+        alignment = semantic_alignment(intent, self.world_state["frame_id"])
+        result = self.build(intent, alignment)
+        result["target_location"] = {
+            "x": 12.0,
+            "y": -3.0,
+            "z": 0.2,
+            "yaw": 15.0,
+            "reference": {"x": 10.0, "y": -3.5, "z": 0.2, "yaw": 14.0},
+        }
+        self.assertEqual(validate_control_decision(result), [])
+
+    def test_rejects_malformed_route_reference(self):
+        intent = driving_intent("KEEP_LANE")
+        alignment = semantic_alignment(intent, self.world_state["frame_id"])
+        result = self.build(intent, alignment)
+        result["target_location"] = {
+            "x": 12.0,
+            "y": -3.0,
+            "z": 0.2,
+            "reference": {"x": 10.0, "y": -3.5},
+        }
+        self.assertTrue(
+            any("target_location.reference" in error for error in validate_control_decision(result))
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

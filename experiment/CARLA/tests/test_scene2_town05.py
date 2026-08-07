@@ -133,6 +133,24 @@ class Scene2Town05Tests(unittest.TestCase):
         self.assertEqual(steps[1]["parameters"], {"condition": "PATH_CLEAR"})
         self.assertEqual(steps[1]["on_blocked"], "WAIT_FOR_SAFE")
         self.assertEqual(steps[2]["on_blocked"], "WAIT_FOR_SAFE")
+        self.assertEqual(steps[0]["completion"], {"type": "TARGET_SPEED_REACHED"})
+        self.assertEqual(steps[1]["completion"], {"type": "ACTION_REACHED"})
+        self.assertEqual(intent["input"]["raw_text"], "typed test")
+
+    def test_scene2_lateral_and_turn_steps_have_runtime_completion(self):
+        command = {
+            "id": "motion",
+            "category": "NAVIGATION",
+            "urgency": "NORMAL",
+            "spoken_text": "motion test",
+            "steps": ["CHANGE_LANE:LEFT", "TURN:RIGHT", "U_TURN:LEGAL"],
+        }
+        intent = build_scheduled_driving_intent(command, 1, 0.0, 0.0)
+        completions = [step["completion"]["type"] for step in intent["intent"]["steps"]]
+        self.assertEqual(
+            completions,
+            ["LANE_CHANGE_COMPLETED", "JUNCTION_EXITED", "JUNCTION_EXITED"],
+        )
 
     def test_scripted_walker_restores_hidden_staging_on_start(self):
         class FakeActor:

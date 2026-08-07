@@ -55,8 +55,8 @@ The integration environment is Linux with CARLA `0.9.16` and Python
 the API in the data-disk environment and verify it before starting a run:
 
 ```bash
-conda activate /root/autodl-tmp/conda_envs/command_parser
-export CARLA_ROOT=/root/autodl-tmp/CARLA_0.9.16
+conda activate $PYTHON_BIN
+export CARLA_ROOT=$CARLA_ROOT
 python -m pip install "$CARLA_ROOT"/PythonAPI/carla/dist/carla-0.9.16-*.whl
 python -c "from importlib.metadata import version; print(version('carla'))"
 ```
@@ -72,7 +72,7 @@ python run_control_experiment.py emergency_brake --duration-s 25 --record-images
 ```
 
 Set `CARLA_ROOT` if CARLA is not installed at
-`/root/autodl-tmp/CARLA_0.9.16`.
+`$CARLA_ROOT`.
 
 ## Outputs
 

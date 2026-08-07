@@ -45,6 +45,13 @@ def apply_ablation(inputs: dict[str, torch.Tensor], mode: str) -> None:
         inputs["ego_features"].zero_()
     elif mode == "no_environment":
         inputs["environment_features"].zero_()
+    elif mode == "no_camera_bev":
+        inputs["camera_bev"].zero_()
+    elif mode == "no_lidar_bev":
+        inputs["lidar_bev"].zero_()
+    elif mode == "no_candidate_entities":
+        inputs["candidate_features"].zero_()
+        inputs["candidate_mask"].zero_()
     elif mode.startswith("no_view_"):
         view = int(mode.rsplit("_", 1)[1])
         inputs["camera_view_mask"][:, view] = False
@@ -59,6 +66,13 @@ def apply_ablation(inputs: dict[str, torch.Tensor], mode: str) -> None:
         inputs["environment_features"] = inputs["environment_features"].roll(
             1, dims=0
         )
+    elif mode == "shuffled_lidar_bev":
+        inputs["lidar_bev"] = inputs["lidar_bev"].roll(1, dims=0)
+    elif mode == "shuffled_candidate_entities":
+        inputs["candidate_features"] = inputs["candidate_features"].roll(
+            1, dims=0
+        )
+        inputs["candidate_mask"] = inputs["candidate_mask"].roll(1, dims=0)
 
 
 def run(
@@ -168,9 +182,11 @@ def main() -> None:
     model.to(device).eval()
     modes = [
         "baseline", "no_images", "no_text", "no_vehicle_state",
-        "no_environment", "no_view_0", "no_view_1", "no_view_2", "no_view_3",
+        "no_environment", "no_camera_bev", "no_lidar_bev",
+        "no_candidate_entities", "no_view_0", "no_view_1", "no_view_2", "no_view_3",
         "shuffled_images", "shuffled_text", "shuffled_vehicle_state",
-        "shuffled_environment",
+        "shuffled_environment", "shuffled_lidar_bev",
+        "shuffled_candidate_entities",
     ]
     results = [run(model, loader, device, mode) for mode in modes]
     baseline = results[0]

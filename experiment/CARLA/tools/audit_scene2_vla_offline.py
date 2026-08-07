@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit a Scene-3 VLA checkpoint against the 15 Scene-2 commands.
+"""Audit a universal VLA checkpoint against Scene-2 commands or substeps.
 
 This is an adaptation diagnostic, not a closed-loop competition score.  It
 uses one exact-frame four-view Scene-2 capture and the recorded vehicle/weather
@@ -64,6 +64,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--frame", type=int, default=46906)
     parser.add_argument(
+        "--atomic-steps",
+        action="store_true",
+        help=(
+            "Evaluate the parser/FSM active substep representation used by "
+            "the closed loop instead of sending an entire compound command "
+            "to the single-action VLA head."
+        ),
+    )
+    parser.add_argument(
         "--vla-config",
         type=Path,
         default=Path("lightweight_vla_adapter/configs/scene3_multimodal_v3.json"),
@@ -116,6 +125,65 @@ def environment_tensor(config: dict, world_row: dict) -> torch.Tensor:
     return torch.tensor(values, dtype=torch.float32).unsqueeze(0)
 
 
+def atomic_step_contract(
+    encoded: str,
+    *,
+    current_speed_kmh: float,
+    cruise_speed_kmh: float,
+) -> dict:
+    """Map one compact competition step to the VLA's atomic action space."""
+
+    operation, separator, raw_parameter = str(encoded).partition(":")
+    operation = operation.strip().upper()
+    parameter = raw_parameter.strip().upper() if separator else ""
+    speed = float(cruise_speed_kmh)
+    lane = None
+    if operation == "SET_SPEED":
+        speed = float(parameter.removesuffix("MPS")) * 3.6
+        if speed < current_speed_kmh - 2.0:
+            action = "decelerate"
+        elif speed > current_speed_kmh + 2.0:
+            action = "accelerate"
+        else:
+            action = "keep_lane"
+    elif operation == "ADJUST_SPEED":
+        action = "decelerate" if parameter == "DECREASE" else "accelerate"
+        speed = min(cruise_speed_kmh, 30.0) if action == "decelerate" else cruise_speed_kmh
+    elif operation in {"WAIT", "CHECK", "CONFIRM"}:
+        action, speed = "stop", 0.0
+    elif operation == "YIELD":
+        action, speed = "decelerate", min(cruise_speed_kmh, 20.0)
+    elif operation in {"CHANGE_LANE", "PULL_OVER"}:
+        direction = "right" if "RIGHT" in parameter or "RETURN" in parameter else "left"
+        action, lane = f"lane_change_{direction}", direction
+    elif operation in {"OVERTAKE", "PASS_BY"}:
+        action, lane = "lane_change_left", "left"
+    elif operation in {"TURN", "U_TURN"}:
+        direction = "right" if "RIGHT" in parameter else "left"
+        action = f"turn_{direction}"
+    elif operation == "KEEP_SAFE_DISTANCE" or operation == "FOLLOW":
+        action, speed = "decelerate", min(cruise_speed_kmh, 30.0)
+    else:
+        action = "keep_lane"
+    templates = {
+        "keep_lane": "Keep the current lane at {speed:.1f} kilometers per hour.",
+        "accelerate": "Accelerate smoothly to {speed:.1f} kilometers per hour when safe.",
+        "decelerate": "Slow down smoothly to {speed:.1f} kilometers per hour.",
+        "stop": "Stop the vehicle at a safe position.",
+        "lane_change_left": "Change to the left lane when it is safe.",
+        "lane_change_right": "Change to the right lane when it is safe.",
+        "turn_left": "Turn left safely at the next junction.",
+        "turn_right": "Turn right safely at the next junction.",
+    }
+    return {
+        "encoded_step": encoded,
+        "text": templates[action].format(speed=speed),
+        "action": action,
+        "target_speed_kmh": speed,
+        "target_lane": lane,
+    }
+
+
 def main() -> None:
     args = parse_args()
     scene2 = json.loads(args.scene2_config.read_text(encoding="utf-8"))
@@ -142,9 +210,29 @@ def main() -> None:
     parser = parser_service.parser
     parser.load()
 
-    rows = []
+    audit_items = []
+    current_speed_kmh = float(world_row["ego"]["speed_kmh"])
     for command in scene2["commands"]:
-        text = str(command["text"])
+        if args.atomic_steps:
+            audit_items.extend(
+                {
+                    "command": command,
+                    "step_index": index,
+                    **atomic_step_contract(
+                        step,
+                        current_speed_kmh=current_speed_kmh,
+                        cruise_speed_kmh=float(scene2["route"]["target_speed_kmh"]),
+                    ),
+                }
+                for index, step in enumerate(command["steps"], start=1)
+            )
+        else:
+            audit_items.append({"command": command, "text": str(command["text"])})
+
+    rows = []
+    for item in audit_items:
+        command = item["command"]
+        text = str(item["text"])
         parsed = parser_service.parse_text(
             text,
             request_id=f"scene2-audit-{command['id']}",
@@ -196,13 +284,23 @@ def main() -> None:
             candidate_entity_ids=[[]],
             world_state={"objects": [], "ego": {"speed_mps": speed_mps}},
             risk_assessment=risk,
-            stream_id=str(command["id"]),
+            stream_id=(
+                f"{command['id']}:step_{item['step_index']:02d}"
+                if args.atomic_steps
+                else str(command["id"])
+            ),
         )
         latency_ms = (time.perf_counter() - started) * 1000.0
-        expected = sorted(EXPECTED_FIRST_ACTIONS[str(command["id"])])
+        expected = (
+            [str(item["action"])]
+            if args.atomic_steps
+            else sorted(EXPECTED_FIRST_ACTIONS[str(command["id"])])
+        )
         rows.append(
             {
                 "command_id": command["id"],
+                "step_index": item.get("step_index"),
+                "encoded_step": item.get("encoded_step"),
                 "text": text,
                 "steps": command["steps"],
                 "parser_status": parsed.get("parse_result", {}).get("status"),
@@ -210,6 +308,10 @@ def main() -> None:
                 "expected_first_actions": expected,
                 "proposal": proposal,
                 "first_action_compatible": proposal["action"] in expected,
+                "target_speed_error_kmh": (
+                    round(abs(float(proposal["target_speed_kmh"]) - float(item["target_speed_kmh"])), 3)
+                    if args.atomic_steps else None
+                ),
                 "inference_latency_ms": round(latency_ms, 3),
             }
         )
@@ -217,10 +319,12 @@ def main() -> None:
     payload = {
         "schema_version": "scene2_vla_adaptation_audit/1.0",
         "scope": "offline single-frame adaptation diagnostic; not a competition score",
+        "audit_mode": "atomic_fsm_steps" if args.atomic_steps else "compound_commands",
         "frame": args.frame,
         "input_mode": "raw Chinese text + exact-frame four-view RGB + vehicle/weather state",
         "checkpoint": str(args.checkpoint),
-        "command_count": len(rows),
+        "command_count": len(scene2["commands"]),
+        "evaluated_item_count": len(rows),
         "first_action_compatible_count": compatible,
         "first_action_compatible_rate": compatible / len(rows),
         "rows": rows,

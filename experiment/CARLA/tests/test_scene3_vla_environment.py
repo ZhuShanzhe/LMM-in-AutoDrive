@@ -8,7 +8,7 @@ CARLA_DIR = Path(__file__).resolve().parents[1]
 if str(CARLA_DIR) not in sys.path:
     sys.path.insert(0, str(CARLA_DIR))
 
-from scene3_vla_controller import environment_feature_tensor
+from universal_vla_controller import environment_feature_tensor
 
 
 class FakeWorld:
@@ -34,15 +34,15 @@ class FakeEgo:
         return 60.0
 
 
-def test_legacy_environment_contract_is_preserved():
+def test_unified_environment_contract_is_14_dim():
     features = environment_feature_tensor(FakeWorld())
-    assert tuple(features.shape) == (1, 12)
-    assert float(features[0, 11]) == pytest.approx(8.0)
+    assert tuple(features.shape) == (1, 14)
+    assert float(features[0, 11]) == pytest.approx(0.8)
 
 
 def test_v3_environment_adds_road_and_control_speed_caps():
     features = environment_feature_tensor(
-        FakeWorld(), FakeEgo(), 30.0, include_speed_limits=True
+        FakeWorld(), FakeEgo(), 30.0
     )
     assert tuple(features.shape) == (1, 14)
     assert float(features[0, 11]) == pytest.approx(0.8)

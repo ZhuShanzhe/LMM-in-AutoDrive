@@ -63,6 +63,24 @@ BACKGROUND_TRAFFIC_PLAN = (
 )
 
 
+def work_zone_boundary_positions(
+    start_s_m: float,
+    end_s_m: float,
+    spacing_m: float,
+) -> list[float]:
+    """Return a half-open cone sequence that leaves the exit hand-off clear."""
+    if spacing_m <= 0.0:
+        raise ValueError("work-zone cone spacing must be positive")
+    if end_s_m <= start_s_m:
+        raise ValueError("work-zone end must be after its start")
+    positions = []
+    s_m = float(start_s_m)
+    while s_m < float(end_s_m) - 1e-6:
+        positions.append(s_m)
+        s_m += float(spacing_m)
+    return positions
+
+
 def first_available_blueprint(
     library: Any,
     blueprint_ids: Sequence[str],
@@ -264,6 +282,19 @@ class EmergencySceneActorRuntime:
             self._activate_advance_warning(event)
             return
         if event["id"] == "scene3_cone_taper":
+            # A controlled construction approach must not retain free-flow
+            # traffic behind a sensor-policy ego that may stop for the taper.
+            # Retiring the pre-work-zone diversity fleet here prevents a
+            # Traffic Manager follower from rear-ending the ego while keeping
+            # all construction actors and the later blocked-lane gap traffic.
+            retired = self._retire_background_traffic(
+                retire_pending=True,
+            )
+            print(
+                "BACKGROUND TRAFFIC RETIRED | "
+                f"count={retired} | "
+                "reason=controlled_work_zone_approach"
+            )
             self._activate_cone_taper(event)
             return
         if event["id"] == "scene3_work_zone":
@@ -486,6 +517,16 @@ class EmergencySceneActorRuntime:
             actor,
             target_speed_kmh,
         )
+        self._traffic_manager.distance_to_leading_vehicle(
+            actor,
+            8.0,
+        )
+        if self._ego_actor is not None:
+            self._traffic_manager.collision_detection(
+                actor,
+                self._ego_actor,
+                True,
+            )
         self._traffic_manager.auto_lane_change(
             actor,
             False,
@@ -907,12 +948,17 @@ class EmergencySceneActorRuntime:
                 30.0,
             )
         )
-        boundary_positions: list[float] = []
-        s_m = start_s_m
-        while s_m < end_s_m:
-            boundary_positions.append(s_m)
-            s_m += spacing_m
-        boundary_positions.append(end_s_m)
+        boundary_positions = work_zone_boundary_positions(
+            start_s_m,
+            end_s_m,
+            spacing_m,
+        )
+        # Keep the event hand-off point clear.  A cone exactly at ``end_s_m``
+        # sits on the curved lane-centre transition where the route executor
+        # recentres from the open work-zone lane.  The cone at the preceding
+        # spacing position already closes the lane up to the exit, while an
+        # extra terminal cone can touch the ego bounding box even though the
+        # ego remains in the legal adjacent lane.
 
         boundary_cone_count = 0
         open_boundary_lane_id = -2
@@ -1549,7 +1595,12 @@ class EmergencySceneActorRuntime:
             or self._target_lane_released
         ):
             return
-        release_after_s = 4.0
+        release_after_s = float(
+            self._blocked_lane_event.get("blockage", {}).get(
+                "release_target_lane_after_s",
+                4.0,
+            )
+        )
         if (
             elapsed_s
             - self._blocked_lane_activation_s
@@ -1619,15 +1670,11 @@ class EmergencySceneActorRuntime:
             return
 
         self._target_lane_released = True
-        self._traffic_manager.force_lane_change(
-            self._ego_actor,
-            False,
-        )
-        self._blocked_lane_change_commanded = True
         print(
             "BLOCKED-LANE TARGET GAP RELEASED | "
             f"front_gap={front_gap_m:.1f} m | "
-            f"rear_gap={rear_gap_m:.1f} m"
+            f"rear_gap={rear_gap_m:.1f} m | "
+            "awaiting_policy_lane_change=true"
         )
         print(
             "EGO CONTROLLED LANE CHANGE | "

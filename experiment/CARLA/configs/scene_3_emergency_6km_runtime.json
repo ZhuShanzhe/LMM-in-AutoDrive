@@ -534,6 +534,47 @@
       }
     }
   ],
+  "event_variant_sets": [
+    {
+      "id": "baseline",
+      "description": "Nominal recoverable emergency sequence used for the reference run.",
+      "event_overrides": {
+        "scene3_cut_in": {"actor": {"target_speed_kmh": 32.0, "lane_change_duration_s": 2.2, "post_merge_brake_probability": 0.25}},
+        "scene3_advance_warning": {"props": {"s_m": 2925.0}},
+        "scene3_cone_taper": {"closure": {"cone_spacing_m": 10.0, "taper_end_s_m": 3150.0}},
+        "scene3_work_zone": {"zone": {"work_vehicle_spawns": [{"role_name": "scene3_work_truck_1", "lane_id": -2, "s_m": 3225.0}, {"role_name": "scene3_work_truck_2", "lane_id": -2, "s_m": 3400.0}]}},
+        "scene3_temporary_pedestrian": {"crossing_behavior": {"speed_mps": 1.8, "hesitation_probability": 0.35, "hesitation_duration_s": [0.4, 1.2]}},
+        "scene3_blocked_lane": {"blockage": {"release_target_lane_after_s": 4.0, "rear_warning_triangle_distance_m": 25.0}},
+        "scene3_work_zone_exit": {"recovery": {"normal_speed_limit_kmh": 60.0}}
+      }
+    },
+    {
+      "id": "cautious_sparse",
+      "description": "Slower cut-in and pedestrian with wider cone spacing and a longer blocked-lane wait.",
+      "event_overrides": {
+        "scene3_cut_in": {"actor": {"target_speed_kmh": 28.0, "lane_change_duration_s": 2.8, "post_merge_brake_probability": 0.0}},
+        "scene3_advance_warning": {"props": {"s_m": 2910.0}},
+        "scene3_cone_taper": {"closure": {"cone_spacing_m": 12.0, "taper_end_s_m": 3150.0}},
+        "scene3_work_zone": {"zone": {"work_vehicle_spawns": [{"role_name": "scene3_work_truck_1", "lane_id": -2, "s_m": 3210.0}, {"role_name": "scene3_work_truck_2", "lane_id": -2, "s_m": 3380.0}]}},
+        "scene3_temporary_pedestrian": {"crossing_behavior": {"speed_mps": 1.4, "hesitation_probability": 0.55, "hesitation_duration_s": [0.8, 1.6]}},
+        "scene3_blocked_lane": {"blockage": {"release_target_lane_after_s": 5.5, "rear_warning_triangle_distance_m": 30.0}},
+        "scene3_work_zone_exit": {"recovery": {"normal_speed_limit_kmh": 55.0}}
+      }
+    },
+    {
+      "id": "dense_dynamic",
+      "description": "Faster dynamic actors, denser taper and shorter target-lane release interval.",
+      "event_overrides": {
+        "scene3_cut_in": {"actor": {"target_speed_kmh": 36.0, "lane_change_duration_s": 1.8, "post_merge_brake_probability": 0.5}},
+        "scene3_advance_warning": {"props": {"s_m": 2940.0}},
+        "scene3_cone_taper": {"closure": {"cone_spacing_m": 8.0, "taper_end_s_m": 3150.0}},
+        "scene3_work_zone": {"zone": {"work_vehicle_spawns": [{"role_name": "scene3_work_truck_1", "lane_id": -2, "s_m": 3235.0}, {"role_name": "scene3_work_truck_2", "lane_id": -2, "s_m": 3410.0}]}},
+        "scene3_temporary_pedestrian": {"crossing_behavior": {"speed_mps": 2.2, "hesitation_probability": 0.15, "hesitation_duration_s": [0.2, 0.7]}},
+        "scene3_blocked_lane": {"blockage": {"release_target_lane_after_s": 2.5, "rear_warning_triangle_distance_m": 20.0}},
+        "scene3_work_zone_exit": {"recovery": {"normal_speed_limit_kmh": 60.0}}
+      }
+    }
+  ],
   "decision_interfaces": {
     "input_health_schema": "multisource_health/1.0",
     "event_observation_schema": "scene_event_observation/1.0",

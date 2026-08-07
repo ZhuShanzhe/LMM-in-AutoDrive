@@ -524,12 +524,36 @@ def validate_control_decision(data: Any) -> list[str]:
     if data.get("target_lane") not in {None, "left", "right"}:
         errors.append("target_lane: expected null, 'left', or 'right'")
     location = data.get("target_location")
-    if location is not None and (
-        not isinstance(location, dict)
-        or set(location) != {"x", "y", "z"}
-        or any(not _is_number(location.get(key)) for key in ("x", "y", "z"))
-    ):
-        errors.append("target_location: expected null or finite x/y/z object")
+    if location is not None:
+        allowed_location_keys = {"x", "y", "z", "yaw", "reference"}
+        if (
+            not isinstance(location, dict)
+            or not {"x", "y", "z"}.issubset(location)
+            or not set(location).issubset(allowed_location_keys)
+            or any(
+                not _is_number(location.get(key))
+                for key in ("x", "y", "z")
+            )
+            or (
+                "yaw" in location and not _is_number(location.get("yaw"))
+            )
+        ):
+            errors.append(
+                "target_location: expected finite x/y/z with optional yaw/reference"
+            )
+        reference = location.get("reference") if isinstance(location, dict) else None
+        if reference is not None and (
+            not isinstance(reference, dict)
+            or not {"x", "y", "yaw"}.issubset(reference)
+            or not set(reference).issubset({"x", "y", "z", "yaw"})
+            or any(
+                not _is_number(reference.get(key))
+                for key in reference
+            )
+        ):
+            errors.append(
+                "target_location.reference: expected finite x/y/yaw with optional z"
+            )
     if not isinstance(data.get("emergency"), bool):
         errors.append("emergency: expected a boolean")
     elif data.get("emergency") != (data.get("action") == "emergency_brake"):

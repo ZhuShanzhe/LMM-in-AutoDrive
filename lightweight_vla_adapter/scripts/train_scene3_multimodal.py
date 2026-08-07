@@ -36,11 +36,13 @@ class Scene3Dataset(Dataset):
         *,
         augment: bool,
         intent_max_length: int = 32,
+        bev_input_size: tuple[int, int] = (64, 64),
     ) -> None:
         self.root = root
         self.rows = rows
         self.augment = augment
         self.intent_max_length = int(intent_max_length)
+        self.bev_input_size = tuple(int(value) for value in bev_input_size)
 
     def __len__(self) -> int:
         return len(self.rows)
@@ -97,11 +99,44 @@ class Scene3Dataset(Dataset):
         padded_mask[: mask.shape[0]] = mask
         saved["intent_tokens"] = padded_tokens
         saved["intent_mask"] = padded_mask
+        for name in ("camera_bev", "lidar_bev"):
+            tensor = saved[name].float()
+            if tensor.shape[-2:] != self.bev_input_size:
+                tensor = F.interpolate(
+                    tensor.unsqueeze(0),
+                    size=self.bev_input_size,
+                    mode="bilinear",
+                    align_corners=False,
+                ).squeeze(0)
+            saved[name] = tensor
+        configured_mask = row.get(
+            "camera_view_mask", saved.get("camera_view_mask")
+        )
+        if configured_mask is None:
+            view_mask = torch.ones(images.shape[0], dtype=torch.bool)
+        else:
+            view_mask = torch.as_tensor(configured_mask, dtype=torch.bool)
+        if view_mask.numel() != images.shape[0]:
+            raise ValueError(
+                f"camera_view_mask has {view_mask.numel()} entries for "
+                f"{images.shape[0]} images"
+            )
+        # Front-only dropout teaches the same checkpoint to serve Scene 1,
+        # while partial side-view dropout makes transient sensor loss safe.
+        if self.augment and images.shape[0] > 1:
+            if random.random() < 0.25:
+                view_mask[1:] = False
+            else:
+                for view_index in range(1, images.shape[0]):
+                    if random.random() < 0.10:
+                        view_mask[view_index] = False
+        if not bool(view_mask.any()):
+            view_mask[0] = True
         action = ACTION_LABELS.index(row["label"]["action"])
         return {
             **saved,
             "camera_images": images,
-            "camera_view_mask": torch.ones(4, dtype=torch.bool),
+            "camera_view_mask": view_mask,
             "action_label": torch.tensor(action),
             "speed_label": torch.tensor(row["label"]["target_speed_kmh"]),
             "lane_label": torch.tensor(LANE_LABELS[row["label"]["target_lane"]]),
@@ -113,6 +148,7 @@ class Scene3Dataset(Dataset):
             "counterfactual_set_id": str(
                 row.get("counterfactual_set_id", row.get("sample_id", index))
             ),
+            "source_dataset": str(row.get("source_dataset", "CARLA")),
         }
 
 
@@ -164,7 +200,11 @@ def split_rows(rows: list[dict]) -> tuple[list[dict], list[dict], list[dict]]:
     )
 
 
-def model_kwargs(batch: dict[str, torch.Tensor], device: torch.device):
+def model_kwargs(
+    batch: dict[str, torch.Tensor],
+    device: torch.device,
+    config: dict | None = None,
+):
     floating = (
         "camera_bev", "lidar_bev", "ego_features", "candidate_features",
         "intent_tokens", "camera_images", "environment_features"
@@ -175,10 +215,36 @@ def model_kwargs(batch: dict[str, torch.Tensor], device: torch.device):
         intent_mask=batch["intent_mask"].to(device),
         camera_view_mask=batch["camera_view_mask"].to(device),
     )
+    if config is not None and not bool(
+        config.get("use_candidate_entities", True)
+    ):
+        result["candidate_features"].zero_()
+        result["candidate_mask"].zero_()
+    allowed_structured_sources = (
+        set(config.get("structured_sensor_sources", []))
+        if config is not None
+        else set()
+    )
+    if config is not None and "structured_sensor_sources" in config:
+        blocked = torch.tensor(
+            [
+                str(source) not in allowed_structured_sources
+                for source in batch["source_dataset"]
+            ],
+            dtype=torch.bool,
+            device=device,
+        )
+        result["camera_bev"][blocked] = 0
+        result["lidar_bev"][blocked] = 0
     return result
 
 
-def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> dict:
+def evaluate(
+    model: nn.Module,
+    loader: DataLoader,
+    device: torch.device,
+    config: dict | None = None,
+) -> dict:
     model.eval()
     totals = Counter()
     action_totals = Counter()
@@ -189,7 +255,7 @@ def evaluate(model: nn.Module, loader: DataLoader, device: torch.device) -> dict
     environment_pair_predictions: dict[str, dict[str, tuple[float, float]]] = {}
     with torch.inference_mode():
         for batch in loader:
-            output = model(**model_kwargs(batch, device))
+            output = model(**model_kwargs(batch, device, config))
             action = batch["action_label"].to(device)
             risk = batch["risk_label"].to(device)
             totals["count"] += action.numel()
@@ -300,6 +366,7 @@ def main() -> None:
     torch.manual_seed(args.seed)
     device = torch.device(args.device)
     config = json.loads(args.config.read_text(encoding="utf-8"))
+    bev_input_size = tuple(config.get("bev_input_size", (64, 64)))
     rows = load_rows(args.dataset)
     if len(rows) < 50:
         raise ValueError("at least 50 synchronized training samples are required")
@@ -335,7 +402,7 @@ def main() -> None:
     if not 0.0 <= args.balance_power <= 1.0:
         raise ValueError("--balance-power must be in [0, 1]")
     sample_weights = [
-        1.0
+        float(row.get("sampling_weight", 1.0))
         / (
             joint_counts[(row["label"]["action"], row["risk_level"])]
             ** args.balance_power
@@ -349,6 +416,7 @@ def main() -> None:
             train_rows,
             augment=True,
             intent_max_length=int(config.get("intent_max_length", 32)),
+            bev_input_size=bev_input_size,
         ),
         batch_size=args.batch_size, sampler=sampler, num_workers=4,
         pin_memory=True, persistent_workers=True,
@@ -359,6 +427,7 @@ def main() -> None:
             validation_rows,
             augment=False,
             intent_max_length=int(config.get("intent_max_length", 32)),
+            bev_input_size=bev_input_size,
         ),
         batch_size=args.batch_size, shuffle=False, num_workers=2,
         pin_memory=True, persistent_workers=True,
@@ -370,6 +439,7 @@ def main() -> None:
                 test_rows,
                 augment=False,
                 intent_max_length=int(config.get("intent_max_length", 32)),
+                bev_input_size=bev_input_size,
             ),
             batch_size=args.batch_size,
             shuffle=False,
@@ -414,8 +484,8 @@ def main() -> None:
         model.train()
         loss_sum = 0.0
         for batch in train_loader:
-            inputs = model_kwargs(batch, device)
-            if random.random() < 0.50:
+            inputs = model_kwargs(batch, device, config)
+            if random.random() < 0.10:
                 inputs["candidate_features"] = torch.zeros_like(
                     inputs["candidate_features"]
                 )
@@ -446,7 +516,7 @@ def main() -> None:
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
             loss_sum += float(loss.detach())
-        metrics = evaluate(model, validation_loader, device)
+        metrics = evaluate(model, validation_loader, device, config)
         metrics.update(epoch=epoch, train_loss=loss_sum / max(1, len(train_loader)))
         emergency_accuracy = metrics["per_action_accuracy"].get(
             "emergency_brake", {"accuracy": 0.0}
@@ -474,7 +544,7 @@ def main() -> None:
             args.output_dir / "model.pt", map_location=device, weights_only=True
         )
         model.load_state_dict(best_state)
-        test_metrics = evaluate(model, test_loader, device)
+        test_metrics = evaluate(model, test_loader, device, config)
     else:
         test_metrics = None
     report = {

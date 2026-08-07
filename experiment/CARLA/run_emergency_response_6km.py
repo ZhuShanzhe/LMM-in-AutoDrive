@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import bisect
+import copy
 import glob
 import importlib.util
 import json
@@ -449,6 +450,7 @@ class SafetyAuditState:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._collision_frames: list[int] = []
+        self._collision_events: list[dict[str, Any]] = []
         self._lane_invasion_frames: list[int] = []
         self._lane_invasion_events: list[dict[str, Any]] = []
         self._invalid_lane_samples = 0
@@ -457,17 +459,40 @@ class SafetyAuditState:
         self,
         event: Any,
     ) -> None:
+        other_actor = getattr(event, "other_actor", None)
+        actor_attributes = getattr(other_actor, "attributes", {}) or {}
+        impulse = getattr(event, "normal_impulse", None)
+        impulse_payload = None
+        if impulse is not None:
+            impulse_payload = {
+                "x": round(float(getattr(impulse, "x", 0.0)), 6),
+                "y": round(float(getattr(impulse, "y", 0.0)), 6),
+                "z": round(float(getattr(impulse, "z", 0.0)), 6),
+            }
+        payload = {
+            "frame": int(event.frame),
+            "other_actor_id": getattr(other_actor, "id", None),
+            "other_actor_type_id": getattr(
+                other_actor,
+                "type_id",
+                "unknown",
+            ),
+            "other_actor_role_name": actor_attributes.get(
+                "role_name",
+                "",
+            ),
+            "normal_impulse": impulse_payload,
+        }
         with self._lock:
-            self._collision_frames.append(
-                int(event.frame)
-            )
+            self._collision_frames.append(payload["frame"])
+            self._collision_events.append(payload)
             collision_index = len(self._collision_frames)
         if collision_index <= 5:
-            other_actor = getattr(event, "other_actor", None)
             print(
                 "COLLISION SAMPLE | "
                 f"frame={int(event.frame)} | "
-                f"other={getattr(other_actor, 'type_id', 'unknown')}"
+                f"other={payload['other_actor_type_id']} | "
+                f"role={payload['other_actor_role_name']}"
             )
 
     def record_lane_invasion(
@@ -540,6 +565,9 @@ class SafetyAuditState:
             collision_frames = list(
                 self._collision_frames
             )
+            collision_events = [
+                dict(event) for event in self._collision_events
+            ]
             lane_invasion_frames = list(
                 self._lane_invasion_frames
             )
@@ -554,6 +582,7 @@ class SafetyAuditState:
                 collision_frames
             ),
             "collision_frames": collision_frames,
+            "collision_events": collision_events,
             "lane_invasion_event_count": len(
                 lane_invasion_frames
             ),
@@ -911,8 +940,76 @@ def make_video_overlay(
     }
 
 
+def _merge_event_override(target: dict[str, Any], override: Mapping[str, Any]) -> None:
+    for key, value in override.items():
+        if key not in target:
+            raise ValueError(f"event variant override has unknown key: {key}")
+        if isinstance(value, Mapping):
+            if not isinstance(target[key], dict):
+                raise ValueError(f"event variant override type mismatch at {key}")
+            _merge_event_override(target[key], value)
+        else:
+            target[key] = copy.deepcopy(value)
+
+
+def apply_event_variant(
+    data: dict[str, Any],
+    selection: str,
+    *,
+    seed: int,
+) -> dict[str, Any]:
+    """Select one of three deterministic variants covering every event."""
+    variants = data.get("event_variant_sets")
+    events = data.get("events")
+    if not isinstance(variants, list) or len(variants) != 3:
+        raise ValueError("runtime config must declare exactly 3 event variant sets")
+    if not isinstance(events, list):
+        raise ValueError("runtime config events must be an array")
+    event_id_list = [
+        str(event.get("id")) for event in events if isinstance(event, dict)
+    ]
+    event_ids = set(event_id_list)
+    if len(event_id_list) != len(events) or len(event_ids) != len(event_id_list):
+        raise ValueError("event has an invalid or duplicate id")
+    by_id: dict[str, dict[str, Any]] = {}
+    for variant in variants:
+        if not isinstance(variant, dict):
+            raise ValueError("event variant set must be an object")
+        variant_id = variant.get("id")
+        overrides = variant.get("event_overrides")
+        if not isinstance(variant_id, str) or not variant_id or variant_id in by_id:
+            raise ValueError("event variant set id is invalid or duplicated")
+        if not isinstance(overrides, dict) or set(overrides) != event_ids:
+            raise ValueError(
+                f"event variant {variant_id} must override all 7 events"
+            )
+        if any(not isinstance(value, dict) or not value for value in overrides.values()):
+            raise ValueError(f"event variant {variant_id} overrides must be non-empty")
+        by_id[variant_id] = variant
+    if selection == "auto":
+        ordered_ids = [str(variant["id"]) for variant in variants]
+        selected_id = ordered_ids[abs(int(seed)) % len(ordered_ids)]
+    else:
+        selected_id = selection
+    if selected_id not in by_id:
+        raise ValueError(
+            "unknown event variant; expected auto or one of: "
+            + ", ".join(by_id)
+        )
+    result = copy.deepcopy(data)
+    result_events = {event["id"]: event for event in result["events"]}
+    for event_id, override in by_id[selected_id]["event_overrides"].items():
+        _merge_event_override(result_events[event_id], override)
+    result["selected_event_variant"] = selected_id
+    result["event_variant_selection"] = selection
+    return result
+
+
 def load_runtime_config(
     path: Path,
+    *,
+    event_variant: str = "baseline",
+    seed: int = 20260729,
 ) -> dict[str, Any]:
     try:
         data = json.loads(
@@ -939,6 +1036,7 @@ def load_runtime_config(
         raise ValueError(
             "unsupported runtime config schema"
         )
+    data = apply_event_variant(data, event_variant, seed=seed)
 
     map_config = data.get("map")
     if not isinstance(map_config, dict):
@@ -1384,6 +1482,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Traffic Manager deterministic seed",
     )
     parser.add_argument(
+        "--event-variant",
+        default="auto",
+        help=(
+            "Scene 3 micro-scenario variant id. 'auto' deterministically "
+            "selects one of the three checked-in variants from --seed."
+        ),
+    )
+    parser.add_argument(
         "--validate-config-only",
         action="store_true",
         help=(
@@ -1765,9 +1871,9 @@ def spawn_ego(
             ego,
             target_speed_kmh,
         )
-        # Keep the ego in the declared middle lane through the
-        # right-lane work zone.  The blocked-lane event later issues
-        # one explicit, gap-checked change to the left lane.
+        # Keep Traffic Manager's optional ego mode in the declared middle
+        # lane.  In the submitted VLA/PID mode the event layer only opens the
+        # adjacent traffic gap; the policy issues the actual lane change.
         traffic_manager.auto_lane_change(
             ego,
             False,
@@ -1801,91 +1907,17 @@ def build_ego_route_plan(
     route_context: Any,
     events: Sequence[dict[str, Any]],
 ) -> list[tuple[Any, Any]]:
-    """Build the drivable lane plan for the seven configured events."""
+    """Build the base drivable corridor plan.
 
-    work_zone = next(
-        event
-        for event in events
-        if event["scenario"] == "right_lane_work_zone"
-    )
-    taper = next(
-        event
-        for event in events
-        if event["scenario"] == "progressive_lane_closure"
-    )
-    blockage = next(
-        event
-        for event in events
-        if event["scenario"] == "maintenance_vehicle_blockage"
-    )
-    recovery = next(
-        event
-        for event in events
-        if event["scenario"] == "work_zone_exit"
-    )
-    cut_in = next(
-        event
-        for event in events
-        if event["scenario"] == "cut_in_vehicle"
-    )
-    warning = next(
-        event
-        for event in events
-        if event["scenario"] == "work_zone_advance_warning"
-    )
-    centre_windows = (
-        (
-            float(cut_in["activate_at_m"]) - 100.0,
-            float(cut_in["resolve_after_m"]) + 100.0,
-        ),
-        (
-            float(warning["activate_at_m"]) - 50.0,
-            float(work_zone["resolve_after_m"]) + 100.0,
-        ),
-        (
-            float(blockage["activate_at_m"]) - 50.0,
-            float(recovery["resolve_after_m"]) + 100.0,
-        ),
-    )
-    lane_windows = (
-        (
-            float(taper["activate_at_m"]),
-            float(work_zone["resolve_after_m"]),
-            int(taper["closure"]["merge_target_lane_id"]),
-        ),
-        (
-            float(blockage["distance_m"]),
-            float(recovery["resolve_after_m"]),
-            int(blockage["blockage"]["target_lane_id"]),
-        ),
-    )
-    plan: list[tuple[Any, Any]] = []
-    for (waypoint, _road_option), progress_m in zip(
-        route_context.route,
-        route_context.distances_m,
-    ):
-        desired_lane_id: int | None = None
-        for start_m, end_m in centre_windows:
-            if start_m <= float(progress_m) <= end_m:
-                desired_lane_id = EGO_LANE_ID
-                break
-        for start_m, end_m, lane_id in lane_windows:
-            if start_m <= float(progress_m) <= end_m:
-                desired_lane_id = lane_id
-                break
-        selected_waypoint = waypoint
-        if (
-            desired_lane_id is not None
-            and not bool(getattr(waypoint, "is_junction", False))
-        ):
-            selected_waypoint = (
-                route_context.adapter.logical_waypoint(
-                    desired_lane_id,
-                    float(progress_m),
-                )
-                or waypoint
-            )
-        plan.append((selected_waypoint, _road_option))
+    The plan contains no event-based lane windows.  Lane changes are decided
+    by the universal VLA chain from text instructions and visual risk; the
+    route plan only provides corridor geometry.
+    """
+
+    plan: list[tuple[Any, Any]] = [
+        (waypoint, road_option)
+        for waypoint, road_option in route_context.route
+    ]
     if len(plan) < 2:
         raise RuntimeError("Town05 ego route plan is too short")
     return plan
@@ -1898,373 +1930,6 @@ def _speed_kmh(actor: Any) -> float:
         + float(velocity.y) ** 2
         + float(velocity.z) ** 2
     )
-
-
-def actor_can_block_ego_lane(
-    ego_waypoint: Any | None,
-    actor_waypoint: Any | None,
-    lateral_distance_m: float,
-) -> bool:
-    """Return whether a forward actor geometrically occupies the ego lane."""
-    same_lane = bool(
-        ego_waypoint is not None
-        and actor_waypoint is not None
-        and int(ego_waypoint.road_id) == int(actor_waypoint.road_id)
-        and int(ego_waypoint.section_id) == int(actor_waypoint.section_id)
-        and int(ego_waypoint.lane_id) == int(actor_waypoint.lane_id)
-    )
-    if same_lane:
-        return True
-    waypoint_ambiguous = bool(
-        ego_waypoint is None
-        or actor_waypoint is None
-        or bool(getattr(ego_waypoint, "is_junction", False))
-        or bool(getattr(actor_waypoint, "is_junction", False))
-        or int(ego_waypoint.road_id) != int(actor_waypoint.road_id)
-    )
-    return waypoint_ambiguous and lateral_distance_m <= 1.65
-
-
-def route_pid_lookahead_m(
-    speed_kmh: float,
-    junction_or_road_transition_ahead: bool = False,
-) -> float:
-    """Use a short pure-pursuit horizon so tight Town05 turns stay centred."""
-
-    speed = max(0.0, float(speed_kmh))
-    normal = min(7.0, max(5.0, 4.5 + speed * 0.10))
-    if junction_or_road_transition_ahead and speed >= 3.0:
-        return min(normal, 3.2)
-    return normal
-
-
-def route_pid_curve_speed_kmh(
-    requested_speed_kmh: float,
-    curve_error_rad: float,
-    junction_or_road_transition_ahead: bool,
-) -> float:
-    """Conservatively cap speed before tight junction geometry."""
-
-    requested = max(0.0, float(requested_speed_kmh))
-    error = abs(float(curve_error_rad))
-    capped = requested
-    if error > 0.05:
-        curve_fraction = max(0.30, 1.0 - 1.70 * error)
-        capped = min(capped, max(9.0, requested * curve_fraction))
-    if junction_or_road_transition_ahead:
-        capped = min(capped, 9.0)
-    return capped
-
-
-class Scene3RouteController:
-    """Small deterministic controller over the shared Scene 3 route plan.
-
-    The controller deliberately has the same ``run_step`` surface as CARLA's
-    BehaviorAgent.  The runner can therefore swap this baseline for an
-    external multimodal policy without changing scenario actors, sensors,
-    ground truth, or evaluation artifacts.
-    """
-
-    def __init__(
-        self,
-        world: Any,
-        ego: Any,
-        route_context: Town05RouteContext,
-        route_plan: Sequence[tuple[Any, Any]],
-        target_speed_kmh: float,
-        fixed_delta_seconds: float,
-    ) -> None:
-        if len(route_plan) != len(route_context.distances_m):
-            raise ValueError("route plan and route distances must be aligned")
-        self.world = world
-        self.ego = ego
-        self.route_context = route_context
-        self.route_plan = list(route_plan)
-        self.target_speed_kmh = float(target_speed_kmh)
-        self._default_speed_kmh = float(target_speed_kmh)
-        self._high_level_command_id: str | None = None
-        self._lane_change_authorized = False
-        from agents.navigation.controller import VehiclePIDController
-
-        dt = float(fixed_delta_seconds)
-        self._vehicle_pid = VehiclePIDController(
-            ego,
-            args_lateral={
-                "K_P": 1.60,
-                "K_D": 0.14,
-                "K_I": 0.02,
-                "dt": dt,
-            },
-            args_longitudinal={
-                "K_P": 0.9,
-                "K_D": 0.05,
-                "K_I": 0.04,
-                "dt": dt,
-            },
-            max_throttle=0.60,
-            max_brake=1.0,
-            max_steering=0.85,
-        )
-
-    def _waypoint_ahead(self, lookahead_m: float) -> Any:
-        progress_m = float(
-            self.route_context.distances_m[
-                self.route_context.tracker.index
-            ]
-        )
-        target_index = bisect.bisect_left(
-            self.route_context.distances_m,
-            progress_m + lookahead_m,
-        )
-        target_index = min(target_index, len(self.route_plan) - 1)
-        planned = self.route_plan[target_index][0]
-        if (
-            self._high_level_command_id
-            != "scene3_blocked_lane_change_left"
-            or self._lane_change_authorized
-            or bool(
-            getattr(planned, "is_junction", False)
-            )
-        ):
-            return planned
-        try:
-            current = self.route_context.adapter.get_waypoint(
-                self.ego.get_location(),
-                project_to_road=True,
-                lane_type=carla.LaneType.Driving,
-            )
-        except RuntimeError:
-            return planned
-        if current is None or int(current.lane_id) == int(planned.lane_id):
-            return planned
-        progress_m = float(
-            self.route_context.distances_m[self.route_context.tracker.index]
-        )
-        current_logical_lane = next(
-            (
-                logical_lane
-                for logical_lane in (-1, -2, -3)
-                if self.route_context.adapter.waypoint_matches_logical_lane(
-                    current,
-                    logical_lane,
-                    progress_m,
-                )
-            ),
-            None,
-        )
-        if current_logical_lane is None:
-            return planned
-        same_lane = self.route_context.adapter.logical_waypoint(
-            current_logical_lane,
-            float(self.route_context.distances_m[target_index]),
-        )
-        return same_lane or planned
-
-    def set_high_level_decision(
-        self,
-        decision: Mapping[str, Any],
-        *,
-        command_id: str,
-    ) -> None:
-        """Apply one VLA/safety-gated decision to the route/PID executor."""
-        if command_id != self._high_level_command_id:
-            self._high_level_command_id = command_id
-            self._lane_change_authorized = False
-        action = str(decision.get("action", "stop"))
-        try:
-            target_speed = float(decision.get("target_speed_kmh", 0.0))
-        except (TypeError, ValueError):
-            target_speed = 0.0
-        self.target_speed_kmh = max(
-            0.0,
-            min(self._default_speed_kmh, target_speed),
-        )
-        if action in {"stop", "emergency_brake"}:
-            self.target_speed_kmh = 0.0
-        if action in {"lane_change_left", "lane_change_right"}:
-            self._lane_change_authorized = True
-        elif command_id == "scene3_blocked_lane_change_left":
-            # A later safety-gate rejection must immediately cancel a lane
-            # change that was authorized by an earlier proposal.  The gate
-            # can re-authorize it when the adjacent-lane observation is safe.
-            self._lane_change_authorized = False
-
-    def _target_waypoint(
-        self,
-        speed_kmh: float,
-        junction_or_road_transition_ahead: bool = False,
-    ) -> Any:
-        return self._waypoint_ahead(
-            route_pid_lookahead_m(
-                speed_kmh,
-                junction_or_road_transition_ahead,
-            )
-        )
-
-    def _junction_or_road_transition_ahead(
-        self,
-        lookahead_m: float = 40.0,
-    ) -> bool:
-        index = int(self.route_context.tracker.index)
-        progress_m = float(self.route_context.distances_m[index])
-        end = bisect.bisect_left(
-            self.route_context.distances_m,
-            progress_m + float(lookahead_m),
-        )
-        end = min(end, len(self.route_plan) - 1)
-        window = [
-            waypoint
-            for waypoint, _road_option in self.route_plan[index : end + 1]
-        ]
-        if any(
-            bool(getattr(waypoint, "is_junction", False))
-            for waypoint in window
-        ):
-            return True
-        road_ids = {int(waypoint.road_id) for waypoint in window}
-        return len(road_ids) > 1
-
-    def _obstacle_distance_m(self) -> float | None:
-        transform = self.ego.get_transform()
-        origin = transform.location
-        forward = transform.get_forward_vector()
-        right = transform.get_right_vector()
-        try:
-            ego_waypoint = self.route_context.adapter.get_waypoint(
-                origin,
-                project_to_road=True,
-                lane_type=carla.LaneType.Driving,
-            )
-        except RuntimeError:
-            ego_waypoint = None
-        closest: float | None = None
-        for pattern in ("vehicle.*", "walker.pedestrian.*"):
-            for actor in self.world.get_actors().filter(pattern):
-                if int(actor.id) == int(self.ego.id):
-                    continue
-                try:
-                    location = actor.get_location()
-                except RuntimeError:
-                    continue
-                dx = float(location.x - origin.x)
-                dy = float(location.y - origin.y)
-                dz = float(location.z - origin.z)
-                longitudinal = dx * float(forward.x) + dy * float(forward.y)
-                lateral = abs(dx * float(right.x) + dy * float(right.y))
-                if longitudinal <= 0.0 or longitudinal > 55.0:
-                    continue
-                if abs(dz) > 2.5:
-                    continue
-                # Do not brake for traffic in an adjacent lane.  The former
-                # three-metre lateral-only test overlaps a normal Town05 lane
-                # and can deadlock the ego beside a stopped vehicle.  CARLA's
-                # lane identity is authoritative away from junction/road
-                # boundaries; the tighter geometric fallback covers actors
-                # immediately ahead while either waypoint is ambiguous.
-                try:
-                    actor_waypoint = self.route_context.adapter.get_waypoint(
-                        location,
-                        project_to_road=True,
-                        lane_type=carla.LaneType.Driving,
-                    )
-                except RuntimeError:
-                    actor_waypoint = None
-                if not actor_can_block_ego_lane(
-                    ego_waypoint,
-                    actor_waypoint,
-                    lateral,
-                ):
-                    continue
-                distance = math.sqrt(dx * dx + dy * dy + dz * dz)
-                if closest is None or distance < closest:
-                    closest = distance
-        return closest
-
-    def _must_stop_for_light(self) -> bool:
-        try:
-            if not self.ego.is_at_traffic_light():
-                return False
-            state = self.ego.get_traffic_light_state()
-            return state in (
-                carla.TrafficLightState.Red,
-                carla.TrafficLightState.Yellow,
-            )
-        except (AttributeError, RuntimeError):
-            return False
-
-    def run_step(self) -> Any:
-        speed_kmh = _speed_kmh(self.ego)
-        junction_or_transition_ahead = (
-            self._junction_or_road_transition_ahead()
-        )
-        target_waypoint = self._target_waypoint(
-            speed_kmh,
-            junction_or_transition_ahead,
-        )
-        target = target_waypoint.transform.location
-        transform = self.ego.get_transform()
-        origin = transform.location
-        yaw_rad = math.radians(float(transform.rotation.yaw))
-        target_heading = math.atan2(
-            float(target.y - origin.y),
-            float(target.x - origin.x),
-        )
-        heading_error = math.atan2(
-            math.sin(target_heading - yaw_rad),
-            math.cos(target_heading - yaw_rad),
-        )
-        far_target = self._waypoint_ahead(18.0).transform.location
-        far_heading = math.atan2(
-            float(far_target.y - origin.y),
-            float(far_target.x - origin.x),
-        )
-        far_heading_error = math.atan2(
-            math.sin(far_heading - yaw_rad),
-            math.cos(far_heading - yaw_rad),
-        )
-
-        target_speed_kmh = self.target_speed_kmh
-        curve_error = max(abs(heading_error), abs(far_heading_error))
-        target_speed_kmh = route_pid_curve_speed_kmh(
-            target_speed_kmh,
-            curve_error,
-            junction_or_transition_ahead,
-        )
-        obstacle_distance_m = self._obstacle_distance_m()
-        if obstacle_distance_m is not None:
-            speed_mps = speed_kmh / 3.6
-            # Actor locations are at bounding-box centres.  Eight metres
-            # preserves roughly one vehicle length of clearance even while
-            # creeping at a red light or behind a stopped work vehicle.
-            emergency_distance_m = 8.0 + speed_mps * 0.80
-            caution_distance_m = max(
-                14.0,
-                emergency_distance_m + speed_mps * 1.4,
-            )
-            if obstacle_distance_m <= emergency_distance_m:
-                target_speed_kmh = 0.0
-            elif obstacle_distance_m < caution_distance_m:
-                fraction = (
-                    (obstacle_distance_m - emergency_distance_m)
-                    / (caution_distance_m - emergency_distance_m)
-                )
-                target_speed_kmh = min(
-                    target_speed_kmh,
-                    max(4.0, self.target_speed_kmh * fraction),
-                )
-        if self._must_stop_for_light():
-            target_speed_kmh = 0.0
-
-        control = self._vehicle_pid.run_step(
-            target_speed_kmh,
-            target_waypoint,
-        )
-        if target_speed_kmh <= 0.1 and speed_kmh < 0.5:
-            control.throttle = 0.0
-            control.brake = 1.0
-        control.hand_brake = False
-        control.manual_gear_shift = False
-        return control
 
 
 def set_traffic_manager_plan(
@@ -2726,7 +2391,9 @@ def main(
     )
     try:
         runtime_config = load_runtime_config(
-            runtime_config_path
+            runtime_config_path,
+            event_variant=args.event_variant,
+            seed=args.seed,
         )
     except ValueError as error:
         print(
@@ -2743,6 +2410,7 @@ def main(
         "Configured events:",
         len(runtime_config["events"]),
     )
+    print("Event variant:", runtime_config["selected_event_variant"])
     if args.validate_config_only:
         print(
             "SCENE 3 RUNTIME CONFIG VALIDATION: PASS"
@@ -2902,13 +2570,16 @@ def main(
                 runtime_config["events"],
             )
             if args.ego_controller in {"route-pid", "vla-route-pid"}:
-                ego_controller = Scene3RouteController(
+                from control.generic_route_pid import GenericRoutePID
+
+                ego_controller = GenericRoutePID(
                     world,
                     ego,
-                    route_context,
-                    ego_plan,
-                    effective_ego_speed_kmh,
-                    args.fixed_delta_seconds,
+                    target_speed_kmh=effective_ego_speed_kmh,
+                    fixed_delta_seconds=args.fixed_delta_seconds,
+                    route_context=route_context,
+                    route_plan=ego_plan,
+                    logical_lane_adapter=route_context.adapter,
                 )
                 print(
                     "Scene3 route-PID executor assigned: "
@@ -3078,12 +2749,11 @@ def main(
             event_handler=event_actor_runtime,
         )
         if args.ego_controller == "vla-route-pid":
-            from scene3_vla_controller import Scene3VlaController
+            from universal_vla_controller import UniversalVLAController
 
-            ego_controller = Scene3VlaController(
+            ego_controller = UniversalVLAController(
                 world=world,
                 ego=ego,
-                route_context=route_context,
                 route_controller=ego_controller,
                 commands=runtime_config["voice_input"]["commands"],
                 checkpoint_path=args.vla_checkpoint.expanduser().resolve(),
@@ -3099,10 +2769,12 @@ def main(
                     else runtime_config["sensors"].get("low_signal_rgb", {})
                 ),
                 fixed_delta_seconds=args.fixed_delta_seconds,
-                training_data_output=(
-                    args.vla_record_training_data.expanduser().resolve()
-                    if args.vla_record_training_data is not None
-                    else None
+                available_cameras=("front", "left", "right", "rear"),
+                enable_lidar=False,
+                default_speed_kmh=effective_ego_speed_kmh,
+                hold_seconds=float(
+                    runtime_config.get("decision_interfaces", {})
+                    .get("maximum_hazard_hold_seconds", 20.0)
                 ),
             )
             print("Scene3 online text-to-VLA controller assigned")

@@ -6,6 +6,11 @@ import torch
 
 from lightweight_vla_adapter.src.contracts import SensorTensorBatch
 from lightweight_vla_adapter.src.decision_adapter import LightweightDecisionAdapter
+from lightweight_vla_adapter.src.pipeline import (
+    LightweightVLAPipeline,
+    decode_visual_risk_assessment,
+)
+from lightweight_vla_adapter.scripts.train_scene3_multimodal import model_kwargs
 
 
 def build_batch(
@@ -32,6 +37,53 @@ def build_batch(
 
 
 class RawMultimodalAdapterTests(unittest.TestCase):
+    def test_training_contract_masks_truth_features_by_source(self):
+        base = build_batch()
+        batch = {
+            "camera_bev": torch.ones(2, 8, 16, 16),
+            "lidar_bev": torch.ones(2, 4, 16, 16),
+            "ego_features": base.ego_features.repeat(2, 1),
+            "candidate_features": torch.ones(2, 2, 12),
+            "candidate_mask": torch.ones(2, 2, dtype=torch.bool),
+            "intent_tokens": base.intent_tokens.repeat(2, 1, 1),
+            "intent_mask": base.intent_mask.repeat(2, 1),
+            "camera_images": base.camera_images.repeat(2, 1, 1, 1, 1),
+            "camera_view_mask": base.camera_view_mask.repeat(2, 1),
+            "environment_features": base.environment_features.repeat(2, 1),
+            "source_dataset": ["CARLA", "nuScenes"],
+        }
+        inputs = model_kwargs(
+            batch,
+            torch.device("cpu"),
+            {
+                "use_candidate_entities": False,
+                "structured_sensor_sources": ["nuScenes"],
+            },
+        )
+        self.assertEqual(int(torch.count_nonzero(inputs["camera_bev"][0])), 0)
+        self.assertEqual(int(torch.count_nonzero(inputs["lidar_bev"][0])), 0)
+        self.assertGreater(int(torch.count_nonzero(inputs["lidar_bev"][1])), 0)
+        self.assertEqual(int(torch.count_nonzero(inputs["candidate_features"])), 0)
+
+    def test_visual_risk_decoder_produces_sensor_safety_contract(self):
+        risk = decode_visual_risk_assessment(
+            torch.tensor([[0.0, 1.0, 4.0]], dtype=torch.float32)
+        )
+        self.assertEqual(risk["risk_level"], "high")
+        self.assertEqual(risk["recommended_action"], "emergency_brake")
+        self.assertFalse(risk["lane_change"]["left"]["is_safe"])
+        self.assertIsNone(risk["matched_entity_id"])
+        self.assertEqual(risk["source"], "learned_raw_camera_visual_risk_head")
+        self.assertAlmostEqual(sum(risk["probabilities"].values()), 1.0, places=5)
+
+    def test_ambiguous_high_argmax_is_calibrated_to_caution(self):
+        probabilities = torch.tensor([[0.349096, 0.166114, 0.484790]])
+        risk = decode_visual_risk_assessment(probabilities.log())
+        self.assertEqual(risk["raw_argmax_level"], "high")
+        self.assertEqual(risk["risk_level"], "medium")
+        self.assertEqual(risk["recommended_action"], "decelerate")
+        self.assertEqual(risk["high_confidence_threshold"], 0.55)
+
     def test_sensor_contract_accepts_exact_four_view_batch(self):
         build_batch().validate()
 
@@ -92,6 +144,35 @@ class RawMultimodalAdapterTests(unittest.TestCase):
             )
         self.assertEqual(tuple(output.action_logits.shape), (1, 9))
         self.assertEqual(tuple(output.visual_risk_logits.shape), (1, 3))
+
+    def test_masked_view_risk_probe_does_not_replace_primary_risk_state(self):
+        model = LightweightDecisionAdapter(
+            camera_channels=8,
+            lidar_channels=4,
+            candidate_dim=12,
+            ego_dim=8,
+            intent_dim=16,
+            hidden_size=32,
+            num_layers=4,
+            num_heads=4,
+            require_raw_camera=True,
+            use_structured_bev=False,
+        ).eval()
+        pipeline = LightweightVLAPipeline(
+            model,
+            device="cpu",
+            checkpoint_loaded=True,
+        )
+        batch = build_batch()
+        batch.camera_view_mask[:] = torch.tensor(
+            [[False, True, False, False]]
+        )
+
+        risk = pipeline.predict_visual_risk(batch)
+
+        self.assertIn(risk["risk_level"], {"low", "medium", "high"})
+        with self.assertRaisesRegex(RuntimeError, "before model inference"):
+            _ = pipeline.last_visual_risk_assessment
 
     def test_disabled_candidate_entities_cannot_change_driving_outputs(self):
         torch.manual_seed(7)

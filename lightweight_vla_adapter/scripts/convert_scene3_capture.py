@@ -16,7 +16,10 @@ CARLA_DIR = REPO_ROOT / "experiment" / "CARLA"
 if str(CARLA_DIR) not in sys.path:
     sys.path.insert(0, str(CARLA_DIR))
 
-from scene3_vla_controller import COMMAND_PROFILES, active_text_command
+from lightweight_vla_adapter.scripts.scene3_command_profiles import (
+    COMMAND_PROFILES,
+    active_text_command,
+)
 from structured_command_parser.src.modernbert_service import ModernBertCommandService
 
 

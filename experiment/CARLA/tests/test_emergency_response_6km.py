@@ -49,81 +49,26 @@ def load_road_generator():
 road_generator = load_road_generator()
 
 
-class RouteObstacleLaneTests(unittest.TestCase):
-    def test_route_pid_uses_short_bounded_lookahead(self):
-        self.assertAlmostEqual(runner.route_pid_lookahead_m(0.0), 5.0)
-        self.assertAlmostEqual(runner.route_pid_lookahead_m(20.0), 6.5)
-        self.assertAlmostEqual(runner.route_pid_lookahead_m(100.0), 7.0)
-        self.assertAlmostEqual(runner.route_pid_lookahead_m(10.0, True), 3.2)
-        self.assertAlmostEqual(runner.route_pid_lookahead_m(0.0, True), 5.0)
+class RoutePolicyBoundaryTests(unittest.TestCase):
+    """The route layer no longer owns actor-truth obstacle decisions."""
 
-    def test_route_pid_caps_junction_speed(self):
-        self.assertEqual(
-            runner.route_pid_curve_speed_kmh(32.0, 0.0, True),
-            9.0,
-        )
+    def test_runner_does_not_expose_actor_truth_obstacle_helpers(self):
+        for name in (
+            "actor_can_block_ego_lane",
+            "route_pid_lookahead_m",
+            "route_pid_curve_speed_kmh",
+            "Scene3RouteController",
+        ):
+            self.assertFalse(
+                hasattr(runner, name),
+                f"{name} must not exist in the unified runner",
+            )
 
-    def test_route_pid_reduces_tight_curve_speed(self):
-        speed = runner.route_pid_curve_speed_kmh(32.0, 0.35, False)
-        self.assertLess(speed, 20.0)
-        self.assertGreaterEqual(speed, 9.0)
-
-    def test_route_pid_preserves_straight_speed(self):
-        self.assertEqual(
-            runner.route_pid_curve_speed_kmh(32.0, 0.01, False),
-            32.0,
-        )
-
-    def test_adjacent_lane_actor_does_not_block_ego(self):
-        ego = SimpleNamespace(
-            road_id=7,
-            section_id=0,
-            lane_id=-2,
-            is_junction=False,
-        )
-        adjacent = SimpleNamespace(
-            road_id=7,
-            section_id=0,
-            lane_id=-1,
-            is_junction=False,
-        )
-        self.assertFalse(
-            runner.actor_can_block_ego_lane(ego, adjacent, 2.8)
-        )
-
-    def test_same_lane_actor_blocks_ego(self):
-        ego = SimpleNamespace(
-            road_id=7,
-            section_id=0,
-            lane_id=-2,
-            is_junction=False,
-        )
-        ahead = SimpleNamespace(
-            road_id=7,
-            section_id=0,
-            lane_id=-2,
-            is_junction=False,
-        )
-        self.assertTrue(
-            runner.actor_can_block_ego_lane(ego, ahead, 0.2)
-        )
-
-    def test_close_actor_at_road_boundary_uses_geometry(self):
-        ego = SimpleNamespace(
-            road_id=7,
-            section_id=0,
-            lane_id=-2,
-            is_junction=False,
-        )
-        ahead = SimpleNamespace(
-            road_id=8,
-            section_id=0,
-            lane_id=-2,
-            is_junction=False,
-        )
-        self.assertTrue(
-            runner.actor_can_block_ego_lane(ego, ahead, 0.3)
-        )
+    def test_runner_uses_generic_route_pid_and_universal_controller(self):
+        source = Path(runner.__file__).read_text(encoding="utf-8")
+        self.assertIn("GenericRoutePID", source)
+        self.assertIn("UniversalVLAController", source)
+        self.assertNotIn("scene3_vla_controller", source)
 
 
 class RecordingEventHandler:
@@ -191,6 +136,25 @@ class RecordingScheduler:
 
 
 class EmergencyRuntimeConfigTests(unittest.TestCase):
+    def test_three_deterministic_variants_cover_every_event(self):
+        selected = [
+            runner.load_runtime_config(
+                CONFIG_PATH, event_variant="auto", seed=seed
+            )
+            for seed in range(3)
+        ]
+        self.assertEqual(
+            [config["selected_event_variant"] for config in selected],
+            ["baseline", "cautious_sparse", "dense_dynamic"],
+        )
+        self.assertEqual(
+            [config["events"][0]["actor"]["target_speed_kmh"] for config in selected],
+            [32.0, 28.0, 36.0],
+        )
+        self.assertTrue(
+            all(len(config["event_variant_sets"]) == 3 for config in selected)
+        )
+
     def test_route_pid_is_default_and_external_control_is_supported(self):
         parser = runner.build_parser()
 
@@ -242,6 +206,18 @@ class EmergencyRuntimeConfigTests(unittest.TestCase):
             len(scene_events.BACKGROUND_TRAFFIC_PLAN),
             14,
         )
+
+    def test_work_zone_boundary_cones_leave_exit_handoff_clear(self):
+        positions = scene_events.work_zone_boundary_positions(
+            3150.0,
+            3450.0,
+            30.0,
+        )
+
+        self.assertEqual(len(positions), 10)
+        self.assertEqual(positions[0], 3150.0)
+        self.assertEqual(positions[-1], 3420.0)
+        self.assertNotIn(3450.0, positions)
 
     def test_config_requires_four_rgb_views(self):
         config = runner.load_runtime_config(
@@ -756,6 +732,31 @@ class EmergencyEventSchedulerTests(unittest.TestCase):
 
 
 class EmergencyActorRuntimeTests(unittest.TestCase):
+    def test_cone_taper_retires_free_flow_traffic_before_activation(self):
+        runtime = scene_events.EmergencySceneActorRuntime(
+            carla_module=mock.Mock(),
+            world=mock.Mock(),
+            carla_map=mock.Mock(),
+            traffic_manager=mock.Mock(),
+            traffic_manager_port=8000,
+            actor_sink=[],
+        )
+        runtime._retire_background_traffic = mock.Mock(return_value=4)
+        runtime._activate_cone_taper = mock.Mock()
+        event = {"id": "scene3_cone_taper"}
+
+        runtime.on_activate(
+            event,
+            route_s_m=2975.0,
+            simulation_frame=10,
+            elapsed_s=100.0,
+        )
+
+        runtime._retire_background_traffic.assert_called_once_with(
+            retire_pending=True,
+        )
+        runtime._activate_cone_taper.assert_called_once_with(event)
+
     def test_background_traffic_falls_back_to_existing_lane(
         self,
     ):
@@ -1263,6 +1264,9 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         )
         runtime._maintenance_vehicle = mock.Mock()
         runtime._blocked_lane_event = {
+            "blockage": {
+                "release_target_lane_after_s": 5.5,
+            },
             "safety": {
                 "minimum_front_gap_m": 30.0,
                 "minimum_rear_gap_m": 25.0,
@@ -1277,15 +1281,21 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
 
         runtime._update_blocked_lane(
             ego_route_s_m=4200.0,
-            elapsed_s=10.0,
+            elapsed_s=6.4,
+        )
+        traffic_manager.force_lane_change.assert_not_called()
+
+        runtime._update_blocked_lane(
+            ego_route_s_m=4200.0,
+            elapsed_s=6.5,
         )
 
-        traffic_manager.force_lane_change.assert_called_once_with(
-            ego,
-            False,
-        )
+        traffic_manager.force_lane_change.assert_not_called()
         self.assertTrue(
             runtime._target_lane_released
+        )
+        self.assertFalse(
+            runtime._blocked_lane_change_commanded
         )
 
 
@@ -1294,7 +1304,19 @@ class SafetyAuditTests(unittest.TestCase):
         audit = runner.SafetyAuditState()
 
         audit.record_collision(
-            SimpleNamespace(frame=12)
+            SimpleNamespace(
+                frame=12,
+                other_actor=SimpleNamespace(
+                    id=42,
+                    type_id="vehicle.audi.tt",
+                    attributes={"role_name": "scene3_background_06"},
+                ),
+                normal_impulse=SimpleNamespace(
+                    x=1.25,
+                    y=-0.5,
+                    z=0.0,
+                ),
+            )
         )
         audit.record_lane_invasion(
             SimpleNamespace(
@@ -1320,6 +1342,19 @@ class SafetyAuditTests(unittest.TestCase):
             {
                 "collision_count": 1,
                 "collision_frames": [12],
+                "collision_events": [
+                    {
+                        "frame": 12,
+                        "other_actor_id": 42,
+                        "other_actor_type_id": "vehicle.audi.tt",
+                        "other_actor_role_name": "scene3_background_06",
+                        "normal_impulse": {
+                            "x": 1.25,
+                            "y": -0.5,
+                            "z": 0.0,
+                        },
+                    }
+                ],
                 "lane_invasion_event_count": 2,
                 "lane_invasion_frames": [18, 19],
                 "lane_invasion_events": [

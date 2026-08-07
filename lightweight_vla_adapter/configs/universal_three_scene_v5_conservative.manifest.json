@@ -1,0 +1,39 @@
+{
+  "schema_version": "universal_vla_model_manifest/1.0",
+  "model_name": "universal-three-scene-multisensor-vla-v5-conservative",
+  "checkpoint_path": "models/lightweight_vla_adapter/universal_three_scene_v5_conservative/model.pt",
+  "config_path": "lightweight_vla_adapter/configs/universal_three_scene_v5_conservative.json",
+  "checkpoint_size_bytes": 21955743,
+  "checkpoint_sha256": "bcf3f86fcd142d824325ec14f4e1ed11c70bc7dca3ae6be6a8df36906a41a35f",
+  "config_sha256": "fdcc944f1d2a82b2af4f75c245951c7279bff1f91d66a5ab3501bdfe7adf2747",
+  "shared_across_scenes": ["scene1", "scene2", "scene3"],
+  "dataset": {
+    "samples": 34132,
+    "train": 24435,
+    "validation": 5119,
+    "test": 4578,
+    "sources": {
+      "carla_scene3_and_counterfactual": 25362,
+      "nuscenes_multisensor": 8080,
+      "carla_scene1_hard_negatives": 690
+    },
+    "waymo_used": false
+  },
+  "test_metrics": {
+    "action_accuracy": 0.9394932284840541,
+    "macro_action_accuracy": 0.9531877044044231,
+    "emergency_brake_accuracy": 0.781431334622824,
+    "visual_risk_accuracy": 0.8073394495412844,
+    "high_visual_risk_accuracy": 0.3228346456692913,
+    "speed_mae_kmh": 1.936702908100963,
+    "visual_counterfactual_accuracy": 0.8823529411764706,
+    "speed_cap_violation_rate": 0.0,
+    "environment_pair_order_accuracy": 1.0
+  },
+  "deployment": {
+    "os": "linux",
+    "precision": "fp16",
+    "requires_safety_gate": true,
+    "decision_period_frames_at_20hz": 3
+  }
+}

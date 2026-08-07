@@ -269,7 +269,10 @@ class RouteProgressTracker:
 
     def update(self, location: Any) -> float:
         lower = max(0, self.index - self.search_behind)
-        upper = min(len(self.route), self.index + self.search_ahead)
+        # Bound the forward search window so a repeated/looping route cannot
+        # jump the tracker to a far-ahead but physically nearby segment.
+        forward_window = min(int(self.search_ahead), 30)
+        upper = min(len(self.route), self.index + forward_window)
         candidates = range(lower, upper)
         closest = min(
             candidates,

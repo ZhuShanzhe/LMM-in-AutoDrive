@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import bisect
+from collections import Counter
 from dataclasses import dataclass
 import json
 import math
@@ -38,6 +40,7 @@ from scenarios.complex.town05_scene2 import (
     route_curvature_degrees,
     speed_kmh,
 )
+from scene2_runtime_interface import build_scheduled_driving_intent
 
 
 DEFAULT_CONFIG = (
@@ -191,6 +194,34 @@ def parse_args() -> argparse.Namespace:
         help="Spawn and instrument ego but do not apply preview-agent control.",
     )
     parser.add_argument(
+        "--vla-checkpoint",
+        type=Path,
+        help=(
+            "Universal VLA checkpoint. When set, the model consumes raw "
+            "four-view RGB, LiDAR, vehicle/environment state, and the active "
+            "compound-command substep, then controls ego through the PID "
+            "executor."
+        ),
+    )
+    parser.add_argument("--vla-config", type=Path)
+    parser.add_argument("--command-parser-model", type=Path)
+    parser.add_argument("--vla-device", default="cuda")
+    parser.add_argument(
+        "--vla-precision",
+        choices=("fp32", "fp16", "bf16"),
+        default="fp16",
+    )
+    parser.add_argument(
+        "--vla-decision-every-n",
+        type=int,
+        default=3,
+        help=(
+            "Run the high-level VLA every N 20-Hz simulation frames and "
+            "hold the latest approved decision in the PID between updates; "
+            "the default is a 150-ms policy period."
+        ),
+    )
+    parser.add_argument(
         "--validate-only",
         action="store_true",
         help="Validate the runtime contract without connecting to CARLA.",
@@ -204,6 +235,75 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     return parser.parse_args()
+
+
+def build_vla_command_schedule(
+    config: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Compile reviewed Scene-2 commands into compound DrivingIntents."""
+
+    result = []
+    for command in config["commands"]:
+        intent = build_scheduled_driving_intent(
+            command,
+            simulation_frame=0,
+            route_s_m=float(command["announce_at_m"]),
+            timestamp_s=0.0,
+        )
+        intent["request_id"] = "{0}-configured".format(command["id"])
+        result.append(
+            {
+                "id": str(command["id"]),
+                "announce_at_m": float(command["announce_at_m"]),
+                "activate_at_m": float(command["announce_at_m"]),
+                "voice_text": str(command["spoken_text"]),
+                "target_speed_kmh": float(
+                    config["route"]["target_speed_kmh"]
+                ),
+                "action": "keep_lane",
+                "driving_intent": intent,
+            }
+        )
+    return result
+
+
+def vla_route_context(
+    route: list[tuple[Any, Any]],
+    route_distances: list[float],
+    tracker: Any,
+    progress_m: float,
+    simulation_time_s: float,
+    default_speed_kmh: float,
+) -> dict[str, Any]:
+    """Return the same short-horizon geometry contract as the unified runner."""
+
+    target_index = bisect.bisect_left(route_distances, progress_m + 10.0)
+    target_index = min(max(int(tracker.index), target_index), len(route) - 1)
+    target_transform = route[target_index][0].transform
+    reference_transform = route[int(tracker.index)][0].transform
+    return {
+        "progress_m": float(progress_m),
+        "simulation_time_s": float(simulation_time_s),
+        "default_speed_kmh": float(default_speed_kmh),
+        "route_target": {
+            "x": float(target_transform.location.x),
+            "y": float(target_transform.location.y),
+            "z": float(target_transform.location.z),
+            "yaw": float(target_transform.rotation.yaw),
+        },
+        "turn_route_target": {
+            "x": float(target_transform.location.x),
+            "y": float(target_transform.location.y),
+            "z": float(target_transform.location.z),
+            "yaw": float(target_transform.rotation.yaw),
+        },
+        "route_reference": {
+            "x": float(reference_transform.location.x),
+            "y": float(reference_transform.location.y),
+            "z": float(reference_transform.location.z),
+            "yaw": float(reference_transform.rotation.yaw),
+        },
+    }
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -770,6 +870,16 @@ def main() -> int:
     args = parse_args()
     config_path = args.config.resolve()
     config = load_config(config_path)
+    vla_enabled = args.vla_checkpoint is not None
+    if vla_enabled and (
+        args.vla_config is None or args.command_parser_model is None
+    ):
+        raise ValueError(
+            "--vla-checkpoint requires --vla-config and "
+            "--command-parser-model"
+        )
+    if args.vla_decision_every_n <= 0:
+        raise ValueError("--vla-decision-every-n must be positive")
     if args.competition_run:
         if args.no_video:
             raise ValueError("--competition-run does not allow --no-video")
@@ -806,7 +916,11 @@ def main() -> int:
     # BehaviorAgent controller itself is optional.
     setup_navigation_agents(carla_root)
     BehaviorAgent = None
-    if not args.external_ego_control and not args.route_preflight:
+    if (
+        not args.external_ego_control
+        and not args.route_preflight
+        and not vla_enabled
+    ):
         from agents.navigation.behavior_agent import BehaviorAgent
 
     output_dir = args.output_dir.resolve()
@@ -831,6 +945,8 @@ def main() -> int:
     sensor_suite = None
     runtime_interface = None
     safety = None
+    unified_vla = None
+    unified_route_pid = None
     summary: dict[str, Any] = {}
 
     try:
@@ -1016,12 +1132,13 @@ def main() -> int:
                 scene_id=str(config["scene_id"]),
                 events=events.events,
                 every_n_frames=args.ground_truth_every_n,
+                model_output_used=bool(vla_enabled),
             )
 
         agent = None
         behavior_profile = None
         agent_target_speed_kmh = None
-        if not args.external_ego_control:
+        if not args.external_ego_control and not vla_enabled:
             assert BehaviorAgent is not None
             agent = BehaviorAgent(ego, behavior="normal")
             cruise_speed_kmh = float(
@@ -1135,6 +1252,59 @@ def main() -> int:
             route_distances,
             index=start_route_index,
         )
+        if vla_enabled:
+            from types import SimpleNamespace
+
+            from control.generic_route_pid import GenericRoutePID
+            from universal_vla_controller import UniversalVLAController
+
+            vla_commands = build_vla_command_schedule(config)
+            route_context_view = SimpleNamespace(
+                distances_m=route_distances,
+                tracker=tracker,
+                adapter=None,
+            )
+            unified_route_pid = GenericRoutePID(
+                world,
+                ego,
+                target_speed_kmh=float(
+                    config["route"]["target_speed_kmh"]
+                ),
+                fixed_delta_seconds=float(args.fixed_delta_seconds),
+                route_context=route_context_view,
+                route_plan=route,
+            )
+            # Give the unified VLA's sensor rig one complete cadence before
+            # the timed loop starts.
+            for _ in range(int(args.vla_decision_every_n) + 2):
+                world.tick()
+            unified_vla = UniversalVLAController(
+                world=world,
+                ego=ego,
+                route_controller=unified_route_pid,
+                commands=vla_commands,
+                checkpoint_path=args.vla_checkpoint.resolve(),
+                config_path=args.vla_config.resolve(),
+                parser_model_path=args.command_parser_model.resolve(),
+                output_path=output_dir / "vla_control_decisions.jsonl",
+                device=args.vla_device,
+                precision=args.vla_precision,
+                decision_interval_frames=int(args.vla_decision_every_n),
+                fixed_delta_seconds=float(args.fixed_delta_seconds),
+                available_cameras=("front", "left", "right", "rear"),
+                enable_lidar=True,
+                default_speed_kmh=float(
+                    config["route"]["target_speed_kmh"]
+                ),
+            )
+            # Give the unified controller's sensor rig one complete cadence.
+            for _ in range(int(args.vla_decision_every_n) + 2):
+                world.tick()
+            print(
+                "Scene 2 universal VLA control enabled: unified batch -> "
+                "VLA pipeline -> temporal supervisor -> instruction FSM -> "
+                "route PID"
+            )
         announced: set[str] = set()
         current_command = None
         latest_intent = None
@@ -1199,7 +1369,10 @@ def main() -> int:
                     )
                 )
 
-            if agent is not None:
+            if unified_vla is not None:
+                control = unified_vla.run_step()
+                ego.apply_control(control)
+            elif agent is not None:
                 desired_speed_kmh = route_aware_preview_speed_kmh(
                     progress_m,
                     route_command_audit["global_maneuvers"],
@@ -1429,13 +1602,20 @@ def main() -> int:
             ),
             "preview_controller": {
                 "source": (
+                    "universal multisensor VLA + deterministic safety gate + PID"
+                    if vla_enabled
+                    else
                     "external"
                     if args.external_ego_control
                     else "CARLA BehaviorAgent demonstration controller"
                 ),
-                "competition_metric_eligible": False,
+                "competition_metric_eligible": bool(vla_enabled),
             },
         }
+        if vla_enabled:
+            summary["vla_control"] = unified_vla.summary()
+            summary["vla_control"]["checkpoint"] = str(args.vla_checkpoint)
+            summary["vla_control"]["config"] = str(args.vla_config)
         if sensor_suite is not None:
             summary["multimodal_evidence"] = sensor_suite.summary()
             summary["multimodal_evidence"][
@@ -1489,6 +1669,11 @@ def main() -> int:
             return 2
         return 0
     finally:
+        if unified_vla is not None:
+            try:
+                unified_vla.close()
+            except RuntimeError:
+                pass
         if runtime_interface is not None:
             runtime_interface.close()
         if ground_truth is not None:

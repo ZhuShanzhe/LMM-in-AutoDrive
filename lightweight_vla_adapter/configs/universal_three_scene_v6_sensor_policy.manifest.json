@@ -1,0 +1,48 @@
+{
+  "schema_version": "universal_vla_model_manifest/1.0",
+  "model_name": "universal-three-scene-sensor-policy-vla-v6",
+  "checkpoint_path": "models/lightweight_vla_adapter/universal_three_scene_v6_sensor_policy/model.pt",
+  "config_path": "lightweight_vla_adapter/configs/universal_three_scene_v6_sensor_policy.json",
+  "checkpoint_size_bytes": 21165103,
+  "checkpoint_sha256": "06c774e3a5eead95e230b55b65a3d86c52ba93110c6046506be21dd69ecb2165",
+  "config_sha256": "47204682f7cdb5ee7be3ec0a077f1ee04c0a067b0a6a07a2aa9434949a4aa20d",
+  "shared_across_scenes": ["scene1", "scene2", "scene3"],
+  "policy_input_contract": {
+    "carla_truth_allowed": false,
+    "candidate_entities_allowed": false,
+    "scene1": ["text", "front_rgb", "vehicle_state", "environment_state"],
+    "scene2": ["text", "four_view_rgb", "physical_lidar_bev", "vehicle_state", "environment_state"],
+    "scene3": ["text", "four_view_rgb", "vehicle_state", "environment_state"]
+  },
+  "dataset": {
+    "samples": 34132,
+    "train": 24435,
+    "validation": 5119,
+    "test": 4578,
+    "sources": {
+      "carla_scene3_and_counterfactual": 25362,
+      "nuscenes_multisensor": 8080,
+      "carla_scene1_hard_negatives": 690
+    },
+    "waymo_used": false
+  },
+  "test_metrics": {
+    "action_accuracy": 0.935998252512014,
+    "macro_action_accuracy": 0.9525310394220683,
+    "emergency_brake_accuracy": 0.8085106382978723,
+    "visual_risk_accuracy": 0.8202271734381826,
+    "visual_risk_macro_accuracy": 0.69627488774509,
+    "high_visual_risk_accuracy": 0.41732283464566927,
+    "medium_visual_risk_accuracy": 0.7802631578947369,
+    "speed_mae_kmh": 1.9343758081962783,
+    "visual_counterfactual_accuracy": 0.8766968325791855,
+    "speed_cap_violation_rate": 0.0,
+    "environment_pair_order_accuracy": 1.0
+  },
+  "deployment": {
+    "os": "linux",
+    "precision": "fp16",
+    "requires_independent_rule_failsafe": true,
+    "decision_period_frames_at_20hz": 3
+  }
+}
