@@ -239,6 +239,9 @@ class UniversalVLAController:
             strict_checkpoint=not bool(
                 config.get("allow_legacy_checkpoint", False)
             ),
+            high_confidence_threshold=float(
+                config.get("high_confidence_threshold", 0.55)
+            ),
         )
         self.parser = ModernBertCommandService(
             str(parser_model_path),

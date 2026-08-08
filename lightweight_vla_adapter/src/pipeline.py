@@ -84,6 +84,7 @@ class LightweightVLAPipeline:
         dtype: torch.dtype | None = None,
         checkpoint_loaded: bool = False,
         temporal_supervisor: TemporalProposalSupervisor | None = None,
+        high_confidence_threshold: float = VISUAL_HIGH_CONFIDENCE_THRESHOLD,
     ) -> None:
         self.device = torch.device(device)
         self.model = model.to(device=self.device, dtype=dtype).eval()
@@ -96,6 +97,7 @@ class LightweightVLAPipeline:
         self._last_visual_risk_assessment: dict[str, Any] | None = None
         self._risk_history: list[torch.Tensor] = []
         self._risk_history_max = 5
+        self.high_confidence_threshold = float(high_confidence_threshold)
 
     def _move(self, batch: SensorTensorBatch) -> SensorTensorBatch:
         def floating(tensor: torch.Tensor) -> torch.Tensor:
@@ -183,7 +185,8 @@ class LightweightVLAPipeline:
                 )
             output = self.model(**model_inputs)
         self._last_visual_risk_assessment = decode_visual_risk_assessment(
-            output.visual_risk_logits
+            output.visual_risk_logits,
+            high_confidence_threshold=self.high_confidence_threshold,
         )
         if self.model.use_temporal_risk:
             self._risk_history.append(output.risk_input_features.detach())
@@ -246,7 +249,10 @@ class LightweightVLAPipeline:
             output = self.model(**self._model_inputs(moved))
         if self.device.type == "cuda":
             torch.cuda.synchronize(self.device)
-        return decode_visual_risk_assessment(output.visual_risk_logits)
+        return decode_visual_risk_assessment(
+            output.visual_risk_logits,
+            high_confidence_threshold=self.high_confidence_threshold,
+        )
 
     @property
     def last_visual_risk_assessment(self) -> dict[str, Any]:
@@ -312,6 +318,7 @@ class LightweightVLAPipeline:
         dtype: torch.dtype | None = None,
         temporal_supervisor: TemporalProposalSupervisor | None = None,
         strict_checkpoint: bool = True,
+        high_confidence_threshold: float = VISUAL_HIGH_CONFIDENCE_THRESHOLD,
     ) -> "LightweightVLAPipeline":
         state = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
         incompatible = model.load_state_dict(state, strict=strict_checkpoint)
@@ -329,4 +336,5 @@ class LightweightVLAPipeline:
             dtype=dtype,
             checkpoint_loaded=True,
             temporal_supervisor=temporal_supervisor,
+            high_confidence_threshold=high_confidence_threshold,
         )
