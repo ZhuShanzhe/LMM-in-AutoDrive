@@ -157,18 +157,14 @@ class GenericTemporalRiskSupervisor:
             self._stopped_since_frame = None
             self._resume_intent = None
 
-        stop_like_intent = (
-            parsed_intent in HAZARD_STOP_INTENTS
-            or parsed_intent in LANE_CHANGE_INTENTS
-        )
         if ego_speed_kmh >= 1.0 and self._moving_since_frame is None:
             self._moving_since_frame = int(frame)
         if ego_speed_kmh < 0.5:
             self._moving_since_frame = None
-        if stop_like_intent and ego_speed_kmh < 0.5:
+        if ego_speed_kmh < 0.5:
             if self._stopped_since_frame is None:
                 self._stopped_since_frame = int(frame)
-        elif not stop_like_intent:
+        elif ego_speed_kmh >= 1.0:
             self._stopped_since_frame = None
             self._resume_intent = None
 
