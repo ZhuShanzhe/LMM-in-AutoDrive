@@ -198,6 +198,15 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--medium-recall-margin",
+        type=float,
+        default=0.0,
+        help=(
+            "Clamp penalty pushing P(medium) above this margin for every "
+            "medium-risk sample (prevents the medium class collapsing)."
+        ),
+    )
+    parser.add_argument(
         "--unfreeze-epoch",
         type=int,
         default=None,
@@ -588,6 +597,15 @@ def main() -> None:
                     loss = loss + 0.5 * torch.clamp(
                         args.high_recall_margin - high_probs, min=0.0
                     ).mean()
+            if args.medium_recall_margin > 0.0:
+                medium_mask = risk == 1
+                if bool(medium_mask.any()):
+                    medium_probs = F.softmax(
+                        output.visual_risk_logits, dim=-1
+                    )[medium_mask, 1]
+                    loss = loss + 0.5 * torch.clamp(
+                        args.medium_recall_margin - medium_probs, min=0.0
+                    ).mean()
             if (
                 bool((batch["risk_score_label"] >= 0.0).all())
                 and output.risk_score is not None
@@ -670,6 +688,7 @@ def main() -> None:
         },
         "balance_power": args.balance_power,
         "high_recall_margin": args.high_recall_margin,
+        "medium_recall_margin": args.medium_recall_margin,
         "unfreeze_epoch": unfreeze_epoch,
         "action_loss_weights": {
             action: float(weight)
