@@ -803,7 +803,7 @@ def main() -> int:
 
         # Episode 1: baseline cruise on an empty road (clean low-risk
         # hard negatives; no parked actors to pollute the front cone).
-        reset_to_straight(ego, world, spawn_points, 0)
+        reset_ego(ego, world, spawn_points, 0)
         run_episode(
             "baseline",
             target_speed_kmh=40.0,
@@ -814,7 +814,7 @@ def main() -> int:
         )
 
         # Episode 1b: rainy-night empty-road low-risk hard negatives.
-        reset_to_straight(ego, world, spawn_points, 11)
+        reset_ego(ego, world, spawn_points, 11)
         run_episode(
             "baseline_rainy_night",
             target_speed_kmh=35.0,
@@ -825,7 +825,7 @@ def main() -> int:
         )
 
         # Episode 2: slow vehicle ahead.
-        reset_to_straight(ego, world, spawn_points, 1)
+        reset_ego(ego, world, spawn_points, 1)
         set_weather(world, "rainy_night")
         lead = spawn_actor(
             world,
@@ -869,7 +869,7 @@ def main() -> int:
                 forward, _ = forward_lateral(ego, lead)
                 if forward >= 1e9:
                     break
-                target = 30.0 if forward > 24.0 else 12.0 if forward > 14.0 else 0.0
+                target = 45.0 if forward > 24.0 else 12.0 if forward > 14.0 else 0.0
                 follow_road(ego, world, target)
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
@@ -900,7 +900,7 @@ def main() -> int:
             spawn_cleanup.clear()
 
         # Episode 3: crossing pedestrian ahead.
-        reset_to_straight(ego, world, spawn_points, 2)
+        reset_ego(ego, world, spawn_points, 2)
         set_weather(world, "wet_cloudy")
         walker_bp = library.find("walker.pedestrian.0001")
         walker_ahead = pick_road_ahead(world, ego, 38.0)
@@ -914,7 +914,7 @@ def main() -> int:
             walker_control.speed = 1.4
             for tick_index in range(700):
                 forward, _ = forward_lateral(ego, walker)
-                target = 28.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
+                target = 35.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
                 follow_road(ego, world, target)
                 if alive(walker):
                     try:
@@ -951,7 +951,7 @@ def main() -> int:
             spawn_cleanup.clear()
 
         # Episode 4: slow cyclist in the right lane.
-        reset_to_straight(ego, world, spawn_points, 3)
+        reset_ego(ego, world, spawn_points, 3)
         set_weather(world, "sunset")
         cyclist = spawn_actor(
             world,
@@ -971,7 +971,7 @@ def main() -> int:
                     except RuntimeError:
                         pass
                 forward, _ = forward_lateral(ego, cyclist)
-                target = 28.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
+                target = 35.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
                 follow_road(ego, world, target)
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
@@ -1002,7 +1002,7 @@ def main() -> int:
             spawn_cleanup.clear()
 
         # Episode 5: stopped bus with waiting pedestrians (right lane).
-        reset_to_straight(ego, world, spawn_points, 4)
+        reset_ego(ego, world, spawn_points, 4)
         set_weather(world, "foggy_morning")
         bus = spawn_actor(
             world,
@@ -1034,7 +1034,7 @@ def main() -> int:
                     except RuntimeError:
                         pass
                 forward, _ = forward_lateral(ego, bus)
-                target = 28.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
+                target = 35.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
                 follow_road(ego, world, target)
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
