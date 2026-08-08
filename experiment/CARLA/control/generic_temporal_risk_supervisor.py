@@ -146,14 +146,10 @@ class GenericTemporalRiskSupervisor:
             gap_s = max(0.0, float(timestamp_s) - float(self._last_timestamp_s))
         if (
             self._last_frame is not None
-            and (
-                int(frame) - int(self._last_frame) > 1
-                or (
-                    gap_s is not None
-                    and gap_s > self.config.max_stop_gap_s
-                )
-            )
+            and int(frame) - int(self._last_frame) > 20
         ):
+            # A long gap means the decision stream restarted; the ordinary
+            # 3-6 frame decision cadence must NOT reset the stopped tracker.
             self._stopped_since_frame = None
             self._resume_intent = None
 
