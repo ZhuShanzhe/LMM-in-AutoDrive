@@ -276,6 +276,25 @@ class GenericRoutePID:
         """Detect junctions or road-id transitions in the planned corridor."""
 
         if self.route_context is None or self.route_plan is None:
+            if self.route_manager is not None:
+                # Route-manager corridors expose the exact planned waypoints
+                # with junction flags; scanning them is faster and more
+                # reliable than walking the official map lanes.
+                route = getattr(self.route_manager, "route", None)
+                if route:
+                    progress_m = float(
+                        getattr(self.route_manager, "progress_m", 0.0) or 0.0
+                    )
+                    horizon = progress_m + float(lookahead_m)
+                    for point in route:
+                        distance_m = float(point.get("distance_m", -1.0))
+                        if distance_m < progress_m - 2.0:
+                            continue
+                        if distance_m > horizon:
+                            break
+                        if bool(point.get("is_junction", False)):
+                            return True
+                return False
             return False
         progress_m = self.progress_m()
         index = bisect.bisect_left(

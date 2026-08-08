@@ -262,8 +262,21 @@ r12（旧链路）在约 352 m 路口因旧路由计划的车道窗口偏离到 
 - 使用同一 stage-3 checkpoint 与 `UniversalVLAController`；
 - 已定位并修复两个问题：默认巡航文本被模型解析为 DECELERATE 9 km/h（禁止默认指令的模型合并）；低风险指令速度下限；
 - 场景二运行配置保持契约完整（70 辆车、24 行人、multimodal 证据 960x540、四路 RGB+真实 LiDAR 接入）；
-- 当前 r6（非 competition 全程模式）运行中，路线/事件结果待定；该模式不逐帧持久化 multimodal 证据文件，模型仍实时接入四路 RGB+LiDAR，最终摘要将如实标注未声明 competition acceptance。
+- r6 非 competition 全程 8 km 已跑完（route_completed=true，4 类特殊事件全部 RESOLVED），但存在 15 次碰撞与 85 次实线侵入，未达到严格通过标准；该模式不逐帧持久化 multimodal 证据文件，未声明 competition acceptance。
 
-### 场景一（Town04，5 km，待跑）
+### 场景一（Town04，5 km，stage-4 实测结果）
 
-- 使用同一 checkpoint，等待场景二完成后执行。
+- 使用 stage-4 微调模型（在原 stage-3 基础上并入 200 条 Town04 前视巡航样本，35,396 条，离线验证 200/200 判 low）；
+- 起点 0–2,073 m 正常巡航，误报急刹问题已消除（stage-4 后风险头 high≈0）；
+- 在约 2,100 m 左转路口处多次撞上 `static.fence`（r3/r4/r5 同一位置，横偏约 5.6 m），场景判定 FAILURE(collision_detected)，未完成 5 km；
+- 已修复：场景一收尾相机 `append_terminal_overlay` 缺失导致崩溃；route-manager 模式路口检测/限速/前瞻；
+- 剩余问题：该左转路口的护栏与纯追踪轨迹几何冲突；曾尝试在场景侧对急弯航点做圆弧平滑（场景代码 `urban_voice_5km.py` 的 `_smooth_sharp_junctions`），但平滑后改为在弯前发生非法车道侵入（r7），方案已回退，场景文件恢复 HEAD 版本；
+- 结论：场景一未完成 5 km 验收，失败点固定在约 2,050–2,100 m 的两个 Town04 急转路口（碰撞护栏 / 非法车道侵入），需要后续调整该路口路线选线或横向控制再验证。
+
+## 最终状态（2026-08-08 收尾）
+
+- 场景三（Town05 6 km）：**通过**（r25，`complete_scene_success=true`，7/7 事件，0 碰撞，0 实线违规，0 fallback）；
+- 场景二（Town05 8 km）：完整路线已跑完（r6，route_completed=true，4 类特殊事件 RESOLVED），但 15 次碰撞与 85 次实线侵入，未达严格通过标准；
+- 场景一（Town04 5 km）：stage-4 后误报急刹消除，正常行驶至约 2,050 m；在急转路口多次失败（碰撞护栏/非法车道侵入），未完成全程；
+- 完整 pytest：531 passed + 177 subtests passed；`git diff --check` 干净；
+- 代码已提交 `main`（`a7fae88`），后续修复提交随收尾更新。

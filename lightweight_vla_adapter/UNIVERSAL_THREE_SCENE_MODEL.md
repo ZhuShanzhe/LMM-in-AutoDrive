@@ -123,3 +123,12 @@ V6 的策略输入边界禁止 CARLA actor 真值：
 
 - 独立测试集高风险识别仍偏低（约 23.6%），雨夜遮挡/反光与远距离近失仍需更多困难样本；
 - CARLA 闭环通过依赖规则层失效保护与碰撞传感器评测，不能视为量产级安全认证。
+
+## Stage-4 微调（2026-08-08）
+
+- 在 stage-3 基础上并入 200 条 Town04 场景一前视巡航样本（35,396 条），8 epoch，lr 1.2e-4；
+- 离线验证：场景一 200/200 判 low，阻塞车道样本仍判 high；
+- 最终权重（三场景共用）：`models/lightweight_vla_adapter/universal_three_scene_v6_sensor_policy_finetuned_stage4/model.pt`
+- 场景一 CARLA 实测：起点至 2,073 m 正常，2,100 m 左转撞护栏失败（见测试报告），未完成 5 km；
+- 场景二 8 km 路线跑完但含 15 次碰撞/85 次实线侵入，未达严格通过标准；
+- 场景三 r25 使用 stage-3 通过 6 km 全程；stage-4 与 stage-3 同框架同结构，stage-4 主要改善 Town04 前视误报。

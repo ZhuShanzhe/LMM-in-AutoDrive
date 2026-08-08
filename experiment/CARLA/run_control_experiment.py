@@ -1182,7 +1182,11 @@ def main():
                 })
         metrics = summarize(records, args.scenario, scenario_goal_distance_m)
         final_status = call_scenario_method(scenario, "get_status", {})
-        if camera is not None and final_status.get("status") in ("SUCCESS", "FAILURE"):
+        if (
+            camera is not None
+            and hasattr(camera, "append_terminal_overlay")
+            and final_status.get("status") in ("SUCCESS", "FAILURE")
+        ):
             terminal_record = dict(records[-1]) if records else {"scenario": args.scenario}
             terminal_record["scenario_status"] = final_status
             camera.append_terminal_overlay(
