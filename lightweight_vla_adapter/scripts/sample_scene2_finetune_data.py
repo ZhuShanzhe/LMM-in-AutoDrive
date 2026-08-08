@@ -211,6 +211,8 @@ def label_risk(ego: Any, world: Any) -> dict[str, Any]:
             actor_velocity = actor.get_velocity()
         except (RuntimeError, AttributeError):
             continue
+        if not ("vehicle" in type_id or "walker" in type_id):
+            continue
         is_vru = (
             "walker" in type_id
             or "bicycle" in type_id
