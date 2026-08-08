@@ -237,14 +237,44 @@ def pick_road_ahead(world: Any, ego: Any, distance_m: float) -> carla.Transform:
     waypoint = world.get_map().get_waypoint(
         ego.get_location(), project_to_road=True
     )
-    for _ in range(20):
-        candidates = waypoint.next(distance_m / 4.0)
-        if not candidates:
-            break
+    candidates = waypoint.next(max(1.0, float(distance_m)))
+    if candidates:
         waypoint = candidates[0]
     transform = waypoint.transform
     transform.location.z += 0.6
     return transform
+
+
+WEATHER_PROFILES = {
+    "clear_noon": carla.WeatherParameters.ClearNoon,
+    "cloudy_noon": carla.WeatherParameters.CloudyNoon,
+    "wet_cloudy": carla.WeatherParameters(
+        cloudiness=60.0,
+        precipitation=20.0,
+        precipitation_deposits=70.0,
+        wind_intensity=20.0,
+        sun_altitude_angle=50.0,
+    ),
+    "sunset": carla.WeatherParameters(
+        cloudiness=10.0,
+        precipitation=0.0,
+        precipitation_deposits=0.0,
+        wind_intensity=10.0,
+        sun_altitude_angle=8.0,
+        sun_azimuth_angle=200.0,
+    ),
+}
+
+
+CURRENT_WEATHER = "clear_noon"
+
+
+def set_weather(world: Any, name: str) -> None:
+    global CURRENT_WEATHER
+    CURRENT_WEATHER = name
+    world.set_weather(WEATHER_PROFILES[name])
+    for _ in range(8):
+        world.tick()
 
 
 def main() -> int:
@@ -340,9 +370,15 @@ def main() -> int:
         risk: dict[str, Any],
         intent_name: str,
         speed_cap_kmh: float,
+        quotas: dict[str, int],
+        counts: dict[str, int],
     ) -> None:
         nonlocal samples, last_frame
-        if samples >= args.max_samples:
+        bucket = risk["risk_level"]
+        if (
+            samples >= args.max_samples
+            or counts[bucket] >= quotas[bucket]
+        ):
             return
         try:
             frame, images, mask, lidar_bev, _ = rig.latest_multisensor(
@@ -410,7 +446,7 @@ def main() -> int:
                     "risk_reason_codes": [],
                     "lane_change_risk": risk.get("lane_change", {}),
                     "front_distance_m": risk.get("front_distance_m"),
-                    "weather_profile": "ClearNoon",
+                    "weather_profile": CURRENT_WEATHER,
                     "control_speed_cap_kmh": speed_cap_kmh,
                     "capture_quality": "moving_scene2_traffic",
                     "sampling_weight": (
@@ -422,6 +458,7 @@ def main() -> int:
             )
             + "\n"
         )
+        counts[bucket] += 1
         samples += 1
 
     def cleanup(actors: list[Any]) -> None:
@@ -442,13 +479,26 @@ def main() -> int:
         target_speed_kmh: float,
         ticks: int,
         sample_every: int = 3,
+        quotas: dict[str, int] | None = None,
+        counts: dict[str, int] | None = None,
+        weather: str | None = None,
     ) -> None:
         nonlocal last_frame, samples
+        if weather is not None:
+            set_weather(world, weather)
+        quota = quotas or {"low": 10**9, "medium": 10**9, "high": 10**9}
+        counter = counts if counts is not None else {
+            "low": 0,
+            "medium": 0,
+            "high": 0,
+        }
         for tick_index in range(ticks):
             follow_road(ego, world, target_speed_kmh)
             world.tick()
             if tick_index % sample_every == 0 and samples < args.max_samples:
                 risk = label_risk(ego, world)
+                if counter[risk["risk_level"]] >= quota[risk["risk_level"]]:
+                    continue
                 intent = (
                     "yield_10"
                     if risk["risk_level"] == "high"
@@ -456,7 +506,10 @@ def main() -> int:
                     if risk["risk_level"] == "medium"
                     else "keep_40"
                 )
-                snapshot(name, risk, intent, target_speed_kmh)
+                snapshot(
+                    name, risk, intent, target_speed_kmh, quota, counter
+                )
+        return counter
 
     try:
         manifest = manifest_path.open("w", encoding="utf-8")
@@ -488,10 +541,18 @@ def main() -> int:
                 parked.append(actor)
         for _ in range(30):
             world.tick()
-        run_episode("baseline", target_speed_kmh=45.0, ticks=800, sample_every=4)
+        run_episode(
+            "baseline",
+            target_speed_kmh=45.0,
+            ticks=800,
+            sample_every=4,
+            quotas={"low": 160, "medium": 40, "high": 20},
+            weather="clear_noon",
+        )
         cleanup(parked)
 
         # Episode 2: slow vehicle ahead.
+        set_weather(world, "cloudy_noon")
         lead = spawn_actor(
             world,
             "vehicle.toyota.prius",
@@ -499,11 +560,35 @@ def main() -> int:
         )
         if lead is not None:
             spawn_cleanup.append(lead)
+            counts2 = {"low": 0, "medium": 0, "high": 0}
+            quota2 = {"low": 120, "medium": 120, "high": 120}
+            left_wp = world.get_map().get_waypoint(
+                ego.get_location(), project_to_road=True
+            )
+            left_lane = left_wp.get_left_lane() if left_wp is not None else None
+            left_vehicle = None
+            if left_lane is not None:
+                left_points = left_lane.next(30.0)
+                if left_points:
+                    left_transform = left_points[0].transform
+                    left_transform.location.z += 0.6
+                    left_vehicle = spawn_actor(
+                        world, "vehicle.audi.tt", left_transform
+                    )
+                    if left_vehicle is not None:
+                        spawn_cleanup.append(left_vehicle)
             for tick_index in range(900):
                 if alive(lead):
                     try:
                         lead.apply_control(
                             carla.VehicleControl(throttle=0.28, brake=0.0)
+                        )
+                    except RuntimeError:
+                        pass
+                if alive(left_vehicle):
+                    try:
+                        left_vehicle.apply_control(
+                            carla.VehicleControl(throttle=0.32, brake=0.0)
                         )
                     except RuntimeError:
                         pass
@@ -513,21 +598,26 @@ def main() -> int:
                 target = 32.0 if forward > 16.0 else 12.0 if forward > 9.0 else 0.0
                 follow_road(ego, world, target)
                 world.tick()
-                if (
-                    tick_index % 3 == 0
-                    and samples < args.max_samples
-                ):
-                    snapshot("slow_vehicle", label_risk(ego, world), "yield_10", 32.0)
-            cleanup([lead])
+                if tick_index % 3 == 0 and samples < args.max_samples:
+                    risk = label_risk(ego, world)
+                    if counts2[risk["risk_level"]] >= quota2[risk["risk_level"]]:
+                        continue
+                    snapshot(
+                        "slow_vehicle", risk, "yield_10", 32.0, quota2, counts2
+                    )
+            cleanup([lead] + ([left_vehicle] if left_vehicle is not None else []))
             spawn_cleanup.clear()
 
         # Episode 3: crossing pedestrian ahead.
+        set_weather(world, "wet_cloudy")
         walker_bp = library.find("walker.pedestrian.0001")
         walker_ahead = pick_road_ahead(world, ego, 38.0)
         walker_ahead.location.x += 2.5
         walker = world.spawn_actor(walker_bp, walker_ahead)
         if walker is not None:
             spawn_cleanup.append(walker)
+            counts3 = {"low": 0, "medium": 0, "high": 0}
+            quota3 = {"low": 120, "medium": 120, "high": 120}
             walker_control = carla.WalkerControl()
             walker_control.speed = 1.4
             for tick_index in range(700):
@@ -542,11 +632,17 @@ def main() -> int:
                         pass
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
-                    snapshot("pedestrian", label_risk(ego, world), "yield_10", 30.0)
+                    risk = label_risk(ego, world)
+                    if counts3[risk["risk_level"]] >= quota3[risk["risk_level"]]:
+                        continue
+                    snapshot(
+                        "pedestrian", risk, "yield_10", 30.0, quota3, counts3
+                    )
             cleanup([walker])
             spawn_cleanup.clear()
 
         # Episode 4: slow cyclist in the right lane.
+        set_weather(world, "sunset")
         cyclist = spawn_actor(
             world,
             "vehicle.diamondback.century",
@@ -554,6 +650,8 @@ def main() -> int:
         )
         if cyclist is not None:
             spawn_cleanup.append(cyclist)
+            counts4 = {"low": 0, "medium": 0, "high": 0}
+            quota4 = {"low": 120, "medium": 120, "high": 120}
             for tick_index in range(800):
                 if alive(cyclist):
                     try:
@@ -567,11 +665,17 @@ def main() -> int:
                 follow_road(ego, world, target)
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
-                    snapshot("cyclist", label_risk(ego, world), "yield_10", 30.0)
+                    risk = label_risk(ego, world)
+                    if counts4[risk["risk_level"]] >= quota4[risk["risk_level"]]:
+                        continue
+                    snapshot(
+                        "cyclist", risk, "yield_10", 30.0, quota4, counts4
+                    )
             cleanup([cyclist])
             spawn_cleanup.clear()
 
         # Episode 5: stopped bus with waiting pedestrians (right lane).
+        set_weather(world, "clear_noon")
         bus = spawn_actor(
             world,
             "vehicle.volkswagen.t2",
@@ -579,6 +683,8 @@ def main() -> int:
         )
         if bus is not None:
             spawn_cleanup.append(bus)
+            counts5 = {"low": 0, "medium": 0, "high": 0}
+            quota5 = {"low": 120, "medium": 120, "high": 120}
             walker_bp2 = library.find("walker.pedestrian.0002")
             walker1 = world.spawn_actor(
                 walker_bp2,
@@ -604,7 +710,12 @@ def main() -> int:
                 follow_road(ego, world, target)
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
-                    snapshot("bus_stop", label_risk(ego, world), "yield_10", 30.0)
+                    risk = label_risk(ego, world)
+                    if counts5[risk["risk_level"]] >= quota5[risk["risk_level"]]:
+                        continue
+                    snapshot(
+                        "bus_stop", risk, "yield_10", 30.0, quota5, counts5
+                    )
             cleanup([bus] + ([walker1] if walker1 is not None else []))
             spawn_cleanup.clear()
 
