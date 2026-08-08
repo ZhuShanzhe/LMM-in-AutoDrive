@@ -148,7 +148,7 @@ def follow_road(ego: Any, world: Any, target_speed_kmh: float) -> None:
     if speed_error > 1.0:
         throttle, brake = 0.45, 0.0
     elif speed_error < -2.0:
-        throttle, brake = 0.0, 0.55
+        throttle, brake = 0.0, 0.72 if speed_error < -6.0 else 0.55
     else:
         throttle, brake = 0.12, 0.0
     ego.apply_control(
@@ -297,9 +297,34 @@ def label_risk(ego: Any, world: Any) -> dict[str, Any]:
     else:
         action_hint = "keep_lane"
 
+    if ttc_s is None:
+        risk_score = 0.0
+    else:
+        risk_score = max(
+            0.0,
+            min(1.0, 1.0 - float(ttc_s) / 4.0),
+        )
+        if vru_front:
+            risk_score = min(1.0, risk_score * 1.15 + 0.15)
+    horizon_probabilities = []
+    for horizon_s in (0.5, 1.0, 2.0, 3.0):
+        if ttc_s is None or ttc_s <= 0.0:
+            horizon_probabilities.append(0.0)
+        else:
+            horizon_probabilities.append(
+                max(0.0, min(1.0, 1.0 - float(ttc_s) / horizon_s))
+            )
+    lane_risk_levels = [
+        {"low": 0, "medium": 1, "high": 2}[lanes[direction] or "low"]
+        for direction in ("left", "right")
+    ]
+
     return {
         "risk_level": risk_level,
         "action_hint": action_hint,
+        "risk_score": round(risk_score, 4),
+        "horizon_probabilities": [round(v, 4) for v in horizon_probabilities],
+        "lane_risk_levels": lane_risk_levels,
         "ttc_s": ttc_s,
         "gap_m": gap_m,
         "rel_speed_kmh": rel_kmh,
@@ -624,6 +649,11 @@ def main() -> int:
                         "gap_m": risk.get("gap_m"),
                         "rel_speed_kmh": risk.get("rel_speed_kmh"),
                     },
+                    "risk_score": risk.get("risk_score"),
+                    "horizon_probabilities": risk.get(
+                        "horizon_probabilities"
+                    ),
+                    "lane_risk_levels": risk.get("lane_risk_levels"),
                     "lane_change_risk": risk.get("lane_change", {}),
                     "front_distance_m": risk.get("front_distance_m"),
                     "weather_profile": CURRENT_WEATHER,
@@ -706,32 +736,9 @@ def main() -> int:
     try:
         manifest = manifest_path.open("w", encoding="utf-8")
 
-        # Episode 1: baseline cruise with static roadside vehicles (no
-        # autopilot, so actor cleanup cannot destabilize the traffic manager).
-        parked = []
-        for index in range(6):
-            point = spawn_points[(244 + 40 + index * 13) % len(spawn_points)]
-            actor = spawn_actor(
-                world,
-                rng.choice(
-                    [
-                        "vehicle.audi.tt",
-                        "vehicle.toyota.prius",
-                        "vehicle.volkswagen.t2",
-                        "vehicle.nissan.patrol",
-                    ]
-                ),
-                point,
-            )
-            if actor is not None:
-                try:
-                    actor.apply_control(
-                        carla.VehicleControl(throttle=0.0, brake=1.0)
-                    )
-                except RuntimeError:
-                    pass
-                parked.append(actor)
-        for _ in range(30):
+        # Episode 1: baseline cruise on an empty road (clean low-risk
+        # hard negatives; no parked actors to pollute the front cone).
+        for _ in range(20):
             world.tick()
         run_episode(
             "baseline",
@@ -741,7 +748,6 @@ def main() -> int:
             quotas={"low": 160, "medium": 40, "high": 20},
             weather="clear_noon",
         )
-        cleanup(parked)
 
         # Episode 2: slow vehicle ahead.
         reset_ego(ego, world, spawn_points, 1)
@@ -788,7 +794,7 @@ def main() -> int:
                 forward, _ = forward_lateral(ego, lead)
                 if forward >= 1e9:
                     break
-                target = 32.0 if forward > 16.0 else 12.0 if forward > 9.0 else 0.0
+                target = 30.0 if forward > 24.0 else 12.0 if forward > 14.0 else 0.0
                 follow_road(ego, world, target)
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
@@ -833,7 +839,7 @@ def main() -> int:
             walker_control.speed = 1.4
             for tick_index in range(700):
                 forward, _ = forward_lateral(ego, walker)
-                target = 30.0 if forward > 15.0 else 8.0 if forward > 8.0 else 0.0
+                target = 28.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
                 follow_road(ego, world, target)
                 if alive(walker):
                     try:
@@ -890,7 +896,7 @@ def main() -> int:
                     except RuntimeError:
                         pass
                 forward, _ = forward_lateral(ego, cyclist)
-                target = 30.0 if forward > 15.0 else 10.0 if forward > 8.0 else 0.0
+                target = 28.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
                 follow_road(ego, world, target)
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
@@ -953,7 +959,7 @@ def main() -> int:
                     except RuntimeError:
                         pass
                 forward, _ = forward_lateral(ego, bus)
-                target = 30.0 if forward > 15.0 else 8.0 if forward > 8.0 else 0.0
+                target = 28.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
                 follow_road(ego, world, target)
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
