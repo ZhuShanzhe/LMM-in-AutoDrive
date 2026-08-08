@@ -27,6 +27,8 @@
   "use_structured_bev": true,
   "fuse_structured_visual_risk": false,
   "condition_decision_on_visual_risk": true,
+  "use_temporal_risk": false,
+  "risk_type_count": 6,
   "structured_sensor_sources": ["nuScenes"],
   "speed_cap_environment_index": 13,
   "allow_legacy_checkpoint": false,

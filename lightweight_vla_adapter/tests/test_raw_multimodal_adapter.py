@@ -304,6 +304,52 @@ class RawMultimodalAdapterTests(unittest.TestCase):
             )
         self.assertFalse(torch.equal(low_risk.action_logits, high_risk.action_logits))
 
+    def test_temporal_risk_branch_uses_history_and_ordinal_heads(self):
+        adapter = LightweightDecisionAdapter(
+            camera_channels=8,
+            lidar_channels=4,
+            candidate_dim=12,
+            ego_dim=8,
+            intent_dim=16,
+            hidden_size=32,
+            num_layers=4,
+            num_heads=4,
+            bev_grid=(2, 2),
+            environment_dim=12,
+            num_camera_views=4,
+            use_temporal_risk=True,
+            risk_type_count=6,
+        )
+        adapter.eval()
+        base = build_batch()
+        inputs = {
+            "camera_bev": base.camera_bev,
+            "lidar_bev": base.lidar_bev,
+            "ego_features": base.ego_features,
+            "candidate_features": base.candidate_features,
+            "candidate_mask": base.candidate_mask,
+            "intent_tokens": base.intent_tokens,
+            "intent_mask": base.intent_mask,
+            "camera_images": base.camera_images,
+            "camera_view_mask": base.camera_view_mask,
+            "environment_features": base.environment_features,
+        }
+        with torch.inference_mode():
+            single = adapter(**inputs)
+            history = single.risk_input_features.unsqueeze(1).repeat(1, 4, 1)
+            temporal = adapter(**{**inputs, "history_risk_features": history})
+
+        self.assertFalse(single.temporal_used)
+        self.assertTrue(temporal.temporal_used)
+        self.assertEqual(single.ordinal_risk_logits.shape, (1, 2))
+        self.assertEqual(single.risk_score.shape, (1,))
+        self.assertEqual(single.risk_type_logits.shape, (1, 6))
+        self.assertEqual(single.risk_horizon_logits.shape, (1, 4))
+        self.assertEqual(single.lane_risk_logits.shape, (1, 6))
+        self.assertEqual(single.risk_uncertainty.shape, (1,))
+        self.assertEqual(temporal.ordinal_risk_logits.shape, (1, 2))
+        self.assertEqual(temporal.risk_input_features.shape, (1, 96))
+
 
 if __name__ == "__main__":
     unittest.main()

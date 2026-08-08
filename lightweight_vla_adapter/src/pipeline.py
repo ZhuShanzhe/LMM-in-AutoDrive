@@ -94,6 +94,8 @@ class LightweightVLAPipeline:
             temporal_supervisor or TemporalProposalSupervisor()
         )
         self._last_visual_risk_assessment: dict[str, Any] | None = None
+        self._risk_history: list[torch.Tensor] = []
+        self._risk_history_max = 5
 
     def _move(self, batch: SensorTensorBatch) -> SensorTensorBatch:
         def floating(tensor: torch.Tensor) -> torch.Tensor:
@@ -143,6 +145,12 @@ class LightweightVLAPipeline:
             "environment_features": batch.environment_features,
         }
 
+    def _risk_history_tensor(self) -> torch.Tensor | None:
+        if not self.model.use_temporal_risk or not self._risk_history:
+            return None
+        frames = self._risk_history[-(self._risk_history_max - 1):]
+        return torch.stack(frames, dim=1)
+
     def predict_proposal(
         self,
         batch: SensorTensorBatch,
@@ -168,10 +176,19 @@ class LightweightVLAPipeline:
             torch.cuda.synchronize(self.device)
         started = time.perf_counter()
         with torch.inference_mode():
-            output = self.model(**self._model_inputs(moved))
+            model_inputs = self._model_inputs(moved)
+            if self.model.use_temporal_risk:
+                model_inputs["history_risk_features"] = (
+                    self._risk_history_tensor()
+                )
+            output = self.model(**model_inputs)
         self._last_visual_risk_assessment = decode_visual_risk_assessment(
             output.visual_risk_logits
         )
+        if self.model.use_temporal_risk:
+            self._risk_history.append(output.risk_input_features.detach())
+            if len(self._risk_history) > self._risk_history_max:
+                self._risk_history.pop(0)
         if self.device.type == "cuda":
             torch.cuda.synchronize(self.device)
         latency_ms = (time.perf_counter() - started) * 1000.0
@@ -238,6 +255,7 @@ class LightweightVLAPipeline:
         return copy.deepcopy(self._last_visual_risk_assessment)
 
     def reset_temporal_state(self, stream_id: str | None = None) -> None:
+        self._risk_history.clear()
         self.temporal_supervisor.reset(stream_id)
 
     def warmup(self, batch: SensorTensorBatch, *, iterations: int = 10) -> None:

@@ -149,6 +149,25 @@ class Scene3Dataset(Dataset):
                 row.get("counterfactual_set_id", row.get("sample_id", index))
             ),
             "source_dataset": str(row.get("source_dataset", "CARLA")),
+            "risk_score_label": (
+                torch.tensor(float(row["risk_score"]))
+                if row.get("risk_score") is not None
+                else None
+            ),
+            "horizon_label": (
+                torch.tensor(
+                    [float(v) for v in row["horizon_probabilities"]]
+                )
+                if row.get("horizon_probabilities") is not None
+                else None
+            ),
+            "lane_risk_label": (
+                torch.tensor(
+                    [int(v) for v in row["lane_risk_levels"]]
+                )
+                if row.get("lane_risk_levels") is not None
+                else None
+            ),
         }
 
 
@@ -183,6 +202,15 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=None,
         help="Epoch at which the raw-camera backbone is unfrozen.",
+    )
+    parser.add_argument(
+        "--freeze-decision-heads",
+        type=int,
+        default=0,
+        help=(
+            "Freeze action/speed/lane/confidence heads for the first N "
+            "epochs so the risk branch can be strengthened first."
+        ),
     )
     parser.add_argument("--seed", type=int, default=20260805)
     parser.add_argument("--device", default="cuda")
@@ -496,6 +524,26 @@ def main() -> None:
         else max(3, args.epochs // 3)
     )
     for epoch in range(1, args.epochs + 1):
+        decision_modules = (
+            model.action_head,
+            model.speed_head,
+            model.lane_head,
+            model.confidence_head,
+            model.target_query,
+        )
+        freeze_decision = epoch <= args.freeze_decision_heads
+        for module in decision_modules:
+            for parameter in module.parameters():
+                parameter.requires_grad_(not freeze_decision)
+        optimizer = torch.optim.AdamW(
+            [
+                parameter
+                for parameter in model.parameters()
+                if parameter.requires_grad
+            ],
+            lr=args.learning_rate,
+            weight_decay=0.02,
+        )
         if epoch == unfreeze_epoch:
             model.raw_camera_encoder.freeze_backbone(False)
             optimizer = torch.optim.AdamW(
@@ -540,6 +588,38 @@ def main() -> None:
                     loss = loss + 0.5 * torch.clamp(
                         args.high_recall_margin - high_probs, min=0.0
                     ).mean()
+            if (
+                batch.get("risk_score_label") is not None
+                and output.risk_score is not None
+            ):
+                loss = loss + 0.15 * F.mse_loss(
+                    output.risk_score,
+                    batch["risk_score_label"].to(device).float(),
+                )
+            if (
+                batch.get("horizon_label") is not None
+                and output.risk_horizon_logits is not None
+            ):
+                loss = loss + 0.10 * F.binary_cross_entropy_with_logits(
+                    output.risk_horizon_logits,
+                    batch["horizon_label"].to(device).float(),
+                )
+            if (
+                batch.get("lane_risk_label") is not None
+                and output.lane_risk_logits is not None
+            ):
+                lane_target = batch["lane_risk_label"].to(device)
+                loss = loss + 0.10 * F.cross_entropy(
+                    output.lane_risk_logits.view(-1, 3),
+                    lane_target.view(-1),
+                )
+            if output.ordinal_risk_logits is not None:
+                ordinal_target = torch.stack(
+                    [(risk >= 1).long(), (risk >= 2).long()], dim=-1
+                ).float()
+                loss = loss + 0.10 * F.binary_cross_entropy_with_logits(
+                    output.ordinal_risk_logits, ordinal_target
+                )
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)

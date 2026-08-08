@@ -64,6 +64,8 @@ def build_model(config: dict) -> LightweightDecisionAdapter:
             config.get("condition_decision_on_visual_risk", False)
         ),
         speed_cap_environment_index=config.get("speed_cap_environment_index"),
+        use_temporal_risk=bool(config.get("use_temporal_risk", False)),
+        risk_type_count=int(config.get("risk_type_count", 6)),
     )
 
 

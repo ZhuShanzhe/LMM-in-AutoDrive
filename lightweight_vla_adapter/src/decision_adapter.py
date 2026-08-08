@@ -6,6 +6,7 @@ from typing import Sequence
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from .bev_encoder import LightweightBEVEncoder
 from .contracts import ACTION_LABELS, VLA_PROPOSAL_SCHEMA_VERSION
@@ -62,6 +63,14 @@ class AdapterOutput:
     confidence: torch.Tensor
     decision_embedding: torch.Tensor
     visual_risk_logits: torch.Tensor
+    risk_input_features: torch.Tensor
+    ordinal_risk_logits: torch.Tensor | None = None
+    risk_score: torch.Tensor | None = None
+    risk_type_logits: torch.Tensor | None = None
+    risk_horizon_logits: torch.Tensor | None = None
+    lane_risk_logits: torch.Tensor | None = None
+    risk_uncertainty: torch.Tensor | None = None
+    temporal_used: bool = False
 
 
 class LightweightDecisionAdapter(nn.Module):
@@ -91,6 +100,8 @@ class LightweightDecisionAdapter(nn.Module):
         fuse_structured_visual_risk: bool = False,
         condition_decision_on_visual_risk: bool = False,
         speed_cap_environment_index: int | None = None,
+        use_temporal_risk: bool = False,
+        risk_type_count: int = 6,
     ) -> None:
         super().__init__()
         if not 4 <= num_layers <= 6:
@@ -146,6 +157,26 @@ class LightweightDecisionAdapter(nn.Module):
             condition_decision_on_visual_risk
         )
         self.speed_cap_environment_index = speed_cap_environment_index
+        self.use_temporal_risk = bool(use_temporal_risk)
+        self.risk_type_count = int(risk_type_count)
+        self.temporal_risk_encoder = nn.GRU(
+            hidden_size * 3,
+            hidden_size,
+            num_layers=2,
+            batch_first=True,
+            dropout=dropout if dropout > 0.0 else 0.0,
+        )
+        self.temporal_risk_projection = nn.Sequential(
+            nn.Linear(hidden_size * 3, hidden_size),
+            nn.LayerNorm(hidden_size),
+            nn.GELU(),
+        )
+        self.ordinal_risk_head = nn.Linear(hidden_size, 2)
+        self.risk_score_head = nn.Linear(hidden_size, 1)
+        self.risk_type_head = nn.Linear(hidden_size, self.risk_type_count)
+        self.risk_horizon_head = nn.Linear(hidden_size, 4)
+        self.lane_risk_head = nn.Linear(hidden_size, 6)
+        self.risk_uncertainty_head = nn.Linear(hidden_size, 1)
         if speed_cap_environment_index is not None and not (
             0 <= speed_cap_environment_index < environment_dim
         ):
@@ -164,6 +195,7 @@ class LightweightDecisionAdapter(nn.Module):
         camera_images: torch.Tensor | None = None,
         camera_view_mask: torch.Tensor | None = None,
         environment_features: torch.Tensor | None = None,
+        history_risk_features: torch.Tensor | None = None,
     ) -> AdapterOutput:
         batch = camera_bev.shape[0]
         if self.require_raw_camera and camera_images is None:
@@ -288,6 +320,24 @@ class LightweightDecisionAdapter(nn.Module):
         decision_token = query[:, 0]
         target_token = query[:, 1]
         visual_risk_logits = self.visual_risk_head(visual_summary)
+        risk_input = torch.cat(
+            [
+                visual_summary,
+                bev_summary,
+                self.ego_projection(ego_features),
+            ],
+            dim=-1,
+        )
+        temporal_used = False
+        if self.use_temporal_risk and history_risk_features is not None:
+            history = torch.cat(
+                [history_risk_features, risk_input.unsqueeze(1)], dim=1
+            )
+            temporal_out, _ = self.temporal_risk_encoder(history)
+            temporal_context = temporal_out[:, -1]
+            temporal_used = True
+        else:
+            temporal_context = self.temporal_risk_projection(risk_input)
         if self.condition_decision_on_visual_risk:
             visual_risk_probabilities = torch.softmax(visual_risk_logits, dim=-1)
             decision_token = decision_token + self.visual_risk_projection(
@@ -326,6 +376,18 @@ class LightweightDecisionAdapter(nn.Module):
             confidence=torch.sigmoid(confidence_logits),
             decision_embedding=decision_token,
             visual_risk_logits=visual_risk_logits,
+            risk_input_features=risk_input,
+            ordinal_risk_logits=self.ordinal_risk_head(temporal_context),
+            risk_score=torch.sigmoid(
+                self.risk_score_head(temporal_context)
+            ).squeeze(-1),
+            risk_type_logits=self.risk_type_head(temporal_context),
+            risk_horizon_logits=self.risk_horizon_head(temporal_context),
+            lane_risk_logits=self.lane_risk_head(temporal_context),
+            risk_uncertainty=F.softplus(
+                self.risk_uncertainty_head(temporal_context)
+            ).squeeze(-1),
+            temporal_used=temporal_used,
         )
 
 
