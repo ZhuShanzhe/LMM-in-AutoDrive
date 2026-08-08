@@ -277,6 +277,56 @@ def set_weather(world: Any, name: str) -> None:
         world.tick()
 
 
+def reset_ego(
+    ego: Any,
+    world: Any,
+    spawn_points: list[Any],
+    offset: int,
+) -> None:
+    """Teleport the ego to a fresh straight-road spawn and zero its motion."""
+
+    index = (244 + int(offset) * 23) % len(spawn_points)
+    transform = spawn_points[index]
+    waypoint = world.get_map().get_waypoint(
+        transform.location, project_to_road=True
+    )
+    if waypoint is not None:
+        candidates = waypoint.next(30.0)
+        if candidates:
+            delta = abs(
+                math.degrees(
+                    math.atan2(
+                        math.sin(
+                            math.radians(
+                                candidates[0].transform.rotation.yaw
+                                - waypoint.transform.rotation.yaw
+                            )
+                        ),
+                        math.cos(
+                            math.radians(
+                                candidates[0].transform.rotation.yaw
+                                - waypoint.transform.rotation.yaw
+                            )
+                        ),
+                    )
+                )
+            )
+            if delta < 12.0:
+                transform = carla.Transform(
+                    carla.Location(
+                        x=waypoint.transform.location.x,
+                        y=waypoint.transform.location.y,
+                        z=waypoint.transform.location.z + 0.6,
+                    ),
+                    waypoint.transform.rotation,
+                )
+    ego.set_transform(transform)
+    ego.set_target_velocity(carla.Vector3D(0.0, 0.0, 0.0))
+    ego.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0))
+    for _ in range(20):
+        world.tick()
+
+
 def main() -> int:
     args = parse_args()
     rng = random.Random(args.seed)
@@ -552,6 +602,7 @@ def main() -> int:
         cleanup(parked)
 
         # Episode 2: slow vehicle ahead.
+        reset_ego(ego, world, spawn_points, 1)
         set_weather(world, "cloudy_noon")
         lead = spawn_actor(
             world,
@@ -609,6 +660,7 @@ def main() -> int:
             spawn_cleanup.clear()
 
         # Episode 3: crossing pedestrian ahead.
+        reset_ego(ego, world, spawn_points, 2)
         set_weather(world, "wet_cloudy")
         walker_bp = library.find("walker.pedestrian.0001")
         walker_ahead = pick_road_ahead(world, ego, 38.0)
@@ -642,6 +694,7 @@ def main() -> int:
             spawn_cleanup.clear()
 
         # Episode 4: slow cyclist in the right lane.
+        reset_ego(ego, world, spawn_points, 3)
         set_weather(world, "sunset")
         cyclist = spawn_actor(
             world,
@@ -675,6 +728,7 @@ def main() -> int:
             spawn_cleanup.clear()
 
         # Episode 5: stopped bus with waiting pedestrians (right lane).
+        reset_ego(ego, world, spawn_points, 4)
         set_weather(world, "clear_noon")
         bus = spawn_actor(
             world,
