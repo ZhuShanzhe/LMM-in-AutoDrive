@@ -159,24 +159,36 @@ class LightweightDecisionAdapter(nn.Module):
         self.speed_cap_environment_index = speed_cap_environment_index
         self.use_temporal_risk = bool(use_temporal_risk)
         self.risk_type_count = int(risk_type_count)
-        self.temporal_risk_encoder = nn.GRU(
-            hidden_size * 3,
-            hidden_size,
-            num_layers=2,
-            batch_first=True,
-            dropout=dropout if dropout > 0.0 else 0.0,
-        )
-        self.temporal_risk_projection = nn.Sequential(
-            nn.Linear(hidden_size * 3, hidden_size),
-            nn.LayerNorm(hidden_size),
-            nn.GELU(),
-        )
-        self.ordinal_risk_head = nn.Linear(hidden_size, 2)
-        self.risk_score_head = nn.Linear(hidden_size, 1)
-        self.risk_type_head = nn.Linear(hidden_size, self.risk_type_count)
-        self.risk_horizon_head = nn.Linear(hidden_size, 4)
-        self.lane_risk_head = nn.Linear(hidden_size, 6)
-        self.risk_uncertainty_head = nn.Linear(hidden_size, 1)
+        if self.use_temporal_risk:
+            self.temporal_risk_encoder = nn.GRU(
+                hidden_size * 3,
+                hidden_size,
+                num_layers=2,
+                batch_first=True,
+                dropout=dropout if dropout > 0.0 else 0.0,
+            )
+            self.temporal_risk_projection = nn.Sequential(
+                nn.Linear(hidden_size * 3, hidden_size),
+                nn.LayerNorm(hidden_size),
+                nn.GELU(),
+            )
+            self.ordinal_risk_head = nn.Linear(hidden_size, 2)
+            self.risk_score_head = nn.Linear(hidden_size, 1)
+            self.risk_type_head = nn.Linear(
+                hidden_size, self.risk_type_count
+            )
+            self.risk_horizon_head = nn.Linear(hidden_size, 4)
+            self.lane_risk_head = nn.Linear(hidden_size, 6)
+            self.risk_uncertainty_head = nn.Linear(hidden_size, 1)
+        else:
+            self.temporal_risk_encoder = None
+            self.temporal_risk_projection = None
+            self.ordinal_risk_head = None
+            self.risk_score_head = None
+            self.risk_type_head = None
+            self.risk_horizon_head = None
+            self.lane_risk_head = None
+            self.risk_uncertainty_head = None
         if speed_cap_environment_index is not None and not (
             0 <= speed_cap_environment_index < environment_dim
         ):
@@ -320,24 +332,42 @@ class LightweightDecisionAdapter(nn.Module):
         decision_token = query[:, 0]
         target_token = query[:, 1]
         visual_risk_logits = self.visual_risk_head(visual_summary)
-        risk_input = torch.cat(
-            [
-                visual_summary,
-                bev_summary,
-                self.ego_projection(ego_features),
-            ],
-            dim=-1,
-        )
         temporal_used = False
-        if self.use_temporal_risk and history_risk_features is not None:
-            history = torch.cat(
-                [history_risk_features, risk_input.unsqueeze(1)], dim=1
+        risk_input = None
+        ordinal_risk_logits = None
+        risk_score = None
+        risk_type_logits = None
+        risk_horizon_logits = None
+        lane_risk_logits = None
+        risk_uncertainty = None
+        if self.use_temporal_risk:
+            risk_input = torch.cat(
+                [
+                    visual_summary,
+                    bev_summary,
+                    self.ego_projection(ego_features),
+                ],
+                dim=-1,
             )
-            temporal_out, _ = self.temporal_risk_encoder(history)
-            temporal_context = temporal_out[:, -1]
-            temporal_used = True
-        else:
-            temporal_context = self.temporal_risk_projection(risk_input)
+            if history_risk_features is not None:
+                history = torch.cat(
+                    [history_risk_features, risk_input.unsqueeze(1)], dim=1
+                )
+                temporal_out, _ = self.temporal_risk_encoder(history)
+                temporal_context = temporal_out[:, -1]
+                temporal_used = True
+            else:
+                temporal_context = self.temporal_risk_projection(risk_input)
+            ordinal_risk_logits = self.ordinal_risk_head(temporal_context)
+            risk_score = torch.sigmoid(
+                self.risk_score_head(temporal_context)
+            ).squeeze(-1)
+            risk_type_logits = self.risk_type_head(temporal_context)
+            risk_horizon_logits = self.risk_horizon_head(temporal_context)
+            lane_risk_logits = self.lane_risk_head(temporal_context)
+            risk_uncertainty = F.softplus(
+                self.risk_uncertainty_head(temporal_context)
+            ).squeeze(-1)
         if self.condition_decision_on_visual_risk:
             visual_risk_probabilities = torch.softmax(visual_risk_logits, dim=-1)
             decision_token = decision_token + self.visual_risk_projection(
@@ -377,16 +407,12 @@ class LightweightDecisionAdapter(nn.Module):
             decision_embedding=decision_token,
             visual_risk_logits=visual_risk_logits,
             risk_input_features=risk_input,
-            ordinal_risk_logits=self.ordinal_risk_head(temporal_context),
-            risk_score=torch.sigmoid(
-                self.risk_score_head(temporal_context)
-            ).squeeze(-1),
-            risk_type_logits=self.risk_type_head(temporal_context),
-            risk_horizon_logits=self.risk_horizon_head(temporal_context),
-            lane_risk_logits=self.lane_risk_head(temporal_context),
-            risk_uncertainty=F.softplus(
-                self.risk_uncertainty_head(temporal_context)
-            ).squeeze(-1),
+            ordinal_risk_logits=ordinal_risk_logits,
+            risk_score=risk_score,
+            risk_type_logits=risk_type_logits,
+            risk_horizon_logits=risk_horizon_logits,
+            lane_risk_logits=lane_risk_logits,
+            risk_uncertainty=risk_uncertainty,
             temporal_used=temporal_used,
         )
 
