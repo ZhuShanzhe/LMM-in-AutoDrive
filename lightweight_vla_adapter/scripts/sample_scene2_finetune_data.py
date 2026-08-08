@@ -1,4 +1,4 @@
-﻿"""Sample Town05 Scene-2 traffic/event data for V6 risk-head fine-tuning.
+"""Sample Town05 Scene-2 traffic/event data for V6 risk-head fine-tuning.
 
 The sampler drives the ego through scripted dense-traffic episodes (slow
 vehicle, crossing pedestrian, cyclist, bus stop) and records synchronized
@@ -100,27 +100,43 @@ def ego_features(ego: Any, waypoint: Any, speed_cap_kmh: float) -> list[float]:
 
 
 def speed_kmh(actor: Any) -> float:
-    velocity = actor.get_velocity()
-    return 3.6 * math.sqrt(
-        float(velocity.x) ** 2
-        + float(velocity.y) ** 2
-        + float(velocity.z) ** 2
-    )
+    try:
+        velocity = actor.get_velocity()
+        return 3.6 * math.sqrt(
+            float(velocity.x) ** 2
+            + float(velocity.y) ** 2
+            + float(velocity.z) ** 2
+        )
+    except (RuntimeError, AttributeError):
+        return 0.0
+
+
+def alive(actor: Any) -> bool:
+    try:
+        return actor is not None and bool(actor.is_alive)
+    except (RuntimeError, AttributeError):
+        return False
 
 
 def follow_road(ego: Any, world: Any, target_speed_kmh: float) -> None:
     """Simple road follower: steer toward the lane 8 m ahead and hold speed."""
 
-    waypoint = world.get_map().get_waypoint(
-        ego.get_location(), project_to_road=True
-    )
+    try:
+        waypoint = world.get_map().get_waypoint(
+            ego.get_location(), project_to_road=True
+        )
+    except (RuntimeError, AttributeError):
+        return
     if waypoint is None:
         ego.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0))
         return
-    candidates = waypoint.next(8.0)
-    target = candidates[0] if candidates else waypoint
-    current_yaw = math.radians(ego.get_transform().rotation.yaw)
-    target_yaw = math.radians(target.transform.rotation.yaw)
+    try:
+        candidates = waypoint.next(8.0)
+        target = candidates[0] if candidates else waypoint
+        current_yaw = math.radians(ego.get_transform().rotation.yaw)
+        target_yaw = math.radians(target.transform.rotation.yaw)
+    except (RuntimeError, AttributeError):
+        return
     error = math.atan2(
         math.sin(target_yaw - current_yaw),
         math.cos(target_yaw - current_yaw),
@@ -140,14 +156,17 @@ def follow_road(ego: Any, world: Any, target_speed_kmh: float) -> None:
 
 
 def forward_lateral(ego: Any, actor: Any) -> tuple[float, float]:
-    ego_transform = ego.get_transform()
-    actor_location = actor.get_location()
-    dx = actor_location.x - ego_transform.location.x
-    dy = actor_location.y - ego_transform.location.y
-    yaw = math.radians(ego_transform.rotation.yaw)
-    forward = dx * math.cos(yaw) + dy * math.sin(yaw)
-    lateral = -dx * math.sin(yaw) + dy * math.cos(yaw)
-    return float(forward), float(lateral)
+    try:
+        ego_transform = ego.get_transform()
+        actor_location = actor.get_location()
+        dx = actor_location.x - ego_transform.location.x
+        dy = actor_location.y - ego_transform.location.y
+        yaw = math.radians(ego_transform.rotation.yaw)
+        forward = dx * math.cos(yaw) + dy * math.sin(yaw)
+        lateral = -dx * math.sin(yaw) + dy * math.cos(yaw)
+        return float(forward), float(lateral)
+    except (RuntimeError, AttributeError):
+        return 1e9, 0.0
 
 
 def label_risk(ego: Any, world: Any) -> dict[str, Any]:
@@ -159,15 +178,17 @@ def label_risk(ego: Any, world: Any) -> dict[str, Any]:
     for actor in world.get_actors():
         if actor.id == ego.id:
             continue
-        if not (
-            actor.is_alive
-            and (
-                "vehicle" in actor.type_id
-                or "walker" in actor.type_id
-            )
-        ):
+        if not alive(actor):
+            continue
+        try:
+            type_id = actor.type_id
+        except (RuntimeError, AttributeError):
+            continue
+        if not ("vehicle" in type_id or "walker" in type_id):
             continue
         forward, lateral = forward_lateral(ego, actor)
+        if forward >= 1e9:
+            continue
         if forward <= 0.5 or forward > 60.0:
             continue
         distance = math.hypot(forward, lateral)
@@ -202,11 +223,14 @@ def label_risk(ego: Any, world: Any) -> dict[str, Any]:
 
 
 def spawn_actor(world: Any, blueprint_name: str, transform: Any) -> Any:
-    blueprint = world.get_blueprint_library().find(blueprint_name)
-    if blueprint.has_attribute("role_name"):
-        blueprint.set_attribute("role_name", "sampler_npc")
-    actor = world.spawn_actor(blueprint, transform)
-    return actor
+    try:
+        blueprint = world.get_blueprint_library().find(blueprint_name)
+        if blueprint.has_attribute("role_name"):
+            blueprint.set_attribute("role_name", "sampler_npc")
+        actor = world.spawn_actor(blueprint, transform)
+        return actor
+    except (RuntimeError, AttributeError):
+        return None
 
 
 def pick_road_ahead(world: Any, ego: Any, distance_m: float) -> carla.Transform:
@@ -393,7 +417,7 @@ def main() -> int:
     def cleanup(actors: list[Any]) -> None:
         for actor in actors:
             try:
-                if actor.is_alive:
+                if alive(actor):
                     actor.destroy()
             except RuntimeError:
                 pass
@@ -456,11 +480,16 @@ def main() -> int:
         if lead is not None:
             spawn_cleanup.append(lead)
             for tick_index in range(900):
-                if lead.is_alive:
-                    lead.apply_control(
-                        carla.VehicleControl(throttle=0.28, brake=0.0)
-                    )
+                if alive(lead):
+                    try:
+                        lead.apply_control(
+                            carla.VehicleControl(throttle=0.28, brake=0.0)
+                        )
+                    except RuntimeError:
+                        pass
                 forward, _ = forward_lateral(ego, lead)
+                if forward >= 1e9:
+                    break
                 target = 32.0 if forward > 16.0 else 12.0 if forward > 9.0 else 0.0
                 follow_road(ego, world, target)
                 world.tick()
@@ -485,9 +514,12 @@ def main() -> int:
                 forward, _ = forward_lateral(ego, walker)
                 target = 30.0 if forward > 15.0 else 8.0 if forward > 8.0 else 0.0
                 follow_road(ego, world, target)
-                if walker.is_alive:
-                    walker_control.direction = carla.Vector3D(0.0, -1.0, 0.0)
-                    walker.apply_control(walker_control)
+                if alive(walker):
+                    try:
+                        walker_control.direction = carla.Vector3D(0.0, -1.0, 0.0)
+                        walker.apply_control(walker_control)
+                    except RuntimeError:
+                        pass
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
                     snapshot("pedestrian", label_risk(ego, world), "yield_10", 30.0)
@@ -503,10 +535,13 @@ def main() -> int:
         if cyclist is not None:
             spawn_cleanup.append(cyclist)
             for tick_index in range(800):
-                if cyclist.is_alive:
-                    cyclist.apply_control(
-                        carla.VehicleControl(throttle=0.18, brake=0.0)
-                    )
+                if alive(cyclist):
+                    try:
+                        cyclist.apply_control(
+                            carla.VehicleControl(throttle=0.18, brake=0.0)
+                        )
+                    except RuntimeError:
+                        pass
                 forward, _ = forward_lateral(ego, cyclist)
                 target = 30.0 if forward > 15.0 else 10.0 if forward > 8.0 else 0.0
                 follow_road(ego, world, target)
@@ -537,10 +572,13 @@ def main() -> int:
                 ),
             )
             for tick_index in range(700):
-                if bus.is_alive:
-                    bus.apply_control(
-                        carla.VehicleControl(throttle=0.0, brake=1.0)
-                    )
+                if alive(bus):
+                    try:
+                        bus.apply_control(
+                            carla.VehicleControl(throttle=0.0, brake=1.0)
+                        )
+                    except RuntimeError:
+                        pass
                 forward, _ = forward_lateral(ego, bus)
                 target = 30.0 if forward > 15.0 else 8.0 if forward > 8.0 else 0.0
                 follow_road(ego, world, target)
