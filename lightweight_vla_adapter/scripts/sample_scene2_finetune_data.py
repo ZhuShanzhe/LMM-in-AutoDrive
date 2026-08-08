@@ -251,8 +251,18 @@ def main() -> int:
     args = parse_args()
     rng = random.Random(args.seed)
     client = carla.Client("127.0.0.1", 2000)
-    client.set_timeout(60)
-    world = client.load_world("Town05_Opt")
+    client.set_timeout(180)
+    world = None
+    for attempt in range(3):
+        try:
+            world = client.load_world("Town05_Opt")
+            break
+        except RuntimeError:
+            if attempt == 2:
+                raise
+            time.sleep(10)
+    if world is None:
+        raise RuntimeError("failed to load Town05_Opt")
     settings = world.get_settings()
     settings.synchronous_mode = True
     settings.fixed_delta_seconds = 0.05
