@@ -460,6 +460,69 @@ def reset_ego(
         world.tick()
 
 
+def reset_to_straight(
+    ego: Any,
+    world: Any,
+    spawn_points: list[Any],
+    offset: int,
+) -> bool:
+    """Teleport the ego to a long straight segment (>=200 m, heading-stable)."""
+
+    map_api = world.get_map()
+    for attempt in range(12):
+        index = (244 + (int(offset) + attempt * 37) * 23) % len(spawn_points)
+        transform = spawn_points[index]
+        waypoint = map_api.get_waypoint(
+            transform.location, project_to_road=True
+        )
+        if waypoint is None:
+            continue
+        start_yaw = math.radians(waypoint.transform.rotation.yaw)
+        cursor = waypoint
+        straight = True
+        for _ in range(20):
+            candidates = cursor.next(10.0)
+            if not candidates:
+                straight = False
+                break
+            cursor = candidates[0]
+            delta = abs(
+                math.degrees(
+                    math.atan2(
+                        math.sin(
+                            math.radians(cursor.transform.rotation.yaw)
+                            - start_yaw
+                        ),
+                        math.cos(
+                            math.radians(cursor.transform.rotation.yaw)
+                            - start_yaw
+                        ),
+                    )
+                )
+            )
+            if delta > 5.0:
+                straight = False
+                break
+        if not straight:
+            continue
+        ego.set_transform(
+            carla.Transform(
+                carla.Location(
+                    x=waypoint.transform.location.x,
+                    y=waypoint.transform.location.y,
+                    z=waypoint.transform.location.z + 0.6,
+                ),
+                waypoint.transform.rotation,
+            )
+        )
+        ego.set_target_velocity(carla.Vector3D(0.0, 0.0, 0.0))
+        ego.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0))
+        for _ in range(20):
+            world.tick()
+        return True
+    return False
+
+
 def main() -> int:
     args = parse_args()
     rng = random.Random(args.seed)
@@ -738,19 +801,29 @@ def main() -> int:
 
         # Episode 1: baseline cruise on an empty road (clean low-risk
         # hard negatives; no parked actors to pollute the front cone).
-        for _ in range(20):
-            world.tick()
+        reset_to_straight(ego, world, spawn_points, 0)
         run_episode(
             "baseline",
-            target_speed_kmh=45.0,
-            ticks=800,
-            sample_every=4,
-            quotas={"low": 160, "medium": 40, "high": 20},
+            target_speed_kmh=40.0,
+            ticks=1500,
+            sample_every=3,
+            quotas={"low": 240, "medium": 40, "high": 20},
             weather="clear_noon",
         )
 
+        # Episode 1b: rainy-night empty-road low-risk hard negatives.
+        reset_to_straight(ego, world, spawn_points, 11)
+        run_episode(
+            "baseline_rainy_night",
+            target_speed_kmh=35.0,
+            ticks=1200,
+            sample_every=3,
+            quotas={"low": 160, "medium": 40, "high": 20},
+            weather="rainy_night",
+        )
+
         # Episode 2: slow vehicle ahead.
-        reset_ego(ego, world, spawn_points, 1)
+        reset_to_straight(ego, world, spawn_points, 1)
         set_weather(world, "rainy_night")
         lead = spawn_actor(
             world,
@@ -825,7 +898,7 @@ def main() -> int:
             spawn_cleanup.clear()
 
         # Episode 3: crossing pedestrian ahead.
-        reset_ego(ego, world, spawn_points, 2)
+        reset_to_straight(ego, world, spawn_points, 2)
         set_weather(world, "wet_cloudy")
         walker_bp = library.find("walker.pedestrian.0001")
         walker_ahead = pick_road_ahead(world, ego, 38.0)
@@ -876,7 +949,7 @@ def main() -> int:
             spawn_cleanup.clear()
 
         # Episode 4: slow cyclist in the right lane.
-        reset_ego(ego, world, spawn_points, 3)
+        reset_to_straight(ego, world, spawn_points, 3)
         set_weather(world, "sunset")
         cyclist = spawn_actor(
             world,
@@ -927,7 +1000,7 @@ def main() -> int:
             spawn_cleanup.clear()
 
         # Episode 5: stopped bus with waiting pedestrians (right lane).
-        reset_ego(ego, world, spawn_points, 4)
+        reset_to_straight(ego, world, spawn_points, 4)
         set_weather(world, "foggy_morning")
         bus = spawn_actor(
             world,

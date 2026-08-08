@@ -207,6 +207,16 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--low-precision-margin",
+        type=float,
+        default=0.0,
+        help=(
+            "Clamp penalty pushing P(low) above this margin for every "
+            "low-risk sample (prevents high-risk over-prediction on empty "
+            "scenes)."
+        ),
+    )
+    parser.add_argument(
         "--unfreeze-epoch",
         type=int,
         default=None,
@@ -606,6 +616,15 @@ def main() -> None:
                     loss = loss + 0.5 * torch.clamp(
                         args.medium_recall_margin - medium_probs, min=0.0
                     ).mean()
+            if args.low_precision_margin > 0.0:
+                low_mask = risk == 0
+                if bool(low_mask.any()):
+                    low_probs = F.softmax(
+                        output.visual_risk_logits, dim=-1
+                    )[low_mask, 0]
+                    loss = loss + 0.5 * torch.clamp(
+                        args.low_precision_margin - low_probs, min=0.0
+                    ).mean()
             if (
                 bool((batch["risk_score_label"] >= 0.0).all())
                 and output.risk_score is not None
@@ -689,6 +708,7 @@ def main() -> None:
         "balance_power": args.balance_power,
         "high_recall_margin": args.high_recall_margin,
         "medium_recall_margin": args.medium_recall_margin,
+        "low_precision_margin": args.low_precision_margin,
         "unfreeze_epoch": unfreeze_epoch,
         "action_loss_weights": {
             action: float(weight)
