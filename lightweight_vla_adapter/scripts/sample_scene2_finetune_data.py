@@ -57,6 +57,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--seed", type=int, default=20260808)
     parser.add_argument("--max-samples", type=int, default=4000)
+    parser.add_argument("--town", default="Town05_Opt")
     return parser.parse_args()
 
 
@@ -170,11 +171,36 @@ def forward_lateral(ego: Any, actor: Any) -> tuple[float, float]:
 
 
 def label_risk(ego: Any, world: Any) -> dict[str, Any]:
-    """Offline-only risk labels from actor truth."""
+    """Offline-only physics-based risk labels from actor truth.
 
-    front_best = None
-    left_best = None
-    right_best = None
+    Risk integrates longitudinal gap, relative speed, TTC, ego stopping
+    distance, short-horizon trajectory intersection, actor type and lane
+    topology.  Target-lane risk also checks fast-approaching rear vehicles.
+    """
+
+    reaction_time_s = 1.0
+    comfort_decel_mps2 = 4.0
+    ego_velocity = ego.get_velocity()
+    ego_speed_mps = max(
+        0.0,
+        math.sqrt(
+            float(ego_velocity.x) ** 2
+            + float(ego_velocity.y) ** 2
+            + float(ego_velocity.z) ** 2
+        ),
+    )
+    ego_stopping_m = (
+        ego_speed_mps * reaction_time_s
+        + ego_speed_mps * ego_speed_mps / (2.0 * comfort_decel_mps2)
+    )
+    ego_yaw = math.radians(ego.get_transform().rotation.yaw)
+
+    front = None  # (rank, ttc, gap, rel_speed, is_vru)
+    lanes = {"left": None, "right": None}
+
+    def rank_of(level: str) -> int:
+        return {"low": 0, "medium": 1, "high": 2}[level]
+
     for actor in world.get_actors():
         if actor.id == ego.id:
             continue
@@ -182,42 +208,108 @@ def label_risk(ego: Any, world: Any) -> dict[str, Any]:
             continue
         try:
             type_id = actor.type_id
+            actor_velocity = actor.get_velocity()
         except (RuntimeError, AttributeError):
             continue
-        if not ("vehicle" in type_id or "walker" in type_id):
-            continue
+        is_vru = (
+            "walker" in type_id
+            or "bicycle" in type_id
+            or "bike" in type_id
+        )
         forward, lateral = forward_lateral(ego, actor)
         if forward >= 1e9:
             continue
-        if forward <= 0.5 or forward > 60.0:
-            continue
         distance = math.hypot(forward, lateral)
-        if abs(lateral) < 2.6 and (front_best is None or distance < front_best):
-            front_best = distance
-        if -5.5 <= lateral <= -2.2 and (
-            left_best is None or distance < left_best
-        ):
-            left_best = distance
-        if 2.2 <= lateral <= 5.5 and (
-            right_best is None or distance < right_best
-        ):
-            right_best = distance
+        target_speed_along = (
+            float(actor_velocity.x) * math.cos(ego_yaw)
+            + float(actor_velocity.y) * math.sin(ego_yaw)
+        )
+        rel_speed_mps = ego_speed_mps - target_speed_along
+        ttc = forward / max(rel_speed_mps, 0.5)
+        projected_gap_15 = forward - max(0.0, rel_speed_mps) * 1.5
+        margin = forward - ego_stopping_m
 
-    def level(distance: float | None) -> str:
-        if distance is None:
-            return "low"
-        if distance < 12.0:
-            return "high"
-        if distance < 25.0:
-            return "medium"
-        return "low"
+        level = "low"
+        if forward > 0.5:
+            if (
+                ttc < 1.8
+                or margin < 0.0
+                or projected_gap_15 < 1.0
+                or (is_vru and forward < 12.0)
+            ):
+                level = "high"
+            elif (
+                ttc < 4.0
+                or (forward < 25.0 and rel_speed_mps > 1.0)
+                or (is_vru and forward < 25.0)
+            ):
+                level = "medium"
+
+        rank = rank_of(level)
+        if abs(lateral) < 2.6 and 0.5 < forward < 60.0:
+            if front is None or rank > front[0]:
+                front = (rank, ttc, forward, rel_speed_mps, is_vru)
+
+        lane_level = None
+        if forward > 0.5 and forward < 40.0:
+            if ttc < 2.2 or (is_vru and forward < 15.0):
+                lane_level = "high"
+            elif ttc < 5.0 or forward < 25.0:
+                lane_level = "medium"
+        elif forward < 0.0:
+            behind = -forward
+            if behind < 40.0 and rel_speed_mps < -3.0:
+                lane_level = "high" if behind < 20.0 else "medium"
+        if lane_level is not None:
+            if -5.5 <= lateral <= -2.2 and (
+                lanes["left"] is None
+                or rank_of(lane_level) > rank_of(lanes["left"])
+            ):
+                lanes["left"] = lane_level
+            if 2.2 <= lateral <= 5.5 and (
+                lanes["right"] is None
+                or rank_of(lane_level) > rank_of(lanes["right"])
+            ):
+                lanes["right"] = lane_level
+
+    if front is None:
+        risk_level = "low"
+        ttc_s = None
+        gap_m = None
+        rel_kmh = None
+        vru_front = False
+    else:
+        rank, ttc_s, gap_m, rel_speed, vru_front = front
+        risk_level = {0: "low", 1: "medium", 2: "high"}[rank]
+        rel_kmh = rel_speed * 3.6
+
+    if risk_level == "high":
+        if vru_front:
+            action_hint = "stop"
+        elif ttc_s is not None and ttc_s < 1.2:
+            action_hint = "emergency_brake"
+        elif rel_kmh is not None and rel_kmh < 1.0:
+            action_hint = "stop"
+        else:
+            action_hint = "decelerate"
+    elif risk_level == "medium":
+        action_hint = "decelerate"
+    else:
+        action_hint = "keep_lane"
 
     return {
-        "risk_level": level(front_best),
-        "front_distance_m": front_best,
+        "risk_level": risk_level,
+        "action_hint": action_hint,
+        "ttc_s": ttc_s,
+        "gap_m": gap_m,
+        "rel_speed_kmh": rel_kmh,
+        "front_distance_m": gap_m,
         "lane_change": {
-            "left": {"risk_level": level(left_best), "is_safe": level(left_best) == "low"},
-            "right": {"risk_level": level(right_best), "is_safe": level(right_best) == "low"},
+            direction: {
+                "risk_level": lanes[direction] or "low",
+                "is_safe": (lanes[direction] or "low") == "low",
+            }
+            for direction in ("left", "right")
         },
     }
 
@@ -248,12 +340,28 @@ def pick_road_ahead(world: Any, ego: Any, distance_m: float) -> carla.Transform:
 WEATHER_PROFILES = {
     "clear_noon": carla.WeatherParameters.ClearNoon,
     "cloudy_noon": carla.WeatherParameters.CloudyNoon,
+    "foggy_morning": carla.WeatherParameters(
+        cloudiness=80.0,
+        precipitation=0.0,
+        precipitation_deposits=0.0,
+        fog_density=70.0,
+        fog_distance=12.0,
+        sun_altitude_angle=25.0,
+    ),
     "wet_cloudy": carla.WeatherParameters(
         cloudiness=60.0,
         precipitation=20.0,
         precipitation_deposits=70.0,
         wind_intensity=20.0,
         sun_altitude_angle=50.0,
+    ),
+    "rainy_night": carla.WeatherParameters(
+        cloudiness=90.0,
+        precipitation=80.0,
+        precipitation_deposits=90.0,
+        wind_intensity=40.0,
+        sun_altitude_angle=-12.0,
+        fog_density=15.0,
     ),
     "sunset": carla.WeatherParameters(
         cloudiness=10.0,
@@ -335,7 +443,7 @@ def main() -> int:
     world = None
     for attempt in range(3):
         try:
-            world = client.load_world("Town05_Opt")
+            world = client.load_world(args.town)
             break
         except RuntimeError:
             if attempt == 2:
@@ -391,6 +499,7 @@ def main() -> int:
         "keep_30": "Keep the current lane at 30.0 kilometers per hour.",
         "decel_20": "Slow down smoothly to 20.0 kilometers per hour.",
         "yield_10": "Slow down and yield to the road user ahead.",
+        "stop": "Stop the vehicle immediately.",
     }
     intent_paths = {}
     for name, text in intent_texts.items():
@@ -422,6 +531,7 @@ def main() -> int:
         speed_cap_kmh: float,
         quotas: dict[str, int],
         counts: dict[str, int],
+        split_label: str,
     ) -> None:
         nonlocal samples, last_frame
         bucket = risk["risk_level"]
@@ -461,9 +571,24 @@ def main() -> int:
             output_dir / "tensors" / f"{sample_id}.pt",
         )
         risk_level = risk["risk_level"]
-        action = "decelerate" if risk_level != "low" else "keep_lane"
-        target_speed = 20.0 if risk_level != "low" else speed_cap_kmh
-        split = "validation" if samples % 10 == 0 else "train"
+        action_hint = risk.get("action_hint", "keep_lane")
+        if risk_level == "low":
+            action = "keep_lane"
+        elif action_hint in {"emergency_brake", "stop"}:
+            action = action_hint
+        elif action_hint == "yield":
+            action = "decelerate"
+        else:
+            action = "decelerate"
+        if action == "emergency_brake":
+            target_speed = 0.0
+        elif action == "stop":
+            target_speed = 0.0
+        elif risk_level != "low":
+            target_speed = 15.0
+        else:
+            target_speed = speed_cap_kmh
+        split = split_label
         manifest.write(
             json.dumps(
                 {
@@ -494,6 +619,11 @@ def main() -> int:
                     },
                     "risk_level": risk_level,
                     "risk_reason_codes": [],
+                    "risk_physics": {
+                        "ttc_s": risk.get("ttc_s"),
+                        "gap_m": risk.get("gap_m"),
+                        "rel_speed_kmh": risk.get("rel_speed_kmh"),
+                    },
                     "lane_change_risk": risk.get("lane_change", {}),
                     "front_distance_m": risk.get("front_distance_m"),
                     "weather_profile": CURRENT_WEATHER,
@@ -532,6 +662,7 @@ def main() -> int:
         quotas: dict[str, int] | None = None,
         counts: dict[str, int] | None = None,
         weather: str | None = None,
+        split_label: str = "train",
     ) -> None:
         nonlocal last_frame, samples
         if weather is not None:
@@ -549,15 +680,26 @@ def main() -> int:
                 risk = label_risk(ego, world)
                 if counter[risk["risk_level"]] >= quota[risk["risk_level"]]:
                     continue
-                intent = (
-                    "yield_10"
-                    if risk["risk_level"] == "high"
-                    else "decel_20"
-                    if risk["risk_level"] == "medium"
-                    else "keep_40"
-                )
+                hint = risk.get("action_hint", "keep_lane")
+                if risk["risk_level"] == "high" and hint in {
+                    "emergency_brake",
+                    "stop",
+                }:
+                    intent = "stop"
+                elif risk["risk_level"] == "high":
+                    intent = "yield_10"
+                elif risk["risk_level"] == "medium":
+                    intent = "decel_20"
+                else:
+                    intent = "keep_40"
                 snapshot(
-                    name, risk, intent, target_speed_kmh, quota, counter
+                    name,
+                    risk,
+                    intent,
+                    target_speed_kmh,
+                    quota,
+                    counter,
+                    split_label,
                 )
         return counter
 
@@ -603,7 +745,7 @@ def main() -> int:
 
         # Episode 2: slow vehicle ahead.
         reset_ego(ego, world, spawn_points, 1)
-        set_weather(world, "cloudy_noon")
+        set_weather(world, "rainy_night")
         lead = spawn_actor(
             world,
             "vehicle.toyota.prius",
@@ -653,8 +795,25 @@ def main() -> int:
                     risk = label_risk(ego, world)
                     if counts2[risk["risk_level"]] >= quota2[risk["risk_level"]]:
                         continue
+                    hint = risk.get("action_hint", "keep_lane")
+                    intent = (
+                        "stop"
+                        if risk["risk_level"] == "high"
+                        and hint in {"emergency_brake", "stop"}
+                        else "yield_10"
+                        if risk["risk_level"] == "high"
+                        else "decel_20"
+                        if risk["risk_level"] == "medium"
+                        else "keep_40"
+                    )
                     snapshot(
-                        "slow_vehicle", risk, "yield_10", 32.0, quota2, counts2
+                        "slow_vehicle",
+                        risk,
+                        intent,
+                        32.0,
+                        quota2,
+                        counts2,
+                        "validation",
                     )
             cleanup([lead] + ([left_vehicle] if left_vehicle is not None else []))
             spawn_cleanup.clear()
@@ -687,8 +846,25 @@ def main() -> int:
                     risk = label_risk(ego, world)
                     if counts3[risk["risk_level"]] >= quota3[risk["risk_level"]]:
                         continue
+                    hint = risk.get("action_hint", "keep_lane")
+                    intent = (
+                        "stop"
+                        if risk["risk_level"] == "high"
+                        and hint in {"emergency_brake", "stop"}
+                        else "yield_10"
+                        if risk["risk_level"] == "high"
+                        else "decel_20"
+                        if risk["risk_level"] == "medium"
+                        else "keep_40"
+                    )
                     snapshot(
-                        "pedestrian", risk, "yield_10", 30.0, quota3, counts3
+                        "pedestrian",
+                        risk,
+                        intent,
+                        30.0,
+                        quota3,
+                        counts3,
+                        "train",
                     )
             cleanup([walker])
             spawn_cleanup.clear()
@@ -721,15 +897,32 @@ def main() -> int:
                     risk = label_risk(ego, world)
                     if counts4[risk["risk_level"]] >= quota4[risk["risk_level"]]:
                         continue
+                    hint = risk.get("action_hint", "keep_lane")
+                    intent = (
+                        "stop"
+                        if risk["risk_level"] == "high"
+                        and hint in {"emergency_brake", "stop"}
+                        else "yield_10"
+                        if risk["risk_level"] == "high"
+                        else "decel_20"
+                        if risk["risk_level"] == "medium"
+                        else "keep_40"
+                    )
                     snapshot(
-                        "cyclist", risk, "yield_10", 30.0, quota4, counts4
+                        "cyclist",
+                        risk,
+                        intent,
+                        30.0,
+                        quota4,
+                        counts4,
+                        "validation",
                     )
             cleanup([cyclist])
             spawn_cleanup.clear()
 
         # Episode 5: stopped bus with waiting pedestrians (right lane).
         reset_ego(ego, world, spawn_points, 4)
-        set_weather(world, "clear_noon")
+        set_weather(world, "foggy_morning")
         bus = spawn_actor(
             world,
             "vehicle.volkswagen.t2",
@@ -767,8 +960,25 @@ def main() -> int:
                     risk = label_risk(ego, world)
                     if counts5[risk["risk_level"]] >= quota5[risk["risk_level"]]:
                         continue
+                    hint = risk.get("action_hint", "keep_lane")
+                    intent = (
+                        "stop"
+                        if risk["risk_level"] == "high"
+                        and hint in {"emergency_brake", "stop"}
+                        else "yield_10"
+                        if risk["risk_level"] == "high"
+                        else "decel_20"
+                        if risk["risk_level"] == "medium"
+                        else "keep_40"
+                    )
                     snapshot(
-                        "bus_stop", risk, "yield_10", 30.0, quota5, counts5
+                        "bus_stop",
+                        risk,
+                        intent,
+                        30.0,
+                        quota5,
+                        counts5,
+                        "train",
                     )
             cleanup([bus] + ([walker1] if walker1 is not None else []))
             spawn_cleanup.clear()
