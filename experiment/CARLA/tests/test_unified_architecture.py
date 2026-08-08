@@ -965,3 +965,38 @@ def test_generic_command_speed_floor_only_applies_to_first_deceleration_frame():
     second, override2 = supervisor.apply(decision, canonical, risk, **kwargs)
     assert override2 != "low_risk_command_speed_floor"
     assert second["target_speed_kmh"] == 8.0
+
+
+def test_generic_stationary_high_risk_liveness_prevents_deadlock():
+    from control.generic_temporal_risk_supervisor import (
+        GenericTemporalRiskSupervisor,
+        TemporalRiskSupervisorConfig,
+    )
+
+    supervisor = GenericTemporalRiskSupervisor(
+        TemporalRiskSupervisorConfig()
+    )
+    decision = {
+        "action": "emergency_brake",
+        "target_speed_kmh": 0.0,
+        "emergency": True,
+    }
+    canonical = {"action": "keep_lane", "target_speed_kmh": 45.0}
+    risk = {"risk_level": "high", "recommended_action": "emergency_brake"}
+
+    final, override = supervisor.apply(
+        decision,
+        canonical,
+        risk,
+        parsed_intent="KEEP_LANE",
+        requested_lane_direction=None,
+        target_lane_risk=None,
+        stationary_elapsed_s=3.0,
+        resume_active=False,
+        resume_speed_kmh=20.0,
+    )
+
+    assert override == "stationary_high_risk_liveness"
+    assert final["action"] == "decelerate"
+    assert final["target_speed_kmh"] == 12.0
+    assert final["emergency"] is False

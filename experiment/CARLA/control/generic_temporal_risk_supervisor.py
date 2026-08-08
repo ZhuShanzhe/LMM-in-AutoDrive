@@ -323,6 +323,26 @@ class GenericTemporalRiskSupervisor:
             self._override_counts[OVERRIDE_LANE_CHANGE_TIMEOUT] += 1
             return decision, OVERRIDE_LANE_CHANGE_TIMEOUT
 
+        # Generic stationary high-risk liveness: a learned high signal while
+        # the ego has been stopped for a while without an explicit text stop
+        # is treated as a view false-positive and downgraded to a cautious
+        # crawl, so the vehicle never deadlocks on an empty scene.
+        if (
+            risk_level == "high"
+            and stationary_elapsed_s >= 2.0
+            and str(decision.get("action")) == "emergency_brake"
+            and str(canonical.get("action")) not in {"stop", "emergency_brake"}
+        ):
+            decision.update(
+                action="decelerate",
+                target_speed_kmh=12.0,
+                emergency=False,
+                reason="stationary_high_risk_liveness",
+                blocked_reason_codes=[],
+            )
+            self._override_counts["stationary_high_risk_liveness"] += 1
+            return decision, "stationary_high_risk_liveness"
+
         # Generic low-risk command-speed floor: when the text command defines
         # an explicit speed envelope and the learned risk head says low or
         # medium (no hazard), a model over-deceleration below that envelope is
