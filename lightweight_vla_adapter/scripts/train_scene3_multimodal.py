@@ -169,6 +169,21 @@ def parse_args() -> argparse.Namespace:
         default=0.75,
         help="Inverse joint action/risk frequency exponent used by the sampler.",
     )
+    parser.add_argument(
+        "--high-recall-margin",
+        type=float,
+        default=0.0,
+        help=(
+            "Clamp penalty pushing P(high) above this margin for every "
+            "high-risk sample (directly targets high-risk recall)."
+        ),
+    )
+    parser.add_argument(
+        "--unfreeze-epoch",
+        type=int,
+        default=None,
+        help="Epoch at which the raw-camera backbone is unfrozen.",
+    )
     parser.add_argument("--seed", type=int, default=20260805)
     parser.add_argument("--device", default="cuda")
     return parser.parse_args()
@@ -475,8 +490,13 @@ def main() -> None:
     best_score = -float("inf")
     history = []
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    unfreeze_epoch = (
+        args.unfreeze_epoch
+        if args.unfreeze_epoch is not None
+        else max(3, args.epochs // 3)
+    )
     for epoch in range(1, args.epochs + 1):
-        if epoch == max(3, args.epochs // 3):
+        if epoch == unfreeze_epoch:
             model.raw_camera_encoder.freeze_backbone(False)
             optimizer = torch.optim.AdamW(
                 model.parameters(), lr=args.learning_rate * 0.15, weight_decay=0.02
@@ -511,6 +531,15 @@ def main() -> None:
                     output.visual_risk_logits, risk, weight=risk_loss_weights
                 )
             )
+            if args.high_recall_margin > 0.0:
+                high_mask = risk == 2
+                if bool(high_mask.any()):
+                    high_probs = F.softmax(
+                        output.visual_risk_logits, dim=-1
+                    )[high_mask, 2]
+                    loss = loss + 0.5 * torch.clamp(
+                        args.high_recall_margin - high_probs, min=0.0
+                    ).mean()
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -560,6 +589,8 @@ def main() -> None:
             for (action, risk), count in sorted(joint_counts.items())
         },
         "balance_power": args.balance_power,
+        "high_recall_margin": args.high_recall_margin,
+        "unfreeze_epoch": unfreeze_epoch,
         "action_loss_weights": {
             action: float(weight)
             for action, weight in zip(ACTION_LABELS, action_loss_weights.cpu())
