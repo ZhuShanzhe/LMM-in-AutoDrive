@@ -323,7 +323,7 @@ class GenericTemporalRiskSupervisor:
             risk_level == "high"
             and stationary_elapsed_s >= 2.0
             and str(decision.get("action")) == "emergency_brake"
-            and str(canonical.get("action")) not in {"stop", "emergency_brake"}
+            and parsed_intent not in {"STOP", "EMERGENCY_BRAKE"}
         ):
             decision.update(
                 action="decelerate",
