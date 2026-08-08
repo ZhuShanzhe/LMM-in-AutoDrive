@@ -152,21 +152,21 @@ class Scene3Dataset(Dataset):
             "risk_score_label": (
                 torch.tensor(float(row["risk_score"]))
                 if row.get("risk_score") is not None
-                else None
+                else torch.tensor(-1.0)
             ),
             "horizon_label": (
                 torch.tensor(
                     [float(v) for v in row["horizon_probabilities"]]
                 )
                 if row.get("horizon_probabilities") is not None
-                else None
+                else torch.tensor([-1.0, -1.0, -1.0, -1.0])
             ),
             "lane_risk_label": (
                 torch.tensor(
                     [int(v) for v in row["lane_risk_levels"]]
                 )
                 if row.get("lane_risk_levels") is not None
-                else None
+                else torch.tensor([-1, -1])
             ),
         }
 
@@ -589,7 +589,7 @@ def main() -> None:
                         args.high_recall_margin - high_probs, min=0.0
                     ).mean()
             if (
-                batch.get("risk_score_label") is not None
+                bool((batch["risk_score_label"] >= 0.0).all())
                 and output.risk_score is not None
             ):
                 loss = loss + 0.15 * F.mse_loss(
@@ -597,7 +597,7 @@ def main() -> None:
                     batch["risk_score_label"].to(device).float(),
                 )
             if (
-                batch.get("horizon_label") is not None
+                bool((batch["horizon_label"] >= 0.0).all())
                 and output.risk_horizon_logits is not None
             ):
                 loss = loss + 0.10 * F.binary_cross_entropy_with_logits(
@@ -605,7 +605,7 @@ def main() -> None:
                     batch["horizon_label"].to(device).float(),
                 )
             if (
-                batch.get("lane_risk_label") is not None
+                bool((batch["lane_risk_label"] >= 0).all())
                 and output.lane_risk_logits is not None
             ):
                 lane_target = batch["lane_risk_label"].to(device)
