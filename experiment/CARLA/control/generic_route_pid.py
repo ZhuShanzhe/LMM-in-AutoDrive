@@ -387,7 +387,42 @@ class GenericRoutePID:
         planned = self._plan_logical_lane(self.progress_m() + 15.0)
         return planned is not None and planned != current_logical
 
+    def _lane_change_legal(self) -> bool:
+        """Map-legality check for the requested lane change.
+
+        Uses only static map geometry (waypoint lane-change permissions), not
+        actor truth.  A change across a solid marking is never executed; the
+        intent remains active and proceeds when the corridor reaches a legal
+        window (or the supervisor timeout keeps the ego crawling).
+        """
+
+        if self._action not in ("lane_change_left", "lane_change_right"):
+            return True
+        direction = self._action.removeprefix("lane_change_")
+        try:
+            waypoint = self.world.get_map().get_waypoint(
+                self.ego.get_location(),
+                project_to_road=True,
+                lane_type=carla.LaneType.Driving,
+            )
+        except (RuntimeError, AttributeError, TypeError):
+            return True
+        if waypoint is None:
+            return True
+        try:
+            permission = int(waypoint.lane_change)
+        except (AttributeError, TypeError, ValueError):
+            return True
+        if direction == "left":
+            return bool(permission & 1)
+        return bool(permission & 2)
+
     def run_step(self) -> carla.VehicleControl:
+        if not self._lane_change_legal():
+            # Hold the lateral action in the current lane; the high-level
+            # intent stays untouched so it can resume at a legal window.
+            self._target_lane = None
+            self._action = "keep_lane"
         intent = {
             "schema_version": "1.0.0",
             "action": self._action,

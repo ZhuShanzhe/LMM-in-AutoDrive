@@ -897,3 +897,71 @@ def test_same_output_action_executes_through_one_route_pid():
         )
         control = pid.run_step()
         assert control is not None
+
+
+def test_generic_lane_change_wait_timeout_falls_back_to_crawl():
+    from control.generic_temporal_risk_supervisor import (
+        GenericTemporalRiskSupervisor,
+        TemporalRiskSupervisorConfig,
+    )
+
+    supervisor = GenericTemporalRiskSupervisor(
+        TemporalRiskSupervisorConfig(lane_change_wait_timeout_s=8.0)
+    )
+    decision = {
+        "action": "decelerate",
+        "target_speed_kmh": 5.0,
+        "emergency": False,
+    }
+    canonical = {"action": "keep_lane", "target_speed_kmh": 45.0}
+    risk = {"risk_level": "low", "recommended_action": "keep_lane"}
+
+    final, override = supervisor.apply(
+        decision,
+        canonical,
+        risk,
+        parsed_intent="CHANGE_LANE_LEFT",
+        requested_lane_direction="left",
+        target_lane_risk=None,
+        stationary_elapsed_s=9.0,
+        resume_active=False,
+        resume_speed_kmh=20.0,
+    )
+
+    assert override == "lane_change_wait_timeout"
+    assert final["action"] == "keep_lane"
+    assert final["target_speed_kmh"] == 15.0
+
+
+def test_generic_command_speed_floor_only_applies_to_first_deceleration_frame():
+    from control.generic_temporal_risk_supervisor import (
+        GenericTemporalRiskSupervisor,
+        TemporalRiskSupervisorConfig,
+    )
+
+    supervisor = GenericTemporalRiskSupervisor(
+        TemporalRiskSupervisorConfig()
+    )
+    decision = {
+        "action": "decelerate",
+        "target_speed_kmh": 8.0,
+        "emergency": False,
+    }
+    canonical = {"action": "keep_lane", "target_speed_kmh": 45.0}
+    risk = {"risk_level": "low", "recommended_action": "keep_lane"}
+    kwargs = {
+        "parsed_intent": "DECELERATE",
+        "requested_lane_direction": None,
+        "target_lane_risk": None,
+        "stationary_elapsed_s": 0.0,
+        "resume_active": False,
+        "resume_speed_kmh": 20.0,
+    }
+
+    first, override1 = supervisor.apply(decision, canonical, risk, **kwargs)
+    assert override1 == "low_risk_command_speed_floor"
+    assert first["target_speed_kmh"] == 45.0
+
+    second, override2 = supervisor.apply(decision, canonical, risk, **kwargs)
+    assert override2 != "low_risk_command_speed_floor"
+    assert second["target_speed_kmh"] == 8.0

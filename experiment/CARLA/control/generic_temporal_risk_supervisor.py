@@ -27,6 +27,7 @@ OVERRIDE_LANE_CLEARANCE = "target_lane_visual_clearance"
 OVERRIDE_RISK_CONFIRMATION = "temporal_risk_confirmation"
 OVERRIDE_UNCONFIRMED_STOP = "unconfirmed_stop_crawl_floor"
 OVERRIDE_COMMAND_SPEED_FLOOR = "low_risk_command_speed_floor"
+OVERRIDE_LANE_CHANGE_TIMEOUT = "lane_change_wait_timeout"
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,7 @@ class TemporalRiskSupervisorConfig:
     decision_history_size: int = 40
     high_confirm_frames: int = 3
     stopped_speed_kmh: float = 0.5
+    lane_change_wait_timeout_s: float = 8.0
 
     def __post_init__(self) -> None:
         if self.history_size < 1:
@@ -63,6 +65,11 @@ class TemporalRiskSupervisorConfig:
             or self.stopped_speed_kmh < 0.0
         ):
             raise ValueError("stopped_speed_kmh must be non-negative")
+        if (
+            not math.isfinite(self.lane_change_wait_timeout_s)
+            or self.lane_change_wait_timeout_s <= 0.0
+        ):
+            raise ValueError("lane_change_wait_timeout_s must be positive")
 
 
 class GenericTemporalRiskSupervisor:
@@ -82,6 +89,7 @@ class GenericTemporalRiskSupervisor:
         self._resume_intent: str | None = None
         self._crawl_pending = False
         self._high_confirm_count = 0
+        self._consecutive_decelerate_frames = 0
         self._moving_since_frame: int | None = None
         self._decision_history: deque[dict[str, Any]] = deque(
             maxlen=self.config.decision_history_size
@@ -99,6 +107,7 @@ class GenericTemporalRiskSupervisor:
         self._resume_intent = None
         self._crawl_pending = False
         self._high_confirm_count = 0
+        self._consecutive_decelerate_frames = 0
         self._moving_since_frame = None
         self._decision_history.clear()
         self._last_decision_frame = None
@@ -293,6 +302,27 @@ class GenericTemporalRiskSupervisor:
             self._override_counts[OVERRIDE_UNCONFIRMED_STOP] += 1
             return decision, OVERRIDE_UNCONFIRMED_STOP
 
+        # Generic lane-change liveness: never block the road indefinitely
+        # while waiting for a safe lane-change gap.  After a configurable
+        # stationary timeout, fall back to a cautious crawl in the current
+        # lane so the ego keeps moving instead of deadlocking.
+        if (
+            parsed_intent in LANE_CHANGE_INTENTS
+            and stationary_elapsed_s >= self.config.lane_change_wait_timeout_s
+            and str(decision.get("action"))
+            in {"decelerate", "lane_change_left", "lane_change_right"}
+        ):
+            decision.update(
+                action="keep_lane",
+                target_speed_kmh=self.config.crawl_speed_kmh,
+                target_lane=None,
+                emergency=False,
+                reason="lane_change_wait_timeout",
+                blocked_reason_codes=[],
+            )
+            self._override_counts[OVERRIDE_LANE_CHANGE_TIMEOUT] += 1
+            return decision, OVERRIDE_LANE_CHANGE_TIMEOUT
+
         # Generic low-risk command-speed floor: when the text command defines
         # an explicit speed envelope and the learned risk head says low or
         # medium (no hazard), a model over-deceleration below that envelope is
@@ -301,9 +331,14 @@ class GenericTemporalRiskSupervisor:
         canonical_speed = float(canonical.get("target_speed_kmh", 0.0) or 0.0)
         model_decelerates = str(decision.get("action")) == "decelerate"
         model_speed = float(decision.get("target_speed_kmh", 0.0) or 0.0)
+        if model_decelerates:
+            self._consecutive_decelerate_frames += 1
+        else:
+            self._consecutive_decelerate_frames = 0
         if (
             low_risk
             and model_decelerates
+            and self._consecutive_decelerate_frames <= 1
             and not stopped_target
             and str(canonical.get("action"))
             not in {"stop", "emergency_brake"}
