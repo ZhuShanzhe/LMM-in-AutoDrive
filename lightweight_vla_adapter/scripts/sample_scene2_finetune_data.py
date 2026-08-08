@@ -237,6 +237,7 @@ def label_risk(ego: Any, world: Any) -> dict[str, Any]:
                 ttc < 1.8
                 or margin < 0.0
                 or projected_gap_15 < 1.0
+                or forward < 8.0
                 or (is_vru and forward < 12.0)
             ):
                 level = "high"
@@ -869,7 +870,7 @@ def main() -> int:
                 forward, _ = forward_lateral(ego, lead)
                 if forward >= 1e9:
                     break
-                target = 45.0 if forward > 24.0 else 12.0 if forward > 14.0 else 0.0
+                target = 45.0 if forward > 24.0 else 12.0 if forward > 10.0 else 0.0
                 follow_road(ego, world, target)
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
@@ -914,7 +915,7 @@ def main() -> int:
             walker_control.speed = 1.4
             for tick_index in range(700):
                 forward, _ = forward_lateral(ego, walker)
-                target = 35.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
+                target = 35.0 if forward > 24.0 else 10.0 if forward > 9.0 else 0.0
                 follow_road(ego, world, target)
                 if alive(walker):
                     try:
@@ -971,7 +972,7 @@ def main() -> int:
                     except RuntimeError:
                         pass
                 forward, _ = forward_lateral(ego, cyclist)
-                target = 35.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
+                target = 35.0 if forward > 24.0 else 10.0 if forward > 9.0 else 0.0
                 follow_road(ego, world, target)
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
@@ -1034,7 +1035,7 @@ def main() -> int:
                     except RuntimeError:
                         pass
                 forward, _ = forward_lateral(ego, bus)
-                target = 35.0 if forward > 24.0 else 10.0 if forward > 14.0 else 0.0
+                target = 35.0 if forward > 24.0 else 10.0 if forward > 9.0 else 0.0
                 follow_road(ego, world, target)
                 world.tick()
                 if tick_index % 3 == 0 and samples < args.max_samples:
