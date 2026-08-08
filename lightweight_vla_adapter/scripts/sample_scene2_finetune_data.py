@@ -428,6 +428,10 @@ def main() -> int:
         for actor in actors:
             try:
                 if alive(actor):
+                    try:
+                        actor.set_autopilot(False)
+                    except (RuntimeError, AttributeError):
+                        pass
                     actor.destroy()
             except RuntimeError:
                 pass
@@ -457,10 +461,11 @@ def main() -> int:
     try:
         manifest = manifest_path.open("w", encoding="utf-8")
 
-        # Episode 1: baseline cruise with sparse background traffic.
-        traffic = []
-        for index in range(8):
-            point = spawn_points[(244 + 30 + index * 7) % len(spawn_points)]
+        # Episode 1: baseline cruise with static roadside vehicles (no
+        # autopilot, so actor cleanup cannot destabilize the traffic manager).
+        parked = []
+        for index in range(6):
+            point = spawn_points[(244 + 40 + index * 13) % len(spawn_points)]
             actor = spawn_actor(
                 world,
                 rng.choice(
@@ -474,12 +479,17 @@ def main() -> int:
                 point,
             )
             if actor is not None:
-                actor.set_autopilot(True, 8000)
-                traffic.append(actor)
-        for _ in range(60):
+                try:
+                    actor.apply_control(
+                        carla.VehicleControl(throttle=0.0, brake=1.0)
+                    )
+                except RuntimeError:
+                    pass
+                parked.append(actor)
+        for _ in range(30):
             world.tick()
         run_episode("baseline", target_speed_kmh=45.0, ticks=800, sample_every=4)
-        cleanup(traffic)
+        cleanup(parked)
 
         # Episode 2: slow vehicle ahead.
         lead = spawn_actor(
