@@ -49,7 +49,10 @@
   "surface_and_visibility": {
     "wet_road_friction_scale": 0.68,
     "wet_speed_limit_kmh": 32.0,
-    "standing_water_depth_mm": [0.0, 6.0],
+    "standing_water_depth_mm": [
+      0.0,
+      6.0
+    ],
     "headlight_reflection": true,
     "tyre_spray": true,
     "camera_degradation": {
@@ -111,56 +114,85 @@
         "trigger_progress_m": 900.0,
         "end_progress_m": 1250.0,
         "text": "前方路况危险，保持安全车速",
-        "semantic_goal": ["decelerate", "monitor", "keep_lane"]
+        "semantic_goal": [
+          "decelerate",
+          "monitor",
+          "keep_lane"
+        ]
       },
       {
         "id": "scene3_cut_in_decelerate",
         "trigger_progress_m": 1250.0,
         "end_progress_m": 1550.0,
         "text": "突发车辆加塞，紧急避让",
-        "semantic_goal": ["decelerate", "yield", "avoid_collision"]
+        "semantic_goal": [
+          "decelerate",
+          "yield",
+          "avoid_collision"
+        ]
       },
       {
         "id": "scene3_work_zone_warning",
         "trigger_progress_m": 2850.0,
         "end_progress_m": 3050.0,
         "text": "前方进入施工区域，注意观察",
-        "semantic_goal": ["decelerate", "monitor"]
+        "semantic_goal": [
+          "decelerate",
+          "monitor"
+        ]
       },
       {
         "id": "scene3_right_lane_closure",
         "trigger_progress_m": 2975.0,
         "end_progress_m": 3150.0,
         "text": "施工路段，减速并道至左侧车道",
-        "semantic_goal": ["decelerate", "lane_change_left"]
+        "semantic_goal": [
+          "decelerate",
+          "lane_change_left"
+        ]
       },
       {
         "id": "scene3_pass_work_zone",
         "trigger_progress_m": 3100.0,
         "end_progress_m": 3450.0,
         "text": "前方路况危险，保持安全车速",
-        "semantic_goal": ["decelerate", "monitor", "keep_lane"]
+        "semantic_goal": [
+          "decelerate",
+          "monitor",
+          "keep_lane"
+        ]
       },
       {
         "id": "scene3_worker_crossing",
         "trigger_progress_m": 3250.0,
         "end_progress_m": 3425.0,
         "text": "有人突然横穿，立即减速让行",
-        "semantic_goal": ["decelerate", "yield", "stop_if_needed"]
+        "semantic_goal": [
+          "decelerate",
+          "yield",
+          "stop_if_needed"
+        ]
       },
       {
         "id": "scene3_blocked_lane_change_left",
         "trigger_progress_m": 4700.0,
         "end_progress_m": 5000.0,
         "text": "前方车道受阻，确认安全后向左避让",
-        "semantic_goal": ["decelerate", "wait_for_gap", "lane_change_left"]
+        "semantic_goal": [
+          "decelerate",
+          "wait_for_gap",
+          "lane_change_left"
+        ]
       },
       {
         "id": "scene3_resume_normal_driving",
         "trigger_progress_m": 5000.0,
         "end_progress_m": 6000.0,
         "text": "危险路段结束，保持安全并逐步恢复车速",
-        "semantic_goal": ["keep_lane", "resume_speed"]
+        "semantic_goal": [
+          "keep_lane",
+          "resume_speed"
+        ]
       }
     ]
   },
@@ -188,7 +220,7 @@
         "target_speed_kmh": 32.0,
         "turn_indicator_lead_time_s": 0.8,
         "lane_change_duration_s": 2.2,
-        "post_merge_brake_probability": 0.25
+        "post_merge_brake_probability": 0.0
       },
       "safety": {
         "recoverable": true,
@@ -382,7 +414,10 @@
       "crossing_behavior": {
         "speed_mps": 1.8,
         "hesitation_probability": 0.35,
-        "hesitation_duration_s": [0.4, 1.2],
+        "hesitation_duration_s": [
+          0.4,
+          1.2
+        ],
         "look_toward_ego": true,
         "visibility_clothing": "retroreflective"
       },
@@ -539,39 +574,183 @@
       "id": "baseline",
       "description": "Nominal recoverable emergency sequence used for the reference run.",
       "event_overrides": {
-        "scene3_cut_in": {"actor": {"target_speed_kmh": 32.0, "lane_change_duration_s": 2.2, "post_merge_brake_probability": 0.25}},
-        "scene3_advance_warning": {"props": {"s_m": 2925.0}},
-        "scene3_cone_taper": {"closure": {"cone_spacing_m": 10.0, "taper_end_s_m": 3150.0}},
-        "scene3_work_zone": {"zone": {"work_vehicle_spawns": [{"role_name": "scene3_work_truck_1", "lane_id": -2, "s_m": 3225.0}, {"role_name": "scene3_work_truck_2", "lane_id": -2, "s_m": 3400.0}]}},
-        "scene3_temporary_pedestrian": {"crossing_behavior": {"speed_mps": 1.8, "hesitation_probability": 0.35, "hesitation_duration_s": [0.4, 1.2]}},
-        "scene3_blocked_lane": {"blockage": {"release_target_lane_after_s": 4.0, "rear_warning_triangle_distance_m": 25.0}},
-        "scene3_work_zone_exit": {"recovery": {"normal_speed_limit_kmh": 60.0}}
+        "scene3_cut_in": {
+          "actor": {
+            "target_speed_kmh": 32.0,
+            "lane_change_duration_s": 2.2,
+            "post_merge_brake_probability": 0.25
+          }
+        },
+        "scene3_advance_warning": {
+          "props": {
+            "s_m": 2925.0
+          }
+        },
+        "scene3_cone_taper": {
+          "closure": {
+            "cone_spacing_m": 10.0,
+            "taper_end_s_m": 3150.0
+          }
+        },
+        "scene3_work_zone": {
+          "zone": {
+            "work_vehicle_spawns": [
+              {
+                "role_name": "scene3_work_truck_1",
+                "lane_id": -2,
+                "s_m": 3225.0
+              },
+              {
+                "role_name": "scene3_work_truck_2",
+                "lane_id": -2,
+                "s_m": 3400.0
+              }
+            ]
+          }
+        },
+        "scene3_temporary_pedestrian": {
+          "crossing_behavior": {
+            "speed_mps": 1.8,
+            "hesitation_probability": 0.35,
+            "hesitation_duration_s": [
+              0.4,
+              1.2
+            ]
+          }
+        },
+        "scene3_blocked_lane": {
+          "blockage": {
+            "release_target_lane_after_s": 4.0,
+            "rear_warning_triangle_distance_m": 25.0
+          }
+        },
+        "scene3_work_zone_exit": {
+          "recovery": {
+            "normal_speed_limit_kmh": 60.0
+          }
+        }
       }
     },
     {
       "id": "cautious_sparse",
       "description": "Slower cut-in and pedestrian with wider cone spacing and a longer blocked-lane wait.",
       "event_overrides": {
-        "scene3_cut_in": {"actor": {"target_speed_kmh": 28.0, "lane_change_duration_s": 2.8, "post_merge_brake_probability": 0.0}},
-        "scene3_advance_warning": {"props": {"s_m": 2910.0}},
-        "scene3_cone_taper": {"closure": {"cone_spacing_m": 12.0, "taper_end_s_m": 3150.0}},
-        "scene3_work_zone": {"zone": {"work_vehicle_spawns": [{"role_name": "scene3_work_truck_1", "lane_id": -2, "s_m": 3210.0}, {"role_name": "scene3_work_truck_2", "lane_id": -2, "s_m": 3380.0}]}},
-        "scene3_temporary_pedestrian": {"crossing_behavior": {"speed_mps": 1.4, "hesitation_probability": 0.55, "hesitation_duration_s": [0.8, 1.6]}},
-        "scene3_blocked_lane": {"blockage": {"release_target_lane_after_s": 5.5, "rear_warning_triangle_distance_m": 30.0}},
-        "scene3_work_zone_exit": {"recovery": {"normal_speed_limit_kmh": 55.0}}
+        "scene3_cut_in": {
+          "actor": {
+            "target_speed_kmh": 28.0,
+            "lane_change_duration_s": 2.8,
+            "post_merge_brake_probability": 0.0
+          }
+        },
+        "scene3_advance_warning": {
+          "props": {
+            "s_m": 2910.0
+          }
+        },
+        "scene3_cone_taper": {
+          "closure": {
+            "cone_spacing_m": 12.0,
+            "taper_end_s_m": 3150.0
+          }
+        },
+        "scene3_work_zone": {
+          "zone": {
+            "work_vehicle_spawns": [
+              {
+                "role_name": "scene3_work_truck_1",
+                "lane_id": -2,
+                "s_m": 3210.0
+              },
+              {
+                "role_name": "scene3_work_truck_2",
+                "lane_id": -2,
+                "s_m": 3380.0
+              }
+            ]
+          }
+        },
+        "scene3_temporary_pedestrian": {
+          "crossing_behavior": {
+            "speed_mps": 1.4,
+            "hesitation_probability": 0.55,
+            "hesitation_duration_s": [
+              0.8,
+              1.6
+            ]
+          }
+        },
+        "scene3_blocked_lane": {
+          "blockage": {
+            "release_target_lane_after_s": 5.5,
+            "rear_warning_triangle_distance_m": 30.0
+          }
+        },
+        "scene3_work_zone_exit": {
+          "recovery": {
+            "normal_speed_limit_kmh": 55.0
+          }
+        }
       }
     },
     {
       "id": "dense_dynamic",
       "description": "Faster dynamic actors, denser taper and shorter target-lane release interval.",
       "event_overrides": {
-        "scene3_cut_in": {"actor": {"target_speed_kmh": 36.0, "lane_change_duration_s": 1.8, "post_merge_brake_probability": 0.5}},
-        "scene3_advance_warning": {"props": {"s_m": 2940.0}},
-        "scene3_cone_taper": {"closure": {"cone_spacing_m": 8.0, "taper_end_s_m": 3150.0}},
-        "scene3_work_zone": {"zone": {"work_vehicle_spawns": [{"role_name": "scene3_work_truck_1", "lane_id": -2, "s_m": 3235.0}, {"role_name": "scene3_work_truck_2", "lane_id": -2, "s_m": 3410.0}]}},
-        "scene3_temporary_pedestrian": {"crossing_behavior": {"speed_mps": 2.2, "hesitation_probability": 0.15, "hesitation_duration_s": [0.2, 0.7]}},
-        "scene3_blocked_lane": {"blockage": {"release_target_lane_after_s": 2.5, "rear_warning_triangle_distance_m": 20.0}},
-        "scene3_work_zone_exit": {"recovery": {"normal_speed_limit_kmh": 60.0}}
+        "scene3_cut_in": {
+          "actor": {
+            "target_speed_kmh": 36.0,
+            "lane_change_duration_s": 1.8,
+            "post_merge_brake_probability": 0.5
+          }
+        },
+        "scene3_advance_warning": {
+          "props": {
+            "s_m": 2940.0
+          }
+        },
+        "scene3_cone_taper": {
+          "closure": {
+            "cone_spacing_m": 8.0,
+            "taper_end_s_m": 3150.0
+          }
+        },
+        "scene3_work_zone": {
+          "zone": {
+            "work_vehicle_spawns": [
+              {
+                "role_name": "scene3_work_truck_1",
+                "lane_id": -2,
+                "s_m": 3235.0
+              },
+              {
+                "role_name": "scene3_work_truck_2",
+                "lane_id": -2,
+                "s_m": 3410.0
+              }
+            ]
+          }
+        },
+        "scene3_temporary_pedestrian": {
+          "crossing_behavior": {
+            "speed_mps": 2.2,
+            "hesitation_probability": 0.15,
+            "hesitation_duration_s": [
+              0.2,
+              0.7
+            ]
+          }
+        },
+        "scene3_blocked_lane": {
+          "blockage": {
+            "release_target_lane_after_s": 2.5,
+            "rear_warning_triangle_distance_m": 20.0
+          }
+        },
+        "scene3_work_zone_exit": {
+          "recovery": {
+            "normal_speed_limit_kmh": 60.0
+          }
+        }
       }
     }
   ],

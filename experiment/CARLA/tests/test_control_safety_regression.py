@@ -224,6 +224,8 @@ class ControlSafetyRegressionTests(unittest.TestCase):
         for _ in range(3):
             steer = controller._lateral_control(intent, 0.05)
 
+        # Stationary ego, offset right of the reference line: the cross-track
+        # term (atan2(-lat, v+2)) dominates and steers back toward the line.
         self.assertLess(steer, 0.0)
         self.assertLess(steer, 0.2)
 
@@ -426,7 +428,7 @@ class ControlSafetyRegressionTests(unittest.TestCase):
         self.assertEqual(emergency.throttle, 0.0)
         self.assertEqual(emergency.brake, 1.0)
 
-    def test_steering_rate_limit_is_time_based_and_mode_aware(self):
+    def test_steering_rate_limit_is_time_based_mode_aware_and_speed_adaptive(self):
         vehicle = FakeVehicle()
         controller = EgoPIDController(vehicle, FakeMap(FakeWaypoint(transform())))
         controller._last_control = carla.VehicleControl(steer=0.0)
@@ -443,22 +445,59 @@ class ControlSafetyRegressionTests(unittest.TestCase):
             0.0, 0.0, 1.0, dt=0.05, lateral_action="keep_lane"
         )
 
-        self.assertAlmostEqual(lane_change.steer, 0.024, places=6)
-        self.assertAlmostEqual(turn.steer, 0.0425, places=6)
-        self.assertAlmostEqual(lane_keep.steer, 0.0375, places=6)
+        # Stationary vehicle: response scale is 1.6 (maximum authority for
+        # slow junction work), so per-tick rates are 0.48/0.85/0.75 * 1.6.
+        self.assertAlmostEqual(lane_change.steer, 0.48 * 1.6 * 0.05, places=6)
+        self.assertAlmostEqual(turn.steer, 0.85 * 1.6 * 0.05, places=6)
+        self.assertAlmostEqual(lane_keep.steer, 0.75 * 1.6 * 0.05, places=6)
+
+        # At 70 km/h the response scale drops to 0.65: same command is
+        # smoothed much harder so high-speed corrections stay gentle.
+        vehicle.current_velocity = carla.Vector3D(x=70.0 / 3.6)
+        controller._last_control = carla.VehicleControl(steer=0.0)
+        fast_lane_change = controller._smooth_control(
+            0.0, 0.0, 1.0, dt=0.05, lateral_action="lane_change_left"
+        )
+        self.assertAlmostEqual(
+            fast_lane_change.steer, 0.48 * 0.65 * 0.05, places=6
+        )
 
     def test_curvature_speed_cap_only_limits_a_sharp_upcoming_bend(self):
         vehicle = FakeVehicle()
         straight = FakeWaypoint(transform(x=30.0, yaw=3.0))
         sharp = FakeWaypoint(transform(x=20.0, y=20.0, yaw=24.0))
+        tight = FakeWaypoint(transform(x=30.0, y=30.0, yaw=60.0))
         current = FakeWaypoint(transform(yaw=0.0))
         current.next = lambda _distance: [straight]
         controller = EgoPIDController(vehicle, FakeMap(current))
         self.assertEqual(controller._curvature_speed_cap({"action": "keep_lane"}), 100.0)
-        current.next = lambda _distance: [sharp]
-        self.assertEqual(controller._curvature_speed_cap({"action": "keep_lane"}), 25.0)
 
-    def test_route_heading_error_caps_speed_when_map_projection_is_straight(self):
+        current.next = lambda _distance: [sharp]
+        sharp_curvature = math.radians(24.0) / 30.0
+        sharp_expected = math.sqrt(2.2 / sharp_curvature) * 3.6
+        sharp_cap = controller._curvature_speed_cap({"action": "keep_lane"})
+        self.assertAlmostEqual(sharp_cap, sharp_expected, places=4)
+
+        current.next = lambda _distance: [tight]
+        tight_curvature = math.radians(60.0) / 30.0
+        tight_cap = controller._curvature_speed_cap({"action": "keep_lane"})
+        self.assertLess(tight_cap, sharp_cap)
+        self.assertAlmostEqual(
+            tight_cap,
+            min(100.0, math.sqrt(2.2 / tight_curvature) * 3.6),
+            places=4,
+        )
+
+        # The cap is an actuator ceiling: it never raises the requested speed.
+        current.next = lambda _distance: [sharp]
+        self.assertEqual(
+            controller._curvature_speed_cap(
+                {"action": "keep_lane", "target_speed_kmh": 30.0}
+            ),
+            30.0,
+        )
+
+    def test_route_curvature_caps_speed_from_reference_heading(self):
         vehicle = FakeVehicle()
         straight = FakeWaypoint(transform(x=30.0, yaw=0.0))
         current = FakeWaypoint(transform(yaw=0.0), next_waypoint=straight)
@@ -466,11 +505,90 @@ class ControlSafetyRegressionTests(unittest.TestCase):
 
         cap = controller._curvature_speed_cap({
             "action": "keep_lane",
-            "target_location": {"x": 10.0, "y": 4.0, "z": 0.0},
+            "target_location": {
+                "x": 10.0,
+                "y": 0.0,
+                "z": 0.0,
+                "yaw": 40.0,
+                "reference": {"x": 0.0, "y": 0.0, "z": 0.0, "yaw": 0.0},
+            },
             "route_target_trusted": True,
         })
 
-        self.assertEqual(cap, 25.0)
+        expected = math.sqrt(2.2 / (math.radians(40.0) / 10.0)) * 3.6
+        self.assertAlmostEqual(cap, expected, places=4)
+
+        straight_cap = controller._curvature_speed_cap({
+            "action": "keep_lane",
+            "target_location": {
+                "x": 10.0,
+                "y": 0.0,
+                "z": 0.0,
+                "yaw": 0.0,
+                "reference": {"x": 0.0, "y": 0.0, "z": 0.0, "yaw": 0.0},
+            },
+            "route_target_trusted": True,
+        })
+        self.assertEqual(straight_cap, 100.0)
+
+    def test_dynamic_steering_limit_tracks_curvature_speed_and_lane_width(self):
+        vehicle = FakeVehicle()
+        controller = EgoPIDController(vehicle, FakeMap(FakeWaypoint(transform())))
+
+        base = controller._dynamic_steering_limit(
+            speed_kmh=20.0,
+            heading_error_rad=math.radians(10.0),
+            curvature=0.05,
+            lane_width_m=3.5,
+        )
+        tighter = controller._dynamic_steering_limit(
+            speed_kmh=20.0,
+            heading_error_rad=math.radians(10.0),
+            curvature=0.12,
+            lane_width_m=3.5,
+        )
+        slower = controller._dynamic_steering_limit(
+            speed_kmh=10.0,
+            heading_error_rad=math.radians(10.0),
+            curvature=0.05,
+            lane_width_m=3.5,
+        )
+        faster = controller._dynamic_steering_limit(
+            speed_kmh=60.0,
+            heading_error_rad=math.radians(10.0),
+            curvature=0.05,
+            lane_width_m=3.5,
+        )
+        wider = controller._dynamic_steering_limit(
+            speed_kmh=20.0,
+            heading_error_rad=math.radians(10.0),
+            curvature=0.05,
+            lane_width_m=4.5,
+        )
+
+        self.assertGreater(tighter, base)
+        self.assertGreater(slower, base)
+        self.assertLess(faster, base)
+        self.assertGreaterEqual(wider, base)
+
+    def test_predict_arc_points_follow_bicycle_kinematics(self):
+        vehicle = FakeVehicle()
+        controller = EgoPIDController(vehicle, FakeMap(FakeWaypoint(transform())))
+        origin = carla.Location(x=0.0, y=0.0, z=0.0)
+
+        straight = controller._predict_arc_points(
+            origin, 0.0, 0.0, 6.0, step_m=2.0
+        )
+        self.assertAlmostEqual(straight[-1][1], 6.0, places=6)
+        self.assertAlmostEqual(straight[-1][2], 0.0, places=6)
+
+        arc = controller._predict_arc_points(
+            origin, 0.0, 0.1, 10.0, step_m=5.0
+        )
+        final_heading = math.atan2(
+            arc[-1][2] - origin.y, arc[-1][1] - origin.x
+        )
+        self.assertAlmostEqual(final_heading, 0.5, places=2)
 
     def test_controller_releases_emergency_after_two_clear_frames(self):
         vehicle = FakeVehicle()

@@ -34,6 +34,12 @@ class EgoPIDController:
         self._last_control = None
         self._filtered_steer = 0.0
         self._last_lateral_debug = {}
+        self._yaw_history = []
+        self._last_yaw_time_s = 0.0
+        self._last_yaw_rate_rad_s = 0.0
+        self._last_applied_steer = 0.0
+        self._turn_unsafe_frames = 0
+        self._turn_unsafe_speed_cap_kmh = 100.0
         # Tuned for CARLA passenger vehicles on level arterial roads. Keep
         # these controller-owned so high-level decisions remain unit-agnostic.
         self.speed_kp = 0.075
@@ -64,11 +70,15 @@ class EgoPIDController:
             steer = self._lateral_control(hold_lane_intent, dt)
             self._reset_longitudinal_state()
             control = carla.VehicleControl(throttle=0.0, brake=1.0, steer=steer)
+            self._last_applied_steer = steer
             self._last_control = control
             return control, intent
 
         target_speed = self._resolve_target_speed(intent)
         target_speed = min(target_speed, self._curvature_speed_cap(intent))
+        if self._turn_unsafe_frames > 0:
+            target_speed = min(target_speed, self._turn_unsafe_speed_cap_kmh)
+            self._turn_unsafe_frames -= 1
         current_speed = self._get_speed_kmh()
         self._crawl_active = (
             target_speed <= 16.0 and current_speed < 2.0
@@ -102,57 +112,249 @@ class EgoPIDController:
             return 0.0
         return requested
 
+    def _wheelbase_m(self):
+        """Estimate the vehicle wheelbase from its actual bounding box."""
+
+        try:
+            half_length = float(self.vehicle.bounding_box.extent.x)
+        except Exception:
+            half_length = 2.4
+        return max(2.3, min(3.2, 1.15 * half_length))
+
+    def _max_wheel_angle_rad(self):
+        """Passenger-car steering geometry (normalized steer = 1 at ~40deg)."""
+
+        return math.radians(40.0)
+
+    def _route_curvature_of(self, route_reference, target_location):
+        """Curvature (1/m) implied by the heading change over the path."""
+
+        if route_reference is None or target_location is None:
+            return 0.0
+        try:
+            reference_yaw = math.radians(float(route_reference["yaw"]))
+            target_yaw = math.radians(float(target_location["yaw"]))
+            distance = max(
+                1.0,
+                math.hypot(
+                    float(target_location["x"]) - float(route_reference["x"]),
+                    float(target_location["y"]) - float(route_reference["y"]),
+                ),
+            )
+        except (KeyError, TypeError, ValueError):
+            return 0.0
+        return self._angle_delta(target_yaw, reference_yaw) / distance
+
+    def _dynamic_steering_limit(
+        self,
+        *,
+        speed_kmh,
+        heading_error_rad,
+        curvature,
+        lane_width_m=3.5,
+    ):
+        """Steering authority computed from kinematics, speed and lane width.
+
+        Straight gentle driving keeps a small limit; sharp curves derive
+        their authority from the bicycle-model steering angle plus a bounded
+        heading-feedback term, scaled down at higher speeds.
+        """
+
+        wheelbase = self._wheelbase_m()
+        kinematic = math.atan(wheelbase * max(0.0, abs(curvature)))
+        feedback = 0.60 * min(
+            1.0, abs(heading_error_rad) / math.radians(35.0)
+        )
+        width_factor = max(0.85, min(1.15, float(lane_width_m) / 3.5))
+        speed_factor = max(0.30, 1.0 - float(speed_kmh) / 70.0)
+        limit = (kinematic * 1.35 + feedback) * width_factor * speed_factor
+        return _clamp(limit, 0.10, 0.85)
+
+    def _dynamic_curve_speed_cap(self, curvature, requested_kmh):
+        """Speed ceiling from the lateral-acceleration limit on the arc."""
+
+        if abs(curvature) <= 1e-4:
+            return float(requested_kmh)
+        lateral_accel_mps2 = 2.2  # comfort ceiling, physically meaningful
+        dynamic_kmh = math.sqrt(lateral_accel_mps2 / abs(curvature)) * 3.6
+        return min(float(requested_kmh), max(6.0, dynamic_kmh))
+
+    def _update_yaw_history(self, dt):
+        """Track recent yaw so the actual path curvature can be estimated."""
+
+        try:
+            yaw = math.radians(self.vehicle.get_transform().rotation.yaw)
+        except Exception:
+            return
+        now = getattr(self, "_last_yaw_time_s", 0.0) + max(float(dt), 1e-3)
+        if self._yaw_history:
+            last_t, last_yaw = self._yaw_history[-1]
+            d_t = max(1e-3, now - last_t)
+            self._last_yaw_rate_rad_s = self._angle_delta(
+                yaw, last_yaw
+            ) / d_t
+        self._yaw_history.append((now, yaw))
+        if len(self._yaw_history) > 8:
+            self._yaw_history.pop(0)
+        self._last_yaw_time_s = now
+
+    def _estimate_curvature_per_m(self, speed_kmh, dt):
+        """Actual path curvature from the yaw rate, else the bicycle model."""
+
+        speed_mps = max(0.5, float(speed_kmh) / 3.6)
+        self._update_yaw_history(dt)
+        if abs(self._last_yaw_rate_rad_s) > 1e-4:
+            return self._last_yaw_rate_rad_s / speed_mps
+        steer_angle = (
+            float(self._last_applied_steer)
+            * self._max_wheel_angle_rad()
+        )
+        return math.tan(steer_angle) / self._wheelbase_m()
+
+    def _predict_arc_points(
+        self, origin, yaw, curvature_per_m, horizon_m, step_m=1.0
+    ):
+        """Sample the predicted circular path (bicycle kinematics).
+
+        The sampled arc is the multi-point trajectory estimate used to reason
+        about the turn before it is fully entered.
+        """
+
+        points = []
+        distance = step_m
+        while distance <= horizon_m + 1e-9:
+            if abs(curvature_per_m) < 1e-6:
+                px = origin.x + math.cos(yaw) * distance
+                py = origin.y + math.sin(yaw) * distance
+            else:
+                px = origin.x + (
+                    math.sin(yaw + curvature_per_m * distance)
+                    - math.sin(yaw)
+                ) / curvature_per_m
+                py = origin.y + (
+                    math.cos(yaw)
+                    - math.cos(yaw + curvature_per_m * distance)
+                ) / curvature_per_m
+            points.append((distance, px, py))
+            distance += step_m
+        return points
+
+    def _turn_trajectory_adjust(
+        self,
+        raw_steer,
+        speed_kmh,
+        dt,
+        curvature_req,
+        lateral_error_m,
+        action="keep_lane",
+    ):
+        """Continuously compare the actual trajectory arc with the route arc.
+
+        The ego's actual path curvature is estimated every control step from
+        the recent yaw rate (fallback: bicycle model from the last applied
+        steer).  The difference against the planned corridor curvature closes
+        the gap with a bounded steering correction, and the cruise speed is
+        capped while the mismatch is large so the turn is negotiated with both
+        speed and steering coordinated.
+        """
+
+        if action in ("lane_change_left", "lane_change_right"):
+            return raw_steer
+        speed_mps = max(0.0, float(speed_kmh) / 3.6)
+        if speed_mps < 0.8:
+            return raw_steer
+        curvature_actual = self._estimate_curvature_per_m(speed_kmh, dt)
+        error = float(curvature_req) - curvature_actual
+        lateral_error = float(lateral_error_m or 0.0)
+        inside_curve = (
+            abs(float(curvature_req)) > 1e-4
+            and curvature_req * lateral_error > 0.0
+        )
+        if inside_curve:
+            # The ego is already offset toward the centre of the bend:
+            # adding more curvature-direction steering would cut the inside
+            # edge.  Gently unwind and let the cross-track correction return
+            # the vehicle to the corridor centre.
+            unwind = _clamp(
+                0.02 + 0.10 * min(1.0, abs(lateral_error) / 2.0),
+                0.0,
+                0.12,
+            )
+            adjust = -math.copysign(unwind, float(curvature_req))
+            self._last_lateral_debug["trajectory_adjust"] = round(
+                float(adjust), 6
+            )
+            self._last_lateral_debug["curvature_error_per_m"] = round(
+                float(error), 6
+            )
+            if abs(lateral_error) > 0.35:
+                urgency = _clamp(
+                    (abs(lateral_error) - 0.35) / 0.8, 0.0, 1.0
+                )
+                self._turn_unsafe_frames = 3 + int(4.0 * urgency)
+                self._turn_unsafe_speed_cap_kmh = max(
+                    12.0, 24.0 - 10.0 * urgency
+                )
+            return _clamp(raw_steer + adjust, -0.85, 0.85)
+        if abs(error) < 0.005:
+            return raw_steer
+        adjust = _clamp(
+            0.5
+            * error
+            * self._wheelbase_m()
+            / self._max_wheel_angle_rad(),
+            -0.15,
+            0.15,
+        )
+        self._last_lateral_debug["curvature_error_per_m"] = round(
+            float(error), 6
+        )
+        self._last_lateral_debug["trajectory_adjust"] = round(
+            float(adjust), 6
+        )
+        if abs(error) > 0.015:
+            urgency = _clamp(
+                (abs(error) - 0.015) / 0.05, 0.0, 1.0
+            )
+            self._turn_unsafe_frames = 3 + int(4.0 * urgency)
+            self._turn_unsafe_speed_cap_kmh = max(
+                12.0, 24.0 - 12.0 * urgency
+            )
+        return _clamp(raw_steer + adjust, -0.85, 0.85)
+
     def _curvature_speed_cap(self, intent):
-        """Apply a conservative speed ceiling before a visible road bend.
+        """Apply a speed ceiling derived from the actual road curvature.
 
         The high-level rule keeps ownership of the requested cruise speed.
         This is a local actuator-safety cap: it only reduces speed on an
         upcoming curved lane and never changes lane/turn selection.
         """
+
         if intent["action"] in {"emergency_brake", "stop"}:
             return 0.0
-        requested = intent.get("target_location")
-        if (
-            bool(intent.get("route_target_trusted", False))
-            and isinstance(requested, dict)
-        ):
-            transform = self.vehicle.get_transform()
-            dx = float(requested["x"]) - transform.location.x
-            dy = float(requested["y"]) - transform.location.y
-            if math.hypot(dx, dy) > 1.0:
-                desired_yaw = math.atan2(dy, dx)
-                vehicle_yaw = math.radians(transform.rotation.yaw)
-                route_error_deg = abs(math.degrees(
-                    self._angle_delta(desired_yaw, vehicle_yaw)
-                ))
-                if route_error_deg >= 18.0:
-                    return 25.0
-                if route_error_deg >= 10.0:
-                    return 32.0
-                if route_error_deg >= 5.0:
-                    return 40.0
-        waypoint = self.world_map.get_waypoint(
-            self.vehicle.get_location(),
-            project_to_road=True,
-            lane_type=carla.LaneType.Driving,
-        )
-        if waypoint is None:
-            return 100.0
-        candidates = waypoint.next(30.0)
-        if not candidates:
-            return 100.0
-        current_yaw = math.radians(waypoint.transform.rotation.yaw)
-        heading_change_deg = min(
-            abs(math.degrees(self._angle_delta(
-                math.radians(candidate.transform.rotation.yaw), current_yaw
-            )))
-            for candidate in candidates
-        )
-        if heading_change_deg >= 18.0:
-            return 25.0
-        if heading_change_deg >= 9.0:
-            return 32.0
-        return 100.0
+        requested = float(intent.get("target_speed_kmh", 100.0) or 100.0)
+        target = intent.get("target_location")
+        reference = target.get("reference") if isinstance(target, dict) else None
+        curvature = self._route_curvature_of(reference, target)
+        if abs(curvature) <= 1e-4:
+            waypoint = self.world_map.get_waypoint(
+                self.vehicle.get_location(),
+                project_to_road=True,
+                lane_type=carla.LaneType.Driving,
+            )
+            if waypoint is not None:
+                candidates = waypoint.next(30.0)
+                if candidates:
+                    current_yaw = math.radians(waypoint.transform.rotation.yaw)
+                    heading_change_deg = min(
+                        abs(math.degrees(self._angle_delta(
+                            math.radians(candidate.transform.rotation.yaw),
+                            current_yaw,
+                        )))
+                        for candidate in candidates
+                    )
+                    curvature = math.radians(heading_change_deg) / 30.0
+        return self._dynamic_curve_speed_cap(curvature, requested)
 
     def _longitudinal_control(self, target_speed, current_speed, dt):
         error = target_speed - current_speed
@@ -194,6 +396,7 @@ class EgoPIDController:
         from becoming more aggressive than the nominal 20 Hz control loop.
         """
         if self._last_control is None:
+            self._last_applied_steer = steer
             return carla.VehicleControl(throttle=throttle, brake=brake, steer=steer)
         previous = self._last_control
         throttle_rate = 0.45 if self._crawl_active else 0.18
@@ -209,12 +412,14 @@ class EgoPIDController:
             "lane_change_left": 0.48,
             "lane_change_right": 0.48,
         }.get(lateral_action, 0.75)
+        steer_rate *= self._steering_response_scale()
         steer_delta = steer_rate * _clamp(float(dt), 0.01, 0.10)
         steer = _clamp(steer, previous.steer - steer_delta, previous.steer + steer_delta)
         if brake > 0.01:
             throttle = 0.0
         elif throttle > 0.01:
             brake = 0.0
+        self._last_applied_steer = steer
         return carla.VehicleControl(throttle=throttle, brake=brake, steer=steer)
 
     def _reset_longitudinal_state(self):
@@ -275,25 +480,43 @@ class EgoPIDController:
                     * math.cos(lane_yaw)
                 )
                 speed_kmh = self._get_speed_kmh()
+                hold_reference = {
+                    "x": waypoint.transform.location.x,
+                    "y": waypoint.transform.location.y,
+                    "yaw": waypoint.transform.rotation.yaw,
+                }
+                hold_target = {
+                    "x": target_waypoint.transform.location.x,
+                    "y": target_waypoint.transform.location.y,
+                    "yaw": target_waypoint.transform.rotation.yaw,
+                }
                 raw_steer = self._planned_route_steer(
-                    route_reference={
-                        "x": waypoint.transform.location.x,
-                        "y": waypoint.transform.location.y,
-                        "yaw": waypoint.transform.rotation.yaw,
-                    },
-                    target_location={
-                        "x": target_waypoint.transform.location.x,
-                        "y": target_waypoint.transform.location.y,
-                        "yaw": target_waypoint.transform.rotation.yaw,
-                    },
+                    route_reference=hold_reference,
+                    target_location=hold_target,
                     current_yaw=math.radians(vehicle_transform.rotation.yaw),
                     lateral_error_m=lateral_error_m,
                     speed_kmh=speed_kmh,
                 )
-                steering_limit = _clamp(
-                    0.19 - 0.0018 * speed_kmh,
-                    0.08,
-                    0.16,
+                steering_limit = self._dynamic_steering_limit(
+                    speed_kmh=speed_kmh,
+                    heading_error_rad=self._angle_delta(
+                        math.radians(float(hold_target["yaw"])),
+                        math.radians(vehicle_transform.rotation.yaw),
+                    ),
+                    curvature=self._route_curvature_of(
+                        hold_reference, hold_target
+                    ),
+                    lane_width_m=float(
+                        getattr(waypoint, "lane_width", 3.5) or 3.5
+                    ),
+                )
+                raw_steer = self._turn_trajectory_adjust(
+                    raw_steer,
+                    speed_kmh,
+                    dt,
+                    self._route_curvature_of(hold_reference, hold_target),
+                    lateral_error_m,
+                    intent["action"],
                 )
                 return self._filter_steering(
                     _clamp(raw_steer, -steering_limit, steering_limit),
@@ -404,10 +627,25 @@ class EgoPIDController:
                     and abs(lateral_error_m) > 1.0
                 ),
             )
-            steering_limit = _clamp(
-                0.19 - 0.0018 * current_speed_kmh,
-                0.08,
-                0.16,
+            steering_limit = self._dynamic_steering_limit(
+                speed_kmh=current_speed_kmh,
+                heading_error_rad=angle,
+                curvature=self._route_curvature_of(
+                    route_reference, intent["target_location"]
+                ),
+                lane_width_m=float(
+                    getattr(waypoint, "lane_width", 3.5) or 3.5
+                ),
+            )
+            raw_steer = self._turn_trajectory_adjust(
+                raw_steer,
+                current_speed_kmh,
+                dt,
+                self._route_curvature_of(
+                    route_reference, intent["target_location"]
+                ),
+                lateral_error_m,
+                intent["action"],
             )
             return self._filter_steering(
                 _clamp(raw_steer, -steering_limit, steering_limit),
@@ -454,31 +692,21 @@ class EgoPIDController:
                 ) * _clamp(lateral_error_m, -2.5, 2.5)
             )
         )
-        # Keep the low-level command smooth on Town04's tight ramps.  The
-        # previous 0.7 limit could steer through a roadside guardrail or
-        # vegetation when the nearest waypoint changed at a junction.
-        steering_limit = (
-            0.16
-            if lane_change_active
-            else (
-                0.22
-                if lane_change_settling
-                else (
-                    0.18
-                    if trusted_route_active and not route_turn_active
-                    else 0.45
-                )
-            )
+        base_curvature = self._route_curvature_of(
+            route_reference, intent.get("target_location")
         )
-        if trusted_route_active and not route_turn_active:
-            steering_limit = min(
-                steering_limit,
-                _clamp(
-                    0.19 - 0.0018 * current_speed_kmh,
-                    0.08,
-                    0.16,
-                ),
-            )
+        steering_limit = self._dynamic_steering_limit(
+            speed_kmh=current_speed_kmh,
+            heading_error_rad=angle,
+            curvature=base_curvature,
+            lane_width_m=float(
+                getattr(waypoint, "lane_width", 3.5) or 3.5
+            ),
+        )
+        if lane_change_settling:
+            steering_limit = min(steering_limit, 0.22)
+        elif lane_change_active:
+            steering_limit = min(steering_limit, 0.30)
         if route_curve_active and not route_turn_active:
             reference_yaw = math.radians(float(route_reference["yaw"]))
             current_heading_error = self._angle_delta(
@@ -499,8 +727,11 @@ class EgoPIDController:
             # Approximate bicycle-model feed-forward in CARLA's normalized
             # steering space, then use heading/cross-track terms only to
             # reject tracking error instead of aiming directly through the arc.
+            wheelbase = self._wheelbase_m()
+            max_wheel = self._max_wheel_angle_rad()
+            feed_forward = math.atan(wheelbase * route_curvature) / max_wheel
             heading_command = (
-                2.3 * route_curvature
+                feed_forward
                 + 0.90 * current_heading_error
             )
         else:
@@ -527,11 +758,16 @@ class EgoPIDController:
                 -correction_limit,
                 correction_limit,
             )
-        raw_steer = _clamp(
-            heading_command + centerline_correction,
-            -steering_limit,
-            steering_limit,
+        raw_steer = heading_command + centerline_correction
+        raw_steer = self._turn_trajectory_adjust(
+            raw_steer,
+            current_speed_kmh,
+            dt,
+            base_curvature,
+            lateral_error_m,
+            intent["action"],
         )
+        raw_steer = _clamp(raw_steer, -steering_limit, steering_limit)
         return self._filter_steering(raw_steer, intent["action"], dt)
 
     def _planned_route_steer(
@@ -557,8 +793,8 @@ class EgoPIDController:
             ),
         )
         curvature = self._angle_delta(target_yaw, reference_yaw) / path_distance_m
-        wheelbase_m = 2.8
-        max_wheel_angle_rad = math.radians(70.0)
+        wheelbase_m = self._wheelbase_m()
+        max_wheel_angle_rad = self._max_wheel_angle_rad()
         feed_forward = math.atan(wheelbase_m * curvature)
         heading_error = self._angle_delta(reference_yaw, current_yaw)
         speed_mps = max(0.0, float(speed_kmh) / 3.6)
@@ -583,6 +819,15 @@ class EgoPIDController:
         }
         return normalized
 
+    def _steering_response_scale(self):
+        """Speed-adaptive steering response.
+
+        At low speed (junction turns, crawling) the wheel can respond faster;
+        at cruising speed the same command is low-passed harder so high-speed
+        corrections stay smooth and do not excite the vehicle dynamics.
+        """
+        return _clamp(1.6 - self._get_speed_kmh() / 70.0, 0.65, 1.6)
+
     def _filter_steering(self, raw_steer, action, dt):
         """Apply mode-aware low-pass filtering before actuator rate limiting.
 
@@ -591,12 +836,15 @@ class EgoPIDController:
         create a one-frame steering spike when the route target switches at a
         junction.
         """
-        response_per_s = {
+        base_response_per_s = {
             "turn_left": 5.5,
             "turn_right": 5.5,
             "lane_change_left": 3.4,
             "lane_change_right": 3.4,
         }.get(action, 3.0)
+        response_per_s = (
+            base_response_per_s * self._steering_response_scale()
+        )
         alpha = 1.0 - math.exp(-response_per_s * _clamp(float(dt), 0.01, 0.10))
         self._filtered_steer += alpha * (raw_steer - self._filtered_steer)
         if abs(self._filtered_steer) < 0.008:

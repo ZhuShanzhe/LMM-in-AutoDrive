@@ -510,12 +510,13 @@ class BasicVoiceControl5KmScenario(BaseScenario):
             if state["action"] == "turn_left"
             else heading_change >= 45.0
         )
-        state["completed"] = bool(
-            state["entered_junction"]
-            and state["exited_junction"]
-            and state["final_road_id"] != state["start_road_id"]
-            and direction_ok
-        )
+        if not state["completed"]:
+            state["completed"] = bool(
+                state["entered_junction"]
+                and state["exited_junction"]
+                and state["final_road_id"] != state["start_road_id"]
+                and direction_ok
+            )
 
     @staticmethod
     def _route_turn_evidence(route, directives):

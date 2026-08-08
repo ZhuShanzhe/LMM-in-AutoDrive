@@ -992,7 +992,11 @@ def main():
                         "target_speed_kmh", 0.0
                     ),
                     "emergency": bool(overlay.get("emergency", False)),
-                    "command_id": None,
+                    "command_id": (
+                        unified_vla.active_command().get("id")
+                        if unified_vla is not None
+                        else None
+                    ),
                     "request_id": f"unified-{int(decision_snapshot.frame)}",
                     "frame_id": f"carla_{int(decision_snapshot.frame)}",
                 }
@@ -1099,7 +1103,19 @@ def main():
                     "steer_accel_per_s2": round(steer_accel, 6),
                     "action": normalized_intent.get("action", "unknown"),
                     "controller_terms": dict(
-                        getattr(controller, "_last_lateral_debug", {})
+                        getattr(
+                            getattr(
+                                getattr(
+                                    unified_vla, "route_controller", None
+                                )
+                                or controller,
+                                "_pid",
+                                None,
+                            )
+                            or controller,
+                            "_last_lateral_debug",
+                            {},
+                        )
                     ),
                 },
                 "ego": {

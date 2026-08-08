@@ -308,6 +308,11 @@ class UniversalVLAController:
     def _progress_m(self) -> float:
         return float(self.route_controller.progress_m())
 
+    def active_command(self) -> dict[str, Any]:
+        """Return the route-triggered command currently selected by the FSM."""
+
+        return self.fsm.active_command(self.commands, self._progress_m())
+
     def _decide(self, frame: int) -> None:
         progress_m = self._progress_m()
         command = self.fsm.active_command(self.commands, progress_m)

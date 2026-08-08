@@ -14,7 +14,7 @@ from typing import Any, Mapping, Sequence
 
 import carla
 
-from control.pid_controller import EgoPIDController
+from control.pid_controller import EgoPIDController, _clamp
 from control.protocol import normalize_intent
 
 
@@ -234,14 +234,18 @@ class GenericRoutePID:
 
     def _route_target(self) -> dict[str, Any] | None:
         speed_kmh = self._current_speed_kmh()
-        # Longer lookahead keeps the ego centred on sweeping curves, where a
-        # short pure-pursuit horizon cuts the inside edge and clips solid
-        # lane boundaries.  Junction turns still use the short horizon below.
-        lookahead_m = max(5.0, min(10.0, 3.0 + speed_kmh * 0.25))
+        # Speed-adaptive lookahead with a moderate floor.  Junction turns use
+        # a shorter horizon derived from the current speed instead of a fixed
+        # constant, so slow turns keep a tight arc while faster approaches
+        # still look far enough ahead.
+        lookahead_m = max(4.0, min(12.0, 3.5 + speed_kmh * 0.30))
         if self._junction_or_road_transition_ahead() and speed_kmh >= 3.0:
-            # Short pure-pursuit horizon keeps tight Town05 junction turns
-            # centred without cutting into an adjacent branch.
-            lookahead_m = min(lookahead_m, 3.2)
+            # Short speed-adaptive horizon: tight junction turns need a close
+            # pure-pursuit point, otherwise the approach cuts the inside edge.
+            lookahead_m = min(
+                lookahead_m,
+                max(2.8, min(4.5, 2.2 + speed_kmh * 0.10)),
+            )
         if self.route_context is not None:
             target = self._waypoint_target(lookahead_m)
             if target is None:
@@ -261,6 +265,43 @@ class GenericRoutePID:
             return result
         return None
 
+    def _ahead_heading_change_deg(
+        self, start_m: float = 8.0, span_m: float = 26.0
+    ) -> float:
+        """Absolute heading change of the planned corridor ahead (degrees)."""
+
+        try:
+            if self.route_context is not None and self.route_plan is not None:
+                progress_m = self.progress_m()
+
+                def _yaw(offset: float) -> float:
+                    index = bisect.bisect_left(
+                        self.route_context.distances_m,
+                        progress_m + offset,
+                    )
+                    index = max(0, min(index, len(self.route_plan) - 1))
+                    return math.radians(
+                        float(
+                            self.route_plan[index][0]
+                            .transform.rotation.yaw
+                        )
+                    )
+
+                yaw0 = _yaw(start_m)
+                yaw1 = _yaw(start_m + span_m)
+            elif self.route_manager is not None:
+                point0 = self.route_manager.target_point(start_m)
+                point1 = self.route_manager.target_point(start_m + span_m)
+                if point0 is None or point1 is None:
+                    return 0.0
+                yaw0 = math.radians(float(point0["yaw"]))
+                yaw1 = math.radians(float(point1["yaw"]))
+            else:
+                return 0.0
+        except (IndexError, KeyError, TypeError, ValueError, AttributeError):
+            return 0.0
+        return abs(math.degrees(self._pid._angle_delta(yaw1, yaw0)))
+
     def _current_speed_kmh(self) -> float:
         velocity = self.ego.get_velocity()
         return 3.6 * math.sqrt(
@@ -271,10 +312,17 @@ class GenericRoutePID:
 
     def _junction_or_road_transition_ahead(
         self,
-        lookahead_m: float = 40.0,
+        lookahead_m: float | None = None,
     ) -> bool:
         """Detect junctions or road-id transitions in the planned corridor."""
 
+        if lookahead_m is None:
+            lookahead_m = _clamp(
+                20.0 + self._current_speed_kmh() * 0.40,
+                20.0,
+                50.0,
+            )
+        lookahead_m = float(lookahead_m)
         if self.route_context is None or self.route_plan is None:
             if self.route_manager is not None:
                 # Route-manager corridors expose the exact planned waypoints
@@ -350,24 +398,47 @@ class GenericRoutePID:
             "route_target_trusted": False,
         }
         if self._junction_or_road_transition_ahead():
-            # Generic actuator-safety ceiling before a junction or a road-id
-            # transition.  It only limits physical speed and never changes
-            # lane/turn selection.
+            # Sharpness-aware junction ceiling: the cap falls with the actual
+            # heading change of the planned corridor and rises slightly with
+            # the approach speed.  It only limits physical speed and never
+            # changes lane/turn selection.
+            sharpness_deg = self._ahead_heading_change_deg()
+            junction_cap = _clamp(
+                11.0 - 0.05 * sharpness_deg
+                + self._current_speed_kmh() * 0.05,
+                7.0,
+                14.0,
+            )
             intent["target_speed_kmh"] = min(
                 float(intent["target_speed_kmh"]),
-                9.0,
+                junction_cap,
             )
         if self._lane_transition_ahead():
-            # Generic cautious speed during any lane transition: keep the
-            # lateral manoeuvre stable and avoid clipping lane boundaries.
+            # Speed-adaptive lane-transition ceiling: faster approaches get a
+            # lower cap so the lateral manoeuvre stays stable and cannot clip
+            # lane boundaries; slow crawls keep enough momentum to finish the
+            # change.
+            transition_cap = _clamp(
+                16.0 - self._current_speed_kmh() * 0.10,
+                9.0,
+                16.0,
+            )
             intent["target_speed_kmh"] = min(
                 float(intent["target_speed_kmh"]),
-                15.0,
+                transition_cap,
             )
         route_target = self._route_target()
         if route_target is not None:
             intent["target_location"] = route_target
             intent["route_target_trusted"] = True
+        # Route-manager corridors (e.g. scene 1) sample corners coarsely and
+        # need additional steering authority while approaching or crossing a
+        # junction; lane-centred route contexts keep the conservative
+        # validated limit.
+        intent["junction_steering_authority"] = bool(
+            self.route_manager is not None
+            and self._junction_or_road_transition_ahead()
+        )
         control, _ = self._pid.run_step(intent, self.fixed_delta_seconds)
         return control
 
