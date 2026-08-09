@@ -387,6 +387,45 @@ class GenericRoutePID:
         planned = self._plan_logical_lane(self.progress_m() + 15.0)
         return planned is not None and planned != current_logical
 
+    def autonomous_lane_change_legal(self, direction: str) -> bool:
+        """Conservatively validate an uncommanded collision-escape lane.
+
+        Unlike instructed lane changes, uncertainty is fail-closed: the
+        target lane must exist, be a driving lane and be reachable across a
+        marking that explicitly permits the requested direction.
+        """
+
+        if direction not in {"left", "right"}:
+            raise ValueError("direction must be 'left' or 'right'")
+        try:
+            waypoint = self.world.get_map().get_waypoint(
+                self.ego.get_location(),
+                project_to_road=True,
+                lane_type=carla.LaneType.Driving,
+            )
+        except (RuntimeError, AttributeError, TypeError):
+            return False
+        if waypoint is None:
+            return False
+        try:
+            permission = int(waypoint.lane_change)
+            target = (
+                waypoint.get_left_lane()
+                if direction == "left"
+                else waypoint.get_right_lane()
+            )
+            if target is None or target.lane_type != carla.LaneType.Driving:
+                return False
+            # Adjacent lanes travelling in the opposite direction are never
+            # valid evasive targets even if malformed map metadata exposes
+            # a lane-change bit.
+            if int(target.lane_id) * int(waypoint.lane_id) <= 0:
+                return False
+        except (RuntimeError, AttributeError, TypeError, ValueError):
+            return False
+        mask = 1 if direction == "left" else 2
+        return bool(permission & mask)
+
     def _lane_change_legal(self) -> bool:
         """Map-legality check for the requested lane change.
 

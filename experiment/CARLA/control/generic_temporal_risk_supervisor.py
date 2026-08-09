@@ -28,6 +28,7 @@ OVERRIDE_RISK_CONFIRMATION = "temporal_risk_confirmation"
 OVERRIDE_UNCONFIRMED_STOP = "unconfirmed_stop_crawl_floor"
 OVERRIDE_COMMAND_SPEED_FLOOR = "low_risk_command_speed_floor"
 OVERRIDE_LANE_CHANGE_TIMEOUT = "lane_change_wait_timeout"
+OVERRIDE_RADAR_GUARDED_CRAWL = "stationary_high_risk_radar_guarded_crawl"
 
 
 @dataclass(frozen=True)
@@ -44,6 +45,7 @@ class TemporalRiskSupervisorConfig:
     high_confirm_frames: int = 3
     stopped_speed_kmh: float = 0.5
     lane_change_wait_timeout_s: float = 8.0
+    radar_guarded_crawl_speed_kmh: float = 6.0
     immediate_high_probability: float = 0.80
     immediate_risk_score: float = 0.70
     immediate_horizon_probability: float = 0.65
@@ -73,6 +75,13 @@ class TemporalRiskSupervisorConfig:
             or self.lane_change_wait_timeout_s <= 0.0
         ):
             raise ValueError("lane_change_wait_timeout_s must be positive")
+        if (
+            not math.isfinite(self.radar_guarded_crawl_speed_kmh)
+            or self.radar_guarded_crawl_speed_kmh <= 0.0
+        ):
+            raise ValueError(
+                "radar_guarded_crawl_speed_kmh must be positive"
+            )
         for name in (
             "immediate_high_probability",
             "immediate_risk_score",
@@ -101,6 +110,7 @@ class GenericTemporalRiskSupervisor:
         self._crawl_pending = False
         self._high_confirm_count = 0
         self._consecutive_decelerate_frames = 0
+        self._radar_guarded_crawl_active = False
         self._moving_since_frame: int | None = None
         self._decision_history: deque[dict[str, Any]] = deque(
             maxlen=self.config.decision_history_size
@@ -119,6 +129,7 @@ class GenericTemporalRiskSupervisor:
         self._crawl_pending = False
         self._high_confirm_count = 0
         self._consecutive_decelerate_frames = 0
+        self._radar_guarded_crawl_active = False
         self._moving_since_frame = None
         self._decision_history.clear()
         self._last_decision_frame = None
@@ -296,6 +307,32 @@ class GenericTemporalRiskSupervisor:
             or imminent_horizon >= self.config.immediate_horizon_probability
         )
 
+        radar = risk.get("physical_forward_radar") or {}
+        radar_distance = radar.get("nearest_distance_m")
+        radar_emergency_distance = radar.get("emergency_distance_m")
+        radar_caution_distance = radar.get("caution_distance_m")
+        radar_guarded_clearance = False
+        if all(
+            isinstance(value, (int, float))
+            for value in (
+                radar_distance,
+                radar_emergency_distance,
+                radar_caution_distance,
+            )
+        ):
+            distance_m = float(radar_distance)
+            emergency_m = float(radar_emergency_distance)
+            caution_m = float(radar_caution_distance)
+            radar_guarded_clearance = (
+                math.isfinite(distance_m)
+                and math.isfinite(emergency_m)
+                and math.isfinite(caution_m)
+                and distance_m > emergency_m + 0.25
+                and distance_m <= caution_m + 4.0
+            )
+        if risk_level != "high" or not radar_guarded_clearance:
+            self._radar_guarded_crawl_active = False
+
         # Generic unconfirmed-stop crawl floor: when the learned risk head says
         # low/medium and the text envelope does not request a stop, a model
         # stop action is treated as an unconfirmed flicker and converted to a
@@ -342,24 +379,42 @@ class GenericTemporalRiskSupervisor:
         # the ego has been stopped for a while without an explicit text stop
         # is treated as a view false-positive and downgraded to a cautious
         # crawl, so the vehicle never deadlocks on an empty scene.
-        if (
+        stationary_high = (
             risk_level == "high"
-            and stationary_elapsed_s >= 2.0
+            and (
+                stationary_elapsed_s >= 2.0
+                or self._radar_guarded_crawl_active
+            )
             and str(decision.get("action")) == "emergency_brake"
             and parsed_intent not in {"STOP", "EMERGENCY_BRAKE"}
-            and high_probability < self.config.immediate_high_probability
+        )
+        unconfirmed_high = (
+            high_probability < self.config.immediate_high_probability
             and risk_score < self.config.immediate_risk_score
             and imminent_horizon < self.config.immediate_horizon_probability
-        ):
+        )
+        if stationary_high and (unconfirmed_high or radar_guarded_clearance):
+            radar_guarded = radar_guarded_clearance
+            self._radar_guarded_crawl_active = radar_guarded
+            speed_kmh = (
+                self.config.radar_guarded_crawl_speed_kmh
+                if radar_guarded
+                else 12.0
+            )
+            reason = (
+                OVERRIDE_RADAR_GUARDED_CRAWL
+                if radar_guarded
+                else "stationary_high_risk_liveness"
+            )
             decision.update(
                 action="decelerate",
-                target_speed_kmh=12.0,
+                target_speed_kmh=speed_kmh,
                 emergency=False,
-                reason="stationary_high_risk_liveness",
+                reason=reason,
                 blocked_reason_codes=[],
             )
-            self._override_counts["stationary_high_risk_liveness"] += 1
-            return decision, "stationary_high_risk_liveness"
+            self._override_counts[reason] += 1
+            return decision, reason
 
         # Generic low-risk command-speed floor: when the text command defines
         # an explicit speed envelope and the learned risk head says low or
