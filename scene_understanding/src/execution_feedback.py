@@ -345,6 +345,22 @@ def evaluate_execution_feedback(
             return current_tracker, _feedback(
                 request_id, frame_id, step_id, "COMPLETED", ["target_speed_reached"]
             )
+    elif completion_type == "ACTION_REACHED":
+        # Atomic observation/route-following steps have no separate metric
+        # target. Require the approved action to remain active for several
+        # consecutive frames so one transient proposal cannot advance a
+        # compound command.
+        current_tracker["stable_frames"] = int(
+            current_tracker.get("stable_frames", 0)
+        ) + 1
+        if current_tracker["stable_frames"] >= required_stable_frames:
+            return current_tracker, _feedback(
+                request_id,
+                frame_id,
+                step_id,
+                "COMPLETED",
+                ["approved_action_stable"],
+            )
     elif completion_type == "VEHICLE_STOPPED":
         if speed_mps is not None and speed_mps <= stop_speed_threshold_mps:
             return current_tracker, _feedback(

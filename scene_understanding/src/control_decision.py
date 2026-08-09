@@ -144,14 +144,92 @@ def _inherited_plan_speed_kmh(
 ) -> float:
     """Keep the latest explicit plan speed across later non-speed steps."""
 
-    target = float(current_speed_kmh)
-    for step in steps[: selected_index + 1]:
-        if str(step.get("action", "")).strip().upper() != "SET_SPEED":
-            continue
-        value = (step.get("parameters") or {}).get("target_speed_mps")
-        if _is_number(value) and float(value) >= 0:
-            target = round(min(float(value) * 3.6, 100.0), 6)
-    return target
+
+def _map_step_action(
+    step: Mapping[str, Any], current_speed_kmh: float
+) -> tuple[str, float, str | None, dict[str, float] | None]:
+    parser_action = str(step.get("action", "")).strip().upper()
+    parameters = step.get("parameters") or {}
+    if not isinstance(parameters, dict):
+        raise ValueError(f"DrivingIntent step {step.get('step_id')!r} parameters must be an object")
+
+    action = DIRECT_ACTION_MAP.get(parser_action)
+    target_speed_kmh = current_speed_kmh
+    target_lane: str | None = None
+    target_location: dict[str, float] | None = None
+
+    if parser_action == "SET_SPEED":
+        value = parameters.get("target_speed_mps")
+        if not _is_number(value) or float(value) < 0:
+            raise ValueError("SET_SPEED requires finite non-negative target_speed_mps")
+        action = "keep_lane"
+        target_speed_kmh = round(min(float(value) * 3.6, 100.0), 6)
+    elif parser_action == "ADJUST_SPEED":
+        change = str(parameters.get("change", "HOLD")).strip().upper()
+        action = {
+            "INCREASE": "accelerate",
+            "DECREASE": "decelerate",
+            "HOLD": "keep_lane",
+        }.get(change)
+    elif parser_action == "CHANGE_LANE":
+        direction = str(parameters.get("direction", "")).strip().upper()
+        if direction in {"LEFT", "RIGHT"}:
+            target_lane = direction.lower()
+            action = f"lane_change_{target_lane}"
+    elif parser_action == "TURN":
+        direction = str(parameters.get("direction", "")).strip().upper()
+        if direction == "STRAIGHT":
+            action = "keep_lane"
+        elif direction in {"LEFT", "RIGHT"}:
+            action = f"turn_{direction.lower()}"
+        location = parameters.get("target_location")
+        if location is not None:
+            if not isinstance(location, dict) or not all(
+                key in location and _is_number(location[key]) for key in ("x", "y")
+            ):
+                raise ValueError("TURN target_location requires finite x and y")
+            target_location = {
+                "x": float(location["x"]),
+                "y": float(location["y"]),
+                "z": float(location.get("z", 0.0)),
+            }
+    elif parser_action == "OVERTAKE":
+        direction = str(parameters.get("direction", "")).strip().upper()
+        if direction in {"LEFT", "RIGHT"}:
+            target_lane = direction.lower()
+            action = f"lane_change_{target_lane}"
+        else:
+            # In a sequenced plan, CHANGE_LANE has already established the
+            # passing lane.  OVERTAKE therefore means build longitudinal
+            # speed while the normal target-alignment and risk gates remain
+            # authoritative.
+            action = "accelerate"
+    elif parser_action == "WAIT":
+        # WAIT remains an explicit stationary action until StepFeedback
+        # confirms that the observed condition has cleared.
+        action = "stop"
+    elif parser_action in {"CHECK", "CONFIRM", "COMPLETE"}:
+        # These are observation/verification steps.  Semantic alignment and
+        # the step's on_blocked policy decide whether the plan may proceed;
+        # when aligned they do not request an independent manoeuvre.
+        action = "keep_lane"
+    elif parser_action in {"PROCEED", "PASS_BY", "KEEP_SAFE_DISTANCE"}:
+        # Route following supplies steering for these auxiliary steps.  The
+        # risk gate can still reduce speed or stop for an observed hazard.
+        action = "keep_lane"
+    elif parser_action in {"YIELD", "PULL_OVER", "AVOID"}:
+        direction = str(parameters.get("direction", "")).strip().upper()
+        if direction in {"LEFT", "RIGHT"}:
+            target_lane = direction.lower()
+            action = f"lane_change_{target_lane}"
+        else:
+            action = "decelerate"
+
+    if action not in CONTROL_ACTIONS:
+        raise ValueError(f"unsupported DrivingIntent action {parser_action!r}")
+    if action in {"stop", "emergency_brake"}:
+        target_speed_kmh = 0.0
+    return action, target_speed_kmh, target_lane, target_location
 
 
 def _decision(
@@ -463,12 +541,36 @@ def validate_control_decision(data: Any) -> list[str]:
     if data.get("target_lane") not in {None, "left", "right"}:
         errors.append("target_lane: expected null, 'left', or 'right'")
     location = data.get("target_location")
-    if location is not None and (
-        not isinstance(location, dict)
-        or set(location) != {"x", "y", "z"}
-        or any(not _is_number(location.get(key)) for key in ("x", "y", "z"))
-    ):
-        errors.append("target_location: expected null or finite x/y/z object")
+    if location is not None:
+        allowed_location_keys = {"x", "y", "z", "yaw", "reference"}
+        if (
+            not isinstance(location, dict)
+            or not {"x", "y", "z"}.issubset(location)
+            or not set(location).issubset(allowed_location_keys)
+            or any(
+                not _is_number(location.get(key))
+                for key in ("x", "y", "z")
+            )
+            or (
+                "yaw" in location and not _is_number(location.get("yaw"))
+            )
+        ):
+            errors.append(
+                "target_location: expected finite x/y/z with optional yaw/reference"
+            )
+        reference = location.get("reference") if isinstance(location, dict) else None
+        if reference is not None and (
+            not isinstance(reference, dict)
+            or not {"x", "y", "yaw"}.issubset(reference)
+            or not set(reference).issubset({"x", "y", "z", "yaw"})
+            or any(
+                not _is_number(reference.get(key))
+                for key in reference
+            )
+        ):
+            errors.append(
+                "target_location.reference: expected finite x/y/yaw with optional z"
+            )
     if not isinstance(data.get("emergency"), bool):
         errors.append("emergency: expected a boolean")
     elif data.get("emergency") != (data.get("action") == "emergency_brake"):

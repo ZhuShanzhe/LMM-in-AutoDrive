@@ -244,7 +244,14 @@ class BasicVoiceControl5KmScenario(BaseScenario):
         spawn_points = world_map.get_spawn_points()
         requested_index = self.config["route"].get("start_spawn_index")
         candidates = []
-        rejected = {"lane": 0, "directive": 0, "continuity": 0}
+        rejected = {
+            "lane": 0,
+            "directive": 0,
+            "directive_distance": 0,
+            "continuity": 0,
+            "corridor": 0,
+        }
+        last_corridor = None
         if requested_index is not None and int(requested_index) < len(spawn_points):
             candidates.append(spawn_points[int(requested_index)])
         if not bool(self.config["route"].get("strict_start_spawn", False)):
@@ -283,6 +290,16 @@ class BasicVoiceControl5KmScenario(BaseScenario):
             if not route or self.route_manager.unapplied_directives:
                 rejected["directive"] += 1
                 continue
+            if any(
+                abs(
+                    float(item.get("applied_distance_m", -1.0))
+                    - float(item.get("distance_m", -1.0))
+                )
+                > directive_tolerance
+                for item in self.route_manager.applied_directives
+            ):
+                rejected["directive_distance"] += 1
+                continue
             if self._has_uncommanded_sharp_turn(
                 route,
                 self.route_manager.applied_directives,
@@ -301,6 +318,11 @@ class BasicVoiceControl5KmScenario(BaseScenario):
             ]):
                 rejected["directive"] += 1
                 continue
+            corridor = self._route_corridor_evidence(route, minimum_lanes)
+            if not corridor["valid"]:
+                rejected["corridor"] += 1
+                last_corridor = corridor
+                continue
             self.route = route
             self.route_preflight = {
                 "selected_candidate_position": candidate_index,
@@ -313,13 +335,85 @@ class BasicVoiceControl5KmScenario(BaseScenario):
                 "continuity_horizon_m": continuity_horizon,
                 "max_uncommanded_heading_delta_deg": max_uncommanded_turn,
                 "turn_evidence": turn_evidence,
+                "corridor_evidence": corridor,
             }
             return spawn_transform
         raise RuntimeError(
-            "No spawn point satisfies lane, route-directive, and route-continuity requirements: {0}".format(
-                rejected
+            "No spawn point satisfies lane, route-directive, route-continuity, and corridor requirements: {0}; last_corridor={1}".format(
+                rejected, last_corridor
             )
         )
+
+    def _route_corridor_evidence(self, route, minimum_lanes):
+        """Validate the six-lane arterial where basic lane commands execute.
+
+        Town maps contain short connector roads whose spawn waypoint happens
+        to expose several adjacent lanes. Checking only that first waypoint
+        allowed a route that collapsed to a single lane after 30 metres. The
+        audit therefore samples the route itself and separately checks the
+        500 m preparation window before every lane-change instruction.
+        """
+        route_cfg = self.config["route"]
+        sample_step_m = max(10.0, float(route_cfg.get("corridor_sample_step_m", 50.0)))
+        minimum_fraction = float(route_cfg.get("minimum_multilane_route_fraction", 0.0))
+        preparation_m = float(route_cfg.get("lane_change_preparation_m", 500.0))
+        world_map = self.world.get_map()
+        next_sample_m = 0.0
+        sampled = []
+        for point in route:
+            distance_m = float(point["distance_m"])
+            if distance_m + 1e-6 < next_sample_m:
+                continue
+            waypoint = world_map.get_waypoint(
+                carla.Location(x=point["x"], y=point["y"], z=point["z"]),
+                project_to_road=True,
+                lane_type=carla.LaneType.Driving,
+            )
+            lanes = self._same_direction_lane_count(waypoint) if waypoint else 0
+            sampled.append({"distance_m": distance_m, "same_direction_lanes": lanes})
+            next_sample_m = distance_m + sample_step_m
+        multilane = [item for item in sampled if item["same_direction_lanes"] >= minimum_lanes]
+        fraction = len(multilane) / float(max(1, len(sampled)))
+        lane_change_windows = []
+        for command in self.config.get("commands", []):
+            if command.get("action") not in ("lane_change_left", "lane_change_right"):
+                continue
+            command_m = float(command.get("activate_at_m", command.get("announce_at_m", 0.0)))
+            window = [
+                item for item in sampled
+                if max(0.0, command_m - preparation_m) <= item["distance_m"] <= command_m
+            ]
+            valid = bool(window) and all(
+                item["same_direction_lanes"] >= minimum_lanes for item in window
+            )
+            lane_change_windows.append({
+                "command_id": command.get("id"),
+                "start_m": max(0.0, command_m - preparation_m),
+                "end_m": command_m,
+                "minimum_observed_lanes": min(
+                    (item["same_direction_lanes"] for item in window), default=0
+                ),
+                "valid": valid,
+            })
+        start_waypoint = world_map.get_waypoint(
+            carla.Location(x=route[0]["x"], y=route[0]["y"], z=route[0]["z"]),
+            project_to_road=True,
+            lane_type=carla.LaneType.Driving,
+        ) if route else None
+        start_valid = bool(start_waypoint and not start_waypoint.is_junction)
+        return {
+            "valid": bool(
+                start_valid
+                and fraction >= minimum_fraction
+                and all(item["valid"] for item in lane_change_windows)
+            ),
+            "start_outside_junction": start_valid,
+            "minimum_required_lanes": int(minimum_lanes),
+            "sample_step_m": sample_step_m,
+            "multilane_fraction": round(fraction, 4),
+            "minimum_multilane_route_fraction": minimum_fraction,
+            "lane_change_windows": lane_change_windows,
+        }
 
     def _select_initial_lane(self, waypoint):
         """Honor a stable lane rank when the scenario needs both lane changes."""
@@ -416,12 +510,13 @@ class BasicVoiceControl5KmScenario(BaseScenario):
             if state["action"] == "turn_left"
             else heading_change >= 45.0
         )
-        state["completed"] = bool(
-            state["entered_junction"]
-            and state["exited_junction"]
-            and state["final_road_id"] != state["start_road_id"]
-            and direction_ok
-        )
+        if not state["completed"]:
+            state["completed"] = bool(
+                state["entered_junction"]
+                and state["exited_junction"]
+                and state["final_road_id"] != state["start_road_id"]
+                and direction_ok
+            )
 
     @staticmethod
     def _route_turn_evidence(route, directives):

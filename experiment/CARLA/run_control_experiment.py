@@ -11,6 +11,11 @@ import os
 import sys
 import tempfile
 import time
+from pathlib import Path
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if PROJECT_ROOT not in sys.path:
@@ -670,6 +675,9 @@ def main():
     async_qwen = None
     scene_world_state_collector = None
     logger = None
+    policy = None
+    unified_vla = None
+    unified_route_pid = None
     records = []
     try:
         scenario.setup()
@@ -685,21 +693,24 @@ def main():
         monitor = EventMonitor(world, ego)
         monitor.start()
         if args.record_images or args.video_output:
+            camera_pose = (
+                (1.5, 0.0, 2.4, 0.0, 0.0)
+                if args.camera_view == "hood"
+                else (-8.0, 0.0, 3.0, -10.0, 0.0)
+            )
             camera = ExperimentCamera(
-                world,
-                ego,
-                os.path.join(output_dir, "camera_frames"),
-                args.record_every_n,
-                args.camera_width,
-                args.camera_height,
-                args.record_images,
-                args.video_output,
-                args.video_fps,
-                args.ffmpeg,
-                args.video_overlay,
-                args.fixed_delta_s * args.record_every_n if args.record_images else None,
-                args.camera_view,
-                args.video_profile,
+                world=world,
+                ego_vehicle=ego,
+                output_dir=os.path.join(output_dir, "camera_frames"),
+                every_n_frames=args.record_every_n,
+                width=args.camera_width,
+                height=args.camera_height,
+                save_images=args.record_images,
+                video_output=args.video_output,
+                video_fps=args.video_fps,
+                ffmpeg_path=args.ffmpeg,
+                video_overlay=args.video_overlay,
+                camera_pose=camera_pose,
             )
             camera.start()
         if args.scene_capture or args.live_perception or args.async_qwen:
@@ -758,7 +769,52 @@ def main():
                 default_speed_kmh=args.target_speed_kmh,
                 max_age_frames=0,
             )
-        elif args.decision_source in {"voice_schedule", "voice_scene_bridge", "vla_scene_bridge"} or args.scenario == "basic_voice_control_5km":
+        elif args.decision_source == "vla_scene_bridge":
+            from control.generic_route_pid import GenericRoutePID
+            from universal_vla_controller import UniversalVLAController
+
+            commands = list(
+                getattr(scenario, "config", {}).get("commands", [])
+            )
+            route_manager = getattr(scenario, "route_manager", None)
+            unified_route_pid = GenericRoutePID(
+                world,
+                ego,
+                target_speed_kmh=args.target_speed_kmh,
+                fixed_delta_seconds=args.fixed_delta_s,
+                route_manager=route_manager,
+            )
+            unified_vla = UniversalVLAController(
+                world=world,
+                ego=ego,
+                route_controller=unified_route_pid,
+                commands=commands,
+                checkpoint_path=Path(
+                    args.vla_checkpoint
+                ).expanduser().resolve(),
+                config_path=Path(
+                    args.vla_config
+                ).expanduser().resolve(),
+                parser_model_path=Path(
+                    args.command_parser_model
+                ).expanduser().resolve(),
+                output_path=Path(output_dir)
+                / "vla_control_decisions.jsonl",
+                device=args.vla_device,
+                precision=args.vla_precision,
+                decision_interval_frames=3,
+                fixed_delta_seconds=args.fixed_delta_s,
+                available_cameras=("front",),
+                enable_lidar=False,
+                default_speed_kmh=args.target_speed_kmh,
+            )
+            policy = None
+            effective_decision_source = "universal_vla_controller"
+            print("Scene 1 unified VLA controller assigned")
+            # Give the sensor rig one complete cadence before the timed loop.
+            for _ in range(6):
+                world.tick()
+        elif args.decision_source in {"voice_schedule", "voice_scene_bridge"} or args.scenario == "basic_voice_control_5km":
             create_policy = getattr(scenario, "create_temporary_policy", None)
             if create_policy is None:
                 raise ValueError("voice_schedule requires a scenario with a temporary policy")
@@ -767,32 +823,21 @@ def main():
                 args.command_parser_model,
                 args.command_parser_device,
             )
-            if args.decision_source in {"voice_scene_bridge", "vla_scene_bridge"}:
+            if args.decision_source == "voice_scene_bridge":
                 rule_policy = ScheduledSceneBridgePolicy(
                     schedule_policy,
                     args.bridge_output_dir or os.path.join(output_dir, "scene_bridge"),
                 )
-                policy = (
-                    StructuredVlaSceneBridgePolicy(
-                        rule_policy,
-                        checkpoint_path=args.vla_checkpoint,
-                        config_path=args.vla_config,
-                        device=args.vla_device,
-                        precision=args.vla_precision,
-                    )
-                    if args.decision_source == "vla_scene_bridge"
-                    else rule_policy
-                )
+                policy = rule_policy
             else:
                 policy = schedule_policy
             warmup = getattr(policy, "warmup", None)
             if callable(warmup):
                 warmup()
             effective_decision_source = (
-                "structured_vla_scene_bridge"
-                if args.decision_source == "vla_scene_bridge"
-                else "modernbert_voice_scene_bridge"
-                if args.decision_source == "voice_scene_bridge" and args.command_parser_model
+                "modernbert_voice_scene_bridge"
+                if args.decision_source == "voice_scene_bridge"
+                and args.command_parser_model
                 else "voice_scene_bridge"
                 if args.decision_source == "voice_scene_bridge"
                 else "modernbert_voice_closed_loop"
@@ -942,12 +987,40 @@ def main():
             set_context = getattr(policy, "set_context", None)
             if set_context is not None:
                 set_context(call_scenario_method(scenario, "get_policy_context", {}))
-            decision_start = time.perf_counter()
-            intent = decide_with_optional_wait(policy, state, args.decision_wait_ms)
-            decision_latency_ms = (time.perf_counter() - decision_start) * 1000.0
-            control_start = time.perf_counter()
-            control, normalized_intent = controller.run_step(intent, control_delta_s)
-            control_latency_ms = (time.perf_counter() - control_start) * 1000.0
+            if unified_vla is not None:
+                control = unified_vla.run_step()
+                overlay = unified_vla.overlay()
+                normalized_intent = {
+                    "action": overlay.get("action", "keep_lane"),
+                    "target_speed_kmh": overlay.get(
+                        "target_speed_kmh", 0.0
+                    ),
+                    "emergency": bool(overlay.get("emergency", False)),
+                    "command_id": (
+                        unified_vla.active_command().get("id")
+                        if unified_vla is not None
+                        else None
+                    ),
+                    "request_id": f"unified-{int(decision_snapshot.frame)}",
+                    "frame_id": f"carla_{int(decision_snapshot.frame)}",
+                }
+                decision_latency_ms = 0.0
+                control_latency_ms = 0.0
+            else:
+                decision_start = time.perf_counter()
+                intent = decide_with_optional_wait(
+                    policy, state, args.decision_wait_ms
+                )
+                decision_latency_ms = (
+                    time.perf_counter() - decision_start
+                ) * 1000.0
+                control_start = time.perf_counter()
+                control, normalized_intent = controller.run_step(
+                    intent, control_delta_s
+                )
+                control_latency_ms = (
+                    time.perf_counter() - control_start
+                ) * 1000.0
             call_scenario_method(scenario, "report_intent", None, normalized_intent)
             if control is not None:
                 ego.apply_control(control)
@@ -1034,7 +1107,19 @@ def main():
                     "steer_accel_per_s2": round(steer_accel, 6),
                     "action": normalized_intent.get("action", "unknown"),
                     "controller_terms": dict(
-                        getattr(controller, "_last_lateral_debug", {})
+                        getattr(
+                            getattr(
+                                getattr(
+                                    unified_vla, "route_controller", None
+                                )
+                                or controller,
+                                "_pid",
+                                None,
+                            )
+                            or controller,
+                            "_last_lateral_debug",
+                            {},
+                        )
                     ),
                 },
                 "ego": {
@@ -1118,7 +1203,11 @@ def main():
                 })
         metrics = summarize(records, args.scenario, scenario_goal_distance_m)
         final_status = call_scenario_method(scenario, "get_status", {})
-        if camera is not None and final_status.get("status") in ("SUCCESS", "FAILURE"):
+        if (
+            camera is not None
+            and hasattr(camera, "append_terminal_overlay")
+            and final_status.get("status") in ("SUCCESS", "FAILURE")
+        ):
             terminal_record = dict(records[-1]) if records else {"scenario": args.scenario}
             terminal_record["scenario_status"] = final_status
             camera.append_terminal_overlay(
@@ -1126,6 +1215,8 @@ def main():
             )
         metrics["scenario_status"] = final_status
         metrics["runner_stop_reason"] = runner_stop_reason
+        if unified_vla is not None:
+            metrics["universal_vla_controller"] = unified_vla.summary()
         if scene_capture is not None:
             metrics["scene_understanding_capture"] = scene_capture.stats()
         if async_qwen is not None:
@@ -1143,6 +1234,15 @@ def main():
         print("[Done] Metrics written to {0}".format(output_dir))
         print(metrics)
     finally:
+        if unified_vla is not None:
+            try:
+                unified_vla.close()
+            except RuntimeError:
+                pass
+        if policy is not None:
+            close_policy = getattr(policy, "close", None)
+            if callable(close_policy):
+                close_policy()
         if logger is not None:
             logger.close()
         if monitor is not None:

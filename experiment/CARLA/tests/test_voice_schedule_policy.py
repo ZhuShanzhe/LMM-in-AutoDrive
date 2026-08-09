@@ -324,7 +324,9 @@ class RouteDirectiveTest(unittest.TestCase):
         target = manager.target_point(2)
 
         self.assertAlmostEqual(target["x"], 3.0)
-        self.assertAlmostEqual(target["yaw"], 27.0)
+        # The sampled coordinates remain on the x axis, so their tangent is
+        # zero degrees even if CARLA reports a premature connector yaw.
+        self.assertAlmostEqual(target["yaw"], 0.0)
         self.assertAlmostEqual(target["distance_m"], 3.0)
 
     def test_progress_projects_smoothly_between_route_points(self):

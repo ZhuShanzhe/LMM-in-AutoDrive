@@ -1,4 +1,4 @@
-"""Locate the CARLA 0.9.16 Python API and navigation agents."""
+"""Locate the CARLA 0.9.16 Python API without machine-specific paths."""
 
 from __future__ import annotations
 
@@ -8,10 +8,40 @@ from importlib import metadata
 import os
 import sys
 from pathlib import Path
+import zipfile
 
 
 EXPECTED_VERSION = "0.9.16"
-DEFAULT_CARLA_ROOT = "/root/autodl-tmp/CARLA_0.9.16"
+
+
+def _python_abi_tag() -> str:
+    return f"cp{sys.version_info.major}{sys.version_info.minor}"
+
+
+def _archive_cache_dir(repository_root: Path, archive: Path) -> Path:
+    configured_cache = os.environ.get("CARLA_PYTHON_CACHE")
+    cache_root = (
+        Path(configured_cache).expanduser().resolve()
+        if configured_cache
+        else repository_root / ".runtime" / "carla-python-api"
+    )
+    return cache_root / _python_abi_tag() / archive.stem
+
+
+def _extract_python_archive(repository_root: Path, archive: Path) -> Path:
+    destination = _archive_cache_dir(repository_root, archive)
+    extension_modules = list((destination / "carla").glob("libcarla*.so"))
+    if extension_modules:
+        return destination
+    destination.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(archive) as bundle:
+        bundle.extractall(destination)
+    extension_modules = list((destination / "carla").glob("libcarla*.so"))
+    if not extension_modules:
+        raise RuntimeError(
+            f"CARLA archive does not contain libcarla for Linux: {archive}"
+        )
+    return destination
 
 
 def _import_carla():
@@ -38,12 +68,13 @@ def setup_carla_api(carla_root=None):
     """Make the matching CARLA API importable and return its installation root."""
 
     configured_root = carla_root or os.environ.get("CARLA_ROOT")
-    workspace_root = Path(__file__).resolve().parents[3]
+    repository_root = Path(__file__).resolve().parents[2]
     roots = []
     for candidate in (
         configured_root,
-        workspace_root / "carla-0-9-16",
-        DEFAULT_CARLA_ROOT,
+        repository_root / "CARLA_0.9.16",
+        repository_root.parent / "CARLA_0.9.16",
+        repository_root.parent / "carla-0-9-16",
     ):
         if candidate is None:
             continue
@@ -58,27 +89,43 @@ def setup_carla_api(carla_root=None):
             api_dir = root / "PythonAPI" / "carla"
             if api_dir.is_dir():
                 if str(api_dir) not in sys.path:
-                    sys.path.append(str(api_dir))
+                    sys.path.insert(0, str(api_dir))
                 return str(root)
-        return configured_root
+        return (
+            str(Path(configured_root).expanduser().resolve())
+            if configured_root
+            else None
+        )
 
     selected_root = None
     for root in roots:
         api_dir = root / "PythonAPI" / "carla"
         dist_dir = api_dir / "dist"
-        candidates = sorted(
+        archives = sorted(
             glob.glob(str(dist_dir / "carla-*.whl"))
             + glob.glob(str(dist_dir / "carla-*.egg"))
         )
-        for path in [*(Path(item) for item in candidates), api_dir]:
+        matching_archives = [
+            Path(item)
+            for item in archives
+            if _python_abi_tag() in Path(item).name
+        ]
+        paths = [
+            *(
+                _extract_python_archive(repository_root, archive)
+                for archive in matching_archives
+            ),
+            api_dir,
+        ]
+        for path in paths:
             if path.exists() and str(path) not in sys.path:
                 sys.path.insert(0, str(path))
-        if api_dir.is_dir():
+        importlib.invalidate_caches()
+        installed = _import_carla()
+        if installed is not None:
             selected_root = root
             break
 
-    importlib.invalidate_caches()
-    installed = _import_carla()
     if installed is None:
         checked = ", ".join(str(path) for path in roots)
         raise RuntimeError(

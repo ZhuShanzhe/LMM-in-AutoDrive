@@ -115,11 +115,16 @@ class RouteManager:
                     float(first[axis])
                     + ratio * (float(second[axis]) - float(first[axis]))
                 )
-            first_yaw = math.radians(float(first["yaw"]))
-            second_yaw = math.radians(float(second["yaw"]))
-            result["yaw"] = math.degrees(
-                first_yaw + ratio * self._angle_delta(second_yaw, first_yaw)
-            )
+            dx = float(second["x"]) - float(first["x"])
+            dy = float(second["y"]) - float(first["y"])
+            # The route polyline is the controller's geometric authority.
+            # CARLA junction waypoint rotations can jump to a connector's
+            # terminal heading before its coordinates turn, which creates a
+            # fictitious curvature spike and drives the ego over lane lines.
+            if math.hypot(dx, dy) > 1e-6:
+                result["yaw"] = math.degrees(math.atan2(dy, dx))
+            else:
+                result["yaw"] = float(first["yaw"])
             result["distance_m"] = target_distance
             return result
         return dict(self.route[-1])
