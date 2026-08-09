@@ -1,4 +1,6 @@
 import math
+from pathlib import Path
+import tempfile
 import unittest
 from types import SimpleNamespace
 
@@ -6,7 +8,7 @@ import carla
 
 from control.pid_controller import EgoPIDController
 from control.protocol import normalize_intent
-from run_control_experiment import RuleDecisionPolicy
+from run_control_experiment import RuleDecisionPolicy, prepare_output_directory
 
 
 def transform(x=0.0, y=0.0, yaw=0.0):
@@ -63,6 +65,13 @@ class FakeMap:
 
 
 class ControlSafetyRegressionTests(unittest.TestCase):
+    def test_output_directory_exists_before_controller_log_open(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "nested" / "scene1"
+            resolved = prepare_output_directory(output)
+            self.assertEqual(resolved, output)
+            self.assertTrue(output.is_dir())
+
     def test_direct_high_level_vla_actions_compile_before_pid_control(self):
         cases = (
             ({"action": "follow"}, "keep_lane"),

@@ -388,6 +388,13 @@ def make_video_overlay(record):
     }
 
 
+def prepare_output_directory(output_dir):
+    """Create a runner output directory before any controller opens logs."""
+
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir
+
+
 def resolve_scenario_config(config_path, output_dir, resume_progress_m):
     if resume_progress_m is None:
         return config_path
@@ -603,7 +610,16 @@ def parse_args():
 
 def main():
     args = parse_args()
-    output_dir = args.output_dir or os.path.join("outputs", "runs", "{0}_{1}".format(args.scenario, time.strftime("%Y%m%d_%H%M%S")))
+    output_dir = prepare_output_directory(
+        args.output_dir
+        or os.path.join(
+            "outputs",
+            "runs",
+            "{0}_{1}".format(
+                args.scenario, time.strftime("%Y%m%d_%H%M%S")
+            ),
+        )
+    )
     scenario_config_path = resolve_scenario_config(
         args.scenario_config,
         output_dir,
