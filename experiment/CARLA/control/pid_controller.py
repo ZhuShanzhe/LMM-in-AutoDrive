@@ -622,10 +622,6 @@ class EgoPIDController:
                 current_yaw=current_yaw,
                 lateral_error_m=lateral_error_m,
                 speed_kmh=current_speed_kmh,
-                suppress_cross_track=(
-                    bool(getattr(waypoint, "is_junction", False))
-                    and abs(lateral_error_m) > 1.0
-                ),
             )
             steering_limit = self._dynamic_steering_limit(
                 speed_kmh=current_speed_kmh,
@@ -778,7 +774,6 @@ class EgoPIDController:
         current_yaw,
         lateral_error_m,
         speed_kmh,
-        suppress_cross_track=False,
     ):
         """Track a planner path with curvature feed-forward and Stanley error terms."""
         reference_yaw = math.radians(float(route_reference["yaw"]))
@@ -798,7 +793,10 @@ class EgoPIDController:
         feed_forward = math.atan(wheelbase_m * curvature)
         heading_error = self._angle_delta(reference_yaw, current_yaw)
         speed_mps = max(0.0, float(speed_kmh) / 3.6)
-        cross_track = 0.0 if suppress_cross_track else math.atan2(
+        # ``route_reference`` is planner-owned and remains the authoritative
+        # centreline through a junction.  Large offsets need stronger recovery;
+        # suppressing this term is precisely what lets the ego hit an edge.
+        cross_track = math.atan2(
             -1.0 * float(lateral_error_m),
             speed_mps + 2.0,
         )

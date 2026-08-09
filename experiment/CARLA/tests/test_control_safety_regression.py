@@ -238,6 +238,34 @@ class ControlSafetyRegressionTests(unittest.TestCase):
         self.assertLess(steer, 0.0)
         self.assertLess(steer, 0.2)
 
+    def test_trusted_junction_route_retains_large_cross_track_recovery(self):
+        vehicle = FakeVehicle()
+        vehicle.current_transform = transform(x=0.0, y=1.4, yaw=0.0)
+        vehicle.current_velocity = carla.Vector3D(x=2.6)
+        junction = FakeWaypoint(transform(x=0.0, y=0.0, yaw=0.0))
+        junction.is_junction = True
+        controller = EgoPIDController(vehicle, FakeMap(junction))
+        intent = {
+            "action": "keep_lane",
+            "target_location": {
+                "x": 10.0,
+                "y": 0.0,
+                "z": 0.0,
+                "yaw": 20.0,
+                "reference": {
+                    "x": 0.0, "y": 0.0, "z": 0.0, "yaw": 0.0,
+                },
+            },
+            "route_target_trusted": True,
+        }
+
+        steer = controller._lateral_control(intent, 0.05)
+
+        self.assertLess(
+            controller._last_lateral_debug["cross_track_term"], -0.3
+        )
+        self.assertLess(steer, 0.0)
+
     def test_keep_lane_uses_route_heading_to_select_current_lane_branch(self):
         vehicle = FakeVehicle()
         straight = FakeWaypoint(transform(x=15.0, y=0.0, yaw=0.0), lane_id=2)
