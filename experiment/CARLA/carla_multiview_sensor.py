@@ -21,6 +21,31 @@ CAMERA_TRANSFORMS = {
 }
 
 
+def radar_closing_speed_mps(relative_velocity_mps: float) -> float:
+    """Convert CARLA radial velocity to a positive range-closing speed.
+
+    On the installed vehicle-mounted radars, decreasing range is represented
+    by a negative radial relative velocity.  Keeping this conversion explicit
+    prevents static road returns behind a moving ego (positive velocity in a
+    rear-facing sensor) from being mistaken for an accelerating rear vehicle.
+    """
+
+    value = float(relative_velocity_mps)
+    if not math.isfinite(value):
+        return 0.0
+    return max(0.0, -value)
+
+
+def radar_relative_height_m(depth_m: float, altitude_rad: float) -> float:
+    """Return a radar point's vertical offset from the sensor origin."""
+
+    depth = float(depth_m)
+    altitude = float(altitude_rad)
+    if not math.isfinite(depth) or not math.isfinite(altitude):
+        return -math.inf
+    return depth * math.sin(altitude)
+
+
 class SynchronizedMultiviewCameraRig:
     """Own CARLA RGB sensors and expose only complete frame bundles.
 
@@ -57,7 +82,9 @@ class SynchronizedMultiviewCameraRig:
         self._latest_returned_frame = -1
         self._retained_frames = int(retained_frames)
         self.sensors: list[Any] = []
-        self._radar_observations: OrderedDict[int, dict[str, Any]] = OrderedDict()
+        self._radar_observations: dict[
+            str, OrderedDict[int, dict[str, Any]]
+        ] = {direction: OrderedDict() for direction in ("front", "rear")}
         self.enable_lidar = bool(enable_lidar)
         self.enable_radar = bool(enable_radar)
         if available_cameras is None:
@@ -115,28 +142,32 @@ class SynchronizedMultiviewCameraRig:
             lidar.listen(self._lidar_callback)
             self.sensors.append(lidar)
         if self.enable_radar:
-            blueprint = library.find("sensor.other.radar")
-            radar_attributes = {
-                "sensor_tick": str(float(sensor_tick)),
-                "horizontal_fov": "30.0",
-                "vertical_fov": "10.0",
-                "range": str(float(radar_range_m)),
-                "points_per_second": "3000",
-            }
-            for key, value in radar_attributes.items():
-                if blueprint.has_attribute(key):
-                    blueprint.set_attribute(key, value)
-            radar = world.spawn_actor(
-                blueprint,
-                carla.Transform(
-                    carla.Location(x=2.0, z=1.0),
-                    carla.Rotation(),
-                ),
-                attach_to=ego,
-                attachment_type=carla.AttachmentType.Rigid,
-            )
-            radar.listen(self._radar_callback)
-            self.sensors.append(radar)
+            for direction, x, yaw in (
+                ("front", 2.0, 0.0),
+                ("rear", -2.0, 180.0),
+            ):
+                blueprint = library.find("sensor.other.radar")
+                radar_attributes = {
+                    "sensor_tick": str(float(sensor_tick)),
+                    "horizontal_fov": "30.0",
+                    "vertical_fov": "10.0",
+                    "range": str(float(radar_range_m)),
+                    "points_per_second": "3000",
+                }
+                for key, value in radar_attributes.items():
+                    if blueprint.has_attribute(key):
+                        blueprint.set_attribute(key, value)
+                radar = world.spawn_actor(
+                    blueprint,
+                    carla.Transform(
+                        carla.Location(x=x, z=1.0),
+                        carla.Rotation(yaw=yaw),
+                    ),
+                    attach_to=ego,
+                    attachment_type=carla.AttachmentType.Rigid,
+                )
+                radar.listen(self._radar_callback(direction))
+                self.sensors.append(radar)
 
     def view_available(self, name: str) -> bool:
         return name in self.available_cameras
@@ -194,54 +225,103 @@ class SynchronizedMultiviewCameraRig:
             while len(self._frames) > self._retained_frames:
                 self._frames.popitem(last=False)
 
-    def _radar_callback(self, measurement: Any) -> None:
-        """Keep a narrow, sensor-derived forward obstacle observation.
+    def _radar_callback(self, direction: str):
+        """Build a callback for one narrow, physical radar direction.
 
         Only physical radar detections are used.  No CARLA actor enumeration,
         role names, scenario ids or event schedules enter this observation.
         """
 
-        frame = int(measurement.frame)
-        candidates: list[dict[str, float]] = []
-        for detection in measurement:
-            depth_m = float(detection.depth)
-            azimuth_deg = float(np.degrees(detection.azimuth))
-            altitude_deg = float(np.degrees(detection.altitude))
-            if (
-                0.5 <= depth_m <= 80.0
-                and abs(azimuth_deg) <= 8.0
-                and abs(altitude_deg) <= 8.0
-            ):
-                candidates.append(
-                    {
-                        "distance_m": depth_m,
-                        "relative_velocity_mps": float(detection.velocity),
-                        "azimuth_deg": azimuth_deg,
-                        "altitude_deg": altitude_deg,
-                    }
-                )
-        nearest = min(candidates, key=lambda item: item["distance_m"], default=None)
-        observation = {
-            "schema_version": "physical_forward_radar/1.0",
-            "sensor_frame": frame,
-            "candidate_count": len(candidates),
-            "nearest_distance_m": (
-                round(float(nearest["distance_m"]), 3) if nearest else None
-            ),
-            "nearest_relative_velocity_mps": (
-                round(float(nearest["relative_velocity_mps"]), 3)
-                if nearest
-                else None
-            ),
-            "nearest_azimuth_deg": (
-                round(float(nearest["azimuth_deg"]), 3) if nearest else None
-            ),
-        }
-        with self._condition:
-            self._radar_observations[frame] = observation
-            while len(self._radar_observations) > self._retained_frames:
-                self._radar_observations.popitem(last=False)
-            self._condition.notify_all()
+        if direction not in {"front", "rear"}:
+            raise ValueError("radar direction must be 'front' or 'rear'")
+
+        def receive(measurement: Any) -> None:
+            frame = int(measurement.frame)
+            candidates: list[dict[str, float]] = []
+            for detection in measurement:
+                depth_m = float(detection.depth)
+                azimuth_deg = float(np.degrees(detection.azimuth))
+                altitude_deg = float(np.degrees(detection.altitude))
+                if (
+                    0.5 <= depth_m <= 80.0
+                    and abs(azimuth_deg) <= 8.0
+                    and abs(altitude_deg) <= 8.0
+                ):
+                    candidates.append(
+                        {
+                            "distance_m": depth_m,
+                            "relative_velocity_mps": float(detection.velocity),
+                            "closing_speed_mps": radar_closing_speed_mps(detection.velocity),
+                            "azimuth_deg": azimuth_deg,
+                            "altitude_deg": altitude_deg,
+                            "relative_height_m": radar_relative_height_m(
+                                depth_m,
+                                detection.altitude,
+                            ),
+                        }
+                    )
+            # The conic radar also intersects the road.  A true vehicle,
+            # cyclist or guardrail provides returns near sensor height;
+            # ground points sit about one metre below this installation.
+            # Keep raw counts for audit, but exclude low ground returns from
+            # collision distance/TTC decisions.
+            obstacles = [
+                item for item in candidates if item["relative_height_m"] >= -0.65
+            ]
+            nearest = min(
+                obstacles,
+                key=lambda item: item["distance_m"],
+                default=None,
+            )
+            # Keep the nearest decreasing-range return separately so static
+            # road/guardrail points cannot hide a fast rear vehicle.
+            closing = [
+                item
+                for item in obstacles
+                if item["closing_speed_mps"] > 0.5
+            ]
+            nearest_closing = min(
+                closing,
+                key=lambda item: item["distance_m"],
+                default=None,
+            )
+            observation = {
+                "schema_version": f"physical_{direction}_radar/1.0",
+                "direction": direction,
+                "sensor_frame": frame,
+                "candidate_count": len(candidates),
+                "obstacle_candidate_count": len(obstacles),
+                "closing_candidate_count": len(closing),
+                "nearest_distance_m": (
+                    round(float(nearest["distance_m"]), 3) if nearest else None
+                ),
+                "nearest_relative_velocity_mps": (
+                    round(float(nearest["relative_velocity_mps"]), 3)
+                    if nearest
+                    else None
+                ),
+                "nearest_azimuth_deg": (
+                    round(float(nearest["azimuth_deg"]), 3) if nearest else None
+                ),
+                "nearest_closing_distance_m": (
+                    round(float(nearest_closing["distance_m"]), 3)
+                    if nearest_closing
+                    else None
+                ),
+                "nearest_closing_velocity_mps": (
+                    round(float(nearest_closing["closing_speed_mps"]), 3)
+                    if nearest_closing
+                    else None
+                ),
+            }
+            with self._condition:
+                observations = self._radar_observations[direction]
+                observations[frame] = observation
+                while len(observations) > self._retained_frames:
+                    observations.popitem(last=False)
+                self._condition.notify_all()
+
+        return receive
 
     def _callback(self, name: str):
         def receive(image: Any) -> None:
@@ -361,30 +441,49 @@ class SynchronizedMultiviewCameraRig:
             (time.monotonic() - started) * 1000.0,
         )
 
-    def latest_radar(self, *, maximum_frame: int | None = None) -> dict[str, Any]:
-        """Return the newest forward radar observation at/before a frame."""
+    def latest_radar(
+        self,
+        direction: str = "front",
+        *,
+        maximum_frame: int | None = None,
+    ) -> dict[str, Any]:
+        """Return the newest directional radar observation at/before a frame."""
+
+        if direction not in {"front", "rear"}:
+            raise ValueError("radar direction must be 'front' or 'rear'")
 
         if not self.enable_radar:
             return {
-                "schema_version": "physical_forward_radar/1.0",
+                "schema_version": f"physical_{direction}_radar/1.0",
+                "direction": direction,
                 "sensor_frame": -1,
                 "candidate_count": 0,
+                "obstacle_candidate_count": 0,
+                "closing_candidate_count": 0,
                 "nearest_distance_m": None,
                 "nearest_relative_velocity_mps": None,
                 "nearest_azimuth_deg": None,
+                "nearest_closing_distance_m": None,
+                "nearest_closing_velocity_mps": None,
             }
         limit = math.inf if maximum_frame is None else int(maximum_frame)
         with self._condition:
-            for frame, observation in reversed(self._radar_observations.items()):
+            observations = self._radar_observations[direction]
+            for frame, observation in reversed(observations.items()):
                 if frame <= limit:
                     return dict(observation)
         return {
-            "schema_version": "physical_forward_radar/1.0",
+            "schema_version": f"physical_{direction}_radar/1.0",
+            "direction": direction,
             "sensor_frame": -1,
             "candidate_count": 0,
+            "obstacle_candidate_count": 0,
+            "closing_candidate_count": 0,
             "nearest_distance_m": None,
             "nearest_relative_velocity_mps": None,
             "nearest_azimuth_deg": None,
+            "nearest_closing_distance_m": None,
+            "nearest_closing_velocity_mps": None,
         }
 
     def close(self) -> None:

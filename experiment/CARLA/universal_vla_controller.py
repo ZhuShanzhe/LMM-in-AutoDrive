@@ -132,6 +132,177 @@ def fuse_forward_radar_risk(
     return result
 
 
+def assess_rear_radar_collision(
+    radar_observation: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Classify a rapidly closing rear radar return using physical TTC."""
+
+    distance_value = radar_observation.get("nearest_closing_distance_m")
+    closing_value = radar_observation.get("nearest_closing_velocity_mps")
+    if not isinstance(distance_value, (int, float)):
+        nearest_velocity = radar_observation.get(
+            "nearest_relative_velocity_mps"
+        )
+        if isinstance(nearest_velocity, (int, float)) and float(
+            nearest_velocity
+        ) < -0.5:
+            distance_value = radar_observation.get("nearest_distance_m")
+            closing_value = -float(nearest_velocity)
+    assessment = {
+        "schema_version": "rear_collision_assessment/1.0",
+        "collision_risk": False,
+        "distance_m": None,
+        "closing_speed_mps": None,
+        "ttc_s": None,
+        "reason": "no_closing_rear_return",
+    }
+    if not all(
+        isinstance(value, (int, float))
+        for value in (distance_value, closing_value)
+    ):
+        return assessment
+    distance_m = float(distance_value)
+    closing_speed_mps = float(closing_value)
+    if (
+        not math.isfinite(distance_m)
+        or not math.isfinite(closing_speed_mps)
+        or distance_m <= 0.0
+        or closing_speed_mps <= 0.0
+    ):
+        return assessment
+    ttc_s = distance_m / closing_speed_mps
+    collision_risk = (
+        closing_speed_mps >= 2.0
+        and distance_m <= 30.0
+        and ttc_s <= 3.0
+    ) or (
+        closing_speed_mps >= 1.0
+        and distance_m <= 6.0
+        and ttc_s <= 4.0
+    )
+    assessment.update(
+        collision_risk=collision_risk,
+        distance_m=round(distance_m, 3),
+        closing_speed_mps=round(closing_speed_mps, 3),
+        ttc_s=round(ttc_s, 3),
+        reason=(
+            "rear_radar_ttc_collision_risk"
+            if collision_risk
+            else "rear_radar_outside_collision_envelope"
+        ),
+    )
+    return assessment
+
+
+def apply_directional_collision_response(
+    final_decision: Mapping[str, Any],
+    *,
+    front_risk: Mapping[str, Any] | None,
+    forward_radar: Mapping[str, Any],
+    rear_radar: Mapping[str, Any],
+    ego_speed_kmh: float,
+    road_speed_limit_kmh: float,
+    route_speed_cap_kmh: float,
+    lane_options: Mapping[str, Mapping[str, Any]] | None = None,
+    allow_evasive_motion: bool = True,
+) -> tuple[dict[str, Any], dict[str, Any], str | None]:
+    """Apply front-first, speed-limited rear-collision avoidance.
+
+    Front risk always wins.  A rear TTC threat may raise speed only below
+    both the map speed limit and the route controller cap.  At that cap it
+    may select an adjacent lane only when static-map legality and a learned
+    side-view risk probe both pass.
+    """
+
+    decision = dict(final_decision)
+    rear = assess_rear_radar_collision(rear_radar)
+    assessment: dict[str, Any] = {
+        "schema_version": "directional_collision_response/1.0",
+        "front_priority": True,
+        "rear": rear,
+        "front_risk_level": str(
+            (front_risk or {}).get("risk_level", "unknown")
+        ).lower(),
+        "selected_response": "none",
+    }
+    if not rear["collision_risk"]:
+        return decision, assessment, None
+
+    front_level = assessment["front_risk_level"]
+    front_distance = forward_radar.get("nearest_distance_m")
+    front_caution = forward_radar.get("caution_distance_m")
+    physical_front_conflict = all(
+        isinstance(value, (int, float))
+        for value in (front_distance, front_caution)
+    ) and float(front_distance) <= float(front_caution)
+    if front_level in {"medium", "high"} or physical_front_conflict:
+        assessment["selected_response"] = "front_brake_priority"
+        return decision, assessment, None
+    if not allow_evasive_motion:
+        assessment["selected_response"] = "text_hazard_stop_priority"
+        return decision, assessment, None
+
+    caps = [
+        float(value)
+        for value in (road_speed_limit_kmh, route_speed_cap_kmh)
+        if isinstance(value, (int, float))
+        and math.isfinite(float(value))
+        and float(value) > 0.0
+    ]
+    if not caps:
+        assessment["selected_response"] = "missing_speed_limit"
+        return decision, assessment, None
+    speed_cap_kmh = min(caps)
+    assessment["speed_cap_kmh"] = round(speed_cap_kmh, 3)
+    if float(ego_speed_kmh) < speed_cap_kmh - 1.5:
+        target_speed_kmh = min(
+            speed_cap_kmh,
+            max(
+                float(ego_speed_kmh) + 8.0,
+                float(decision.get("target_speed_kmh", 0.0) or 0.0),
+            ),
+        )
+        decision.update(
+            action="accelerate",
+            target_speed_kmh=target_speed_kmh,
+            target_lane=None,
+            emergency=False,
+            reason="physical_rear_radar_acceleration_escape",
+            blocked_reason_codes=[],
+        )
+        assessment["selected_response"] = "accelerate_within_speed_limit"
+        return decision, assessment, "physical_rear_radar_acceleration_escape"
+
+    safe_lanes: list[tuple[float, str]] = []
+    for direction in ("left", "right"):
+        option = dict((lane_options or {}).get(direction) or {})
+        side_risk = dict(option.get("risk") or {})
+        if not bool(option.get("legal", False)):
+            continue
+        if str(side_risk.get("risk_level", "high")).lower() != "low":
+            continue
+        high_probability = float(
+            (side_risk.get("probabilities") or {}).get("high", 0.0) or 0.0
+        )
+        safe_lanes.append((high_probability, direction))
+    if safe_lanes:
+        _probability, direction = min(safe_lanes)
+        override = f"physical_rear_radar_lane_change_{direction}_escape"
+        decision.update(
+            action=f"lane_change_{direction}",
+            target_speed_kmh=speed_cap_kmh,
+            target_lane=direction,
+            emergency=False,
+            reason=override,
+            blocked_reason_codes=[],
+        )
+        assessment["selected_response"] = f"safe_{direction}_lane_change"
+        return decision, assessment, override
+
+    assessment["selected_response"] = "hold_no_legal_clear_escape"
+    return decision, assessment, None
+
+
 def build_sensor_policy_state(
     world: Any,
     ego: Any,
@@ -358,8 +529,8 @@ class UniversalVLAController:
         temporal risk state.
         """
 
-        if direction not in {"left", "right"}:
-            raise ValueError("direction must be 'left' or 'right'")
+        if direction not in {"front", "left", "right"}:
+            raise ValueError("direction must be 'front', 'left' or 'right'")
         view_name = direction
         if view_name not in self.available_cameras:
             return {
@@ -436,10 +607,18 @@ class UniversalVLAController:
             vehicle_state=True,
             environment_state=True,
         )
-        radar_observation = self.camera_rig.latest_radar(
+        forward_radar = self.camera_rig.latest_radar(
+            "front",
+            maximum_frame=sensor_frame,
+        )
+        rear_radar = self.camera_rig.latest_radar(
+            "rear",
             maximum_frame=sensor_frame
         )
-        policy_state["sensor_observations"] = {"forward_radar": radar_observation}
+        policy_state["sensor_observations"] = {
+            "forward_radar": forward_radar,
+            "rear_radar": rear_radar,
+        }
         view_tensors = {
             name: images[:, index]
             for index, name in enumerate(CAMERA_ORDER)
@@ -503,15 +682,53 @@ class UniversalVLAController:
         learned_risk = self.pipeline.last_visual_risk_assessment
         risk = fuse_forward_radar_risk(
             learned_risk,
-            radar_observation,
+            forward_radar,
             ego_speed_kmh=ego_speed_kmh,
         )
 
         target_lane_risk = None
+        front_view_risk = None
+        rear_assessment = assess_rear_radar_collision(rear_radar)
+        lane_options: dict[str, dict[str, Any]] = {}
+        if rear_assessment["collision_risk"]:
+            front_view_risk = self.predict_target_lane_risk(batch, "front")
+            road_speed_limit_kmh = 3.6 * float(
+                policy_state["ego"]["speed_limit_mps"]
+            )
+            effective_cap_kmh = min(
+                road_speed_limit_kmh,
+                float(self.route_controller.target_speed_kmh),
+            )
+            front_level = str(
+                front_view_risk.get("risk_level", "high")
+            ).lower()
+            if (
+                parsed.parsed_intent
+                not in {"YIELD", "STOP", "EMERGENCY_BRAKE"}
+                and front_level == "low"
+                and ego_speed_kmh >= effective_cap_kmh - 1.5
+            ):
+                legality_probe = getattr(
+                    self.route_controller,
+                    "autonomous_lane_change_legal",
+                    None,
+                )
+                for direction in ("left", "right"):
+                    legal = bool(
+                        callable(legality_probe)
+                        and legality_probe(direction)
+                    )
+                    lane_options[direction] = {"legal": legal}
+                    if legal:
+                        lane_options[direction]["risk"] = (
+                            self.predict_target_lane_risk(batch, direction)
+                        )
+
         if parsed.requested_lane_direction in {"left", "right"}:
-            target_lane_risk = self.predict_target_lane_risk(
-                batch,
-                parsed.requested_lane_direction,
+            requested_direction = parsed.requested_lane_direction
+            target_lane_risk = dict(
+                lane_options.get(requested_direction, {}).get("risk")
+                or self.predict_target_lane_risk(batch, requested_direction)
             )
 
         canonical = self.fsm.canonical_decision(
@@ -559,6 +776,34 @@ class UniversalVLAController:
             frame=frame,
             fixed_delta_seconds=self._fixed_delta_seconds,
         )
+        directional_override = None
+        directional_assessment = {
+            "schema_version": "directional_collision_response/1.0",
+            "front_priority": True,
+            "rear": rear_assessment,
+            "front_risk_level": "not_probed",
+            "selected_response": "teacher_force_disabled"
+            if self.teacher_force_control
+            else "none",
+        }
+        if not self.teacher_force_control:
+            final_decision, directional_assessment, directional_override = (
+                apply_directional_collision_response(
+                    final_decision,
+                    front_risk=front_view_risk,
+                    forward_radar=risk.get("physical_forward_radar") or {},
+                    rear_radar=rear_radar,
+                    ego_speed_kmh=ego_speed_kmh,
+                    road_speed_limit_kmh=3.6
+                    * float(policy_state["ego"]["speed_limit_mps"]),
+                    route_speed_cap_kmh=float(
+                        self.route_controller.target_speed_kmh
+                    ),
+                    lane_options=lane_options,
+                    allow_evasive_motion=parsed.parsed_intent
+                    not in {"YIELD", "STOP", "EMERGENCY_BRAKE"},
+                )
+            )
         if self.teacher_force_control:
             final_decision = dict(canonical)
             final_decision["reason"] = "training_teacher_force_control"
@@ -570,7 +815,7 @@ class UniversalVLAController:
             target_speed_kmh=float(
                 final_decision.get("target_speed_kmh", 0.0)
             ),
-            override=liveness_override,
+            override=directional_override or liveness_override,
         )
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         response_latency_ms = camera_wait_ms + elapsed_ms
@@ -583,14 +828,16 @@ class UniversalVLAController:
         accepted = (
             str(gated_decision.get("reason", "")).startswith("vla_accepted_")
             and liveness_override is None
+            and directional_override is None
             and not self.teacher_force_control
         )
         self._decision_count += 1
         self._accepted_count += int(accepted)
         self._proposal_actions[proposal["action"]] += 1
         self._final_actions[final_decision["action"]] += 1
-        if liveness_override is not None:
-            self._liveness_overrides[liveness_override] += 1
+        control_override = directional_override or liveness_override
+        if control_override is not None:
+            self._liveness_overrides[control_override] += 1
         record = {
             "schema_version": "unified_vla_decision/1.0",
             "simulation_frame": frame,
@@ -601,18 +848,23 @@ class UniversalVLAController:
             "target_speed_envelope_kmh": parsed.target_speed_kmh,
             "semantic_text": self.fsm.semantic_text(parsed),
             "input_mode": (
-                "text_raw_4view_rgb_lidar_forward_radar_vehicle_environment"
+                "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment"
                 if self.enable_lidar
-                else "text_raw_rgb_forward_radar_vehicle_environment"
+                else "text_raw_rgb_bidirectional_radar_vehicle_environment"
             ),
             "sensor_frame": sensor_frame,
             "sensor_frame_lag": frame - sensor_frame,
             "camera_wait_ms": round(camera_wait_ms, 3),
             "candidate_count": 0,
             "safety_observation_candidate_count": int(
-                radar_observation.get("candidate_count", 0) or 0
+                forward_radar.get("candidate_count", 0) or 0
+            ) + int(
+                rear_radar.get("candidate_count", 0) or 0
             ),
-            "physical_safety_observation": radar_observation,
+            "physical_safety_observation": {
+                "forward_radar": forward_radar,
+                "rear_radar": rear_radar,
+            },
             "policy_truth_access": False,
             "modality_mask": {
                 key: bool(value) for key, value in modality_mask.items()
@@ -621,11 +873,13 @@ class UniversalVLAController:
             "sensor_batch_schema_version": self.modality_schema_version,
             "risk_assessment": risk,
             "target_lane_risk_assessment": target_lane_risk,
+            "front_view_risk_assessment": front_view_risk,
+            "directional_collision_assessment": directional_assessment,
             "vla_proposal": proposal,
             "control_decision": final_decision,
             "model_output_applied": accepted,
             "training_teacher_force_control": self.teacher_force_control,
-            "liveness_override": liveness_override,
+            "liveness_override": control_override,
             "full_decision_latency_ms": round(elapsed_ms, 3),
             "sensor_to_decision_response_ms": round(response_latency_ms, 3),
         }
@@ -688,9 +942,9 @@ class UniversalVLAController:
         return {
             "controller": "universal-vla-controller",
             "input_mode": (
-                "text_raw_4view_rgb_lidar_vehicle_environment"
+                "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment"
                 if self.enable_lidar
-                else "text_raw_4view_rgb_vehicle_environment"
+                else "text_raw_4view_rgb_bidirectional_radar_vehicle_environment"
             ),
             "model_output_used": self._accepted_count > 0,
             "training_teacher_force_control": self.teacher_force_control,

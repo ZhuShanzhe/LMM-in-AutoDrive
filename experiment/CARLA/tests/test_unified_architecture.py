@@ -960,7 +960,7 @@ def test_generic_lane_change_wait_timeout_falls_back_to_crawl():
     assert final["target_speed_kmh"] == 15.0
 
 
-def test_generic_command_speed_floor_only_applies_to_first_deceleration_frame():
+def test_generic_command_speed_floor_persists_for_low_risk_driving_actions():
     from control.generic_temporal_risk_supervisor import (
         GenericTemporalRiskSupervisor,
         TemporalRiskSupervisorConfig,
@@ -990,8 +990,18 @@ def test_generic_command_speed_floor_only_applies_to_first_deceleration_frame():
     assert first["target_speed_kmh"] == 45.0
 
     second, override2 = supervisor.apply(decision, canonical, risk, **kwargs)
-    assert override2 != "low_risk_command_speed_floor"
-    assert second["target_speed_kmh"] == 8.0
+    assert override2 == "low_risk_command_speed_floor"
+    assert second["target_speed_kmh"] == 45.0
+
+    keep_lane, override3 = supervisor.apply(
+        {"action": "keep_lane", "target_speed_kmh": 12.4, "emergency": False},
+        canonical,
+        risk,
+        **kwargs,
+    )
+    assert override3 == "low_risk_command_speed_floor"
+    assert keep_lane["action"] == "keep_lane"
+    assert keep_lane["target_speed_kmh"] == 45.0
 
 
 def test_generic_stationary_high_risk_liveness_prevents_deadlock():
@@ -1128,3 +1138,251 @@ def test_confirmed_physical_radar_high_is_not_downgraded_while_stopped():
     )
     assert override is None
     assert final["action"] == "emergency_brake"
+
+
+def test_high_confidence_visual_risk_uses_radar_guarded_crawl_after_stop():
+    from control.generic_temporal_risk_supervisor import (
+        GenericTemporalRiskSupervisor,
+    )
+
+    supervisor = GenericTemporalRiskSupervisor()
+    emergency = {
+        "action": "emergency_brake",
+        "target_speed_kmh": 0.0,
+        "emergency": True,
+    }
+    risk = {
+        "risk_level": "high",
+        "recommended_action": "emergency_brake",
+        "probabilities": {"low": 0.0, "medium": 0.01, "high": 0.99},
+        "physical_forward_radar": {
+            "nearest_distance_m": 11.5,
+            "emergency_distance_m": 6.0,
+            "caution_distance_m": 12.0,
+        },
+    }
+    kwargs = {
+        "parsed_intent": "KEEP_LANE",
+        "requested_lane_direction": None,
+        "target_lane_risk": None,
+        "resume_active": False,
+        "resume_speed_kmh": 20.0,
+    }
+
+    final, override = supervisor.apply(
+        emergency,
+        {"action": "keep_lane", "target_speed_kmh": 45.0},
+        risk,
+        stationary_elapsed_s=3.0,
+        **kwargs,
+    )
+    latched, override2 = supervisor.apply(
+        emergency,
+        {"action": "keep_lane", "target_speed_kmh": 45.0},
+        risk,
+        stationary_elapsed_s=0.0,
+        **kwargs,
+    )
+
+    assert override == "stationary_high_risk_radar_guarded_crawl"
+    assert final["action"] == "decelerate"
+    assert final["target_speed_kmh"] == 6.0
+    assert final["emergency"] is False
+    assert override2 == "stationary_high_risk_radar_guarded_crawl"
+    assert latched["target_speed_kmh"] == 6.0
+
+
+def test_radar_guarded_crawl_never_overrides_physical_emergency_envelope():
+    from control.generic_temporal_risk_supervisor import (
+        GenericTemporalRiskSupervisor,
+    )
+
+    supervisor = GenericTemporalRiskSupervisor()
+    emergency = {"action": "emergency_brake", "target_speed_kmh": 0.0, "emergency": True}
+    risk = {
+        "risk_level": "high",
+        "recommended_action": "emergency_brake",
+        "probabilities": {"low": 0.0, "medium": 0.0, "high": 1.0},
+        "risk_score": 1.0,
+        "physical_forward_radar": {
+            "nearest_distance_m": 5.5,
+            "emergency_distance_m": 6.0,
+            "caution_distance_m": 12.0,
+        },
+    }
+    final, override = supervisor.apply(
+        emergency, {"action": "keep_lane", "target_speed_kmh": 45.0}, risk,
+        parsed_intent="KEEP_LANE", requested_lane_direction=None,
+        target_lane_risk=None, stationary_elapsed_s=5.0,
+        resume_active=False, resume_speed_kmh=20.0,
+    )
+    assert override is None
+    assert final["action"] == "emergency_brake"
+
+
+def test_rear_ttc_threat_accelerates_without_exceeding_speed_limit():
+    from universal_vla_controller import apply_directional_collision_response
+
+    final, assessment, override = apply_directional_collision_response(
+        {"action": "emergency_brake", "target_speed_kmh": 0.0, "emergency": True},
+        front_risk={"risk_level": "low"},
+        forward_radar={"nearest_distance_m": 40.0, "caution_distance_m": 15.0},
+        rear_radar={
+            "nearest_closing_distance_m": 18.0,
+            "nearest_closing_velocity_mps": 8.0,
+        },
+        ego_speed_kmh=42.0,
+        road_speed_limit_kmh=50.0,
+        route_speed_cap_kmh=60.0,
+    )
+
+    assert override == "physical_rear_radar_acceleration_escape"
+    assert assessment["rear"]["collision_risk"] is True
+    assert assessment["rear"]["ttc_s"] == pytest.approx(2.25)
+    assert final["action"] == "accelerate"
+    assert final["target_speed_kmh"] == pytest.approx(50.0)
+    assert final["emergency"] is False
+
+
+def test_front_collision_risk_preempts_rear_acceleration():
+    from universal_vla_controller import apply_directional_collision_response
+
+    original = {
+        "action": "emergency_brake",
+        "target_speed_kmh": 0.0,
+        "emergency": True,
+    }
+    final, assessment, override = apply_directional_collision_response(
+        original,
+        front_risk={"risk_level": "high"},
+        forward_radar={"nearest_distance_m": 5.0, "caution_distance_m": 12.0},
+        rear_radar={
+            "nearest_closing_distance_m": 10.0,
+            "nearest_closing_velocity_mps": 6.0,
+        },
+        ego_speed_kmh=20.0,
+        road_speed_limit_kmh=50.0,
+        route_speed_cap_kmh=50.0,
+    )
+
+    assert override is None
+    assert assessment["selected_response"] == "front_brake_priority"
+    assert final == original
+
+
+def test_rear_threat_at_speed_limit_changes_only_to_legal_clear_lane():
+    from universal_vla_controller import apply_directional_collision_response
+
+    final, assessment, override = apply_directional_collision_response(
+        {"action": "decelerate", "target_speed_kmh": 30.0, "emergency": False},
+        front_risk={"risk_level": "low"},
+        forward_radar={"nearest_distance_m": 50.0, "caution_distance_m": 15.0},
+        rear_radar={
+            "nearest_closing_distance_m": 15.0,
+            "nearest_closing_velocity_mps": 6.0,
+        },
+        ego_speed_kmh=49.0,
+        road_speed_limit_kmh=50.0,
+        route_speed_cap_kmh=55.0,
+        lane_options={
+            "left": {"legal": False, "risk": {"risk_level": "low"}},
+            "right": {
+                "legal": True,
+                "risk": {
+                    "risk_level": "low",
+                    "probabilities": {"high": 0.03},
+                },
+            },
+        },
+    )
+
+    assert override == "physical_rear_radar_lane_change_right_escape"
+    assert assessment["selected_response"] == "safe_right_lane_change"
+    assert final["action"] == "lane_change_right"
+    assert final["target_lane"] == "right"
+    assert final["target_speed_kmh"] == pytest.approx(50.0)
+
+
+def test_rear_nonclosing_return_does_not_override_control():
+    from universal_vla_controller import apply_directional_collision_response
+
+    original = {"action": "keep_lane", "target_speed_kmh": 40.0, "emergency": False}
+    final, assessment, override = apply_directional_collision_response(
+        original,
+        front_risk={"risk_level": "low"},
+        forward_radar={},
+        rear_radar={
+            "nearest_distance_m": 8.0,
+            "nearest_relative_velocity_mps": 4.0,
+        },
+        ego_speed_kmh=35.0,
+        road_speed_limit_kmh=50.0,
+        route_speed_cap_kmh=50.0,
+    )
+
+    assert override is None
+    assert assessment["rear"]["collision_risk"] is False
+    assert final == original
+
+
+def test_text_hazard_stop_is_not_overridden_by_rear_threat():
+    from universal_vla_controller import apply_directional_collision_response
+
+    original = {"action": "stop", "target_speed_kmh": 0.0, "emergency": False}
+    final, assessment, override = apply_directional_collision_response(
+        original,
+        front_risk={"risk_level": "low"},
+        forward_radar={"nearest_distance_m": 40.0, "caution_distance_m": 12.0},
+        rear_radar={
+            "nearest_closing_distance_m": 12.0,
+            "nearest_closing_velocity_mps": 8.0,
+        },
+        ego_speed_kmh=0.0,
+        road_speed_limit_kmh=50.0,
+        route_speed_cap_kmh=50.0,
+        allow_evasive_motion=False,
+    )
+
+    assert override is None
+    assert assessment["selected_response"] == "text_hazard_stop_priority"
+    assert final == original
+
+
+def test_radar_closing_speed_uses_decreasing_range_sign():
+    from carla_multiview_sensor import radar_closing_speed_mps
+
+    # r13 measured static rear road returns at +ego speed: they are receding,
+    # not rear-collision threats.  A negative radial velocity closes range.
+    assert radar_closing_speed_mps(6.194) == 0.0
+    assert radar_closing_speed_mps(-6.194) == pytest.approx(6.194)
+    assert radar_closing_speed_mps(0.0) == 0.0
+    assert radar_closing_speed_mps(float("nan")) == 0.0
+
+
+def test_legacy_rear_radar_fallback_uses_negative_closing_velocity():
+    from universal_vla_controller import assess_rear_radar_collision
+
+    closing = assess_rear_radar_collision(
+        {"nearest_distance_m": 8.0, "nearest_relative_velocity_mps": -4.0}
+    )
+    receding = assess_rear_radar_collision(
+        {"nearest_distance_m": 8.0, "nearest_relative_velocity_mps": 4.0}
+    )
+
+    assert closing["collision_risk"] is True
+    assert closing["closing_speed_mps"] == pytest.approx(4.0)
+    assert receding["collision_risk"] is False
+
+
+def test_radar_relative_height_separates_road_from_obstacle_returns():
+    import math
+
+    from carla_multiview_sensor import radar_relative_height_m
+
+    road = radar_relative_height_m(12.0, math.radians(-4.8))
+    vehicle_body = radar_relative_height_m(12.0, math.radians(-1.0))
+
+    assert road < -0.65
+    assert vehicle_body > -0.65
+    assert radar_relative_height_m(20.0, 0.0) == pytest.approx(0.0)
+    assert radar_relative_height_m(float("nan"), 0.0) == -math.inf
