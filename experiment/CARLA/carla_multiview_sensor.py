@@ -36,6 +36,16 @@ def radar_closing_speed_mps(relative_velocity_mps: float) -> float:
     return max(0.0, -value)
 
 
+def radar_relative_height_m(depth_m: float, altitude_rad: float) -> float:
+    """Return a radar point's vertical offset from the sensor origin."""
+
+    depth = float(depth_m)
+    altitude = float(altitude_rad)
+    if not math.isfinite(depth) or not math.isfinite(altitude):
+        return -math.inf
+    return depth * math.sin(altitude)
+
+
 class SynchronizedMultiviewCameraRig:
     """Own CARLA RGB sensors and expose only complete frame bundles.
 
@@ -244,10 +254,22 @@ class SynchronizedMultiviewCameraRig:
                             "closing_speed_mps": radar_closing_speed_mps(detection.velocity),
                             "azimuth_deg": azimuth_deg,
                             "altitude_deg": altitude_deg,
+                            "relative_height_m": radar_relative_height_m(
+                                depth_m,
+                                detection.altitude,
+                            ),
                         }
                     )
+            # The conic radar also intersects the road.  A true vehicle,
+            # cyclist or guardrail provides returns near sensor height;
+            # ground points sit about one metre below this installation.
+            # Keep raw counts for audit, but exclude low ground returns from
+            # collision distance/TTC decisions.
+            obstacles = [
+                item for item in candidates if item["relative_height_m"] >= -0.65
+            ]
             nearest = min(
-                candidates,
+                obstacles,
                 key=lambda item: item["distance_m"],
                 default=None,
             )
@@ -255,7 +277,7 @@ class SynchronizedMultiviewCameraRig:
             # road/guardrail points cannot hide a fast rear vehicle.
             closing = [
                 item
-                for item in candidates
+                for item in obstacles
                 if item["closing_speed_mps"] > 0.5
             ]
             nearest_closing = min(
@@ -268,6 +290,7 @@ class SynchronizedMultiviewCameraRig:
                 "direction": direction,
                 "sensor_frame": frame,
                 "candidate_count": len(candidates),
+                "obstacle_candidate_count": len(obstacles),
                 "closing_candidate_count": len(closing),
                 "nearest_distance_m": (
                     round(float(nearest["distance_m"]), 3) if nearest else None
@@ -435,6 +458,7 @@ class SynchronizedMultiviewCameraRig:
                 "direction": direction,
                 "sensor_frame": -1,
                 "candidate_count": 0,
+                "obstacle_candidate_count": 0,
                 "closing_candidate_count": 0,
                 "nearest_distance_m": None,
                 "nearest_relative_velocity_mps": None,
@@ -453,6 +477,7 @@ class SynchronizedMultiviewCameraRig:
             "direction": direction,
             "sensor_frame": -1,
             "candidate_count": 0,
+            "obstacle_candidate_count": 0,
             "closing_candidate_count": 0,
             "nearest_distance_m": None,
             "nearest_relative_velocity_mps": None,

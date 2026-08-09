@@ -109,7 +109,6 @@ class GenericTemporalRiskSupervisor:
         self._resume_intent: str | None = None
         self._crawl_pending = False
         self._high_confirm_count = 0
-        self._consecutive_decelerate_frames = 0
         self._radar_guarded_crawl_active = False
         self._moving_since_frame: int | None = None
         self._decision_history: deque[dict[str, Any]] = deque(
@@ -128,7 +127,6 @@ class GenericTemporalRiskSupervisor:
         self._resume_intent = None
         self._crawl_pending = False
         self._high_confirm_count = 0
-        self._consecutive_decelerate_frames = 0
         self._radar_guarded_crawl_active = False
         self._moving_since_frame = None
         self._decision_history.clear()
@@ -416,22 +414,16 @@ class GenericTemporalRiskSupervisor:
             self._override_counts[reason] += 1
             return decision, reason
 
-        # Generic low-risk command-speed floor: when the text command defines
-        # an explicit speed envelope and the learned risk head says low or
-        # medium (no hazard), a model over-deceleration below that envelope is
-        # treated as a cautious flicker and floored back to the commanded
-        # speed.  Explicit stop/yield commands are never floored.
+        # Generic low-risk text-speed floor: when physical/learned risk is
+        # low, a driving action may not crawl persistently below the explicit
+        # text envelope.  Medium/high risk keeps full authority to decelerate
+        # or stop, and explicit stop commands are never raised.
         canonical_speed = float(canonical.get("target_speed_kmh", 0.0) or 0.0)
-        model_decelerates = str(decision.get("action")) == "decelerate"
+        model_action = str(decision.get("action"))
         model_speed = float(decision.get("target_speed_kmh", 0.0) or 0.0)
-        if model_decelerates:
-            self._consecutive_decelerate_frames += 1
-        else:
-            self._consecutive_decelerate_frames = 0
         if (
             low_risk
-            and model_decelerates
-            and self._consecutive_decelerate_frames <= 1
+            and model_action not in {"stop", "emergency_brake"}
             and not stopped_target
             and str(canonical.get("action"))
             not in {"stop", "emergency_brake"}

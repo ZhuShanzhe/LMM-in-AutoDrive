@@ -960,7 +960,7 @@ def test_generic_lane_change_wait_timeout_falls_back_to_crawl():
     assert final["target_speed_kmh"] == 15.0
 
 
-def test_generic_command_speed_floor_only_applies_to_first_deceleration_frame():
+def test_generic_command_speed_floor_persists_for_low_risk_driving_actions():
     from control.generic_temporal_risk_supervisor import (
         GenericTemporalRiskSupervisor,
         TemporalRiskSupervisorConfig,
@@ -990,8 +990,18 @@ def test_generic_command_speed_floor_only_applies_to_first_deceleration_frame():
     assert first["target_speed_kmh"] == 45.0
 
     second, override2 = supervisor.apply(decision, canonical, risk, **kwargs)
-    assert override2 != "low_risk_command_speed_floor"
-    assert second["target_speed_kmh"] == 8.0
+    assert override2 == "low_risk_command_speed_floor"
+    assert second["target_speed_kmh"] == 45.0
+
+    keep_lane, override3 = supervisor.apply(
+        {"action": "keep_lane", "target_speed_kmh": 12.4, "emergency": False},
+        canonical,
+        risk,
+        **kwargs,
+    )
+    assert override3 == "low_risk_command_speed_floor"
+    assert keep_lane["action"] == "keep_lane"
+    assert keep_lane["target_speed_kmh"] == 45.0
 
 
 def test_generic_stationary_high_risk_liveness_prevents_deadlock():
@@ -1362,3 +1372,17 @@ def test_legacy_rear_radar_fallback_uses_negative_closing_velocity():
     assert closing["collision_risk"] is True
     assert closing["closing_speed_mps"] == pytest.approx(4.0)
     assert receding["collision_risk"] is False
+
+
+def test_radar_relative_height_separates_road_from_obstacle_returns():
+    import math
+
+    from carla_multiview_sensor import radar_relative_height_m
+
+    road = radar_relative_height_m(12.0, math.radians(-4.8))
+    vehicle_body = radar_relative_height_m(12.0, math.radians(-1.0))
+
+    assert road < -0.65
+    assert vehicle_body > -0.65
+    assert radar_relative_height_m(20.0, 0.0) == pytest.approx(0.0)
+    assert radar_relative_height_m(float("nan"), 0.0) == -math.inf
