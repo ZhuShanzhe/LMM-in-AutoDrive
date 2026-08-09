@@ -17,6 +17,7 @@ if str(ROOT) not in sys.path:
 from run_complex_avoidance_town05 import (
     SafetyMonitor,
     audit_command_route_alignment,
+    carla_world_can_be_reused,
     lane_invasion_is_restricted,
     load_config,
     ready_commands_in_order,
@@ -70,6 +71,38 @@ def route_at(*coordinates: tuple[float, float]):
 
 
 class Scene2Town05Tests(unittest.TestCase):
+    def test_matching_actor_clean_world_can_be_reused(self):
+        class FakeWorld:
+            def __init__(self, map_name, actor_types=()):
+                self.map_name = map_name
+                self.actor_types = actor_types
+
+            def get_map(self):
+                return SimpleNamespace(name=self.map_name)
+
+            def get_actors(self):
+                return [
+                    SimpleNamespace(type_id=type_id)
+                    for type_id in self.actor_types
+                ]
+
+        self.assertTrue(
+            carla_world_can_be_reused(
+                FakeWorld("Carla/Maps/Town05_Opt"), "Town05_Opt"
+            )
+        )
+        self.assertFalse(
+            carla_world_can_be_reused(
+                FakeWorld("Carla/Maps/Town04"), "Town05_Opt"
+            )
+        )
+        self.assertFalse(
+            carla_world_can_be_reused(
+                FakeWorld("Carla/Maps/Town05_Opt", ("vehicle.audi.a2",)),
+                "Town05_Opt",
+            )
+        )
+
     def test_all_competition_steps_normalize_to_executable_actions(self):
         config = load_config(
             ROOT / "configs" / "scene_2_town05_runtime.json"

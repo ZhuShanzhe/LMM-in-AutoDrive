@@ -143,8 +143,10 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help=(
             "Disable the demonstration camera and video encoder for fast "
-            "scene/route regression runs. Formal competition runs require "
-            "video evidence."
+            "scene/route regression runs. In a VLA competition run the "
+            "online multimodal cameras remain rendered and synchronized; "
+            "this flag only disables the separate presentation camera and "
+            "video encoder."
         ),
     )
     parser.add_argument("--record-ground-truth", action="store_true")
@@ -866,6 +868,34 @@ def ready_commands_in_order(
     return ready
 
 
+def carla_world_can_be_reused(
+    world: Any,
+    requested_map: str,
+) -> bool:
+    """Return whether an already loaded, actor-clean CARLA world is reusable."""
+
+    try:
+        current_name = str(world.get_map().name)
+        current_asset = current_name.replace("\\", "/").rstrip("/").split("/")[-1]
+        requested_asset = (
+            str(requested_map).replace("\\", "/").rstrip("/").split("/")[-1]
+        )
+        if current_asset != requested_asset:
+            return False
+        blocking_prefixes = (
+            "vehicle.",
+            "walker.pedestrian.",
+            "controller.ai.walker",
+            "sensor.",
+        )
+        return not any(
+            str(getattr(actor, "type_id", "")).startswith(blocking_prefixes)
+            for actor in world.get_actors()
+        )
+    except Exception:
+        return False
+
+
 def main() -> int:
     args = parse_args()
     config_path = args.config.resolve()
@@ -881,8 +911,10 @@ def main() -> int:
     if args.vla_decision_every_n <= 0:
         raise ValueError("--vla-decision-every-n must be positive")
     if args.competition_run:
-        if args.no_video:
-            raise ValueError("--competition-run does not allow --no-video")
+        if args.no_video and not vla_enabled:
+            raise ValueError(
+                "--competition-run --no-video requires --vla-checkpoint"
+            )
         if args.duration != 0.0:
             raise ValueError("--competition-run requires --duration 0")
         if args.start_progress_m != 0.0:
@@ -952,7 +984,13 @@ def main() -> int:
     try:
         client = carla.Client(args.host, args.port)
         client.set_timeout(args.timeout)
-        world = client.load_world(str(config["map"]))
+        current_world = client.get_world()
+        if carla_world_can_be_reused(current_world, str(config["map"])):
+            world = current_world
+            print("CARLA world: reused clean {0}".format(config["map"]))
+        else:
+            world = client.load_world(str(config["map"]))
+            print("CARLA world: loaded {0}".format(config["map"]))
         load_packaged_map_layers(world)
         original_settings = world.get_settings()
         settings = world.get_settings()
@@ -963,7 +1001,9 @@ def main() -> int:
         # Camera-free regression runs do not need Unreal rendering.  Physics,
         # traffic lights, Traffic Manager, collision sensors, and event actors
         # continue to advance in synchronous mode.
-        settings.no_rendering_mode = bool(args.no_video)
+        settings.no_rendering_mode = bool(
+            args.no_video and not args.record_multimodal
+        )
         world.apply_settings(settings)
         apply_weather(world, config["weather"])
 
