@@ -31,7 +31,19 @@ def summarize(records, scenario, goal_distance_m=None):
     speeds = [float(record["ego"]["speed_kmh"]) for record in records]
     response_latencies = [float(record["latency_ms"]["end_to_end"]) for record in records]
     control_latencies = [float(record["latency_ms"]["control"]) for record in records]
+    speed_limit_records = [
+        record
+        for record in records
+        if record.get("ego", {}).get("speed_limit_kmh") is not None
+        and float(record["ego"]["speed_limit_kmh"]) > 0.0
+    ]
     speeding_frames = sum(
+        1
+        for record in speed_limit_records
+        if float(record["ego"]["speed_kmh"])
+        > float(record["ego"]["speed_limit_kmh"]) + 0.5
+    )
+    target_speed_overshoot_frames = sum(
         1
         for record in records
         if record["intent"]["action"] not in (
@@ -39,7 +51,8 @@ def summarize(records, scenario, goal_distance_m=None):
             "decelerate",
             "emergency_brake",
         )
-        and record["ego"]["speed_kmh"] > record["intent"]["target_speed_kmh"] + 5.0
+        and float(record["ego"]["speed_kmh"])
+        > float(record["intent"]["target_speed_kmh"]) + 5.0
     )
 
     goal_reached = False if goal_distance_m is None else distance_m >= float(goal_distance_m)
@@ -70,6 +83,10 @@ def summarize(records, scenario, goal_distance_m=None):
         "illegal_lane_invasion_free": illegal_lane_invasions == 0,
         "speeding_frames": speeding_frames,
         "speeding_rate": round(speeding_frames / len(records), 5),
+        "speed_limit_observed_frames": len(speed_limit_records),
+        "speed_limit_compliance_evaluable": len(speed_limit_records) == len(records),
+        "target_speed_overshoot_frames": target_speed_overshoot_frames,
+        "target_speed_overshoot_rate": round(target_speed_overshoot_frames / len(records), 5),
         "violation_free": violation_free,
         "response_latency_ms_mean": round(sum(response_latencies) / len(response_latencies), 3),
         "response_latency_ms_p95": round(_percentile(response_latencies, 95), 3),

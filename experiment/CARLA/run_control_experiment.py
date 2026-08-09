@@ -1136,6 +1136,7 @@ def main():
                 },
                 "ego": {
                     "speed_kmh": round(get_speed_kmh(ego), 4),
+                    "speed_limit_kmh": round(float(ego.get_speed_limit()), 4),
                     "location": {"x": round(location.x, 3), "y": round(location.y, 3), "z": round(location.z, 3)},
                     "yaw_deg": round(float(ego.get_transform().rotation.yaw), 4),
                     "road": {
@@ -1233,12 +1234,20 @@ def main():
         if async_qwen is not None:
             metrics["async_qwen"] = async_qwen.stats()
         if final_status.get("status") in ("SUCCESS", "FAILURE"):
+            scenario_succeeded = final_status["status"] == "SUCCESS"
+            metrics["scenario_goal_reached"] = scenario_succeeded
+            if scenario_succeeded:
+                metrics["goal_reached"] = True
+                metrics["completion_basis"] = "scenario_status"
+            else:
+                metrics["completion_basis"] = "scenario_failure"
             metrics["task_completed"] = (
-                final_status["status"] == "SUCCESS"
-                and metrics.get("violation_free", False)
+                scenario_succeeded and metrics.get("violation_free", False)
             )
             metrics["scenario_reason"] = final_status.get("reason", "")
         else:
+            metrics["scenario_goal_reached"] = False
+            metrics["completion_basis"] = "external_distance_or_runner_stop"
             metrics["task_completed"] = False
             metrics["scenario_reason"] = runner_stop_reason
         logger.write_summary(metrics)

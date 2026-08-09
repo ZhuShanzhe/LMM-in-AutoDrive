@@ -10,7 +10,7 @@ def make_record(frame, distance_m, speed_kmh=10.0):
         "frame": frame,
         "sim_time_s": frame * 0.05,
         "distance_m": distance_m,
-        "ego": {"speed_kmh": speed_kmh},
+        "ego": {"speed_kmh": speed_kmh, "speed_limit_kmh": 50.0},
         "intent": {"action": "keep_lane", "target_speed_kmh": 20.0},
         "events": {"collision_count": 0, "lane_invasion_count": 0},
         "latency_ms": {"end_to_end": 1.0, "control": 0.5},
@@ -44,6 +44,36 @@ class MetricsResultSemanticsTest(unittest.TestCase):
         )
         self.assertEqual(metrics["speeding_frames"], 0)
         self.assertTrue(metrics["violation_free"])
+        self.assertTrue(metrics["speed_limit_compliance_evaluable"])
+
+    def test_command_speed_transition_is_not_a_road_speeding_violation(self):
+        records = [
+            make_record(1, 0.0, speed_kmh=25.0),
+            make_record(2, 1.0, speed_kmh=20.0),
+        ]
+        for record in records:
+            record["intent"] = {
+                "action": "turn_left",
+                "target_speed_kmh": 15.0,
+            }
+        metrics = summarize(records, "basic_track_5km", goal_distance_m=1.0)
+        self.assertEqual(metrics["speeding_frames"], 0)
+        self.assertEqual(metrics["target_speed_overshoot_frames"], 1)
+        self.assertTrue(metrics["violation_free"])
+
+    def test_road_speed_limit_violation_is_counted(self):
+        records = [make_record(1, 0.0), make_record(2, 1.0, speed_kmh=51.0)]
+        metrics = summarize(records, "basic_track_5km", goal_distance_m=1.0)
+        self.assertEqual(metrics["speeding_frames"], 1)
+        self.assertFalse(metrics["violation_free"])
+
+    def test_missing_legacy_speed_limit_is_reported_as_not_evaluable(self):
+        records = [make_record(1, 0.0), make_record(2, 1.0)]
+        for record in records:
+            record["ego"].pop("speed_limit_kmh")
+        metrics = summarize(records, "legacy_run", goal_distance_m=1.0)
+        self.assertEqual(metrics["speeding_frames"], 0)
+        self.assertFalse(metrics["speed_limit_compliance_evaluable"])
 
     def test_non_illegal_lane_observations_do_not_fail_a_run(self):
         records = [make_record(1, 0.0), make_record(2, 1.0)]
