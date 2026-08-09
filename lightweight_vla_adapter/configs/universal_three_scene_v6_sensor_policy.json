@@ -48,7 +48,9 @@
     "candidate_entities_allowed": false,
     "structured_bev_requires_physical_sensor": true,
     "scene3_structured_bev": "zero_compatibility_tensor",
-    "visual_safety_source": "learned_raw_camera_visual_risk_head"
+    "visual_safety_source": "learned_raw_camera_visual_risk_head",
+    "physical_safety_sensors": ["forward_radar"],
+    "forward_collision_safety_source": "physical_forward_radar_stopping_envelope"
   },
   "deployment": {
     "precision": "fp16",
@@ -57,6 +59,7 @@
     "safety_gate_scope": [
       "learned_visual_collision_risk",
       "learned_visual_lane_change_risk",
+      "physical_forward_radar_collision_envelope",
       "physical_speed_bound"
     ]
   }

@@ -58,6 +58,80 @@ def _speed_mps(actor: Any) -> float:
     )
 
 
+def fuse_forward_radar_risk(
+    learned_risk: Mapping[str, Any],
+    radar_observation: Mapping[str, Any],
+    *,
+    ego_speed_kmh: float,
+) -> dict[str, Any]:
+    """Fuse a physical forward-radar safety envelope with learned risk.
+
+    This is a scene-agnostic safety cage.  It uses only the ego speed and a
+    narrow forward physical-radar return; no actor truth, scenario ids, event
+    ids or scheduled distances are accepted by the function.
+    """
+
+    result = dict(learned_risk)
+    distance_value = radar_observation.get("nearest_distance_m")
+    if not isinstance(distance_value, (int, float)):
+        return result
+    distance_m = float(distance_value)
+    if not math.isfinite(distance_m) or distance_m <= 0.0:
+        return result
+
+    speed_mps = max(0.0, float(ego_speed_kmh) / 3.6)
+    # Emergency envelope: standstill buffer + controller/sensor reaction
+    # travel + braking distance at 6 m/s^2.  The six-metre floor keeps a
+    # stopped vehicle latched instead of allowing the liveness gate to crawl
+    # back into a close obstacle.
+    emergency_distance_m = max(
+        6.0,
+        1.8 + speed_mps * 0.65 + speed_mps * speed_mps / (2.0 * 6.0),
+    )
+    # Earlier comfortable-deceleration envelope at 3.5 m/s^2.
+    caution_distance_m = max(
+        12.0,
+        2.5 + speed_mps + speed_mps * speed_mps / (2.0 * 3.5),
+    )
+    result["physical_forward_radar"] = {
+        **dict(radar_observation),
+        "emergency_distance_m": round(emergency_distance_m, 3),
+        "caution_distance_m": round(caution_distance_m, 3),
+    }
+    learned_probabilities = dict(result.get("probabilities") or {})
+    if learned_probabilities:
+        result["learned_probabilities"] = learned_probabilities
+    reasons = list(result.get("reason_codes") or [])
+
+    if distance_m <= emergency_distance_m:
+        reasons.append("physical_forward_radar_emergency_distance")
+        result.update(
+            risk_level="high",
+            raw_argmax_level=str(result.get("raw_argmax_level", "low")),
+            recommended_action="emergency_brake",
+            reason_codes=list(dict.fromkeys(reasons)),
+            source="learned_visual_risk+physical_forward_radar",
+            probabilities={"low": 0.0, "medium": 0.0, "high": 1.0},
+            risk_score=1.0,
+            horizon_probabilities=[1.0, 1.0, 0.0],
+        )
+        return result
+
+    learned_level = str(result.get("risk_level", "low")).lower()
+    if distance_m <= caution_distance_m and learned_level == "low":
+        reasons.append("physical_forward_radar_caution_distance")
+        result.update(
+            risk_level="medium",
+            raw_argmax_level=str(result.get("raw_argmax_level", "low")),
+            recommended_action="decelerate",
+            reason_codes=list(dict.fromkeys(reasons)),
+            source="learned_visual_risk+physical_forward_radar",
+            probabilities={"low": 0.0, "medium": 1.0, "high": 0.0},
+            risk_score=max(float(result.get("risk_score", 0.0) or 0.0), 0.5),
+        )
+    return result
+
+
 def build_sensor_policy_state(
     world: Any,
     ego: Any,
@@ -362,6 +436,10 @@ class UniversalVLAController:
             vehicle_state=True,
             environment_state=True,
         )
+        radar_observation = self.camera_rig.latest_radar(
+            maximum_frame=sensor_frame
+        )
+        policy_state["sensor_observations"] = {"forward_radar": radar_observation}
         view_tensors = {
             name: images[:, index]
             for index, name in enumerate(CAMERA_ORDER)
@@ -422,7 +500,12 @@ class UniversalVLAController:
             stream_id=intent_key,
             use_model_risk_assessment=True,
         )
-        risk = self.pipeline.last_visual_risk_assessment
+        learned_risk = self.pipeline.last_visual_risk_assessment
+        risk = fuse_forward_radar_risk(
+            learned_risk,
+            radar_observation,
+            ego_speed_kmh=ego_speed_kmh,
+        )
 
         target_lane_risk = None
         if parsed.requested_lane_direction in {"left", "right"}:
@@ -518,15 +601,18 @@ class UniversalVLAController:
             "target_speed_envelope_kmh": parsed.target_speed_kmh,
             "semantic_text": self.fsm.semantic_text(parsed),
             "input_mode": (
-                "text_raw_4view_rgb_lidar_vehicle_environment"
+                "text_raw_4view_rgb_lidar_forward_radar_vehicle_environment"
                 if self.enable_lidar
-                else "text_raw_4view_rgb_vehicle_environment"
+                else "text_raw_rgb_forward_radar_vehicle_environment"
             ),
             "sensor_frame": sensor_frame,
             "sensor_frame_lag": frame - sensor_frame,
             "camera_wait_ms": round(camera_wait_ms, 3),
             "candidate_count": 0,
-            "safety_observation_candidate_count": 0,
+            "safety_observation_candidate_count": int(
+                radar_observation.get("candidate_count", 0) or 0
+            ),
+            "physical_safety_observation": radar_observation,
             "policy_truth_access": False,
             "modality_mask": {
                 key: bool(value) for key, value in modality_mask.items()

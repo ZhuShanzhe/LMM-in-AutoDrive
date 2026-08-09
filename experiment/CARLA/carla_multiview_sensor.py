@@ -1,7 +1,8 @@
-"""Frame-synchronized in-memory RGB rig for online VLA inference."""
+"""Frame-synchronized physical sensor rig for online VLA inference."""
 
 from __future__ import annotations
 
+import math
 import threading
 import time
 from collections import OrderedDict
@@ -42,6 +43,8 @@ class SynchronizedMultiviewCameraRig:
         retained_frames: int = 12,
         enable_lidar: bool = False,
         lidar_range_m: float = 80.0,
+        enable_radar: bool = True,
+        radar_range_m: float = 80.0,
         lidar_channels: int = 32,
         available_cameras: Sequence[str] | None = None,
     ) -> None:
@@ -54,7 +57,9 @@ class SynchronizedMultiviewCameraRig:
         self._latest_returned_frame = -1
         self._retained_frames = int(retained_frames)
         self.sensors: list[Any] = []
+        self._radar_observations: OrderedDict[int, dict[str, Any]] = OrderedDict()
         self.enable_lidar = bool(enable_lidar)
+        self.enable_radar = bool(enable_radar)
         if available_cameras is None:
             available_cameras = CAMERA_ORDER
         unknown = set(available_cameras) - set(CAMERA_ORDER)
@@ -109,6 +114,29 @@ class SynchronizedMultiviewCameraRig:
             )
             lidar.listen(self._lidar_callback)
             self.sensors.append(lidar)
+        if self.enable_radar:
+            blueprint = library.find("sensor.other.radar")
+            radar_attributes = {
+                "sensor_tick": str(float(sensor_tick)),
+                "horizontal_fov": "30.0",
+                "vertical_fov": "10.0",
+                "range": str(float(radar_range_m)),
+                "points_per_second": "3000",
+            }
+            for key, value in radar_attributes.items():
+                if blueprint.has_attribute(key):
+                    blueprint.set_attribute(key, value)
+            radar = world.spawn_actor(
+                blueprint,
+                carla.Transform(
+                    carla.Location(x=2.0, z=1.0),
+                    carla.Rotation(),
+                ),
+                attach_to=ego,
+                attachment_type=carla.AttachmentType.Rigid,
+            )
+            radar.listen(self._radar_callback)
+            self.sensors.append(radar)
 
     def view_available(self, name: str) -> bool:
         return name in self.available_cameras
@@ -165,6 +193,55 @@ class SynchronizedMultiviewCameraRig:
                 self._condition.notify_all()
             while len(self._frames) > self._retained_frames:
                 self._frames.popitem(last=False)
+
+    def _radar_callback(self, measurement: Any) -> None:
+        """Keep a narrow, sensor-derived forward obstacle observation.
+
+        Only physical radar detections are used.  No CARLA actor enumeration,
+        role names, scenario ids or event schedules enter this observation.
+        """
+
+        frame = int(measurement.frame)
+        candidates: list[dict[str, float]] = []
+        for detection in measurement:
+            depth_m = float(detection.depth)
+            azimuth_deg = float(np.degrees(detection.azimuth))
+            altitude_deg = float(np.degrees(detection.altitude))
+            if (
+                0.5 <= depth_m <= 80.0
+                and abs(azimuth_deg) <= 8.0
+                and abs(altitude_deg) <= 8.0
+            ):
+                candidates.append(
+                    {
+                        "distance_m": depth_m,
+                        "relative_velocity_mps": float(detection.velocity),
+                        "azimuth_deg": azimuth_deg,
+                        "altitude_deg": altitude_deg,
+                    }
+                )
+        nearest = min(candidates, key=lambda item: item["distance_m"], default=None)
+        observation = {
+            "schema_version": "physical_forward_radar/1.0",
+            "sensor_frame": frame,
+            "candidate_count": len(candidates),
+            "nearest_distance_m": (
+                round(float(nearest["distance_m"]), 3) if nearest else None
+            ),
+            "nearest_relative_velocity_mps": (
+                round(float(nearest["relative_velocity_mps"]), 3)
+                if nearest
+                else None
+            ),
+            "nearest_azimuth_deg": (
+                round(float(nearest["azimuth_deg"]), 3) if nearest else None
+            ),
+        }
+        with self._condition:
+            self._radar_observations[frame] = observation
+            while len(self._radar_observations) > self._retained_frames:
+                self._radar_observations.popitem(last=False)
+            self._condition.notify_all()
 
     def _callback(self, name: str):
         def receive(image: Any) -> None:
@@ -283,6 +360,32 @@ class SynchronizedMultiviewCameraRig:
             lidar_bev,
             (time.monotonic() - started) * 1000.0,
         )
+
+    def latest_radar(self, *, maximum_frame: int | None = None) -> dict[str, Any]:
+        """Return the newest forward radar observation at/before a frame."""
+
+        if not self.enable_radar:
+            return {
+                "schema_version": "physical_forward_radar/1.0",
+                "sensor_frame": -1,
+                "candidate_count": 0,
+                "nearest_distance_m": None,
+                "nearest_relative_velocity_mps": None,
+                "nearest_azimuth_deg": None,
+            }
+        limit = math.inf if maximum_frame is None else int(maximum_frame)
+        with self._condition:
+            for frame, observation in reversed(self._radar_observations.items()):
+                if frame <= limit:
+                    return dict(observation)
+        return {
+            "schema_version": "physical_forward_radar/1.0",
+            "sensor_frame": -1,
+            "candidate_count": 0,
+            "nearest_distance_m": None,
+            "nearest_relative_velocity_mps": None,
+            "nearest_azimuth_deg": None,
+        }
 
     def close(self) -> None:
         for sensor in self.sensors:

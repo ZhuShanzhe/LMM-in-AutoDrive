@@ -1027,3 +1027,104 @@ def test_generic_stationary_high_risk_liveness_prevents_deadlock():
     assert final["action"] == "decelerate"
     assert final["target_speed_kmh"] == 12.0
     assert final["emergency"] is False
+
+
+def test_physical_forward_radar_emergency_preempts_visual_miss():
+    from universal_vla_controller import fuse_forward_radar_risk
+
+    learned = {
+        "risk_level": "low",
+        "recommended_action": "keep_lane",
+        "reason_codes": [],
+        "probabilities": {"low": 0.96, "medium": 0.02, "high": 0.02},
+        "raw_argmax_level": "low",
+    }
+    fused = fuse_forward_radar_risk(
+        learned,
+        {
+            "schema_version": "physical_forward_radar/1.0",
+            "sensor_frame": 100,
+            "candidate_count": 4,
+            "nearest_distance_m": 5.5,
+        },
+        ego_speed_kmh=5.8,
+    )
+
+    assert fused["risk_level"] == "high"
+    assert fused["recommended_action"] == "emergency_brake"
+    assert fused["probabilities"]["high"] == 1.0
+    assert fused["learned_probabilities"]["low"] == pytest.approx(0.96)
+    assert "physical_forward_radar_emergency_distance" in fused["reason_codes"]
+
+
+def test_physical_forward_radar_uses_speed_dependent_stopping_distance():
+    from universal_vla_controller import fuse_forward_radar_risk
+
+    learned = {
+        "risk_level": "low",
+        "recommended_action": "keep_lane",
+        "reason_codes": [],
+        "probabilities": {"low": 0.9, "medium": 0.08, "high": 0.02},
+    }
+    fused = fuse_forward_radar_risk(
+        learned,
+        {"candidate_count": 1, "nearest_distance_m": 20.0},
+        ego_speed_kmh=50.0,
+    )
+
+    assert fused["risk_level"] == "high"
+    assert fused["physical_forward_radar"]["emergency_distance_m"] > 20.0
+
+
+def test_physical_forward_radar_caution_and_clear_paths():
+    from universal_vla_controller import fuse_forward_radar_risk
+
+    learned = {
+        "risk_level": "low",
+        "recommended_action": "keep_lane",
+        "reason_codes": [],
+        "probabilities": {"low": 0.9, "medium": 0.08, "high": 0.02},
+    }
+    caution = fuse_forward_radar_risk(
+        learned,
+        {"candidate_count": 1, "nearest_distance_m": 10.0},
+        ego_speed_kmh=0.0,
+    )
+    clear = fuse_forward_radar_risk(
+        learned,
+        {"candidate_count": 0, "nearest_distance_m": None},
+        ego_speed_kmh=30.0,
+    )
+
+    assert caution["risk_level"] == "medium"
+    assert caution["recommended_action"] == "decelerate"
+    assert "physical_forward_radar_caution_distance" in caution["reason_codes"]
+    assert clear == learned
+
+
+def test_confirmed_physical_radar_high_is_not_downgraded_while_stopped():
+    from control.generic_temporal_risk_supervisor import (
+        GenericTemporalRiskSupervisor,
+    )
+
+    supervisor = GenericTemporalRiskSupervisor()
+    emergency = {"action": "emergency_brake", "target_speed_kmh": 0.0, "emergency": True}
+    risk = {
+        "risk_level": "high",
+        "recommended_action": "emergency_brake",
+        "probabilities": {"low": 0.0, "medium": 0.0, "high": 1.0},
+        "risk_score": 1.0,
+    }
+    final, override = supervisor.apply(
+        emergency,
+        {"action": "keep_lane", "target_speed_kmh": 45.0},
+        risk,
+        parsed_intent="KEEP_LANE",
+        requested_lane_direction=None,
+        target_lane_risk=None,
+        stationary_elapsed_s=5.0,
+        resume_active=False,
+        resume_speed_kmh=20.0,
+    )
+    assert override is None
+    assert final["action"] == "emergency_brake"
