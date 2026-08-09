@@ -1143,9 +1143,12 @@ def test_confirmed_physical_radar_high_is_not_downgraded_while_stopped():
 def test_high_confidence_visual_risk_uses_radar_guarded_crawl_after_stop():
     from control.generic_temporal_risk_supervisor import (
         GenericTemporalRiskSupervisor,
+        TemporalRiskSupervisorConfig,
     )
 
-    supervisor = GenericTemporalRiskSupervisor()
+    supervisor = GenericTemporalRiskSupervisor(
+        TemporalRiskSupervisorConfig(radar_clear_confirm_frames=2)
+    )
     emergency = {
         "action": "emergency_brake",
         "target_speed_kmh": 0.0,
@@ -1156,6 +1159,9 @@ def test_high_confidence_visual_risk_uses_radar_guarded_crawl_after_stop():
         "recommended_action": "emergency_brake",
         "probabilities": {"low": 0.0, "medium": 0.01, "high": 0.99},
         "physical_forward_radar": {
+            "schema_version": "physical_front_radar/1.0",
+            "sensor_frame": 100,
+            "obstacle_candidate_count": 1,
             "nearest_distance_m": 11.5,
             "emergency_distance_m": 6.0,
             "caution_distance_m": 12.0,
@@ -1169,6 +1175,14 @@ def test_high_confidence_visual_risk_uses_radar_guarded_crawl_after_stop():
         "resume_speed_kmh": 20.0,
     }
 
+    held, held_override = supervisor.apply(
+        emergency,
+        {"action": "keep_lane", "target_speed_kmh": 45.0},
+        risk,
+        stationary_elapsed_s=3.0,
+        **kwargs,
+    )
+    risk["physical_forward_radar"]["sensor_frame"] = 101
     final, override = supervisor.apply(
         emergency,
         {"action": "keep_lane", "target_speed_kmh": 45.0},
@@ -1177,19 +1191,71 @@ def test_high_confidence_visual_risk_uses_radar_guarded_crawl_after_stop():
         **kwargs,
     )
     latched, override2 = supervisor.apply(
-        emergency,
-        {"action": "keep_lane", "target_speed_kmh": 45.0},
-        risk,
-        stationary_elapsed_s=0.0,
-        **kwargs,
+        emergency, {"action": "keep_lane", "target_speed_kmh": 45.0}, risk,
+        stationary_elapsed_s=0.0, **kwargs,
     )
 
+    assert held_override is None
+    assert held["action"] == "emergency_brake"
     assert override == "stationary_high_risk_radar_guarded_crawl"
     assert final["action"] == "decelerate"
     assert final["target_speed_kmh"] == 6.0
     assert final["emergency"] is False
     assert override2 == "stationary_high_risk_radar_guarded_crawl"
     assert latched["target_speed_kmh"] == 6.0
+
+
+def test_high_confidence_visual_risk_accepts_confirmed_empty_radar_frames():
+    from control.generic_temporal_risk_supervisor import (
+        GenericTemporalRiskSupervisor,
+        TemporalRiskSupervisorConfig,
+    )
+
+    supervisor = GenericTemporalRiskSupervisor(
+        TemporalRiskSupervisorConfig(radar_clear_confirm_frames=2)
+    )
+    emergency = {
+        "action": "emergency_brake",
+        "target_speed_kmh": 0.0,
+        "emergency": True,
+    }
+    risk = {
+        "risk_level": "high",
+        "recommended_action": "emergency_brake",
+        "probabilities": {"low": 0.0, "medium": 0.01, "high": 0.99},
+        "physical_forward_radar": {
+            "schema_version": "physical_front_radar/1.0",
+            "sensor_frame": 200,
+            "obstacle_candidate_count": 0,
+            "nearest_distance_m": None,
+            "emergency_distance_m": 6.0,
+            "caution_distance_m": 12.0,
+        },
+    }
+    kwargs = {
+        "parsed_intent": "KEEP_LANE",
+        "requested_lane_direction": None,
+        "target_lane_risk": None,
+        "stationary_elapsed_s": 3.0,
+        "resume_active": False,
+        "resume_speed_kmh": 20.0,
+    }
+
+    held, held_override = supervisor.apply(
+        emergency, {"action": "keep_lane", "target_speed_kmh": 45.0}, risk,
+        **kwargs,
+    )
+    risk["physical_forward_radar"]["sensor_frame"] = 201
+    final, override = supervisor.apply(
+        emergency, {"action": "keep_lane", "target_speed_kmh": 45.0}, risk,
+        **kwargs,
+    )
+
+    assert held_override is None
+    assert held["action"] == "emergency_brake"
+    assert override == "stationary_high_risk_radar_guarded_crawl"
+    assert final["action"] == "decelerate"
+    assert final["target_speed_kmh"] == 6.0
 
 
 def test_radar_guarded_crawl_never_overrides_physical_emergency_envelope():
@@ -1202,9 +1268,12 @@ def test_radar_guarded_crawl_never_overrides_physical_emergency_envelope():
     risk = {
         "risk_level": "high",
         "recommended_action": "emergency_brake",
-        "probabilities": {"low": 0.0, "medium": 0.0, "high": 1.0},
-        "risk_score": 1.0,
+        "probabilities": {"low": 0.85, "medium": 0.05, "high": 0.10},
+        "risk_score": 0.10,
         "physical_forward_radar": {
+            "schema_version": "physical_front_radar/1.0",
+            "sensor_frame": 300,
+            "obstacle_candidate_count": 1,
             "nearest_distance_m": 5.5,
             "emergency_distance_m": 6.0,
             "caution_distance_m": 12.0,

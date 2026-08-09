@@ -46,6 +46,7 @@ class TemporalRiskSupervisorConfig:
     stopped_speed_kmh: float = 0.5
     lane_change_wait_timeout_s: float = 8.0
     radar_guarded_crawl_speed_kmh: float = 6.0
+    radar_clear_confirm_frames: int = 3
     immediate_high_probability: float = 0.80
     immediate_risk_score: float = 0.70
     immediate_horizon_probability: float = 0.65
@@ -82,6 +83,10 @@ class TemporalRiskSupervisorConfig:
             raise ValueError(
                 "radar_guarded_crawl_speed_kmh must be positive"
             )
+        if self.radar_clear_confirm_frames < 1:
+            raise ValueError(
+                "radar_clear_confirm_frames must be positive"
+            )
         for name in (
             "immediate_high_probability",
             "immediate_risk_score",
@@ -110,6 +115,8 @@ class GenericTemporalRiskSupervisor:
         self._crawl_pending = False
         self._high_confirm_count = 0
         self._radar_guarded_crawl_active = False
+        self._radar_clear_count = 0
+        self._last_radar_sensor_frame: int | None = None
         self._moving_since_frame: int | None = None
         self._decision_history: deque[dict[str, Any]] = deque(
             maxlen=self.config.decision_history_size
@@ -128,6 +135,8 @@ class GenericTemporalRiskSupervisor:
         self._crawl_pending = False
         self._high_confirm_count = 0
         self._radar_guarded_crawl_active = False
+        self._radar_clear_count = 0
+        self._last_radar_sensor_frame = None
         self._moving_since_frame = None
         self._decision_history.clear()
         self._last_decision_frame = None
@@ -309,27 +318,68 @@ class GenericTemporalRiskSupervisor:
         radar_distance = radar.get("nearest_distance_m")
         radar_emergency_distance = radar.get("emergency_distance_m")
         radar_caution_distance = radar.get("caution_distance_m")
+        radar_obstacle_count = radar.get("obstacle_candidate_count")
+        radar_sensor_frame = radar.get("sensor_frame")
         radar_guarded_clearance = False
-        if all(
-            isinstance(value, (int, float))
-            for value in (
-                radar_distance,
-                radar_emergency_distance,
-                radar_caution_distance,
+        radar_physical_emergency = False
+        radar_ready = (
+            str(radar.get("schema_version", "")).startswith(
+                "physical_front_radar/"
             )
-        ):
-            distance_m = float(radar_distance)
+            and isinstance(radar_sensor_frame, int)
+            and isinstance(radar_emergency_distance, (int, float))
+            and isinstance(radar_caution_distance, (int, float))
+        )
+        if radar_ready:
             emergency_m = float(radar_emergency_distance)
             caution_m = float(radar_caution_distance)
-            radar_guarded_clearance = (
-                math.isfinite(distance_m)
-                and math.isfinite(emergency_m)
+            radar_ready = (
+                math.isfinite(emergency_m)
                 and math.isfinite(caution_m)
-                and distance_m > emergency_m + 0.25
-                and distance_m <= caution_m + 4.0
+                and emergency_m > 0.0
+                and caution_m > emergency_m
             )
-        if risk_level != "high" or not radar_guarded_clearance:
+            no_obstacle = (
+                radar_distance is None
+                and isinstance(radar_obstacle_count, int)
+                and radar_obstacle_count == 0
+            )
+            safe_distance = False
+            if isinstance(radar_distance, (int, float)):
+                distance_m = float(radar_distance)
+                radar_physical_emergency = (
+                    math.isfinite(distance_m)
+                    and distance_m <= emergency_m + 0.25
+                )
+                safe_distance = (
+                    math.isfinite(distance_m)
+                    and not radar_physical_emergency
+                )
+            radar_guarded_clearance = bool(
+                radar_ready and (no_obstacle or safe_distance)
+            )
+
+        if risk_level != "high":
+            self._radar_clear_count = 0
+            self._last_radar_sensor_frame = None
             self._radar_guarded_crawl_active = False
+        elif radar_guarded_clearance:
+            if radar_sensor_frame != self._last_radar_sensor_frame:
+                self._radar_clear_count += 1
+                self._last_radar_sensor_frame = int(radar_sensor_frame)
+        else:
+            self._radar_clear_count = 0
+            self._last_radar_sensor_frame = (
+                int(radar_sensor_frame)
+                if isinstance(radar_sensor_frame, int)
+                else None
+            )
+            self._radar_guarded_crawl_active = False
+        radar_guarded_confirmed = (
+            radar_guarded_clearance
+            and self._radar_clear_count
+            >= self.config.radar_clear_confirm_frames
+        )
 
         # Generic unconfirmed-stop crawl floor: when the learned risk head says
         # low/medium and the text envelope does not request a stop, a model
@@ -374,9 +424,12 @@ class GenericTemporalRiskSupervisor:
             return decision, OVERRIDE_LANE_CHANGE_TIMEOUT
 
         # Generic stationary high-risk liveness: a learned high signal while
-        # the ego has been stopped for a while without an explicit text stop
-        # is treated as a view false-positive and downgraded to a cautious
-        # crawl, so the vehicle never deadlocks on an empty scene.
+        # the ego has been stopped for a while without an explicit text stop is
+        # downgraded only after several distinct front-radar frames confirm
+        # physical clearance.  A valid no-obstacle return and an obstacle beyond
+        # the emergency envelope are both clear; a missing radar snapshot is
+        # never clear.  This prevents visual false-positive deadlocks without
+        # weakening the physical emergency envelope.
         stationary_high = (
             risk_level == "high"
             and (
@@ -385,14 +438,15 @@ class GenericTemporalRiskSupervisor:
             )
             and str(decision.get("action")) == "emergency_brake"
             and parsed_intent not in {"STOP", "EMERGENCY_BRAKE"}
+            and not radar_physical_emergency
         )
         unconfirmed_high = (
             high_probability < self.config.immediate_high_probability
             and risk_score < self.config.immediate_risk_score
             and imminent_horizon < self.config.immediate_horizon_probability
         )
-        if stationary_high and (unconfirmed_high or radar_guarded_clearance):
-            radar_guarded = radar_guarded_clearance
+        if stationary_high and (unconfirmed_high or radar_guarded_confirmed):
+            radar_guarded = radar_guarded_confirmed
             self._radar_guarded_crawl_active = radar_guarded
             speed_kmh = (
                 self.config.radar_guarded_crawl_speed_kmh
