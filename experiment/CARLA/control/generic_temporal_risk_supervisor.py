@@ -44,6 +44,9 @@ class TemporalRiskSupervisorConfig:
     high_confirm_frames: int = 3
     stopped_speed_kmh: float = 0.5
     lane_change_wait_timeout_s: float = 8.0
+    immediate_high_probability: float = 0.80
+    immediate_risk_score: float = 0.70
+    immediate_horizon_probability: float = 0.65
 
     def __post_init__(self) -> None:
         if self.history_size < 1:
@@ -70,6 +73,14 @@ class TemporalRiskSupervisorConfig:
             or self.lane_change_wait_timeout_s <= 0.0
         ):
             raise ValueError("lane_change_wait_timeout_s must be positive")
+        for name in (
+            "immediate_high_probability",
+            "immediate_risk_score",
+            "immediate_horizon_probability",
+        ):
+            value = float(getattr(self, name))
+            if not 0.0 < value < 1.0:
+                raise ValueError(f"{name} must be between 0 and 1")
 
 
 class GenericTemporalRiskSupervisor:
@@ -272,6 +283,18 @@ class GenericTemporalRiskSupervisor:
         stop_like = str(decision.get("action")) in {"stop", "emergency_brake"}
         stopped_target = float(decision.get("target_speed_kmh", 0.0)) <= 0.1
         moving = self._moving_since_frame is not None
+        probabilities = risk.get("probabilities") or {}
+        high_probability = float(probabilities.get("high", 0.0) or 0.0)
+        risk_score = float(risk.get("risk_score", 0.0) or 0.0)
+        horizons = risk.get("horizon_probabilities") or []
+        imminent_horizon = max(
+            [float(value) for value in horizons[:2]] or [0.0]
+        )
+        immediate_high = (
+            high_probability >= self.config.immediate_high_probability
+            or risk_score >= self.config.immediate_risk_score
+            or imminent_horizon >= self.config.immediate_horizon_probability
+        )
 
         # Generic unconfirmed-stop crawl floor: when the learned risk head says
         # low/medium and the text envelope does not request a stop, a model
@@ -324,6 +347,9 @@ class GenericTemporalRiskSupervisor:
             and stationary_elapsed_s >= 2.0
             and str(decision.get("action")) == "emergency_brake"
             and parsed_intent not in {"STOP", "EMERGENCY_BRAKE"}
+            and high_probability < self.config.immediate_high_probability
+            and risk_score < self.config.immediate_risk_score
+            and imminent_horizon < self.config.immediate_horizon_probability
         ):
             decision.update(
                 action="decelerate",
@@ -375,6 +401,7 @@ class GenericTemporalRiskSupervisor:
             if (
                 moving
                 and not stop_intent
+                and not immediate_high
                 and self._high_confirm_count + 1
                 < self.config.high_confirm_frames
             ):
@@ -390,7 +417,10 @@ class GenericTemporalRiskSupervisor:
                 )
                 self._override_counts[OVERRIDE_RISK_CONFIRMATION] += 1
                 return decision, OVERRIDE_RISK_CONFIRMATION
-            self._high_confirm_count = 0
+            # Keep a confirmed high latched until risk actually clears; the
+            # old reset alternated persistent hazards between emergency and
+            # crawl every decision interval and increased stopping distance.
+            self._high_confirm_count = self.config.high_confirm_frames
             self._crawl_pending = False
         else:
             crawl_decision = (

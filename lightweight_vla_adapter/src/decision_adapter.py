@@ -160,6 +160,9 @@ class LightweightDecisionAdapter(nn.Module):
         self.use_temporal_risk = bool(use_temporal_risk)
         self.risk_type_count = int(risk_type_count)
         if self.use_temporal_risk:
+            # This is the categorical risk output consumed by the runtime
+            # safety gate. The other temporal heads remain auxiliary tasks.
+            self.temporal_visual_risk_head = nn.Linear(hidden_size, 3)
             self.temporal_risk_encoder = nn.GRU(
                 hidden_size * 3,
                 hidden_size,
@@ -181,6 +184,7 @@ class LightweightDecisionAdapter(nn.Module):
             self.lane_risk_head = nn.Linear(hidden_size, 6)
             self.risk_uncertainty_head = nn.Linear(hidden_size, 1)
         else:
+            self.temporal_visual_risk_head = None
             self.temporal_risk_encoder = None
             self.temporal_risk_projection = None
             self.ordinal_risk_head = None
@@ -358,6 +362,12 @@ class LightweightDecisionAdapter(nn.Module):
                 temporal_used = True
             else:
                 temporal_context = self.temporal_risk_projection(risk_input)
+            # Preserve the independently trained single-frame risk prior;
+            # temporal learning supplies only a context-dependent residual.
+            visual_risk_logits = (
+                visual_risk_logits
+                + self.temporal_visual_risk_head(temporal_context)
+            )
             ordinal_risk_logits = self.ordinal_risk_head(temporal_context)
             risk_score = torch.sigmoid(
                 self.risk_score_head(temporal_context)

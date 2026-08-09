@@ -472,6 +472,33 @@ def test_cautious_crawl_holds_single_high_frame_once():
     )
     assert override is None
     assert final["action"] == "emergency_brake"
+    # A persistent high remains latched; it must not alternate back to crawl.
+    final, override = supervisor.apply(
+        emergency,
+        emergency,
+        {"risk_level": "high", "recommended_action": "emergency_brake"},
+        parsed_intent="KEEP_LANE",
+        requested_lane_direction=None,
+        target_lane_risk=None,
+        stationary_elapsed_s=0.0,
+        resume_active=False,
+        resume_speed_kmh=32.0,
+    )
+    assert override is None
+    assert final["action"] == "emergency_brake"
+
+
+def test_high_confidence_temporal_risk_brakes_without_confirmation_delay():
+    from control.generic_temporal_risk_supervisor import (
+        GenericTemporalRiskSupervisor,
+        TemporalRiskSupervisorConfig,
+    )
+    supervisor = GenericTemporalRiskSupervisor(TemporalRiskSupervisorConfig())
+    supervisor.observe(frame=10, timestamp_s=0.5, parsed_intent="KEEP_LANE", risk_level="high", target_lane_risk_level=None, ego_speed_kmh=30.0, requested_lane_direction=None)
+    emergency = {"action": "emergency_brake", "target_speed_kmh": 0.0, "emergency": True}
+    risk = {"risk_level": "high", "recommended_action": "emergency_brake", "probabilities": {"high": 0.91}}
+    final, override = supervisor.apply(emergency, emergency, risk, parsed_intent="KEEP_LANE", requested_lane_direction=None, target_lane_risk=None, stationary_elapsed_s=0.0, resume_active=False, resume_speed_kmh=32.0)
+    assert override is None and final["action"] == "emergency_brake"
 
 
 def test_unconfirmed_stop_at_low_risk_uses_crawl_floor():

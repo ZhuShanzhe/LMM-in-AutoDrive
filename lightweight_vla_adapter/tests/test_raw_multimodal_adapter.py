@@ -341,6 +341,10 @@ class RawMultimodalAdapterTests(unittest.TestCase):
 
         self.assertFalse(single.temporal_used)
         self.assertTrue(temporal.temporal_used)
+        self.assertIsNotNone(adapter.temporal_visual_risk_head)
+        self.assertEqual(single.visual_risk_logits.shape, (1, 3))
+        self.assertEqual(temporal.visual_risk_logits.shape, (1, 3))
+        self.assertFalse(torch.equal(single.visual_risk_logits, temporal.visual_risk_logits))
         self.assertEqual(single.ordinal_risk_logits.shape, (1, 2))
         self.assertEqual(single.risk_score.shape, (1,))
         self.assertEqual(single.risk_type_logits.shape, (1, 6))

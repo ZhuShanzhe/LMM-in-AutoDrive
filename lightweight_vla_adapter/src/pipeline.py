@@ -20,6 +20,10 @@ def decode_visual_risk_assessment(
     logits: torch.Tensor,
     *,
     high_confidence_threshold: float = VISUAL_HIGH_CONFIDENCE_THRESHOLD,
+    temporal_used: bool = False,
+    risk_score: torch.Tensor | None = None,
+    risk_horizon_logits: torch.Tensor | None = None,
+    risk_uncertainty: torch.Tensor | None = None,
 ) -> dict[str, Any]:
     """Convert the learned visual-risk head into the safety-gate contract.
 
@@ -50,6 +54,22 @@ def decode_visual_risk_assessment(
     reason_codes = (
         [] if level == "low" else [f"learned_visual_risk_{level}"]
     )
+    score_value = None
+    if risk_score is not None:
+        score_value = round(float(risk_score.detach().float()[0].cpu()), 6)
+    horizon_probabilities = None
+    if risk_horizon_logits is not None:
+        horizon_probabilities = [
+            round(float(value), 6)
+            for value in torch.sigmoid(
+                risk_horizon_logits.detach().float()[0]
+            ).cpu()
+        ]
+    uncertainty_value = None
+    if risk_uncertainty is not None:
+        uncertainty_value = round(
+            float(risk_uncertainty.detach().float()[0].cpu()), 6
+        )
     return {
         "risk_level": level,
         "recommended_action": recommended,
@@ -64,7 +84,15 @@ def decode_visual_risk_assessment(
             }
             for direction in ("left", "right")
         },
-        "source": "learned_raw_camera_visual_risk_head",
+        "source": (
+            "learned_temporal_multisensor_risk_head"
+            if temporal_used
+            else "learned_raw_camera_visual_risk_head"
+        ),
+        "temporal_used": bool(temporal_used),
+        "risk_score": score_value,
+        "horizon_probabilities": horizon_probabilities,
+        "risk_uncertainty": uncertainty_value,
         "raw_argmax_level": raw_level,
         "high_confidence_threshold": high_confidence_threshold,
         "probabilities": {
@@ -187,6 +215,10 @@ class LightweightVLAPipeline:
         self._last_visual_risk_assessment = decode_visual_risk_assessment(
             output.visual_risk_logits,
             high_confidence_threshold=self.high_confidence_threshold,
+            temporal_used=output.temporal_used,
+            risk_score=output.risk_score,
+            risk_horizon_logits=output.risk_horizon_logits,
+            risk_uncertainty=output.risk_uncertainty,
         )
         if self.model.use_temporal_risk:
             self._risk_history.append(output.risk_input_features.detach())
@@ -252,6 +284,10 @@ class LightweightVLAPipeline:
         return decode_visual_risk_assessment(
             output.visual_risk_logits,
             high_confidence_threshold=self.high_confidence_threshold,
+            temporal_used=output.temporal_used,
+            risk_score=output.risk_score,
+            risk_horizon_logits=output.risk_horizon_logits,
+            risk_uncertainty=output.risk_uncertainty,
         )
 
     @property

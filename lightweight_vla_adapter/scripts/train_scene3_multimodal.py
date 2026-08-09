@@ -43,6 +43,14 @@ class Scene3Dataset(Dataset):
         self.augment = augment
         self.intent_max_length = int(intent_max_length)
         self.bev_input_size = tuple(int(value) for value in bev_input_size)
+        history_path = self.root / "temporal_history_features.pt"
+        self.temporal_history_features = (
+            torch.load(
+                history_path, map_location="cpu", weights_only=True, mmap=True
+            )
+            if history_path.exists()
+            else None
+        )
 
     def __len__(self) -> int:
         return len(self.rows)
@@ -149,6 +157,14 @@ class Scene3Dataset(Dataset):
                 row.get("counterfactual_set_id", row.get("sample_id", index))
             ),
             "source_dataset": str(row.get("source_dataset", "CARLA")),
+            "history_risk_features": (
+                self.temporal_history_features[
+                    int(row["temporal_history_index"])
+                ]
+                if self.temporal_history_features is not None
+                and row.get("temporal_history_index") is not None
+                else torch.empty((0, 0), dtype=torch.float32)
+            ),
             "risk_score_label": (
                 torch.tensor(float(row["risk_score"]))
                 if row.get("risk_score") is not None
@@ -217,6 +233,28 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--emergency-recall-margin",
+        type=float,
+        default=0.0,
+        help="Clamp penalty pushing P(emergency_brake) above this margin.",
+    )
+    parser.add_argument(
+        "--freeze-risk-feature-encoder",
+        action="store_true",
+        help=(
+            "Keep camera/BEV/ego risk feature encoders frozen when using "
+            "precomputed temporal history features."
+        ),
+    )
+    parser.add_argument(
+        "--freeze-base-policy",
+        action="store_true",
+        help=(
+            "Freeze the pretrained single-frame policy and train only the "
+            "temporal residual/auxiliary risk modules."
+        ),
+    )
+    parser.add_argument(
         "--unfreeze-epoch",
         type=int,
         default=None,
@@ -277,6 +315,11 @@ def model_kwargs(
         intent_mask=batch["intent_mask"].to(device),
         camera_view_mask=batch["camera_view_mask"].to(device),
     )
+    history = batch.get("history_risk_features")
+    if history is not None and history.numel() > 0:
+        result["history_risk_features"] = history.to(
+            device=device, dtype=torch.float32
+        )
     if config is not None and not bool(
         config.get("use_candidate_entities", True)
     ):
@@ -311,8 +354,10 @@ def evaluate(
     totals = Counter()
     action_totals = Counter()
     action_correct = Counter()
+    action_predicted = Counter()
     risk_totals = Counter()
     risk_correct = Counter()
+    risk_thresholds = (0.55, 0.70, 0.75, 0.80, 0.85, 0.90)
     speed_error = 0.0
     environment_pair_predictions: dict[str, dict[str, tuple[float, float]]] = {}
     with torch.inference_mode():
@@ -327,6 +372,32 @@ def evaluate(
             totals["risk_correct"] += int(
                 (output.visual_risk_logits.argmax(-1) == risk).sum()
             )
+            risk_probabilities = F.softmax(
+                output.visual_risk_logits, dim=-1
+            )
+            for threshold in risk_thresholds:
+                key = f"{threshold:.2f}"
+                predicted_high = risk_probabilities[:, 2] >= threshold
+                true_high = risk == RISK_LABELS["high"]
+                true_low = risk == RISK_LABELS["low"]
+                true_non_high = ~true_high
+                totals[f"high_true@{key}"] += int(true_high.sum())
+                totals[f"high_tp@{key}"] += int(
+                    (predicted_high & true_high).sum()
+                )
+                totals[f"low_true@{key}"] += int(true_low.sum())
+                totals[f"low_fp@{key}"] += int(
+                    (predicted_high & true_low).sum()
+                )
+                totals[f"non_high_true@{key}"] += int(
+                    true_non_high.sum()
+                )
+                totals[f"non_high_fp@{key}"] += int(
+                    (predicted_high & true_non_high).sum()
+                )
+                totals[f"predicted_high@{key}"] += int(
+                    predicted_high.sum()
+                )
             predicted_risk = output.visual_risk_logits.argmax(-1)
             for label, prediction in zip(
                 risk.detach().cpu(), predicted_risk.detach().cpu()
@@ -343,6 +414,7 @@ def evaluate(
                 name = ACTION_LABELS[int(label)]
                 action_totals[name] += 1
                 action_correct[name] += int(label == prediction)
+                action_predicted[ACTION_LABELS[int(prediction)]] += 1
                 if variant == "visual_counterfactual":
                     totals["visual_counterfactual_count"] += 1
                     totals["visual_counterfactual_correct"] += int(
@@ -374,6 +446,10 @@ def evaluate(
             "correct": action_correct[name],
             "samples": action_totals[name],
             "accuracy": action_correct[name] / action_totals[name],
+            "precision": (
+                action_correct[name] / max(1, action_predicted[name])
+            ),
+            "predicted": action_predicted[name],
         }
         for name in sorted(action_totals)
     }
@@ -398,6 +474,18 @@ def evaluate(
         target_delta = counterfactual[1] - observed[1]
         pair_order_correct += int(predicted_delta * target_delta > 0.0)
         pair_delta_error += abs(predicted_delta - target_delta)
+    risk_operating_points = {}
+    for threshold in risk_thresholds:
+        key = f"{threshold:.2f}"
+        risk_operating_points[key] = {
+            "high_recall": totals[f"high_tp@{key}"]
+            / max(1, totals[f"high_true@{key}"]),
+            "low_false_positive_rate": totals[f"low_fp@{key}"]
+            / max(1, totals[f"low_true@{key}"]),
+            "non_high_false_positive_rate": totals[f"non_high_fp@{key}"]
+            / max(1, totals[f"non_high_true@{key}"]),
+            "predicted_high_rate": totals[f"predicted_high@{key}"] / count,
+        }
     return {
         "samples": totals["count"],
         "action_accuracy": totals["action_correct"] / count,
@@ -410,6 +498,7 @@ def evaluate(
             item["accuracy"] for item in per_risk.values()
         ),
         "per_risk_accuracy": per_risk,
+        "risk_operating_points": risk_operating_points,
         "speed_mae_kmh": speed_error / count,
         "visual_counterfactual_accuracy": (
             totals["visual_counterfactual_correct"]
@@ -446,14 +535,52 @@ def main() -> None:
         incompatible = model.load_state_dict(compatible, strict=False)
         if incompatible.unexpected_keys:
             raise RuntimeError(str(incompatible.unexpected_keys))
+        temporal_residual_zero_initialized = False
+        if (
+            model.temporal_visual_risk_head is not None
+            and "temporal_visual_risk_head.weight" in incompatible.missing_keys
+        ):
+            nn.init.zeros_(model.temporal_visual_risk_head.weight)
+            nn.init.zeros_(model.temporal_visual_risk_head.bias)
+            temporal_residual_zero_initialized = True
         initialization = {
             "checkpoint": str(args.initialize_from),
             "compatible_parameters": len(compatible),
             "skipped_parameters": sorted(set(state) - set(compatible)),
+            "temporal_residual_zero_initialized": (
+                temporal_residual_zero_initialized
+            ),
         }
     else:
         model.raw_camera_encoder.load_imagenet_initialization()
     model.raw_camera_encoder.freeze_backbone(True)
+    if args.freeze_risk_feature_encoder:
+        for module in (
+            model.raw_camera_encoder,
+            model.bev_encoder,
+            model.ego_projection,
+        ):
+            for parameter in module.parameters():
+                parameter.requires_grad_(False)
+    if args.freeze_base_policy:
+        if not model.use_temporal_risk:
+            raise ValueError("--freeze-base-policy requires use_temporal_risk")
+        for parameter in model.parameters():
+            parameter.requires_grad_(False)
+        temporal_modules = (
+            model.temporal_visual_risk_head,
+            model.temporal_risk_encoder,
+            model.temporal_risk_projection,
+            model.ordinal_risk_head,
+            model.risk_score_head,
+            model.risk_type_head,
+            model.risk_horizon_head,
+            model.lane_risk_head,
+            model.risk_uncertainty_head,
+        )
+        for module in temporal_modules:
+            for parameter in module.parameters():
+                parameter.requires_grad_(True)
     model.to(device)
     counts = Counter(row["label"]["action"] for row in train_rows)
     risk_counts = Counter(row["risk_level"] for row in train_rows)
@@ -535,6 +662,8 @@ def main() -> None:
     ).clamp_(max=30.0)
     risk_loss_weights.div_(risk_loss_weights.mean())
     best_score = -float("inf")
+    best_epoch = None
+    best_passed_validation_gates = False
     history = []
     args.output_dir.mkdir(parents=True, exist_ok=True)
     unfreeze_epoch = (
@@ -551,9 +680,10 @@ def main() -> None:
             model.target_query,
         )
         freeze_decision = epoch <= args.freeze_decision_heads
-        for module in decision_modules:
-            for parameter in module.parameters():
-                parameter.requires_grad_(not freeze_decision)
+        if not args.freeze_base_policy:
+            for module in decision_modules:
+                for parameter in module.parameters():
+                    parameter.requires_grad_(not freeze_decision)
         optimizer = torch.optim.AdamW(
             [
                 parameter
@@ -563,7 +693,11 @@ def main() -> None:
             lr=args.learning_rate,
             weight_decay=0.02,
         )
-        if epoch == unfreeze_epoch:
+        if (
+            epoch == unfreeze_epoch
+            and not args.freeze_risk_feature_encoder
+            and not args.freeze_base_policy
+        ):
             model.raw_camera_encoder.freeze_backbone(False)
             optimizer = torch.optim.AdamW(
                 model.parameters(), lr=args.learning_rate * 0.15, weight_decay=0.02
@@ -572,6 +706,12 @@ def main() -> None:
         loss_sum = 0.0
         for batch in train_loader:
             inputs = model_kwargs(batch, device, config)
+            if (
+                args.freeze_base_policy
+                and inputs.get("history_risk_features") is not None
+                and random.random() < 0.15
+            ):
+                inputs["history_risk_features"] = None
             if random.random() < 0.10:
                 inputs["candidate_features"] = torch.zeros_like(
                     inputs["candidate_features"]
@@ -625,30 +765,47 @@ def main() -> None:
                     loss = loss + 0.5 * torch.clamp(
                         args.low_precision_margin - low_probs, min=0.0
                     ).mean()
-            if (
-                bool((batch["risk_score_label"] >= 0.0).all())
-                and output.risk_score is not None
-            ):
-                loss = loss + 0.15 * F.mse_loss(
-                    output.risk_score,
-                    batch["risk_score_label"].to(device).float(),
+            if args.emergency_recall_margin > 0.0:
+                emergency_mask = action == ACTION_LABELS.index(
+                    "emergency_brake"
                 )
+                if bool(emergency_mask.any()):
+                    emergency_probs = F.softmax(
+                        output.action_logits, dim=-1
+                    )[
+                        emergency_mask,
+                        ACTION_LABELS.index("emergency_brake"),
+                    ]
+                    loss = loss + 0.5 * torch.clamp(
+                        args.emergency_recall_margin - emergency_probs,
+                        min=0.0,
+                    ).mean()
+            risk_score_target = batch["risk_score_label"].to(device).float()
+            risk_score_mask = risk_score_target >= 0.0
+            if bool(risk_score_mask.any()) and output.risk_score is not None:
+                loss = loss + 0.15 * F.mse_loss(
+                    output.risk_score[risk_score_mask],
+                    risk_score_target[risk_score_mask],
+                )
+            horizon_target = batch["horizon_label"].to(device).float()
+            horizon_mask = horizon_target >= 0.0
             if (
-                bool((batch["horizon_label"] >= 0.0).all())
+                bool(horizon_mask.any())
                 and output.risk_horizon_logits is not None
             ):
                 loss = loss + 0.10 * F.binary_cross_entropy_with_logits(
-                    output.risk_horizon_logits,
-                    batch["horizon_label"].to(device).float(),
+                    output.risk_horizon_logits[horizon_mask],
+                    horizon_target[horizon_mask],
                 )
-            if (
-                bool((batch["lane_risk_label"] >= 0).all())
-                and output.lane_risk_logits is not None
-            ):
-                lane_target = batch["lane_risk_label"].to(device)
+            lane_target = batch["lane_risk_label"].to(device).long()
+            lane_mask = lane_target >= 0
+            if bool(lane_mask.any()) and output.lane_risk_logits is not None:
+                flattened_lane_logits = output.lane_risk_logits.view(-1, 3)
+                flattened_lane_target = lane_target.view(-1)
+                flattened_lane_mask = lane_mask.view(-1)
                 loss = loss + 0.10 * F.cross_entropy(
-                    output.lane_risk_logits.view(-1, 3),
-                    lane_target.view(-1),
+                    flattened_lane_logits[flattened_lane_mask],
+                    flattened_lane_target[flattened_lane_mask],
                 )
             if output.ordinal_risk_logits is not None:
                 ordinal_target = torch.stack(
@@ -664,26 +821,70 @@ def main() -> None:
             loss_sum += float(loss.detach())
         metrics = evaluate(model, validation_loader, device, config)
         metrics.update(epoch=epoch, train_loss=loss_sum / max(1, len(train_loader)))
-        emergency_accuracy = metrics["per_action_accuracy"].get(
+        emergency_recall = metrics["per_action_accuracy"].get(
             "emergency_brake", {"accuracy": 0.0}
         )["accuracy"]
-        high_risk_accuracy = metrics["per_risk_accuracy"].get(
-            "high", {"accuracy": 0.0}
+        medium_recall = metrics["per_risk_accuracy"].get(
+            "medium", {"accuracy": 0.0}
         )["accuracy"]
-        metrics["selection_score"] = (
-            0.20 * metrics["macro_action_accuracy"]
-            + 0.10 * metrics["visual_counterfactual_accuracy"]
-            + 0.10 * metrics["visual_risk_macro_accuracy"]
-            + 0.10 * metrics["environment_pair_order_accuracy"]
-            + 0.25 * emergency_accuracy
-            + 0.25 * high_risk_accuracy
-            - 0.005 * metrics["speed_mae_kmh"]
+        low_recall = metrics["per_risk_accuracy"].get(
+            "low", {"accuracy": 0.0}
+        )["accuracy"]
+        configured_threshold = float(
+            config.get("high_confidence_threshold", 0.75)
         )
+        deploy_key = min(
+            metrics["risk_operating_points"],
+            key=lambda key: abs(float(key) - configured_threshold),
+        )
+        deploy_point = metrics["risk_operating_points"][deploy_key]
+        high_recall = deploy_point["high_recall"]
+        gates = {
+            "high_recall_at_least_0_90": high_recall >= 0.90,
+            "medium_recall_at_least_0_80": medium_recall >= 0.80,
+            "low_recall_at_least_0_85": low_recall >= 0.85,
+            "emergency_recall_at_least_0_95": emergency_recall >= 0.95,
+            "low_high_fpr_at_most_0_10": (
+                deploy_point["low_false_positive_rate"] <= 0.10
+            ),
+        }
+        passed_validation_gates = all(gates.values())
+        penalty = (
+            0.8 * max(0.0, 0.90 - high_recall)
+            + 0.5 * max(0.0, 0.80 - medium_recall)
+            + 0.5 * max(0.0, 0.85 - low_recall)
+            + 0.7 * max(0.0, 0.95 - emergency_recall)
+            + 0.5 * max(
+                0.0, deploy_point["low_false_positive_rate"] - 0.10
+            )
+        )
+        metrics["selection_score"] = (
+            0.15 * metrics["macro_action_accuracy"]
+            + 0.10 * metrics["visual_counterfactual_accuracy"]
+            + 0.20 * emergency_recall
+            + 0.25 * high_recall
+            + 0.15 * medium_recall
+            + 0.10 * low_recall
+            + 0.05 * metrics["environment_pair_order_accuracy"]
+            - 0.005 * metrics["speed_mae_kmh"]
+            - penalty
+        )
+        metrics["deploy_high_threshold"] = float(deploy_key)
+        metrics["validation_gates"] = gates
+        metrics["passed_validation_gates"] = passed_validation_gates
         history.append(metrics)
         print(json.dumps(metrics, ensure_ascii=False), flush=True)
         torch.save(model.state_dict(), args.output_dir / "model_last.pt")
-        if metrics["selection_score"] > best_score:
+        should_select = (
+            passed_validation_gates and not best_passed_validation_gates
+        ) or (
+            passed_validation_gates == best_passed_validation_gates
+            and metrics["selection_score"] > best_score
+        )
+        if should_select:
             best_score = metrics["selection_score"]
+            best_epoch = epoch
+            best_passed_validation_gates = passed_validation_gates
             torch.save(model.state_dict(), args.output_dir / "model.pt")
     if test_loader:
         best_state = torch.load(
@@ -709,6 +910,8 @@ def main() -> None:
         "high_recall_margin": args.high_recall_margin,
         "medium_recall_margin": args.medium_recall_margin,
         "low_precision_margin": args.low_precision_margin,
+        "emergency_recall_margin": args.emergency_recall_margin,
+        "freeze_risk_feature_encoder": args.freeze_risk_feature_encoder,
         "unfreeze_epoch": unfreeze_epoch,
         "action_loss_weights": {
             action: float(weight)
@@ -719,6 +922,8 @@ def main() -> None:
             for risk, index in RISK_LABELS.items()
         },
         "best_selection_score": best_score,
+        "best_epoch": best_epoch,
+        "best_passed_validation_gates": best_passed_validation_gates,
         "test_metrics": test_metrics,
         "initialization": initialization,
         "history": history,
