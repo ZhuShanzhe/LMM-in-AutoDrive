@@ -268,6 +268,30 @@ class SynchronizedMultiviewCameraRig:
             obstacles = [
                 item for item in candidates if item["relative_height_m"] >= -0.65
             ]
+            # Preserve one nearest return per one-degree azimuth bin.  The
+            # controller can then reject a close guardrail outside the curved
+            # planned corridor without losing a farther return in another
+            # direction.  This remains physical sensor data only.
+            nearest_by_azimuth: dict[int, dict[str, float]] = {}
+            for item in obstacles:
+                bin_index = int(round(float(item["azimuth_deg"])))
+                previous = nearest_by_azimuth.get(bin_index)
+                if (
+                    previous is None
+                    or item["distance_m"] < previous["distance_m"]
+                ):
+                    nearest_by_azimuth[bin_index] = item
+            azimuth_obstacle_bins = [
+                {
+                    key: round(float(item[key]), 4)
+                    for key in (
+                        "distance_m", "relative_velocity_mps",
+                        "closing_speed_mps", "azimuth_deg",
+                        "relative_height_m",
+                    )
+                }
+                for _bin, item in sorted(nearest_by_azimuth.items())
+            ]
             nearest = min(
                 obstacles,
                 key=lambda item: item["distance_m"],
@@ -292,6 +316,7 @@ class SynchronizedMultiviewCameraRig:
                 "candidate_count": len(candidates),
                 "obstacle_candidate_count": len(obstacles),
                 "closing_candidate_count": len(closing),
+                "azimuth_obstacle_bins": azimuth_obstacle_bins,
                 "nearest_distance_m": (
                     round(float(nearest["distance_m"]), 3) if nearest else None
                 ),
@@ -460,6 +485,7 @@ class SynchronizedMultiviewCameraRig:
                 "candidate_count": 0,
                 "obstacle_candidate_count": 0,
                 "closing_candidate_count": 0,
+                "azimuth_obstacle_bins": [],
                 "nearest_distance_m": None,
                 "nearest_relative_velocity_mps": None,
                 "nearest_azimuth_deg": None,
@@ -479,6 +505,7 @@ class SynchronizedMultiviewCameraRig:
             "candidate_count": 0,
             "obstacle_candidate_count": 0,
             "closing_candidate_count": 0,
+            "azimuth_obstacle_bins": [],
             "nearest_distance_m": None,
             "nearest_relative_velocity_mps": None,
             "nearest_azimuth_deg": None,

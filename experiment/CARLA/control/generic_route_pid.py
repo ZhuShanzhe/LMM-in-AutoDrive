@@ -81,6 +81,67 @@ class GenericRoutePID:
             return float(self.route_manager.progress_m)
         return 0.0
 
+    def radar_corridor_polyline(
+        self,
+        horizon_m: float = 85.0,
+    ) -> list[tuple[float, float]]:
+        """Return the planner-owned centreline ahead for sensor gating.
+
+        The result contains only route geometry and the ego pose.  It does not
+        enumerate actors or scenario events, so all three scenes can use the
+        same physical radar corridor filter.
+        """
+
+        location = self.ego.get_location()
+        points = [(float(location.x), float(location.y))]
+        progress_m = self.progress_m()
+        horizon = progress_m + max(5.0, float(horizon_m))
+        if self.route_context is not None and self.route_plan is not None:
+            start = bisect.bisect_left(
+                self.route_context.distances_m, progress_m
+            )
+            end = bisect.bisect_right(
+                self.route_context.distances_m, horizon
+            )
+            for waypoint, _road_option in self.route_plan[start:end]:
+                waypoint_location = waypoint.transform.location
+                point = (
+                    float(waypoint_location.x),
+                    float(waypoint_location.y),
+                )
+                if math.hypot(
+                    point[0] - points[-1][0], point[1] - points[-1][1]
+                ) > 0.05:
+                    points.append(point)
+        elif self.route_manager is not None:
+            route = getattr(self.route_manager, "route", None) or []
+            for route_point in route:
+                try:
+                    distance_m = float(route_point["distance_m"])
+                    point = (
+                        float(route_point["x"]),
+                        float(route_point["y"]),
+                    )
+                except (KeyError, TypeError, ValueError):
+                    continue
+                if distance_m < progress_m:
+                    continue
+                if distance_m > horizon:
+                    break
+                if math.hypot(
+                    point[0] - points[-1][0], point[1] - points[-1][1]
+                ) > 0.05:
+                    points.append(point)
+        if len(points) < 2:
+            target = self._route_target()
+            if target is not None:
+                point = (float(target["x"]), float(target["y"]))
+                if math.hypot(
+                    point[0] - points[-1][0], point[1] - points[-1][1]
+                ) > 0.05:
+                    points.append(point)
+        return points
+
     def _update_progress(self) -> float:
         if self.route_context is not None:
             self.route_context.tracker.update(self.ego.get_location())

@@ -58,6 +58,139 @@ def _speed_mps(actor: Any) -> float:
     )
 
 
+def filter_forward_radar_to_route_corridor(
+    radar_observation: Mapping[str, Any],
+    *,
+    ego_x: float,
+    ego_y: float,
+    ego_yaw_deg: float,
+    route_polyline: Sequence[Sequence[float]],
+    corridor_half_width_m: float,
+    sensor_offset_m: float = 2.0,
+) -> dict[str, Any]:
+    """Keep only physical radar returns intersecting the planned corridor.
+
+    A narrow forward cone can hit the barrier straight ahead while the route
+    bends safely away at a junction.  Each binned physical return is projected
+    into world coordinates and compared with the planner-owned route polyline.
+    Straight-lane vehicles stay inside the swept corridor; outside barriers
+    are retained only as audit fields and cannot trigger longitudinal braking.
+    Missing binned detections fail closed by returning the original aggregate.
+    """
+
+    result = dict(radar_observation)
+    bins = radar_observation.get("azimuth_obstacle_bins")
+    try:
+        points = [
+            (float(point[0]), float(point[1]))
+            for point in route_polyline
+        ]
+    except (TypeError, ValueError, IndexError):
+        return result
+    if not isinstance(bins, list) or len(points) < 2:
+        return result
+
+    yaw_rad = math.radians(float(ego_yaw_deg))
+    sensor_x = float(ego_x) + float(sensor_offset_m) * math.cos(yaw_rad)
+    sensor_y = float(ego_y) + float(sensor_offset_m) * math.sin(yaw_rad)
+    half_width_m = max(0.5, float(corridor_half_width_m))
+
+    def distance_to_segment(
+        point_x: float,
+        point_y: float,
+        start: tuple[float, float],
+        end: tuple[float, float],
+    ) -> float:
+        dx = end[0] - start[0]
+        dy = end[1] - start[1]
+        norm = dx * dx + dy * dy
+        if norm <= 1e-9:
+            return math.hypot(point_x - start[0], point_y - start[1])
+        fraction = (
+            (point_x - start[0]) * dx + (point_y - start[1]) * dy
+        ) / norm
+        fraction = max(0.0, min(1.0, fraction))
+        return math.hypot(
+            point_x - (start[0] + fraction * dx),
+            point_y - (start[1] + fraction * dy),
+        )
+
+    relevant: list[dict[str, Any]] = []
+    for raw in bins:
+        if not isinstance(raw, Mapping):
+            continue
+        try:
+            distance_m = float(raw["distance_m"])
+            azimuth_rad = math.radians(float(raw["azimuth_deg"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+        if not math.isfinite(distance_m) or distance_m <= 0.0:
+            continue
+        point_x = sensor_x + distance_m * math.cos(yaw_rad + azimuth_rad)
+        point_y = sensor_y + distance_m * math.sin(yaw_rad + azimuth_rad)
+        lateral_distance_m = min(
+            distance_to_segment(point_x, point_y, start, end)
+            for start, end in zip(points, points[1:])
+        )
+        if lateral_distance_m <= half_width_m:
+            item = dict(raw)
+            item["route_lateral_distance_m"] = round(
+                lateral_distance_m, 3
+            )
+            relevant.append(item)
+
+    nearest = min(
+        relevant,
+        key=lambda item: float(item["distance_m"]),
+        default=None,
+    )
+    closing = [
+        item
+        for item in relevant
+        if float(item.get("closing_speed_mps", 0.0) or 0.0) > 0.5
+    ]
+    nearest_closing = min(
+        closing,
+        key=lambda item: float(item["distance_m"]),
+        default=None,
+    )
+    result.update(
+        route_corridor_filter_applied=True,
+        route_corridor_half_width_m=round(half_width_m, 3),
+        route_corridor_obstacle_bins=relevant,
+        unfiltered_obstacle_candidate_count=radar_observation.get(
+            "obstacle_candidate_count"
+        ),
+        unfiltered_nearest_distance_m=radar_observation.get(
+            "nearest_distance_m"
+        ),
+        unfiltered_nearest_azimuth_deg=radar_observation.get(
+            "nearest_azimuth_deg"
+        ),
+        obstacle_candidate_count=len(relevant),
+        closing_candidate_count=len(closing),
+        nearest_distance_m=(
+            round(float(nearest["distance_m"]), 3) if nearest else None
+        ),
+        nearest_relative_velocity_mps=(
+            round(float(nearest.get("relative_velocity_mps", 0.0)), 3)
+            if nearest else None
+        ),
+        nearest_azimuth_deg=(
+            round(float(nearest["azimuth_deg"]), 3) if nearest else None
+        ),
+        nearest_closing_distance_m=(
+            round(float(nearest_closing["distance_m"]), 3)
+            if nearest_closing else None
+        ),
+        nearest_closing_velocity_mps=(
+            round(float(nearest_closing["closing_speed_mps"]), 3)
+            if nearest_closing else None
+        ),
+    )
+    return result
+
+
 def fuse_forward_radar_risk(
     learned_risk: Mapping[str, Any],
     radar_observation: Mapping[str, Any],
@@ -611,6 +744,28 @@ class UniversalVLAController:
             "front",
             maximum_frame=sensor_frame,
         )
+        # Convert the conic radar aggregate into a route-swept observation.
+        # Fail closed on missing legacy bins or unexpected map errors by
+        # retaining the original physical distance envelope.
+        try:
+            route_polyline = self.route_controller.radar_corridor_polyline(
+                85.0
+            )
+            ego_transform = self.ego.get_transform()
+            ego_location = ego_transform.location
+            vehicle_half_width_m = float(
+                getattr(self.ego.bounding_box.extent, "y", 1.0) or 1.0
+            )
+            forward_radar = filter_forward_radar_to_route_corridor(
+                forward_radar,
+                ego_x=float(ego_location.x),
+                ego_y=float(ego_location.y),
+                ego_yaw_deg=float(ego_transform.rotation.yaw),
+                route_polyline=route_polyline,
+                corridor_half_width_m=vehicle_half_width_m + 0.35,
+            )
+        except (AttributeError, RuntimeError, TypeError, ValueError):
+            pass
         rear_radar = self.camera_rig.latest_radar(
             "rear",
             maximum_frame=sensor_frame

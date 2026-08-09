@@ -1112,6 +1112,82 @@ def test_physical_forward_radar_caution_and_clear_paths():
     assert clear == learned
 
 
+def test_forward_radar_route_corridor_filters_curve_barrier_not_lead_car():
+    from universal_vla_controller import (
+        filter_forward_radar_to_route_corridor,
+    )
+
+    barrier = {
+        "schema_version": "physical_front_radar/1.0",
+        "candidate_count": 108,
+        "obstacle_candidate_count": 84,
+        "closing_candidate_count": 0,
+        "nearest_distance_m": 4.28,
+        "nearest_relative_velocity_mps": 0.0,
+        "nearest_azimuth_deg": 3.47,
+        "nearest_closing_distance_m": None,
+        "nearest_closing_velocity_mps": None,
+        "azimuth_obstacle_bins": [{
+            "distance_m": 4.28,
+            "relative_velocity_mps": 0.0,
+            "closing_speed_mps": 0.0,
+            "azimuth_deg": 3.47,
+            "relative_height_m": 0.0,
+        }],
+    }
+    curved_route = [
+        (258.547, -121.130),
+        (259.240, -120.009),
+        (264.895, -118.715),
+        (269.894, -118.634),
+    ]
+
+    filtered_barrier = filter_forward_radar_to_route_corridor(
+        barrier,
+        ego_x=258.547,
+        ego_y=-121.130,
+        ego_yaw_deg=39.9436,
+        route_polyline=curved_route,
+        corridor_half_width_m=1.30,
+    )
+
+    assert filtered_barrier["route_corridor_filter_applied"] is True
+    assert filtered_barrier["unfiltered_nearest_distance_m"] == 4.28
+    assert filtered_barrier["obstacle_candidate_count"] == 0
+    assert filtered_barrier["nearest_distance_m"] is None
+
+    lead_vehicle = {
+        **barrier,
+        "candidate_count": 8,
+        "obstacle_candidate_count": 3,
+        "closing_candidate_count": 3,
+        "nearest_distance_m": 8.0,
+        "nearest_relative_velocity_mps": -1.0,
+        "nearest_azimuth_deg": 0.0,
+        "nearest_closing_distance_m": 8.0,
+        "nearest_closing_velocity_mps": 1.0,
+        "azimuth_obstacle_bins": [{
+            "distance_m": 8.0,
+            "relative_velocity_mps": -1.0,
+            "closing_speed_mps": 1.0,
+            "azimuth_deg": 0.0,
+            "relative_height_m": 0.0,
+        }],
+    }
+    filtered_vehicle = filter_forward_radar_to_route_corridor(
+        lead_vehicle,
+        ego_x=0.0,
+        ego_y=0.0,
+        ego_yaw_deg=0.0,
+        route_polyline=[(0.0, 0.0), (20.0, 0.0)],
+        corridor_half_width_m=1.30,
+    )
+
+    assert filtered_vehicle["obstacle_candidate_count"] == 1
+    assert filtered_vehicle["nearest_distance_m"] == 8.0
+    assert filtered_vehicle["nearest_closing_velocity_mps"] == 1.0
+
+
 def test_stationary_physical_caution_gap_crawl_is_latched_and_bounded():
     from control.generic_temporal_risk_supervisor import (
         GenericTemporalRiskSupervisor,
