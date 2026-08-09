@@ -18,6 +18,7 @@ from run_complex_avoidance_town05 import (
     SafetyMonitor,
     audit_command_route_alignment,
     carla_world_can_be_reused,
+    configure_competition_artifacts,
     lane_invasion_is_restricted,
     load_config,
     ready_commands_in_order,
@@ -71,6 +72,54 @@ def route_at(*coordinates: tuple[float, float]):
 
 
 class Scene2Town05Tests(unittest.TestCase):
+    def test_logs_only_competition_keeps_online_vla_and_skips_disk_artifacts(self):
+        args = SimpleNamespace(
+            competition_run=True,
+            competition_logs_only=True,
+            no_video=False,
+            record_multimodal=True,
+            record_ground_truth=True,
+            video_overlay=True,
+        )
+
+        configure_competition_artifacts(args, vla_enabled=True)
+
+        self.assertTrue(args.no_video)
+        self.assertFalse(args.record_multimodal)
+        self.assertFalse(args.record_ground_truth)
+        self.assertFalse(args.video_overlay)
+
+    def test_full_competition_retains_all_artifact_recorders(self):
+        args = SimpleNamespace(
+            competition_run=True,
+            competition_logs_only=False,
+            no_video=False,
+            record_multimodal=False,
+            record_ground_truth=False,
+            video_overlay=False,
+        )
+
+        configure_competition_artifacts(args, vla_enabled=True)
+
+        self.assertTrue(args.record_multimodal)
+        self.assertTrue(args.record_ground_truth)
+        self.assertTrue(args.video_overlay)
+
+    def test_logs_only_requires_competition_and_vla(self):
+        args = SimpleNamespace(
+            competition_run=False,
+            competition_logs_only=True,
+            no_video=False,
+            record_multimodal=False,
+            record_ground_truth=False,
+            video_overlay=False,
+        )
+        with self.assertRaisesRegex(ValueError, "competition-run"):
+            configure_competition_artifacts(args, vla_enabled=True)
+        args.competition_run = True
+        with self.assertRaisesRegex(ValueError, "vla-checkpoint"):
+            configure_competition_artifacts(args, vla_enabled=False)
+
     def test_matching_actor_clean_world_can_be_reused(self):
         class FakeWorld:
             def __init__(self, map_name, actor_types=()):

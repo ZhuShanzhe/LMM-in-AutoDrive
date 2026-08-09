@@ -149,6 +149,16 @@ def parse_args() -> argparse.Namespace:
             "video encoder."
         ),
     )
+    parser.add_argument(
+        "--competition-logs-only",
+        action="store_true",
+        help=(
+            "Keep the formal route, traffic, online VLA sensors, control, "
+            "event and safety logs, but skip the duplicate on-disk RGB/LiDAR "
+            "evidence rig, per-frame actor truth and demonstration video. "
+            "This mode requires --competition-run and --vla-checkpoint."
+        ),
+    )
     parser.add_argument("--record-ground-truth", action="store_true")
     parser.add_argument("--ground-truth-every-n", type=int, default=1)
     parser.add_argument(
@@ -868,6 +878,26 @@ def ready_commands_in_order(
     return ready
 
 
+def configure_competition_artifacts(args: Any, vla_enabled: bool) -> None:
+    """Configure evidence writers without changing the online VLA sensor rig."""
+
+    if args.competition_logs_only and not args.competition_run:
+        raise ValueError("--competition-logs-only requires --competition-run")
+    if args.competition_logs_only and not vla_enabled:
+        raise ValueError("--competition-logs-only requires --vla-checkpoint")
+    if not args.competition_run:
+        return
+    if args.competition_logs_only:
+        args.no_video = True
+        args.record_multimodal = False
+        args.record_ground_truth = False
+        args.video_overlay = False
+        return
+    args.record_multimodal = True
+    args.record_ground_truth = True
+    args.video_overlay = True
+
+
 def carla_world_can_be_reused(
     world: Any,
     requested_map: str,
@@ -910,6 +940,7 @@ def main() -> int:
         )
     if args.vla_decision_every_n <= 0:
         raise ValueError("--vla-decision-every-n must be positive")
+    configure_competition_artifacts(args, vla_enabled)
     if args.competition_run:
         if args.no_video and not vla_enabled:
             raise ValueError(
@@ -925,9 +956,6 @@ def main() -> int:
             raise ValueError(
                 "--competition-run requires --external-ego-control"
             )
-        args.record_multimodal = True
-        args.record_ground_truth = True
-        args.video_overlay = True
     print("Validated runtime config: {0}".format(config_path))
     print("Map: {0}".format(config["map"]))
     print("Commands: {0}".format(len(config["commands"])))
@@ -1002,7 +1030,9 @@ def main() -> int:
         # traffic lights, Traffic Manager, collision sensors, and event actors
         # continue to advance in synchronous mode.
         settings.no_rendering_mode = bool(
-            args.no_video and not args.record_multimodal
+            args.no_video
+            and not vla_enabled
+            and not args.record_multimodal
         )
         world.apply_settings(settings)
         apply_weather(world, config["weather"])
@@ -1640,6 +1670,14 @@ def main() -> int:
             "video_output": (
                 str(video_output) if video_output is not None else None
             ),
+            "artifact_recording": {
+                "mode": (
+                    "structured_logs_only"
+                    if args.competition_logs_only
+                    else "full_artifacts"
+                ),
+                "online_vla_sensors_enabled": bool(vla_enabled),
+            },
             "preview_controller": {
                 "source": (
                     "universal multisensor VLA + deterministic safety gate + PID"
@@ -1661,6 +1699,19 @@ def main() -> int:
             summary["multimodal_evidence"][
                 "competition_required_exact_ratio"
             ] = 1.0
+        if args.competition_logs_only:
+            vla_summary = summary.get("vla_control") or {}
+            sensor_evidence_available = bool(
+                int(vla_summary.get("decision_count", 0)) > 0
+                and "4view_rgb" in str(vla_summary.get("input_mode", ""))
+                and vla_summary.get("sensor_batch_schema_version")
+                == "unified_sensor_batch/1.0"
+            )
+        else:
+            sensor_evidence_available = bool(
+                sensor_suite is not None
+                and sensor_suite.summary()["exact_completion_ratio"] == 1.0
+            )
         measurable_checks = {
             "route_completed": bool(summary["route_completed"]),
             "collision_count_equals_0": (
@@ -1679,9 +1730,10 @@ def main() -> int:
             "route_commands_aligned": bool(
                 route_command_audit["competition_ready"]
             ),
-            "exact_multimodal_bundle_ratio": (
-                sensor_suite is not None
-                and sensor_suite.summary()["exact_completion_ratio"] == 1.0
+            "sensor_evidence_available": sensor_evidence_available,
+            "vla_fallback_count_equals_0": (
+                not vla_enabled
+                or summary["vla_control"]["fallback_count"] == 0
             ),
         }
         summary["competition_acceptance"] = {
