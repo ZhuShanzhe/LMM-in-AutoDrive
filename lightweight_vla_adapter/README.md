@@ -66,10 +66,10 @@ pip install -r structured_command_parser/requirements-modernbert.txt
 
 ## 下载模型
 
-最终 v10 权重：
+最终三场景 V6 Stage-8 权重：
 
 ```text
-https://huggingface.co/UNIC0RN-Zhu/lightweight-vla-drive-decision-adapter-v10
+https://huggingface.co/UNIC0RN-Zhu/universal-three-scene-sensor-policy-vla-v6
 ```
 
 该仓库采用自动批准访问门控。首次下载时：
