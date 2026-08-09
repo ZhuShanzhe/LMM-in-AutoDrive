@@ -19,6 +19,7 @@ from run_complex_avoidance_town05 import (
     audit_command_route_alignment,
     carla_world_can_be_reused,
     configure_competition_artifacts,
+    configure_traffic_manager_physics,
     lane_invasion_is_restricted,
     load_config,
     ready_commands_in_order,
@@ -72,6 +73,38 @@ def route_at(*coordinates: tuple[float, float]):
 
 
 class Scene2Town05Tests(unittest.TestCase):
+    def test_hybrid_physics_keeps_auditable_near_field_radius(self):
+        class FakeTrafficManager:
+            def __init__(self):
+                self.calls = []
+
+            def set_hybrid_physics_mode(self, enabled):
+                self.calls.append(("mode", enabled))
+
+            def set_hybrid_physics_radius(self, radius_m):
+                self.calls.append(("radius", radius_m))
+
+        manager = FakeTrafficManager()
+        configure_traffic_manager_physics(
+            manager,
+            hybrid_enabled=True,
+            hybrid_radius_m=100.0,
+        )
+        self.assertEqual(manager.calls, [("mode", True), ("radius", 100.0)])
+
+        manager = FakeTrafficManager()
+        configure_traffic_manager_physics(
+            manager,
+            hybrid_enabled=False,
+            hybrid_radius_m=100.0,
+        )
+        self.assertEqual(manager.calls, [("mode", False)])
+
+        with self.assertRaisesRegex(ValueError, "positive"):
+            configure_traffic_manager_physics(
+                manager, hybrid_enabled=True, hybrid_radius_m=0.0
+            )
+
     def test_logs_only_competition_keeps_online_vla_and_skips_disk_artifacts(self):
         args = SimpleNamespace(
             competition_run=True,

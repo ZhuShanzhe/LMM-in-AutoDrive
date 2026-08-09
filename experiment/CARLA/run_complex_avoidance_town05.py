@@ -109,6 +109,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--host", default="localhost")
     parser.add_argument("--port", type=int, default=2000)
     parser.add_argument("--traffic-manager-port", type=int, default=8000)
+    parser.add_argument(
+        "--traffic-hybrid-physics",
+        action="store_true",
+        help=(
+            "Use full vehicle physics near the ego and kinematic Traffic "
+            "Manager updates for distant background vehicles."
+        ),
+    )
+    parser.add_argument(
+        "--traffic-hybrid-radius-m",
+        type=float,
+        default=100.0,
+    )
     parser.add_argument("--timeout", type=float, default=30.0)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
@@ -878,6 +891,22 @@ def ready_commands_in_order(
     return ready
 
 
+def configure_traffic_manager_physics(
+    traffic_manager: Any,
+    *,
+    hybrid_enabled: bool,
+    hybrid_radius_m: float,
+) -> None:
+    """Configure transparent near-field physics for dense traffic runs."""
+
+    radius_m = float(hybrid_radius_m)
+    if not math.isfinite(radius_m) or radius_m <= 0.0:
+        raise ValueError("traffic hybrid radius must be positive")
+    traffic_manager.set_hybrid_physics_mode(bool(hybrid_enabled))
+    if hybrid_enabled:
+        traffic_manager.set_hybrid_physics_radius(radius_m)
+
+
 def configure_competition_artifacts(args: Any, vla_enabled: bool) -> None:
     """Configure evidence writers without changing the online VLA sensor rig."""
 
@@ -1056,7 +1085,11 @@ def main() -> int:
                 config["traffic"]["global_speed_difference_pct"]
             )
         )
-        traffic_manager.set_hybrid_physics_mode(False)
+        configure_traffic_manager_physics(
+            traffic_manager,
+            hybrid_enabled=bool(args.traffic_hybrid_physics),
+            hybrid_radius_m=float(args.traffic_hybrid_radius_m),
+        )
         traffic_manager.set_respawn_dormant_vehicles(False)
 
         sensor_tick = float(
@@ -1649,6 +1682,10 @@ def main() -> int:
             "commands_announced": len(announced),
             "traffic_vehicles_spawned": len(traffic.vehicles),
             "ambient_walkers_spawned": len(traffic.walkers),
+            "traffic_hybrid_physics": {
+                "enabled": bool(args.traffic_hybrid_physics),
+                "radius_m": float(args.traffic_hybrid_radius_m),
+            },
             "event_states": dict(events.states),
             "event_summary": events.summary(),
             "variant_index": int(args.variant_index),
