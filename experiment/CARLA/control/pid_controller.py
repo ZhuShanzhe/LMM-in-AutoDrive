@@ -275,10 +275,13 @@ class EgoPIDController:
             # adding more curvature-direction steering would cut the inside
             # edge.  Gently unwind and let the cross-track correction return
             # the vehicle to the corridor centre.
+            offset_urgency = _clamp(
+                (abs(lateral_error) - 0.15) / 0.65, 0.0, 1.0
+            )
             unwind = _clamp(
-                0.02 + 0.10 * min(1.0, abs(lateral_error) / 2.0),
+                0.02 + 0.24 * offset_urgency,
                 0.0,
-                0.12,
+                0.26,
             )
             adjust = -math.copysign(unwind, float(curvature_req))
             self._last_lateral_debug["trajectory_adjust"] = round(
@@ -293,7 +296,7 @@ class EgoPIDController:
                 )
                 self._turn_unsafe_frames = 3 + int(4.0 * urgency)
                 self._turn_unsafe_speed_cap_kmh = max(
-                    12.0, 24.0 - 10.0 * urgency
+                    8.0, 16.0 - 8.0 * urgency
                 )
             return _clamp(raw_steer + adjust, -0.85, 0.85)
         if abs(error) < 0.005:

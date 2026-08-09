@@ -266,6 +266,32 @@ class ControlSafetyRegressionTests(unittest.TestCase):
         )
         self.assertLess(steer, 0.0)
 
+    def test_inside_curve_offset_unwinds_before_crossing_inner_marking(self):
+        vehicle = FakeVehicle()
+        vehicle.current_velocity = carla.Vector3D(x=10.0 / 3.6)
+        controller = EgoPIDController(
+            vehicle, FakeMap(FakeWaypoint(transform()))
+        )
+        controller._estimate_curvature_per_m = lambda *_args: -0.04
+
+        corrected = controller._turn_trajectory_adjust(
+            raw_steer=-0.23,
+            speed_kmh=10.0,
+            dt=0.05,
+            curvature_req=-0.10,
+            lateral_error_m=-0.52,
+            action="decelerate",
+        )
+
+        # Matching curvature/lateral signs mean the vehicle is toward the
+        # inside of the bend.  The bounded unwind must materially counter the
+        # feed-forward turn and lower speed until the centreline is recovered.
+        self.assertGreater(corrected, -0.10)
+        self.assertGreater(
+            controller._last_lateral_debug["trajectory_adjust"], 0.12
+        )
+        self.assertLessEqual(controller._turn_unsafe_speed_cap_kmh, 15.0)
+
     def test_keep_lane_uses_route_heading_to_select_current_lane_branch(self):
         vehicle = FakeVehicle()
         straight = FakeWaypoint(transform(x=15.0, y=0.0, yaw=0.0), lane_id=2)
