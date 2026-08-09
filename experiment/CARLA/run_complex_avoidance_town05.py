@@ -123,6 +123,14 @@ def parse_args() -> argparse.Namespace:
         default=100.0,
     )
     parser.add_argument("--timeout", type=float, default=30.0)
+    parser.add_argument(
+        "--reuse-current-world",
+        action="store_true",
+        help=(
+            "Reuse an actor-clean matching CARLA world. Disabled by default "
+            "because some server builds stall while applying new settings."
+        ),
+    )
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument(
@@ -1042,7 +1050,13 @@ def main() -> int:
         client = carla.Client(args.host, args.port)
         client.set_timeout(args.timeout)
         current_world = client.get_world()
-        if carla_world_can_be_reused(current_world, str(config["map"])):
+        world_reused = bool(
+            args.reuse_current_world
+            and carla_world_can_be_reused(
+                current_world, str(config["map"])
+            )
+        )
+        if world_reused:
             world = current_world
             print("CARLA world: reused clean {0}".format(config["map"]))
         else:
@@ -1669,6 +1683,7 @@ def main() -> int:
         summary = {
             "schema_version": "scene_2_town05_summary/v1",
             "map": world.get_map().name,
+            "world_reused": bool(world_reused),
             "route_start_spawn_index": int(
                 config["route"]["start_spawn_index"]
             ),
