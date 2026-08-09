@@ -96,7 +96,7 @@ python3 -u experiment/CARLA/run_complex_avoidance_town05.py \
   --vla-checkpoint ../models/lightweight_vla_adapter/universal_three_scene_v6_sensor_policy_finetuned_stage8/model.pt \
   --vla-config lightweight_vla_adapter/configs/universal_three_scene_v6_sensor_policy.json \
   --command-parser-model ../models/modernbert-drive-command-compositional \
-  --vla-device cuda --vla-precision fp16 --vla-decision-every-n 3 --no-video
+  --vla-device cuda --vla-precision fp16 --vla-decision-every-n 3
 ```
 
 场景三（Town05，6km，7 类紧急事件）：
@@ -111,7 +111,7 @@ python3 -u experiment/CARLA/run_emergency_response_6km.py \
   --vla-checkpoint ../models/lightweight_vla_adapter/universal_three_scene_v6_sensor_policy_finetuned_stage8/model.pt \
   --vla-config lightweight_vla_adapter/configs/universal_three_scene_v6_sensor_policy.json \
   --vla-parser-model ../models/modernbert-drive-command-compositional \
-  --vla-device cuda --vla-precision fp16 --vla-decision-every-n 3 --no-video
+  --vla-device cuda --vla-precision fp16 --vla-decision-every-n 3
 ```
 
 ## 6. 输入输出接口
