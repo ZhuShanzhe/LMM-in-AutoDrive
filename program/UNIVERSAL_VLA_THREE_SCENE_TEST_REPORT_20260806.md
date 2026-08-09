@@ -259,10 +259,11 @@ r12（旧链路）在约 352 m 路口因旧路由计划的车道窗口偏离到 
 
 ### 场景二（Town05，8 km，进行中）
 
-- 使用同一 stage-3 checkpoint 与 `UniversalVLAController`；
-- 已定位并修复两个问题：默认巡航文本被模型解析为 DECELERATE 9 km/h（禁止默认指令的模型合并）；低风险指令速度下限；
+- 使用同一 `UniversalVLAController`（stage-8 权重 + 基础配置，2026-08-09）；
 - 场景二运行配置保持契约完整（70 辆车、24 行人、multimodal 证据 960x540、四路 RGB+真实 LiDAR 接入）；
-- r6 非 competition 全程 8 km 已跑完（route_completed=true，4 类特殊事件全部 RESOLVED），但存在 15 次碰撞与 85 次实线侵入，未达到严格通过标准；该模式不逐帧持久化 multimodal 证据文件，未声明 competition acceptance。
+- r6 非 competition 全程 8 km：route_completed=true、4 类特殊事件 RESOLVED，但 15 次碰撞、85 次实线侵入，未达严格通过标准；
+- **r10（stage-8，competition-run 全程 8 km）**：`route_completed=true`，8,000.9/8,000.9 m，15/15 指令 0 偏差，4/4 事件 RESOLVED，**碰撞 6 次（较 r6 下降 60%）**、**实线（受限）车道侵入 0（较 r6 的 85 次消除）**、lane_invasions 0，fallback 0，VLA 决策 28,483 次，视频 H.264 85,446 帧 0 丢帧；仍未达到“0 碰撞”严格标准，但控制与风险感知改进显著；
+- 风险头与采样改进（详见模型卡）：物理 TTC/制动距离标签、后车检查、动作映射、天气/城镇扩展、episode 分组切分；轻量时序风险分支 + 有序/连续/分时域/车道风险头；静止高风险存活门、变道等待超时、地图标线合法门、高风险置信阈值可配置。
 
 ### 场景一（Town04，5 km）：通过（r18，动态转弯协同）
 
@@ -272,10 +273,10 @@ r12（旧链路）在约 352 m 路口因旧路由计划的车道窗口偏离到 
 - 视频 H.264 20,866 帧 0 丢帧（960×540/20fps）；VLA 决策 6,956 次、fallback 0、120 ms 内 99.86%；
 - 关键修复链：stage-4 消除 Town04 前视误报急刹 → 动态转向限幅（车速/路线曲率/车道宽度实时计算）→ 转弯协同轨迹反馈（横摆角速度估计实际曲率 vs 路线曲率，外侧补转/内侧抑制并联动限速）→ 路口限速随规划实际转角动态、路口前瞻 2.8–4.5 m → runner 上报 command_id → 转弯完成锁存。
 
-## 最终状态（2026-08-08 收尾）
+## 最终状态（2026-08-09 收尾）
 
 - 场景三（Town05 6 km）：**通过**（r25/r29/r30，最近 r30 为动态转弯协同复跑：`complete_scene_success=true`，7/7 事件，0 碰撞，0 实线违规，0 fallback）；
-- 场景二（Town05 8 km）：完整路线已跑完（r6，route_completed=true，4 类特殊事件 RESOLVED），但 15 次碰撞与 85 次实线侵入，未达严格通过标准；
+- 场景二（Town05 8 km）：**r10 competition-run 全程跑完**（route_completed=true，4/4 事件 RESOLVED，15/15 指令），碰撞 6 次（r6 为 15）、实线侵入 0（r6 为 85），仍未达严格“0 碰撞”标准；
 - 场景一（Town04 5 km）：**通过**（r18，`task_completed=true`，0 碰撞，0 非法车道，15/15 指令，横偏 0.083 m）；
-- 完整 pytest：533 passed + 177 subtests passed；`git diff --check` 干净；
-- 代码已提交 `main`（`a7fae88`、`773624c`），本轮新增修复（动态转弯协同、command_id 接线、转弯完成锁存）随后续提交更新。
+- 完整 pytest：537 passed + 177 subtests passed；`git diff --check` 干净；
+- 代码已提交 `main`（至 `2b63bce`）：动态转弯协同、command_id 接线、转弯完成锁存、场景二物理标签采样器、轻量时序风险头、风险 margin 训练、静止高风险存活门、可配置风险阈值等。

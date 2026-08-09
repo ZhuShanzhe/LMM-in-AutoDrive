@@ -141,3 +141,11 @@ V6 的策略输入边界禁止 CARLA actor 真值：
 - runner 向场景上报 FSM 当前 command_id（`UniversalVLAController.active_command()`），转弯完成仍按实际路口穿越物理判定；
 - 场景转弯完成状态锁存：首次满足“进路口→出路口→换道路→方向正确”即保持 completed，避免被后续路口覆盖；
 - 实测：场景一 r18 5 km 全程通过（0 碰撞/0 非法车道/15 条指令）；场景三 r30 6 km 动态复跑通过（7/7 事件/0 碰撞/0 实线/0 fallback），未回归。
+
+## 风险头与采样改进（2026-08-09）
+
+- 场景二采样器 v5：风险标签改为物理模型（TTC=纵向间隙/相对速度、制动距离=反应时间+速度²/(2·舒适减速度)、1.5s 轨迹间隙、VRU 加权、同车道/道路拓扑），目标车道同时检查前方与后方快速接近车辆；动作监督区分 emergency_brake/stop/yield/decelerate/keep_lane；5 类天气（晴/阴/雨/雾/黄昏雨夜）；按 episode 整体分组切分；新增 risk_score、0.5/1/2/3s 碰撞概率、左右车道风险等级标签；排除自车传感器误检、修复传送不可行驶点；
+- 轻量时序风险分支：缓存最近 4–6 帧视觉+BEV+自车特征，2 层 GRU 融合；新增有序风险头（cumulative logits）、连续风险分、风险类型、分时域碰撞概率、左右车道独立风险与不确定性头；`use_temporal_risk=False` 时不创建新参数，旧 checkpoint 可严格加载（场景一/三不回归）；
+- 训练：ordinal/score/horizon/lane 多任务损失 + high/medium/low 三类 margin + 前 N epoch 冻结决策头；stage-12 验证集高风险召回 89.4%（low 80.1%）；stage-13 调整后 high 79% / low 87%（trade-off）；
+- 运行时校准：高风险置信阈值可配置（默认 0.55，stage-12 配置 0.75）；静止高风险存活门（静止≥2s 且非文本停车时降为 12 km/h 爬行）解决空路误判死锁；变道等待超时、地图标线合法门、决策节拍下静止状态按实际车速跟踪；
+- 场景二 r10（stage-8 + 基础配置，competition-run 8 km）：碰撞 6 次（r6 15 次）、实线侵入 0（r6 85 次）、4/4 事件 RESOLVED、15/15 指令、0 fallback。
