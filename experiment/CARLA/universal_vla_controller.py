@@ -548,6 +548,16 @@ def environment_feature_tensor(
     return torch.tensor([values], dtype=torch.float32)
 
 
+def is_initial_sensor_warmup_error(error: Exception, decision_count: int) -> bool:
+    """Identify the expected safe hold before the first RGB bundle arrives."""
+
+    return (
+        int(decision_count) == 0
+        and isinstance(error, RuntimeError)
+        and str(error) == "no synchronized multiview RGB frame is available"
+    )
+
+
 class UniversalVLAController:
     """Run VLA decisions online and execute them through one route PID."""
 
@@ -588,6 +598,7 @@ class UniversalVLAController:
         self._last_overlay: dict[str, Any] = {}
         self._adapter_warmed = False
         self._fallback_count = 0
+        self._sensor_warmup_hold_count = 0
         self._accepted_count = 0
         self._liveness_overrides = Counter()
         self._decision_count = 0
@@ -1059,6 +1070,37 @@ class UniversalVLAController:
                 self._decide(frame)
                 self._last_frame = frame
         except (OSError, RuntimeError, TypeError, ValueError, KeyError) as error:
+            if is_initial_sensor_warmup_error(error, self._decision_count):
+                self._sensor_warmup_hold_count += 1
+                self.route_controller.set_high_level_decision(
+                    {
+                        "action": "stop",
+                        "target_speed_kmh": 0.0,
+                        "emergency": False,
+                        "reason": "vla_sensor_warmup_safe_hold",
+                    }
+                )
+                self._last_overlay = {
+                    "asr_text": "Waiting for synchronized VLA sensors",
+                    "action": "stop",
+                    "target_speed_kmh": 0.0,
+                    "emergency": False,
+                    "risk_level": "UNKNOWN",
+                    "policy_state": "SENSOR_WARMUP",
+                }
+                self._stream.write(
+                    json.dumps(
+                        {
+                            "status": "sensor_warmup_safe_hold",
+                            "error_type": type(error).__name__,
+                            "error": str(error),
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+                self._stream.flush()
+                return self.route_controller.run_step()
             self._fallback_count += 1
             self.route_controller.set_high_level_decision(
                 {
@@ -1111,6 +1153,7 @@ class UniversalVLAController:
                 self._decision_count - self._accepted_count
             ),
             "fallback_count": self._fallback_count,
+            "sensor_warmup_safe_hold_count": self._sensor_warmup_hold_count,
             "liveness_override_counts": dict(self._liveness_overrides),
             "proposal_action_counts": dict(self._proposal_actions),
             "final_action_counts": dict(self._final_actions),

@@ -1590,6 +1590,22 @@ def test_text_hazard_stop_is_not_overridden_by_rear_threat():
     assert final == original
 
 
+def test_only_initial_missing_rgb_bundle_is_classified_as_sensor_warmup():
+    from universal_vla_controller import is_initial_sensor_warmup_error
+
+    expected = RuntimeError("no synchronized multiview RGB frame is available")
+    assert is_initial_sensor_warmup_error(expected, 0) is True
+    assert is_initial_sensor_warmup_error(expected, 1) is False
+    assert (
+        is_initial_sensor_warmup_error(
+            RuntimeError("latest camera frame bundle is incomplete"),
+            0,
+        )
+        is False
+    )
+    assert is_initial_sensor_warmup_error(ValueError(str(expected)), 0) is False
+
+
 def test_radar_closing_speed_uses_decreasing_range_sign():
     from carla_multiview_sensor import radar_closing_speed_mps
 
