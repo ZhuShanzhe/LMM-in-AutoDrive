@@ -283,6 +283,13 @@ class EmergencySceneActorRuntime:
             return
         if event["id"] == "scene3_cone_taper":
             # A controlled construction approach must not retain free-flow
+            # actors from an already completed event. The cut-in vehicle has
+            # provided its full merge-and-yield challenge by this boundary;
+            # keeping it for another 1.5 km can contaminate the independent
+            # work-zone evaluation with an unrelated contact.
+            cut_in_retired = self._retire_resolved_cut_in()
+            if cut_in_retired:
+                print("CUT-IN VEHICLE RETIRED | reason=completed_event_window")
             # traffic behind a sensor-policy ego that may stop for the taper.
             # Retiring the pre-work-zone diversity fleet here prevents a
             # Traffic Manager follower from rear-ending the ego while keeping
@@ -616,6 +623,29 @@ class EmergencySceneActorRuntime:
                 for plan in self._background_plan
             )
         return retired_count
+
+    def _retire_resolved_cut_in(self) -> bool:
+        """Remove the completed cut-in actor before the next event family."""
+
+        actor = self._cut_in_actor
+        if actor is None or self._cut_in_phase != "RESOLVED":
+            return False
+        retired = False
+        try:
+            if actor.is_alive:
+                actor.set_autopilot(
+                    False,
+                    self._traffic_manager_port,
+                )
+                actor.destroy()
+                retired = True
+        except RuntimeError:
+            # CARLA can retire an actor between the is_alive check and the
+            # command. Clearing the stale handle is still the safe outcome.
+            pass
+        self._cut_in_actor = None
+        self._cut_in_event = None
+        return retired
 
     def _update_background_traffic(self, ego_route_s_m: float) -> None:
         for plan in self._background_plan:

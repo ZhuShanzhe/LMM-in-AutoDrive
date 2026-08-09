@@ -29,6 +29,7 @@ OVERRIDE_UNCONFIRMED_STOP = "unconfirmed_stop_crawl_floor"
 OVERRIDE_COMMAND_SPEED_FLOOR = "low_risk_command_speed_floor"
 OVERRIDE_LANE_CHANGE_TIMEOUT = "lane_change_wait_timeout"
 OVERRIDE_RADAR_GUARDED_CRAWL = "stationary_high_risk_radar_guarded_crawl"
+OVERRIDE_RADAR_CAUTION_CRAWL = "stationary_physical_caution_gap_crawl"
 
 
 @dataclass(frozen=True)
@@ -114,6 +115,7 @@ class GenericTemporalRiskSupervisor:
         self._resume_intent: str | None = None
         self._crawl_pending = False
         self._high_confirm_count = 0
+        self._radar_caution_crawl_active = False
         self._radar_guarded_crawl_active = False
         self._radar_clear_count = 0
         self._last_radar_sensor_frame: int | None = None
@@ -134,6 +136,7 @@ class GenericTemporalRiskSupervisor:
         self._resume_intent = None
         self._crawl_pending = False
         self._high_confirm_count = 0
+        self._radar_caution_crawl_active = False
         self._radar_guarded_crawl_active = False
         self._radar_clear_count = 0
         self._last_radar_sensor_frame = None
@@ -380,6 +383,89 @@ class GenericTemporalRiskSupervisor:
             and self._radar_clear_count
             >= self.config.radar_clear_confirm_frames
         )
+
+        # A stationary ego may see a fixed roadside surface inside the
+        # comfortable-deceleration envelope even though the emergency buffer
+        # is clear.  Treat that physical-only medium risk as a bounded gap
+        # controller: creep while clearance and TTC remain safe, then stop
+        # again before entering the emergency envelope.  The latch prevents
+        # the decision cadence from alternating between one crawl frame and a
+        # full stop, while explicit text stops and learned hazards remain
+        # authoritative.
+        reason_codes = {
+            str(value) for value in (risk.get("reason_codes") or [])
+        }
+        physical_caution_only = (
+            risk_level == "medium"
+            and "physical_forward_radar_caution_distance" in reason_codes
+        )
+        caution_gap_safe = False
+        caution_crawl_speed_kmh = (
+            self.config.radar_guarded_crawl_speed_kmh
+        )
+        if (
+            radar_ready
+            and isinstance(radar_distance, (int, float))
+            and isinstance(radar_emergency_distance, (int, float))
+            and isinstance(radar_caution_distance, (int, float))
+        ):
+            distance_m = float(radar_distance)
+            emergency_m = float(radar_emergency_distance)
+            caution_m = float(radar_caution_distance)
+            clearance_m = distance_m - emergency_m
+            closing_speed = radar.get("nearest_closing_velocity_mps")
+            closing_distance = radar.get("nearest_closing_distance_m")
+            closing_safe = True
+            if isinstance(closing_speed, (int, float)):
+                closing_mps = float(closing_speed)
+                if math.isfinite(closing_mps) and closing_mps > 0.0:
+                    ttc_distance = (
+                        float(closing_distance)
+                        if isinstance(closing_distance, (int, float))
+                        else distance_m
+                    )
+                    ttc_s = ttc_distance / closing_mps
+                    closing_safe = closing_mps <= 2.0 and ttc_s >= 5.0
+            caution_gap_safe = (
+                all(math.isfinite(value) for value in (
+                    distance_m, emergency_m, caution_m,
+                ))
+                and clearance_m > 1.5
+                and distance_m <= caution_m + 0.5
+                and closing_safe
+            )
+            if caution_gap_safe:
+                caution_crawl_speed_kmh = min(
+                    self.config.radar_guarded_crawl_speed_kmh,
+                    max(2.0, (clearance_m - 1.0) * 1.8),
+                )
+        caution_crawl_available = (
+            physical_caution_only
+            and caution_gap_safe
+            and parsed_intent not in {"STOP", "EMERGENCY_BRAKE"}
+        )
+        if not caution_crawl_available:
+            self._radar_caution_crawl_active = False
+        if (
+            caution_crawl_available
+            and (
+                stationary_elapsed_s >= 2.0
+                or self._radar_caution_crawl_active
+            )
+            and str(decision.get("action")) == "decelerate"
+            and stopped_target
+        ):
+            self._radar_caution_crawl_active = True
+            decision.update(
+                action="decelerate",
+                target_speed_kmh=caution_crawl_speed_kmh,
+                target_lane=None,
+                emergency=False,
+                reason=OVERRIDE_RADAR_CAUTION_CRAWL,
+                blocked_reason_codes=[],
+            )
+            self._override_counts[OVERRIDE_RADAR_CAUTION_CRAWL] += 1
+            return decision, OVERRIDE_RADAR_CAUTION_CRAWL
 
         # Generic unconfirmed-stop crawl floor: when the learned risk head says
         # low/medium and the text envelope does not request a stop, a model
@@ -659,6 +745,9 @@ class GenericTemporalRiskSupervisor:
             "crawl_pending": self._crawl_pending,
             "high_confirm_count": self._high_confirm_count,
             "override_counts": dict(self._override_counts),
+            "radar_caution_crawl_active": (
+                self._radar_caution_crawl_active
+            ),
             "decision_history": list(self._decision_history),
             "moving_since_frame": self._moving_since_frame,
         }

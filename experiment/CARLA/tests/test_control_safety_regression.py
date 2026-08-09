@@ -1,4 +1,6 @@
 import math
+from pathlib import Path
+import tempfile
 import unittest
 from types import SimpleNamespace
 
@@ -6,7 +8,7 @@ import carla
 
 from control.pid_controller import EgoPIDController
 from control.protocol import normalize_intent
-from run_control_experiment import RuleDecisionPolicy
+from run_control_experiment import RuleDecisionPolicy, prepare_output_directory
 
 
 def transform(x=0.0, y=0.0, yaw=0.0):
@@ -63,6 +65,13 @@ class FakeMap:
 
 
 class ControlSafetyRegressionTests(unittest.TestCase):
+    def test_output_directory_exists_before_controller_log_open(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "nested" / "scene1"
+            resolved = prepare_output_directory(output)
+            self.assertEqual(resolved, output)
+            self.assertTrue(output.is_dir())
+
     def test_direct_high_level_vla_actions_compile_before_pid_control(self):
         cases = (
             ({"action": "follow"}, "keep_lane"),
@@ -228,6 +237,60 @@ class ControlSafetyRegressionTests(unittest.TestCase):
         # term (atan2(-lat, v+2)) dominates and steers back toward the line.
         self.assertLess(steer, 0.0)
         self.assertLess(steer, 0.2)
+
+    def test_trusted_junction_route_retains_large_cross_track_recovery(self):
+        vehicle = FakeVehicle()
+        vehicle.current_transform = transform(x=0.0, y=1.4, yaw=0.0)
+        vehicle.current_velocity = carla.Vector3D(x=2.6)
+        junction = FakeWaypoint(transform(x=0.0, y=0.0, yaw=0.0))
+        junction.is_junction = True
+        controller = EgoPIDController(vehicle, FakeMap(junction))
+        intent = {
+            "action": "keep_lane",
+            "target_location": {
+                "x": 10.0,
+                "y": 0.0,
+                "z": 0.0,
+                "yaw": 20.0,
+                "reference": {
+                    "x": 0.0, "y": 0.0, "z": 0.0, "yaw": 0.0,
+                },
+            },
+            "route_target_trusted": True,
+        }
+
+        steer = controller._lateral_control(intent, 0.05)
+
+        self.assertLess(
+            controller._last_lateral_debug["cross_track_term"], -0.3
+        )
+        self.assertLess(steer, 0.0)
+
+    def test_inside_curve_offset_unwinds_before_crossing_inner_marking(self):
+        vehicle = FakeVehicle()
+        vehicle.current_velocity = carla.Vector3D(x=10.0 / 3.6)
+        controller = EgoPIDController(
+            vehicle, FakeMap(FakeWaypoint(transform()))
+        )
+        controller._estimate_curvature_per_m = lambda *_args: -0.04
+
+        corrected = controller._turn_trajectory_adjust(
+            raw_steer=-0.23,
+            speed_kmh=10.0,
+            dt=0.05,
+            curvature_req=-0.10,
+            lateral_error_m=-0.52,
+            action="decelerate",
+        )
+
+        # Matching curvature/lateral signs mean the vehicle is toward the
+        # inside of the bend.  The bounded unwind must materially counter the
+        # feed-forward turn and lower speed until the centreline is recovered.
+        self.assertGreater(corrected, -0.10)
+        self.assertGreater(
+            controller._last_lateral_debug["trajectory_adjust"], 0.12
+        )
+        self.assertLessEqual(controller._turn_unsafe_speed_cap_kmh, 15.0)
 
     def test_keep_lane_uses_route_heading_to_select_current_lane_branch(self):
         vehicle = FakeVehicle()

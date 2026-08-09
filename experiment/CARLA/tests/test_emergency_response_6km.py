@@ -742,6 +742,7 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
             actor_sink=[],
         )
         runtime._retire_background_traffic = mock.Mock(return_value=4)
+        runtime._retire_resolved_cut_in = mock.Mock(return_value=True)
         runtime._activate_cone_taper = mock.Mock()
         event = {"id": "scene3_cone_taper"}
 
@@ -752,10 +753,36 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
             elapsed_s=100.0,
         )
 
+        runtime._retire_resolved_cut_in.assert_called_once_with()
         runtime._retire_background_traffic.assert_called_once_with(
             retire_pending=True,
         )
         runtime._activate_cone_taper.assert_called_once_with(event)
+
+    def test_resolved_cut_in_is_retired_before_next_event_family(self):
+        traffic_manager = mock.Mock()
+        cut_in_actor = mock.Mock()
+        cut_in_actor.is_alive = True
+        runtime = scene_events.EmergencySceneActorRuntime(
+            carla_module=mock.Mock(),
+            world=mock.Mock(),
+            carla_map=mock.Mock(),
+            traffic_manager=traffic_manager,
+            traffic_manager_port=8000,
+            actor_sink=[cut_in_actor],
+        )
+        runtime._cut_in_actor = cut_in_actor
+        runtime._cut_in_event = {"id": "scene3_cut_in"}
+        runtime._cut_in_phase = "RESOLVED"
+
+        retired = runtime._retire_resolved_cut_in()
+
+        self.assertTrue(retired)
+        cut_in_actor.set_autopilot.assert_called_once_with(False, 8000)
+        cut_in_actor.destroy.assert_called_once_with()
+        self.assertIsNone(runtime._cut_in_actor)
+        self.assertIsNone(runtime._cut_in_event)
+        self.assertEqual(runtime._cut_in_phase, "RESOLVED")
 
     def test_background_traffic_falls_back_to_existing_lane(
         self,

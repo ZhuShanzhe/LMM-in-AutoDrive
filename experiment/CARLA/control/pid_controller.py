@@ -275,10 +275,13 @@ class EgoPIDController:
             # adding more curvature-direction steering would cut the inside
             # edge.  Gently unwind and let the cross-track correction return
             # the vehicle to the corridor centre.
+            offset_urgency = _clamp(
+                (abs(lateral_error) - 0.15) / 0.65, 0.0, 1.0
+            )
             unwind = _clamp(
-                0.02 + 0.10 * min(1.0, abs(lateral_error) / 2.0),
+                0.02 + 0.24 * offset_urgency,
                 0.0,
-                0.12,
+                0.26,
             )
             adjust = -math.copysign(unwind, float(curvature_req))
             self._last_lateral_debug["trajectory_adjust"] = round(
@@ -293,7 +296,7 @@ class EgoPIDController:
                 )
                 self._turn_unsafe_frames = 3 + int(4.0 * urgency)
                 self._turn_unsafe_speed_cap_kmh = max(
-                    12.0, 24.0 - 10.0 * urgency
+                    8.0, 16.0 - 8.0 * urgency
                 )
             return _clamp(raw_steer + adjust, -0.85, 0.85)
         if abs(error) < 0.005:
@@ -622,10 +625,6 @@ class EgoPIDController:
                 current_yaw=current_yaw,
                 lateral_error_m=lateral_error_m,
                 speed_kmh=current_speed_kmh,
-                suppress_cross_track=(
-                    bool(getattr(waypoint, "is_junction", False))
-                    and abs(lateral_error_m) > 1.0
-                ),
             )
             steering_limit = self._dynamic_steering_limit(
                 speed_kmh=current_speed_kmh,
@@ -778,7 +777,6 @@ class EgoPIDController:
         current_yaw,
         lateral_error_m,
         speed_kmh,
-        suppress_cross_track=False,
     ):
         """Track a planner path with curvature feed-forward and Stanley error terms."""
         reference_yaw = math.radians(float(route_reference["yaw"]))
@@ -798,7 +796,10 @@ class EgoPIDController:
         feed_forward = math.atan(wheelbase_m * curvature)
         heading_error = self._angle_delta(reference_yaw, current_yaw)
         speed_mps = max(0.0, float(speed_kmh) / 3.6)
-        cross_track = 0.0 if suppress_cross_track else math.atan2(
+        # ``route_reference`` is planner-owned and remains the authoritative
+        # centreline through a junction.  Large offsets need stronger recovery;
+        # suppressing this term is precisely what lets the ego hit an edge.
+        cross_track = math.atan2(
             -1.0 * float(lateral_error_m),
             speed_mps + 2.0,
         )

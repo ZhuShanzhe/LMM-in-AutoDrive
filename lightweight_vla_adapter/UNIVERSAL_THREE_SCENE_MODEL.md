@@ -1,4 +1,10 @@
 # 三场景通用传感器 VLA 模型卡
+
+> 历史模型卡提示：本文后续部分保留研发阶段的旧轮次数据，不再代表最终交付。
+> 最终 Stage-8 权重、真实训练报告指标、三场景结果与限制见
+> `lightweight_vla_adapter/HUGGINGFACE_MODEL_CARD.md` 和
+> `program/FINAL_SUBMISSION_TEST_REPORT_20260809.md`。
+
 ## 统一在线链路（2026-08-07 更新）
 
 提交版使用唯一的在线控制器入口 `experiment/CARLA/universal_vla_controller.py`（`UniversalVLAController`），固定链路为：

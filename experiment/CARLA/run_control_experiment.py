@@ -392,6 +392,13 @@ def make_video_overlay(record):
     }
 
 
+def prepare_output_directory(output_dir):
+    """Create a runner output directory before any controller opens logs."""
+
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir
+
+
 def resolve_scenario_config(config_path, output_dir, resume_progress_m):
     if resume_progress_m is None:
         return config_path
@@ -607,7 +614,16 @@ def parse_args():
 
 def main():
     args = parse_args()
-    output_dir = args.output_dir or os.path.join("outputs", "runs", "{0}_{1}".format(args.scenario, time.strftime("%Y%m%d_%H%M%S")))
+    output_dir = prepare_output_directory(
+        args.output_dir
+        or os.path.join(
+            "outputs",
+            "runs",
+            "{0}_{1}".format(
+                args.scenario, time.strftime("%Y%m%d_%H%M%S")
+            ),
+        )
+    )
     scenario_config_path = resolve_scenario_config(
         args.scenario_config,
         output_dir,
@@ -1124,6 +1140,7 @@ def main():
                 },
                 "ego": {
                     "speed_kmh": round(get_speed_kmh(ego), 4),
+                    "speed_limit_kmh": round(float(ego.get_speed_limit()), 4),
                     "location": {"x": round(location.x, 3), "y": round(location.y, 3), "z": round(location.z, 3)},
                     "yaw_deg": round(float(ego.get_transform().rotation.yaw), 4),
                     "road": {
@@ -1222,12 +1239,20 @@ def main():
         if async_qwen is not None:
             metrics["async_qwen"] = async_qwen.stats()
         if final_status.get("status") in ("SUCCESS", "FAILURE"):
+            scenario_succeeded = final_status["status"] == "SUCCESS"
+            metrics["scenario_goal_reached"] = scenario_succeeded
+            if scenario_succeeded:
+                metrics["goal_reached"] = True
+                metrics["completion_basis"] = "scenario_status"
+            else:
+                metrics["completion_basis"] = "scenario_failure"
             metrics["task_completed"] = (
-                final_status["status"] == "SUCCESS"
-                and metrics.get("violation_free", False)
+                scenario_succeeded and metrics.get("violation_free", False)
             )
             metrics["scenario_reason"] = final_status.get("reason", "")
         else:
+            metrics["scenario_goal_reached"] = False
+            metrics["completion_basis"] = "external_distance_or_runner_stop"
             metrics["task_completed"] = False
             metrics["scenario_reason"] = runner_stop_reason
         logger.write_summary(metrics)

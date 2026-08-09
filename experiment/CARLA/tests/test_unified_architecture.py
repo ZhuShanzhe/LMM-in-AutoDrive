@@ -1109,7 +1109,180 @@ def test_physical_forward_radar_caution_and_clear_paths():
     assert caution["risk_level"] == "medium"
     assert caution["recommended_action"] == "decelerate"
     assert "physical_forward_radar_caution_distance" in caution["reason_codes"]
-    assert clear == learned
+    assert clear["risk_level"] == learned["risk_level"]
+    assert clear["probabilities"] == learned["probabilities"]
+    assert clear["learned_probabilities"] == learned["probabilities"]
+    assert clear["physical_forward_radar"]["nearest_distance_m"] is None
+    assert clear["physical_forward_radar"]["emergency_distance_m"] > 6.0
+    assert clear["physical_forward_radar"]["caution_distance_m"] >= 12.0
+
+
+def test_forward_radar_route_corridor_filters_curve_barrier_not_lead_car():
+    from universal_vla_controller import (
+        filter_forward_radar_to_route_corridor,
+    )
+
+    barrier = {
+        "schema_version": "physical_front_radar/1.0",
+        "candidate_count": 108,
+        "obstacle_candidate_count": 84,
+        "closing_candidate_count": 0,
+        "nearest_distance_m": 4.28,
+        "nearest_relative_velocity_mps": 0.0,
+        "nearest_azimuth_deg": 3.47,
+        "nearest_closing_distance_m": None,
+        "nearest_closing_velocity_mps": None,
+        "azimuth_obstacle_bins": [{
+            "distance_m": 4.28,
+            "relative_velocity_mps": 0.0,
+            "closing_speed_mps": 0.0,
+            "azimuth_deg": 3.47,
+            "relative_height_m": 0.0,
+        }],
+    }
+    curved_route = [
+        (258.547, -121.130),
+        (259.240, -120.009),
+        (264.895, -118.715),
+        (269.894, -118.634),
+    ]
+
+    filtered_barrier = filter_forward_radar_to_route_corridor(
+        barrier,
+        ego_x=258.547,
+        ego_y=-121.130,
+        ego_yaw_deg=39.9436,
+        route_polyline=curved_route,
+        corridor_half_width_m=1.30,
+    )
+
+    assert filtered_barrier["route_corridor_filter_applied"] is True
+    assert filtered_barrier["unfiltered_nearest_distance_m"] == 4.28
+    assert filtered_barrier["obstacle_candidate_count"] == 0
+    assert filtered_barrier["nearest_distance_m"] is None
+
+    lead_vehicle = {
+        **barrier,
+        "candidate_count": 8,
+        "obstacle_candidate_count": 3,
+        "closing_candidate_count": 3,
+        "nearest_distance_m": 8.0,
+        "nearest_relative_velocity_mps": -1.0,
+        "nearest_azimuth_deg": 0.0,
+        "nearest_closing_distance_m": 8.0,
+        "nearest_closing_velocity_mps": 1.0,
+        "azimuth_obstacle_bins": [{
+            "distance_m": 8.0,
+            "relative_velocity_mps": -1.0,
+            "closing_speed_mps": 1.0,
+            "azimuth_deg": 0.0,
+            "relative_height_m": 0.0,
+        }],
+    }
+    filtered_vehicle = filter_forward_radar_to_route_corridor(
+        lead_vehicle,
+        ego_x=0.0,
+        ego_y=0.0,
+        ego_yaw_deg=0.0,
+        route_polyline=[(0.0, 0.0), (20.0, 0.0)],
+        corridor_half_width_m=1.30,
+    )
+
+    assert filtered_vehicle["obstacle_candidate_count"] == 1
+    assert filtered_vehicle["nearest_distance_m"] == 8.0
+    assert filtered_vehicle["nearest_closing_velocity_mps"] == 1.0
+
+
+def test_stationary_physical_caution_gap_crawl_is_latched_and_bounded():
+    from control.generic_temporal_risk_supervisor import (
+        GenericTemporalRiskSupervisor,
+    )
+
+    supervisor = GenericTemporalRiskSupervisor()
+    stopped = {
+        "action": "decelerate",
+        "target_speed_kmh": 0.0,
+        "emergency": False,
+    }
+    canonical = {"action": "keep_lane", "target_speed_kmh": 45.0}
+    risk = {
+        "risk_level": "medium",
+        "reason_codes": ["physical_forward_radar_caution_distance"],
+        "physical_forward_radar": {
+            "schema_version": "physical_front_radar/1.0",
+            "sensor_frame": 10,
+            "obstacle_candidate_count": 1,
+            "nearest_distance_m": 10.0,
+            "nearest_closing_distance_m": None,
+            "nearest_closing_velocity_mps": None,
+            "emergency_distance_m": 6.0,
+            "caution_distance_m": 12.0,
+        },
+    }
+    kwargs = {
+        "parsed_intent": "KEEP_LANE",
+        "requested_lane_direction": None,
+        "target_lane_risk": None,
+        "resume_active": False,
+        "resume_speed_kmh": 20.0,
+    }
+
+    first, first_override = supervisor.apply(
+        stopped, canonical, risk, stationary_elapsed_s=3.0, **kwargs,
+    )
+    risk["physical_forward_radar"].update(
+        sensor_frame=11,
+        nearest_closing_distance_m=10.0,
+        nearest_closing_velocity_mps=1.0,
+    )
+    latched, latched_override = supervisor.apply(
+        stopped, canonical, risk, stationary_elapsed_s=0.0, **kwargs,
+    )
+
+    assert first_override == "stationary_physical_caution_gap_crawl"
+    assert first["action"] == "decelerate"
+    assert 2.0 <= first["target_speed_kmh"] <= 6.0
+    assert latched_override == first_override
+    assert latched["target_speed_kmh"] == first["target_speed_kmh"]
+
+    # Crossing the 1.5 m buffer outside the emergency envelope clears the
+    # latch and leaves the zero-speed physical-risk decision untouched.
+    risk["physical_forward_radar"].update(
+        sensor_frame=12,
+        nearest_distance_m=7.4,
+        nearest_closing_distance_m=None,
+        nearest_closing_velocity_mps=None,
+    )
+    held, held_override = supervisor.apply(
+        stopped, canonical, risk, stationary_elapsed_s=3.0, **kwargs,
+    )
+    assert held_override is None
+    assert held["target_speed_kmh"] == 0.0
+    assert supervisor.diagnostics()["radar_caution_crawl_active"] is False
+
+
+def test_stationary_physical_caution_gap_crawl_respects_text_stop():
+    from control.generic_temporal_risk_supervisor import GenericTemporalRiskSupervisor
+
+    supervisor = GenericTemporalRiskSupervisor()
+    decision = {"action": "decelerate", "target_speed_kmh": 0.0}
+    risk = {
+        "risk_level": "medium",
+        "reason_codes": ["physical_forward_radar_caution_distance"],
+        "physical_forward_radar": {
+            "schema_version": "physical_front_radar/1.0", "sensor_frame": 20,
+            "obstacle_candidate_count": 1, "nearest_distance_m": 10.0,
+            "emergency_distance_m": 6.0, "caution_distance_m": 12.0,
+        },
+    }
+    final, override = supervisor.apply(
+        decision, {"action": "stop", "target_speed_kmh": 0.0}, risk,
+        parsed_intent="STOP", requested_lane_direction=None,
+        target_lane_risk=None, stationary_elapsed_s=5.0,
+        resume_active=False, resume_speed_kmh=20.0,
+    )
+    assert override is None
+    assert final["target_speed_kmh"] == 0.0
 
 
 def test_confirmed_physical_radar_high_is_not_downgraded_while_stopped():
@@ -1415,6 +1588,22 @@ def test_text_hazard_stop_is_not_overridden_by_rear_threat():
     assert override is None
     assert assessment["selected_response"] == "text_hazard_stop_priority"
     assert final == original
+
+
+def test_only_initial_missing_rgb_bundle_is_classified_as_sensor_warmup():
+    from universal_vla_controller import is_initial_sensor_warmup_error
+
+    expected = RuntimeError("no synchronized multiview RGB frame is available")
+    assert is_initial_sensor_warmup_error(expected, 0) is True
+    assert is_initial_sensor_warmup_error(expected, 1) is False
+    assert (
+        is_initial_sensor_warmup_error(
+            RuntimeError("latest camera frame bundle is incomplete"),
+            0,
+        )
+        is False
+    )
+    assert is_initial_sensor_warmup_error(ValueError(str(expected)), 0) is False
 
 
 def test_radar_closing_speed_uses_decreasing_range_sign():

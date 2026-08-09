@@ -1,5 +1,10 @@
 # 三场景通用 VLA 测试报告（2026-08-07 更新）
 
+> 历史报告提示：本文保留研发阶段记录，其中旧权重哈希、训练数据来源和旧轮次指标不再代表最终提交。
+> 2026-08-09 最终权威结果见
+> `program/FINAL_SUBMISSION_TEST_REPORT_20260809.md`，最终模型卡见
+> `lightweight_vla_adapter/HUGGINGFACE_MODEL_CARD.md`。提交材料只能引用这两份最终文档。
+
 ## 一、结论
 
 最终候选模型为 `universal-three-scene-sensor-policy-vla-v6`。三个题目场景现在共用：
