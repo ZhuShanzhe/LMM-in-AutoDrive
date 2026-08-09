@@ -1109,7 +1109,12 @@ def test_physical_forward_radar_caution_and_clear_paths():
     assert caution["risk_level"] == "medium"
     assert caution["recommended_action"] == "decelerate"
     assert "physical_forward_radar_caution_distance" in caution["reason_codes"]
-    assert clear == learned
+    assert clear["risk_level"] == learned["risk_level"]
+    assert clear["probabilities"] == learned["probabilities"]
+    assert clear["learned_probabilities"] == learned["probabilities"]
+    assert clear["physical_forward_radar"]["nearest_distance_m"] is None
+    assert clear["physical_forward_radar"]["emergency_distance_m"] > 6.0
+    assert clear["physical_forward_radar"]["caution_distance_m"] >= 12.0
 
 
 def test_forward_radar_route_corridor_filters_curve_barrier_not_lead_car():

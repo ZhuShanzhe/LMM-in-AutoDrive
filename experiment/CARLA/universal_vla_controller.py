@@ -205,13 +205,6 @@ def fuse_forward_radar_risk(
     """
 
     result = dict(learned_risk)
-    distance_value = radar_observation.get("nearest_distance_m")
-    if not isinstance(distance_value, (int, float)):
-        return result
-    distance_m = float(distance_value)
-    if not math.isfinite(distance_m) or distance_m <= 0.0:
-        return result
-
     speed_mps = max(0.0, float(ego_speed_kmh) / 3.6)
     # Emergency envelope: standstill buffer + controller/sensor reaction
     # travel + braking distance at 6 m/s^2.  The six-metre floor keeps a
@@ -235,6 +228,15 @@ def fuse_forward_radar_risk(
     if learned_probabilities:
         result["learned_probabilities"] = learned_probabilities
     reasons = list(result.get("reason_codes") or [])
+    # Preserve an explicit no-obstacle snapshot for the temporal supervisor.
+    # Without the thresholds and sensor frame, a learned visual false positive
+    # cannot be cleared even after multiple physical empty-road frames.
+    distance_value = radar_observation.get("nearest_distance_m")
+    if not isinstance(distance_value, (int, float)):
+        return result
+    distance_m = float(distance_value)
+    if not math.isfinite(distance_m) or distance_m <= 0.0:
+        return result
 
     if distance_m <= emergency_distance_m:
         reasons.append("physical_forward_radar_emergency_distance")
