@@ -1,6 +1,6 @@
 # 面向智能驾驶的大模型应用场景研究 - 基础赛道复现说明
 
-本提交使用一套通用多模态 VLA 架构处理三个 CARLA 场景。当前验收仅使用文本指令，不使用声音输入。在线输入为文本、RGB 相机、车辆状态、环境状态；场景二额外使用 LiDAR BEV。模型统一输出驾驶动作、目标速度、目标车道、置信度和视觉风险，再由通用时序安全监督器、指令 FSM 与 Route PID 连接到 CARLA 车辆控制接口。在线策略不读取场景 ID、事件 ID、命令 ID 或 CARLA actor 真值。
+本提交使用一套通用多模态 VLA 架构处理三个 CARLA 场景。当前验收仅使用文本指令，不使用声音输入。在线输入为文本、RGB 相机、车辆状态、环境状态和前后向物理雷达；场景二额外使用 LiDAR BEV。模型统一输出驾驶动作、目标速度、目标车道、置信度和视觉风险，再由通用时序安全监督器、指令 FSM 与 Route PID 连接到 CARLA 车辆控制接口。在线策略不读取场景 ID、事件 ID、命令 ID 或 CARLA actor 真值。
 
 ## 1. 文件
 
@@ -39,10 +39,10 @@ docker run --rm -it --gpus all --network host --shm-size=32g \
 ## 4. 启动 CARLA
 
 ```bash
-cd /workspace/CARLA_0.9.16
+cd ../CARLA_0.9.16
 ./CarlaUE4.sh -RenderOffScreen -nosound -quality-level=Low \
-  -carla-rpc-port=2000 > /workspace/outputs/carla_server.log 2>&1 &
-cd /workspace/LMM-in-AutoDrive
+  -carla-rpc-port=2000 > ../outputs/carla_server.log 2>&1 &
+cd ../LMM-in-AutoDrive
 python3 - <<'PY'
 import carla
 c = carla.Client("127.0.0.1", 2000)
@@ -83,16 +83,17 @@ python3 -u experiment/CARLA/run_control_experiment.py basic_voice_urban_5km \
   --vla-config lightweight_vla_adapter/configs/universal_three_scene_v6_sensor_policy.json \
   --vla-device cuda --vla-precision fp16 \
   --target-speed-kmh 45 --duration-s 3600 --goal-distance-m 5000 \
-  --stop-when-goal-reached --output-dir /workspace/outputs/scene1
+  --stop-when-goal-reached --output-dir ../outputs/scene1
 ```
 
 场景二（Town05，8km，密集交通与四类特殊事件）：
 
 ```bash
 python3 -u experiment/CARLA/run_complex_avoidance_town05.py \
-  --host 127.0.0.1 --port 2000 --duration 0 --competition-run \
-  --external-ego-control --output-dir /workspace/outputs/scene2 \
-  --record-ground-truth --ground-truth-every-n 5 \
+  --host 127.0.0.1 --port 2000 --timeout 120 --duration 0 \
+  --traffic-hybrid-physics --traffic-hybrid-radius-m 100 \
+  --competition-run --competition-logs-only \
+  --external-ego-control --output-dir ../outputs/scene2 \
   --vla-checkpoint ../models/lightweight_vla_adapter/universal_three_scene_v6_sensor_policy_finetuned_stage8/model.pt \
   --vla-config lightweight_vla_adapter/configs/universal_three_scene_v6_sensor_policy.json \
   --command-parser-model ../models/modernbert-drive-command-compositional \
@@ -104,7 +105,7 @@ python3 -u experiment/CARLA/run_complex_avoidance_town05.py \
 ```bash
 python3 -u experiment/CARLA/run_emergency_response_6km.py \
   --host 127.0.0.1 --port 2000 --duration 0 --require-complete-scene \
-  --event-variant cautious_sparse --output-dir /workspace/outputs/scene3 \
+  --event-variant cautious_sparse --output-dir ../outputs/scene3 \
   --camera-mode chase-only --presentation-lighting official-rainy-night \
   --record-ground-truth --ground-truth-every-n 5 \
   --ego-controller vla-route-pid \
@@ -116,6 +117,12 @@ python3 -u experiment/CARLA/run_emergency_response_6km.py \
 
 ## 6. 输入输出接口
 
-每次决策输入为统一 `UnifiedSensorBatch`：原始文本、最多四路同步 RGB、物理 LiDAR BEV（可选）、自车状态和天气/限速等环境状态。输出日志 `vla_control_decisions.jsonl` 记录模型提议、风险概率、监督器决策、是否实际施加以及端到端延迟；场景脚本同时输出 `runtime.jsonl`、`events.jsonl`、`commands.jsonl` 和最终 `summary.json`。
+每次决策输入为统一 `UnifiedSensorBatch`：原始文本、最多四路同步 RGB、物理 LiDAR BEV（可选）、自车状态和天气/限速等环境状态；同一控制器还读取经过相对高度地面过滤的前后向窄角物理雷达。前车风险优先制动；后车仅在距离缩短 TTC 达到阈值时介入，低于道路/路线限速才加速，到达限速后仅在地图合法且侧视风险为 low 时变道。
+
+输出日志 `vla_control_decisions.jsonl` 记录模型提议、风险概率、前后雷达原始/有效候选、方向风险裁决、是否实际施加以及端到端延迟；场景脚本同时输出 `runtime.jsonl`、`events.jsonl`、`commands.jsonl` 和最终 `summary.json`。
+
+场景二的 `--competition-logs-only` 只关闭独立 demo 编码、重复的落盘 RGB/LiDAR 证据 rig 与逐帧 actor 真值；统一 VLA 自身的四路 RGB、LiDAR、前后雷达和车辆控制接口仍在线运行。最终 `summary.json` 会明确记录 `artifact_recording.mode=structured_logs_only`，不会把未生成的逐帧证据误报为完整落盘数据。
+
+为缩短 70 辆背景车的全程验收时间，场景二启用 CARLA Traffic Manager hybrid physics；自车周围 100 m 内保持完整车辆物理，远处背景车使用运动学更新。该参数不减少车辆或事件，最终 summary 会记录启用状态和半径。
 
 验收重点为路线完成、任务闭环、碰撞/红灯/逆行/驶离道路/禁行线等严重安全事件、指令一致性、30 分钟稳定性和端到端延迟。提交的实际自测结论以 `metrics.zip` 内三个场景各自的 `summary.json` 和 `TEST_REPORT.md` 为准，不以视频代替日志。
