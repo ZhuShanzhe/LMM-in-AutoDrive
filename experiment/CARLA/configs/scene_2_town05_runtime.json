@@ -34,7 +34,7 @@
     "seed": 20260730,
     "vehicles": 70,
     "buses": 3,
-    "ambient_walkers": 0,
+    "ambient_walkers": 24,
     "global_distance_to_leading_vehicle_m": 3.2,
     "global_speed_difference_pct": 5.0,
     "route_spawn_radius_m": 45.0,
@@ -86,14 +86,6 @@
     "exact_multimodal_bundle_ratio": 1.0
   },
   "special_events": [
-    {
-      "id": "white_lead_vehicle",
-      "kind": "white_lead_vehicle",
-      "anchor_progress_m": 430.0,
-      "activate_progress_m": 380.0,
-      "target_speed_kmh": 38.0,
-      "color": "255,255,255"
-    },
     {
       "id": "slow_vehicle",
       "kind": "slow_vehicle",

@@ -93,7 +93,6 @@ def advance_vla_control_plan(
     *,
     prior_state: dict[str, Any] | None = None,
     feedback: dict[str, Any] | None = None,
-    planner_target_location: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Advance the existing FSM and safety-gate one learned model proposal."""
 
@@ -104,7 +103,6 @@ def advance_vla_control_plan(
         risk_assessment,
         prior_state=prior_state,
         feedback=feedback,
-        planner_target_location=planner_target_location,
     )
     final_decision = gate_vla_proposal(
         proposal,

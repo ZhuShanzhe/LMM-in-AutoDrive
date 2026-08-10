@@ -28,15 +28,9 @@ from structured_command_parser.src.modernbert_model import ModernBertDrivingMode
 
 
 MODULE_ROOT = Path(__file__).resolve().parents[1]
-REPO_ROOT = MODULE_ROOT.parent
 DEFAULT_DATA = MODULE_ROOT / "data" / "processed" / "english_pseudolabels"
-DEFAULT_BASE_MODEL = REPO_ROOT / "models" / "pretrained" / "ModernBERT-base"
-DEFAULT_OUTPUT = (
-    REPO_ROOT
-    / "models"
-    / "training_outputs"
-    / "modernbert-drive-command-compositional"
-)
+DEFAULT_BASE_MODEL = Path("/root/autodl-tmp/models/ModernBERT-base")
+DEFAULT_OUTPUT = Path("/root/autodl-tmp/models/modernbert-drive-command-base")
 
 
 class CommandDataset(Dataset[dict[str, Any]]):

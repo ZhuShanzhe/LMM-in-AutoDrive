@@ -1,0 +1,12 @@
+{
+  "schema_version": "bench2drive_universal_vla_config/1.0",
+  "checkpoint_path": "/workspace/models/lightweight_vla_adapter/universal_three_scene_v6_sensor_policy_finetuned_stage8/model.pt",
+  "model_config_path": "/workspace/LMM-in-AutoDrive/lightweight_vla_adapter/configs/universal_three_scene_v6_sensor_policy.json",
+  "parser_model_path": "/workspace/models/modernbert-drive-command-compositional",
+  "output_root": "/workspace/outputs/bench2drive",
+  "device": "cuda",
+  "precision": "fp16",
+  "decision_interval_frames": 3,
+  "fixed_delta_seconds": 0.05,
+  "default_speed_kmh": 40.0
+}

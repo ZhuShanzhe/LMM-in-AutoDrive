@@ -582,6 +582,7 @@ class UniversalVLAController:
         default_speed_kmh: float = 40.0,
         hold_seconds: float = 20.0,
         modality_schema_version: str = UNIFIED_SENSOR_BATCH_SCHEMA_VERSION,
+        sensor_rig: Any | None = None,
     ) -> None:
         if decision_interval_frames < 1:
             raise ValueError("decision_interval_frames must be at least 1")
@@ -649,17 +650,21 @@ class UniversalVLAController:
         self.modality_schema_version = modality_schema_version
         self.available_cameras = tuple(available_cameras)
         self.enable_lidar = bool(enable_lidar)
-        self.camera_rig = SynchronizedMultiviewCameraRig(
-            world,
-            ego,
-            width=int(config.get("camera_input_width", 224)),
-            height=int(config.get("camera_input_height", 224)),
-            fov=float(config.get("camera_input_fov", 100.0)),
-            sensor_tick=float(fixed_delta_seconds) * self.decision_interval_frames,
-            camera_attributes=dict(camera_attributes or {}),
-            enable_lidar=self.enable_lidar,
-            available_cameras=self.available_cameras,
-        )
+        self.camera_rig = sensor_rig
+        if self.camera_rig is None:
+            self.camera_rig = SynchronizedMultiviewCameraRig(
+                world,
+                ego,
+                width=int(config.get("camera_input_width", 224)),
+                height=int(config.get("camera_input_height", 224)),
+                fov=float(config.get("camera_input_fov", 100.0)),
+                sensor_tick=(
+                    float(fixed_delta_seconds) * self.decision_interval_frames
+                ),
+                camera_attributes=dict(camera_attributes or {}),
+                enable_lidar=self.enable_lidar,
+                available_cameras=self.available_cameras,
+            )
         self._camera_wait_deque: deque[float] = deque(maxlen=64)
 
     def predict_target_lane_risk(

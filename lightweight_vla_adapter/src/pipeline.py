@@ -322,7 +322,6 @@ class LightweightVLAPipeline:
         candidate_entity_ids: Sequence[Sequence[str]],
         prior_state: dict[str, Any] | None = None,
         feedback: dict[str, Any] | None = None,
-        planner_target_location: dict[str, float] | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         proposal = self.predict_proposal(
             batch,
@@ -341,7 +340,6 @@ class LightweightVLAPipeline:
             proposal,
             prior_state=prior_state,
             feedback=feedback,
-            planner_target_location=planner_target_location,
         )
         return proposal, state, final_decision
 

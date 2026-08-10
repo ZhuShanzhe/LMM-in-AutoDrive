@@ -102,8 +102,8 @@ CARLA 实时默认：
 ```bash
 python -m scene_understanding.realtime_perception.run \
   --backend yolop_yolo11 \
-  --yolop-root models/external/YOLOP \
-  --yolo11-weights models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt \
+  --yolop-root /root/autodl-tmp/models/external/YOLOP \
+  --yolo11-weights /root/autodl-tmp/models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt \
   --image-size 640 \
   --object-image-size 640 \
   --score-threshold 0.10 \

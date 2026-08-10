@@ -1,67 +1,95 @@
-# XH-202602 智能驾驶多模态闭环系统
+# LMM-in-AutoDrive
 
-本目录是基础赛道两场景审核版，包含基础语音操控 5 km 和多模态闭环 8 km 的代码、权重、配置、代表性日志与提交文档。场景三代码和设计配置暂时保留，但不纳入本版结果或达标结论。
+面向 XH-202602“智能驾驶大模型应用场景研究”基础赛道的模块化语音控制与多模态决策系统。本仓库 `main` 保存第一阶段可集成运行代码、稳定接口、环境与模型下载说明，以及已完成的技术调研；训练数据、模型权重、检查点和大规模实验输出不进入 Git。
 
-## 系统链路
+## 第一阶段目标
+
+系统围绕题目要求的四个核心模块组织：
+
+| 题目模块 | 本仓库实现 | 主要输出 |
+|---|---|---|
+| 语音解析 | `automatic_speech_recognition` + `structured_command_parser` | ASR 文本、`DrivingIntent 1.2` |
+| 视觉理解 | `scene_understanding` | `PerceptionFrame`、`WorldState`、候选实体 |
+| 语义对齐 | `scene_understanding` | 实体对齐、TTC、`RiskAssessment` |
+| 动作生成 | 原规则链路或 `lightweight_vla_adapter` | `ControlDecision 1.0` |
+| 仿真执行 | `experiment/CARLA` | CARLA 控制量、日志与场景结果 |
+
+第一阶段材料索引、当前完成项和待补报告见 [docs/phase1_submission/README.md](docs/phase1_submission/README.md)。
+
+## 双链路架构
+
+仓库同时保留原规则链路和轻量 VLA 新链路。两条链路共享结构化指令、场景理解、风险判断、FSM 和 CARLA 控制协议。
 
 ```text
-语音指令
-  -> ASR、降噪与术语约束翻译
-  -> ModernBERT / DrivingIntent 1.2
-  -> 实时感知、场景语义融合与风险评估
-  -> 规则 FSM 或 VLA + FSM
-  -> ControlDecision 1.0
-  -> 路线适配、PID 与 CARLA VehicleControl
-  -> 事件、指标与视频记录
+语音 / 文本
+    |
+    v
+ASR / 翻译
+    |
+    v
+structured_command_parser -> DrivingIntent 1.2
+    |
+    v
+scene_understanding -> WorldState + semantic alignment + RiskAssessment
+    |
+    +---------------------- 原规则链路 ----------------------+
+    |  canonical high-level action -> ControlPlan FSM         |
+    |                                                         |
+    +---------------------- VLA 新链路 -----------------------+
+       camera BEV + LiDAR BEV + entities + ego + intent token
+                         |
+                         v
+       lightweight_vla_adapter -> VLADecisionProposal 1.0
+                         |
+                         v
+       deterministic safety gate + canonical fallback
+                         |
+                         v
+                    ControlPlan FSM
+    |
+    v
+ControlDecision 1.0 -> CARLA protocol -> controller
 ```
 
-## 提交目录
+原规则链路是默认兜底：VLA 权重未安装、输入不完整、推理失败、置信度不足或安全门拒绝时，系统继续使用 canonical rule decision。VLA 不能绕过紧急制动、目标车道安全、语义对齐失败或 FSM 阻塞处理。
 
-| 路径 | 作用 |
+## 目录
+
+| 路径 | 内容 |
 |---|---|
-| `automatic_speech_recognition/` | 语音识别、降噪、翻译和测试入口 |
-| `structured_command_parser/` | 将文本指令解析为 `DrivingIntent 1.2` |
-| `scene_understanding/` | 实时感知、实体对齐、风险评估和高层动作 |
-| `lightweight_vla_adapter/` | 轻量 VLA 训练、推理、评测与安全门 |
-| `experiment/CARLA/` | 场景、交通流、闭环控制、日志与可视化 |
-| `models/` | 上游预训练权重、团队最终权重、许可证与校验清单 |
-| `基础赛道提交材料/` | 题目要求的六类文档、报名表和两场景佐证 |
+| `automatic_speech_recognition/` | 中文语音识别、降噪和可选翻译 |
+| `structured_command_parser/` | 英文指令规范化、组合意图解析和 JSON Schema |
+| `scene_understanding/` | 实时感知、视觉语义、实体对齐、风险和原规则决策 |
+| `lightweight_vla_adapter/` | 可选多模态高层决策适配器 |
+| `experiment/CARLA/` | Linux CARLA 0.9.16 场景、控制和评估 |
+| `docs/baseline_research/` | DriveLM、SparseDrive、VAD、Senna 调研报告 |
+| `docs/phase1_submission/` | 第一阶段提交材料索引与缺口 |
+| `program/` | 题目、计划和任务文档 |
 
-内部计划、题目原文件、基线调研、Git 历史、缓存和原始训练数据不进入本审核目录。
+## 运行环境
 
-## 当前场景
-
-| 场景 | 入口 | 配置 | 实测材料 |
-|---|---|---|---|
-| 场景一：基础语音操控 5 km | `experiment/CARLA/run_control_experiment.py` | `experiment/CARLA/configs/basic_voice_urban_5km.json` | `基础赛道提交材料/06_仿真测试全量报告/原始时序数据/scene_1_basic/` |
-| 场景二：8 km 多模态闭环 | `experiment/CARLA/run_scene2_closed_loop.py` | `experiment/CARLA/configs/scene_2_submission_8_runtime.json` | `基础赛道提交材料/06_仿真测试全量报告/原始时序数据/scene_2_complex/` |
-
-场景二随附运行记录是 8 条安全闭环指令版本，用于验证感知、VLA、FSM 和控制链路。完整复杂障碍事件配置仍保留在 `experiment/CARLA/configs/scene_2_town05_runtime.json`，本版不把简化运行结果表述为完整复杂避障验收。
-
-## 快速检查
-
-```bash
-source submission_env.sh
-sha256sum -c models/SHA256SUMS
-
-python -m pytest -q \
-  structured_command_parser/tests \
-  scene_understanding/tests \
-  lightweight_vla_adapter/tests \
-  experiment/CARLA/tests
-```
-
-服务器审核结果：模型文件校验全部通过；上述四部分共 `455 passed，177 subtests passed`。
-
-## 视频放置
-
-Windows 审核目录预留：
+统一集成环境：
 
 ```text
-基础赛道提交材料/06_仿真测试全量报告/可视化材料/
-├── scene_1_basic.mp4
-└── scene_2_complex.mp4
+Linux / Ubuntu 22.04
+Python 3.12.13
+CARLA 0.9.16
+NVIDIA Driver 580.105.08
+CUDA 13.0
+RTX 5090 / sm_120
 ```
+
+不同模块的依赖存在差异，不建议在仓库根目录一次性安装所有依赖。按照各模块 README 创建或复用环境：
+
+- [语音模块](automatic_speech_recognition/README.md)
+- [指令解析](structured_command_parser/README.md)
+- [场景理解](scene_understanding/README.md)
+- [轻量 VLA](lightweight_vla_adapter/README.md)
+- [CARLA 仿真](experiment/CARLA/README.md)
+
+## 模型权重
+
+权重托管在 Hugging Face 或模块 README 指定的上游仓库，不提交 Git。
 
 | 模型 | 来源 | 提交包内相对位置 |
 |---|---|---|

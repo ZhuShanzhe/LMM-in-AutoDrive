@@ -29,32 +29,11 @@ class RealtimePerceptionPipeline:
         timestamp_s: float | None = None,
         world_state: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
+        started = perf_counter()
         with Image.open(image_path) as handle:
             image = handle.convert("RGB")
-            return self.process_image(
-                image=image,
-                frame_id=frame_id,
-                source=source,
-                camera_name=camera_name,
-                timestamp_s=timestamp_s,
-                world_state=world_state,
-            )
-
-    def process_image(
-        self,
-        *,
-        image: Any,
-        frame_id: str,
-        source: str,
-        camera_name: str,
-        timestamp_s: float | None = None,
-        world_state: Mapping[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        """Process an in-memory RGB frame without an intermediate image file."""
-
-        started = perf_counter()
-        width, height = image.size
-        detections, detector_latency_ms = self.detector.detect(image)
+            width, height = image.size
+            detections, detector_latency_ms = self.detector.detect(image)
         tracks = self.tracker.update(detections)
         for track in tracks:
             x1, y1, x2, y2 = track.pop("bbox_xyxy")

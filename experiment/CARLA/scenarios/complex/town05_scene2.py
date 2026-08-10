@@ -200,7 +200,9 @@ def build_repeated_route(
     target_length_m: float,
     sampling_m: float,
 ) -> tuple[list[tuple[Any, Any]], list[float]]:
-    from agents.navigation.local_planner import RoadOption
+    from agents.navigation.global_route_planner import (
+        GlobalRoutePlanner,
+    )
 
     spawn_points = carla_map.get_spawn_points()
     maximum_index = max(
@@ -211,68 +213,39 @@ def build_repeated_route(
         raise ValueError(
             "route spawn index exceeds available Town05 spawn points"
         )
-    del turnaround_spawn_index
-    current = carla_map.get_waypoint(
-        spawn_points[int(start_spawn_index)].location,
-        project_to_road=True,
+    planner = GlobalRoutePlanner(carla_map, float(sampling_m))
+    endpoints = (
+        int(start_spawn_index),
+        int(turnaround_spawn_index),
     )
-    if current is None:
-        raise RuntimeError("Town05 start point is not on a driving lane")
-
-    route: list[tuple[Any, Any]] = [(current, RoadOption.LANEFOLLOW)]
-    distances = [0.0]
-    maximum_points = int(float(target_length_m) / float(sampling_m)) * 3
-    while distances[-1] < float(target_length_m):
-        candidates = list(current.next(float(sampling_m)))
-        if not candidates:
+    route: list[tuple[Any, Any]] = []
+    distances: list[float] = []
+    leg_index = 0
+    while not distances or distances[-1] < float(target_length_m):
+        source = endpoints[leg_index % 2]
+        destination = endpoints[(leg_index + 1) % 2]
+        leg = planner.trace_route(
+            spawn_points[source].location,
+            spawn_points[destination].location,
+        )
+        if not leg:
             raise RuntimeError(
-                f"Town05 continuous route ended at {distances[-1]:.1f} m"
+                "GlobalRoutePlanner returned an empty Town05 leg"
             )
+        if route:
+            leg = leg[1:]
+        route.extend(leg)
+        distances = cumulative_route_distances(route)
+        leg_index += 1
+        if leg_index > 20:
+            raise RuntimeError("Town05 route failed to reach target length")
 
-        current_yaw = math.radians(float(current.transform.rotation.yaw))
-
-        def heading_delta(candidate: Any) -> float:
-            candidate_yaw = math.radians(
-                float(candidate.transform.rotation.yaw)
-            )
-            return abs(
-                math.atan2(
-                    math.sin(candidate_yaw - current_yaw),
-                    math.cos(candidate_yaw - current_yaw),
-                )
-            )
-
-        following = min(candidates, key=heading_delta)
-        signed_delta = math.atan2(
-            math.sin(
-                math.radians(float(following.transform.rotation.yaw))
-                - current_yaw
-            ),
-            math.cos(
-                math.radians(float(following.transform.rotation.yaw))
-                - current_yaw
-            ),
-        )
-        if abs(signed_delta) < math.radians(12.0):
-            option = RoadOption.STRAIGHT if len(candidates) > 1 else RoadOption.LANEFOLLOW
-        elif signed_delta > 0.0:
-            option = RoadOption.LEFT
-        else:
-            option = RoadOption.RIGHT
-
-        segment = distance_2d(
-            current.transform.location,
-            following.transform.location,
-        )
-        if segment <= 0.05:
-            raise RuntimeError("Town05 route contains a zero-length segment")
-        distances.append(distances[-1] + segment)
-        route.append((following, option))
-        current = following
-        if len(route) > maximum_points:
-            raise RuntimeError("Town05 continuous route exceeded point budget")
-
-    return route, distances
+    end_index = next(
+        index
+        for index, distance in enumerate(distances)
+        if distance >= float(target_length_m)
+    )
+    return route[: end_index + 1], distances[: end_index + 1]
 
 
 def route_index_at(
@@ -699,19 +672,23 @@ def _lane_sidewalk(
 def crossing_endpoints(waypoint: Any) -> tuple[Any, Any]:
     import carla
 
-    center = waypoint.transform.location
+    left = _lane_sidewalk(waypoint, "left")
+    right = _lane_sidewalk(waypoint, "right")
+    if left is not None and right is not None:
+        return left.transform.location, right.transform.location
     transform = waypoint.transform
     right_vector = transform.get_right_vector()
+    center = transform.location
     return (
         center
         - carla.Location(
-            x=right_vector.x * 1.2,
-            y=right_vector.y * 1.2,
+            x=right_vector.x * 9.0,
+            y=right_vector.y * 9.0,
         ),
         center
         + carla.Location(
-            x=right_vector.x * 1.2,
-            y=right_vector.y * 1.2,
+            x=right_vector.x * 9.0,
+            y=right_vector.y * 9.0,
         ),
     )
 
@@ -932,15 +909,16 @@ class ScriptedWalker:
             )
             self.completed = True
             return
-        step_m = min(distance, self.speed_mps * self.tick_seconds)
-        transform = self.actor.get_transform()
-        transform.location = carla.Location(
-            x=location.x + dx / distance * step_m,
-            y=location.y + dy / distance * step_m,
-            z=self.spawn_transform.location.z,
+        self.actor.apply_control(
+            carla.WalkerControl(
+                direction=carla.Vector3D(
+                    x=dx / distance,
+                    y=dy / distance,
+                    z=0.0,
+                ),
+                speed=self.speed_mps,
+            )
         )
-        transform.rotation.yaw = math.degrees(math.atan2(dy, dx))
-        self.actor.set_transform(transform)
 
 
 class DeterministicSceneEvents:
@@ -976,7 +954,6 @@ class DeterministicSceneEvents:
         self.bindings: dict[str, Any] = {}
         self.spawn_diagnostics: dict[str, dict[str, Any]] = {}
         self.slow_vehicle: Any | None = None
-        self.white_lead_vehicle: Any | None = None
         self.cyclist: Any | None = None
         self.cyclist_transform: Any | None = None
         self.bus: Any | None = None
@@ -1533,38 +1510,12 @@ class DeterministicSceneEvents:
     def spawn(self) -> None:
         if self._spawned:
             return
-        if not self.events:
-            self._spawned = True
-            return
         import carla
 
         by_kind = {
             str(event["kind"]): event
             for event in self.events
         }
-        white_config = by_kind.get("white_lead_vehicle")
-        if white_config is not None:
-            white_waypoint = self._waypoint(
-                float(white_config["anchor_progress_m"])
-            )
-            self.white_lead_vehicle = self._spawn_vehicle(
-                (
-                    "vehicle.tesla.model3",
-                    "vehicle.audi.a2",
-                    "vehicle.lincoln.mkz_2020",
-                ),
-                white_waypoint,
-                "scene2_white_lead_vehicle",
-                color=str(white_config.get("color", "255,255,255")),
-            )
-            self.white_lead_vehicle.apply_control(
-                carla.VehicleControl(hand_brake=True)
-            )
-            self._stage_actor(
-                "white_lead_vehicle",
-                self.white_lead_vehicle,
-            )
-
         slow_config = by_kind["slow_vehicle"]
         slow_waypoint = self._waypoint(
             float(slow_config["anchor_progress_m"])
@@ -1583,7 +1534,6 @@ class DeterministicSceneEvents:
             False,
             self.traffic_manager.get_port(),
         )
-        self._stage_actor("slow_vehicle", self.slow_vehicle)
 
         crossing_config = by_kind["crossing_pedestrian"]
         crossing_waypoint = self._waypoint(
@@ -1610,13 +1560,6 @@ class DeterministicSceneEvents:
                 pause_fraction=crossing_config.get("pause_fraction"),
                 pause_ticks=int(crossing_config.get("pause_ticks", 0)),
             )
-        )
-        self._stage_actor(
-            "crosswalk_pedestrian",
-            self.scripted_walkers["crosswalk_pedestrian"].actor,
-            self.scripted_walkers[
-                "crosswalk_pedestrian"
-            ].spawn_transform,
         )
 
         self.spawn_diagnostics[
@@ -1744,11 +1687,6 @@ class DeterministicSceneEvents:
                 "scene2_{0}".format(key),
                 passenger_speed,
             )
-            self._stage_actor(
-                key,
-                self.scripted_walkers[key].actor,
-                self.scripted_walkers[key].spawn_transform,
-            )
 
         prop_blueprint = self.world.get_blueprint_library().find(
             "static.prop.busstop"
@@ -1761,13 +1699,12 @@ class DeterministicSceneEvents:
             ),
             bus_waypoint.transform.rotation,
         )
-        self.bus_stop_prop = self.world.try_spawn_actor(
-            prop_blueprint,
-            prop_transform,
+        self.registry.add(
+            self.world.try_spawn_actor(
+                prop_blueprint,
+                prop_transform,
+            )
         )
-        if self.bus_stop_prop is not None:
-            self.registry.add(self.bus_stop_prop)
-            self._stage_actor("bus_stop_prop", self.bus_stop_prop)
 
         cyclist_config = by_kind["cyclist"]
         cyclist_waypoint = self._waypoint(
@@ -1818,10 +1755,6 @@ class DeterministicSceneEvents:
         self._spawned = True
 
     def update(self, progress_m: float) -> list[dict[str, Any]]:
-        if not self.events:
-            return []
-        import carla
-
         changes = []
         for event in self.events:
             event_id = str(event["id"])
@@ -1852,14 +1785,16 @@ class DeterministicSceneEvents:
                     self._activate_bus()
                     for key, walker in self.scripted_walkers.items():
                         if key.startswith("bus_passenger_"):
-                            self._activate_actor(key)
                             walker.start()
                 elif event["kind"] == "cyclist":
                     if (
                         self.cyclist is not None
                         and self.cyclist_transform is not None
                     ):
-                        self._activate_actor("slow_cyclist")
+                        self.cyclist.set_transform(
+                            self.cyclist_transform
+                        )
+                        self.cyclist.set_simulate_physics(True)
                         self.cyclist.set_autopilot(
                             True,
                             self.traffic_manager.get_port(),
@@ -1871,44 +1806,6 @@ class DeterministicSceneEvents:
                         )
                         self.traffic_manager.auto_lane_change(
                             self.cyclist,
-                            False,
-                        )
-                elif event["kind"] == "slow_vehicle":
-                    if self.slow_vehicle is not None:
-                        self._activate_actor("slow_vehicle")
-                        self.slow_vehicle.apply_control(
-                            carla.VehicleControl(hand_brake=False)
-                        )
-                        self.slow_vehicle.set_autopilot(
-                            True,
-                            self.traffic_manager.get_port(),
-                        )
-                        self._set_desired_speed(
-                            self.slow_vehicle,
-                            float(event["target_speed_kmh"]),
-                            60.0,
-                        )
-                        self.traffic_manager.auto_lane_change(
-                            self.slow_vehicle,
-                            False,
-                        )
-                elif event["kind"] == "white_lead_vehicle":
-                    if self.white_lead_vehicle is not None:
-                        self._activate_actor("white_lead_vehicle")
-                        self.white_lead_vehicle.apply_control(
-                            carla.VehicleControl(hand_brake=False)
-                        )
-                        self.white_lead_vehicle.set_autopilot(
-                            True,
-                            self.traffic_manager.get_port(),
-                        )
-                        self._set_desired_speed(
-                            self.white_lead_vehicle,
-                            float(event["target_speed_kmh"]),
-                            10.0,
-                        )
-                        self.traffic_manager.auto_lane_change(
-                            self.white_lead_vehicle,
                             False,
                         )
 

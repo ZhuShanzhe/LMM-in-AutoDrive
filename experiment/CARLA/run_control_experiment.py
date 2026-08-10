@@ -17,10 +17,6 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
 from carla_bootstrap import setup_carla_api
 
 setup_carla_api()
@@ -1185,7 +1181,6 @@ def main():
                 camera.save_frame(
                     snapshot.frame,
                     overlay=make_video_overlay(record) if args.video_overlay else None,
-                    sample_period_s=observed_delta_s,
                 )
             logger.log_frame(record)
             for event in call_scenario_method(scenario, "drain_event_log", []):

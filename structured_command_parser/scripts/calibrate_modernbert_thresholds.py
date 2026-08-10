@@ -19,9 +19,8 @@ from structured_command_parser.src.modernbert_model import ModernBertDrivingMode
 
 
 MODULE_ROOT = Path(__file__).resolve().parents[1]
-REPO_ROOT = MODULE_ROOT.parent
 DEFAULT_DATASET = MODULE_ROOT / "data" / "processed" / "english_pseudolabels" / "validation.jsonl"
-DEFAULT_MODEL = REPO_ROOT / "models" / "modernbert-drive-command-compositional"
+DEFAULT_MODEL = Path("/root/autodl-tmp/models/modernbert-drive-command-base")
 
 
 def binary_f1(predicted: torch.Tensor, gold: torch.Tensor) -> float:
