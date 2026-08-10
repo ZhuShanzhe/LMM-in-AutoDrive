@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 LABEL org.opencontainers.image.title="LMM-in-AutoDrive Basic Track"
 LABEL org.opencontainers.image.description="Bench2Drive-compatible unified three-scene sensor-policy VLA"
 LABEL org.opencontainers.image.source="https://github.com/ZhuShanzhe/LMM-in-AutoDrive"
-LABEL org.opencontainers.image.revision="3a6982d"
+LABEL org.opencontainers.image.revision="4bec242"
 LABEL org.opencontainers.image.bench2drive.revision="2645714eb1f3a100217928dd113093cae0779f36"
 LABEL org.opencontainers.image.carla.version="0.9.16"
 
@@ -11,6 +11,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     ffmpeg \
+    git \
     libfontconfig1 \
     libfreetype6 \
     libgl1 \
