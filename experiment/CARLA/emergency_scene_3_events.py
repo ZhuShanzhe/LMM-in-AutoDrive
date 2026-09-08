@@ -1669,6 +1669,23 @@ class EmergencySceneActorRuntime:
         ):
             return
 
+        front_actor = self._gap_control_vehicles.get("front")
+        rear_actor = self._gap_control_vehicles.get("rear")
+        if (
+            front_actor is None
+            or rear_actor is None
+            or not bool(front_actor.is_alive)
+            or not bool(rear_actor.is_alive)
+        ):
+            # Missing actors invalidate the scripted gap measurement, not the
+            # physical safety checks. Keep release pending until actual passage.
+            self._gap_control_vehicles.clear()
+            print(
+                "BLOCKED-LANE GAP CONTROL UNAVAILABLE | "
+                "reason=gap_control_actor_unavailable | release_pending=true"
+            )
+            return
+
         if not self._gap_release_commanded:
             self._traffic_manager.set_desired_speed(
                 self._gap_control_vehicles["front"],

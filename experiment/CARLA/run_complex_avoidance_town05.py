@@ -175,8 +175,8 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help=(
             "Keep the formal route, traffic, online VLA sensors, control, "
-            "event and safety logs, but skip the duplicate on-disk RGB/LiDAR "
-            "evidence rig, per-frame actor truth and demonstration video. "
+            "event and safety logs and demonstration video, but skip the "
+            "duplicate on-disk RGB/LiDAR evidence rig and per-frame actor truth. "
             "This mode requires --competition-run and --vla-checkpoint."
         ),
     )
@@ -925,10 +925,10 @@ def configure_competition_artifacts(args: Any, vla_enabled: bool) -> None:
     if not args.competition_run:
         return
     if args.competition_logs_only:
-        args.no_video = True
+        args.no_video = bool(args.no_video)
         args.record_multimodal = False
         args.record_ground_truth = False
-        args.video_overlay = False
+        args.video_overlay = not args.no_video
         return
     args.record_multimodal = True
     args.record_ground_truth = True
@@ -1306,6 +1306,7 @@ def main() -> int:
                 ffmpeg_path=args.ffmpeg,
                 video_overlay=args.video_overlay,
                 camera_attributes={
+                    "sensor_tick": f"{1.0 / max(1.0, float(args.video_fps)):.3f}",
                     "gamma": "2.2",
                     "exposure_mode": "histogram",
                     "exposure_compensation": "-0.3",

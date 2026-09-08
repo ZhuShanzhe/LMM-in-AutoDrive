@@ -117,10 +117,25 @@ class Scene2Town05Tests(unittest.TestCase):
 
         configure_competition_artifacts(args, vla_enabled=True)
 
-        self.assertTrue(args.no_video)
+        self.assertFalse(args.no_video)
         self.assertFalse(args.record_multimodal)
         self.assertFalse(args.record_ground_truth)
+        self.assertTrue(args.video_overlay)
+
+    def test_logs_only_honors_explicit_no_video(self):
+        args = SimpleNamespace(
+            competition_run=True,
+            competition_logs_only=True,
+            no_video=True,
+            record_multimodal=True,
+            record_ground_truth=True,
+            video_overlay=True,
+        )
+        configure_competition_artifacts(args, vla_enabled=True)
+        self.assertTrue(args.no_video)
         self.assertFalse(args.video_overlay)
+        self.assertFalse(args.record_multimodal)
+        self.assertFalse(args.record_ground_truth)
 
     def test_full_competition_retains_all_artifact_recorders(self):
         args = SimpleNamespace(

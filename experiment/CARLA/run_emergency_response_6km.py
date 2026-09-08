@@ -1287,6 +1287,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--skip-audit-cameras",
+        action="store_true",
+        help=(
+            "Skip auxiliary on-disk RGB audit cameras only; keep online VLA "
+            "sensors, safety sensors and explicitly requested direct recording"
+        ),
+    )
+    parser.add_argument(
         "--presentation-lighting",
         choices=(
             "official-rainy-night",
@@ -2013,6 +2021,18 @@ def make_camera_callback(
     return save_image
 
 
+def select_auxiliary_camera_mode(
+    camera_mode: str, *, direct_recording: bool, skip_audit_cameras: bool
+) -> str | None:
+    if skip_audit_cameras:
+        return None
+    if not direct_recording:
+        return camera_mode
+    if camera_mode in {"four-view", "four-view-plus-chase"}:
+        return "four-view"
+    return None
+
+
 def spawn_rgb_cameras(
     world: Any,
     ego: Any,
@@ -2684,15 +2704,12 @@ def main(
                     "H.264 video output:",
                     video_output,
                 )
-        if (
-            not direct_recording
-            or args.camera_mode in {"four-view", "four-view-plus-chase"}
-        ):
-            auxiliary_camera_mode = (
-                "four-view"
-                if direct_recording
-                else args.camera_mode
-            )
+        auxiliary_camera_mode = select_auxiliary_camera_mode(
+            args.camera_mode,
+            direct_recording=direct_recording,
+            skip_audit_cameras=args.skip_audit_cameras,
+        )
+        if auxiliary_camera_mode is not None:
             cameras, capture_state = (
                 spawn_rgb_cameras(
                     world,
