@@ -1,6 +1,6 @@
 # LMM-in-AutoDrive
 
-面向 XH-202602“智能驾驶大模型应用场景研究”基础赛道的模块化语音控制与多模态决策系统。本仓库 `main` 保存第一阶段可集成运行代码、稳定接口、环境与模型下载说明，以及已完成的技术调研；训练数据、模型权重、检查点和大规模实验输出不进入 Git。
+面向 XH-202602“智能驾驶大模型应用场景研究”的模块化语音控制与多模态决策系统。`main` 保存稳定运行链路、模块接口、环境说明、既有测试结果和baseline调研；挑战赛道优化在独立分支开展。权重、数据集和大规模运行输出不进入 Git。
 
 ## 挑战赛道规划与分支
 
@@ -13,7 +13,7 @@
 
 其他成员同样将挑战赛道变更合并到 `challenge-track`；基础赛道必要修复可单独同步到 `main`。
 
-## 第一阶段目标
+## 系统模块
 
 系统围绕题目要求的四个核心模块组织：
 
@@ -25,7 +25,7 @@
 | 动作生成 | 原规则链路或 `lightweight_vla_adapter` | `ControlDecision 1.0` |
 | 仿真执行 | `experiment/CARLA` | CARLA 控制量、日志与场景结果 |
 
-第一阶段材料索引、当前完成项和待补报告见 [docs/phase1_submission/README.md](docs/phase1_submission/README.md)。
+模块说明、调研及系统测试记录统一从 [文档索引](docs/README.md) 查阅。
 
 ## 双链路架构
 
@@ -74,7 +74,7 @@ ControlDecision 1.0 -> CARLA protocol -> controller
 | `lightweight_vla_adapter/` | 可选多模态高层决策适配器 |
 | `experiment/CARLA/` | Linux CARLA 0.9.16 场景、控制和评估 |
 | `docs/baseline_research/` | DriveLM、SparseDrive、VAD、Senna 调研报告 |
-| `docs/phase1_submission/` | 第一阶段提交材料索引与缺口 |
+| `docs/` | 调研与系统测试文档索引 |
 | `program/` | 题目、计划和任务文档 |
 
 ## 运行环境
@@ -100,15 +100,7 @@ RTX 5090 / sm_120
 
 ## 模型权重
 
-权重托管在 Hugging Face 或模块 README 指定的上游仓库，不提交 Git。
-
-| 模型 | 来源 | 提交包内相对位置 |
-|---|---|---|
-| ModernBERT 指令解析 | 组合指令微调权重 | `models/modernbert-drive-command-compositional/` |
-| YOLO11s 场景检测（可选审核模块） | 驾驶场景检测权重 | `models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt` |
-| 三场景通用 VLA V6 sensor policy | 本项目 CARLA + nuScenes 训练；策略端禁用 CARLA actor 真值 | `models/lightweight_vla_adapter/universal_three_scene_v6_sensor_policy/model.pt` |
-
-权重可随 Docker 镜像交付，也可只读挂载到 `models/`。固定哈希、训练数据来源、指标和已知边界见 [三场景通用 VLA 模型卡](lightweight_vla_adapter/UNIVERSAL_THREE_SCENE_MODEL.md)。
+权重不提交Git。目录、挂载与校验方式统一见 [模型说明](models/README.md)，下载入口见各模块README。VLA固定哈希、数据来源、指标和边界见 [三场景通用 VLA 模型卡](lightweight_vla_adapter/UNIVERSAL_THREE_SCENE_MODEL.md)，避免在多个入口重复维护。
 
 ## 三场景统一运行
 
@@ -123,7 +115,7 @@ bash experiment/CARLA/scripts/run_universal_vla.sh scene3
 
 脚本只使用仓库相对路径，并允许用 `MODEL_ROOT`、`PYTHON_BIN`、`CARLA_HOST`、`CARLA_PORT` 和输出目录参数适配 Docker。测试范围和结果见 [三场景测试报告](program/UNIVERSAL_VLA_THREE_SCENE_TEST_REPORT_20260806.md)。
 
-## main 提交边界
+## 仓库边界
 
 `main` 包含：
 
@@ -139,11 +131,13 @@ bash experiment/CARLA/scripts/run_universal_vla.sh scene3
 - 模型权重、检查点和 Hugging Face 缓存；
 - 大规模逐样本预测、图片帧、视频、日志和临时输出。
 
-VLA 训练、数据构建、离线评测和三场景运行代码已进入 `main`；数据集原文件和权重按许可证及体积要求单独交付。新生成的数据和输出统一受 `.gitignore` 管理。
+VLA训练、数据构建、离线评测和三场景运行代码按实际目录保留；数据集原文件和权重独立存储，新生成的数据和输出统一受 `.gitignore` 管理。
 
 ## 当前边界
 
-- 当前仓库是基础赛道三场景统一 VLA 的提交准备版本；权重和 Docker 镜像仍需在最终交付时配套。
-- 场景三 V6 传感器策略 6 km 正式视频正在生成；场景一 5 km、场景二 8 km 的最终权重全程证据仍需按统一脚本留档。
+- main保留稳定运行代码与既有研究结果；旧基础赛道提交清单和待补提交事项已移除。
+- [三场景历史测试结果](program/FINAL_SUBMISSION_TEST_REPORT_20260809.md)保留原文件名与实测指标，用于后续对照，不是待完成的提交清单。
+- `submission_env.sh`沿用历史名称，但仍被三场景运行入口调用，保留作为运行环境脚本。
+- 既有服务器环境与历史指标不代表已完成J6P适配或压缩后性能验证。
 - CARLA 和离线指标只代表对应测试范围，不能解释为真实道路安全认证。
 - 各模型必须遵守 Hugging Face 模型卡和上游数据集许可证。

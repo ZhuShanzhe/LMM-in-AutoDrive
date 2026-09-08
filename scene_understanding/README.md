@@ -1,6 +1,6 @@
 # Scene Understanding
 
-## 第一阶段 main 范围
+## 模块范围
 
 `main` 保留实时感知、CARLA 真值桥接、候选实体、DrivingIntent 语义对齐、TTC/风险判断、canonical 规则决策、ControlPlan FSM、Schema 和接口说明。模型权重、数据集、检测器训练检查点和逐帧大规模输出不提交 Git。
 

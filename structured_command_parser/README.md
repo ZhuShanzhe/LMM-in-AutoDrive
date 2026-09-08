@@ -1,8 +1,8 @@
 # ModernBERT 英文驾驶指令结构化解析模块
 
-## 第一阶段 main 范围
+## 模块范围
 
-`main` 保留结构化指令解析的运行时源代码、规则与术语配置、Schema、接口示例、服务入口和必要回归测试。模型权重不进入 Git，通过 Hugging Face 下载；完整数据构建、伪标签、训练、校准和大规模评测资产继续保留在 `zsz` 分支及外部数据盘，待最终复现包审核。
+本目录包含结构化指令解析的运行时源代码、规则与术语配置、Schema、接口示例、服务入口及回归测试。模型权重通过 Hugging Face 下载，数据和大规模运行结果单独存储；挑战赛道优化在开发分支进行。
 
 默认实时链路使用 `ModernBertCommandService` 输出 `DrivingIntent 1.2.0`。规则短路和结构校验继续保留，Qwen 只作为历史对照或离线扩展，不进入默认实时链路。
 
@@ -12,8 +12,6 @@
 UNIC0RN-Zhu/modernbert-drive-command-base
 /root/autodl-tmp/models/modernbert-drive-command-compositional
 ```
-
-本模块只负责语言指令结构化，不直接输出油门、制动、方向盘或最终安全决策。
 
 本模块是 XH-202602 项目中的英文指令解析基线。它接收上游翻译模块输出的英文驾驶指令，通过“语义规范化、原子意图分解、ModernBERT 语义识别、场景检索、规则验证”生成符合 `DrivingIntent 1.2.0` Schema 的 JSON，再交给场景理解、规划与控制模块。
 

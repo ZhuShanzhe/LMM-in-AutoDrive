@@ -1,6 +1,6 @@
-# 提交模型目录
+# 模型运行目录
 
-模型权重与 Docker 镜像单独提交，不写入 Git。运行脚本从仓库根目录的相对路径 `models/` 查找权重，也允许用 `MODEL_ROOT` 指向容器只读挂载目录。
+模型权重不写入 Git。运行脚本从相对路径 `models/` 查找权重，也允许用 `MODEL_ROOT` 指向服务器共享权重或容器只读挂载目录。下载入口与模型版本见各模块README。
 
 ```text
 models/
@@ -29,11 +29,11 @@ bash experiment/CARLA/scripts/run_universal_vla.sh scene3
 MODEL_ROOT=/models bash experiment/CARLA/scripts/run_universal_vla.sh scene3 /outputs
 ```
 
-提交前在 `models/` 内生成并校验完整哈希：
+需要记录本次权重版本时，可在 `models/` 内生成并校验哈希：
 
 ```bash
 find models -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > models/SHA256SUMS
 sha256sum -c models/SHA256SUMS
 ```
 
-不得在配置、脚本或清单中保留训练服务器绝对路径。运行日志可以记录本次容器解析后的绝对路径，便于审计。
+共享配置和脚本使用相对路径或环境变量；运行日志可记录本机解析后的绝对路径，便于定位问题。
