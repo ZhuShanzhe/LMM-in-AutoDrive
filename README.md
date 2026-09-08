@@ -1,6 +1,6 @@
 # LMM-in-AutoDrive
 
-面向 XH-202602“智能驾驶大模型应用场景研究”基础赛道的模块化语音控制与多模态决策系统。本仓库 `main` 保存第一阶段可集成运行代码、稳定接口、环境与模型下载说明，以及已完成的技术调研；训练数据、模型权重、检查点和大规模实验输出不进入 Git。
+面向 XH-202602“智能驾驶大模型应用场景研究”的模块化语音控制与多模态决策系统。当前分支复用基础赛道稳定链路，作为挑战赛道模型压缩、J6P适配与联调的开发基线；训练数据、模型权重、检查点和大规模实验输出不进入 Git。
 
 ## 挑战赛道规划与分支
 
@@ -15,7 +15,7 @@
 
 服务器工作目录、现有环境与权重复用、基线回归及分支合并方式见 [挑战赛道开发入口](CHALLENGE_DEVELOPMENT.md)。
 
-## 第一阶段目标
+## 当前实现
 
 系统围绕题目要求的四个核心模块组织：
 
@@ -27,7 +27,7 @@
 | 动作生成 | 原规则链路或 `lightweight_vla_adapter` | `ControlDecision 1.0` |
 | 仿真执行 | `experiment/CARLA` | CARLA 控制量、日志与场景结果 |
 
-第一阶段材料索引、当前完成项和待补报告见 [docs/phase1_submission/README.md](docs/phase1_submission/README.md)。
+模块说明及压缩前对照结果见 [文档索引](docs/README.md)。
 
 ## 双链路架构
 
@@ -75,8 +75,7 @@ ControlDecision 1.0 -> CARLA protocol -> controller
 | `scene_understanding/` | 实时感知、视觉语义、实体对齐、风险和原规则决策 |
 | `lightweight_vla_adapter/` | 可选多模态高层决策适配器 |
 | `experiment/CARLA/` | Linux CARLA 0.9.16 场景、控制和评估 |
-| `docs/baseline_research/` | DriveLM、SparseDrive、VAD、Senna 调研报告 |
-| `docs/phase1_submission/` | 第一阶段提交材料索引与缺口 |
+| `docs/` | 挑战赛道文档与现有基线结果索引 |
 | `program/` | 题目、计划和任务文档 |
 
 ## 运行环境
@@ -125,27 +124,27 @@ bash experiment/CARLA/scripts/run_universal_vla.sh scene3
 
 脚本只使用仓库相对路径，并允许用 `MODEL_ROOT`、`PYTHON_BIN`、`CARLA_HOST`、`CARLA_PORT` 和输出目录参数适配 Docker。测试范围和结果见 [三场景测试报告](program/UNIVERSAL_VLA_THREE_SCENE_TEST_REPORT_20260806.md)。
 
-## main 提交边界
+## 版本与数据边界
 
-`main` 包含：
+当前开发分支保留：
 
 - 运行时源代码和稳定接口；
 - 配置、Schema、最小示例与必要的回归入口；
 - 环境、下载、运行和接入说明；
-- 已完成 baseline 调研报告；
+- 挑战赛道可复用的训练、数据处理和评测工具；
 - 当前阶段结果摘要和已知边界。
 
-`main` 不包含：
+Git 不包含：
 
 - 数据集原文件和生成语料；
 - 模型权重、检查点和 Hugging Face 缓存；
 - 大规模逐样本预测、图片帧、视频、日志和临时输出。
 
-VLA 训练、数据构建、离线评测和三场景运行代码已进入 `main`；数据集原文件和权重按许可证及体积要求单独交付。新生成的数据和输出统一受 `.gitignore` 管理。
+已结束的独立baseline调研、DriveLM实验和旧第一阶段材料索引已从挑战赛道开发分支移除，仍可在 `main` 和Git历史中查阅。既有路线规划PDF、模块代码、训练工具和本系统基线测试结果保持保留。新生成的数据和输出统一受 `.gitignore` 管理。
 
 ## 当前边界
 
-- 当前仓库是基础赛道三场景统一 VLA 的提交准备版本；权重和 Docker 镜像仍需在最终交付时配套。
-- 场景三 V6 传感器策略 6 km 正式视频正在生成；场景一 5 km、场景二 8 km 的最终权重全程证据仍需按统一脚本留档。
+- 当前仅完成挑战赛道开发基线同步和目录整理，尚未完成挑战赛道模型压缩或J6P适配。
+- 基础赛道三场景测试结果作为历史对照保留，不能当作J6P部署或压缩后性能。
 - CARLA 和离线指标只代表对应测试范围，不能解释为真实道路安全认证。
 - 各模型必须遵守 Hugging Face 模型卡和上游数据集许可证。

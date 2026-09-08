@@ -6,7 +6,11 @@
 - `challenge-track`：挑战赛道集成分支，由同步最新 main 后的 zsz 建立，保留开发所需的训练工具。
 - `zsz`：朱善哲个人开发分支。后续指令解析、VLA 压缩和 J6P 适配先在这里开发，再通过 Pull Request 合并到 `challenge-track`。
 
-规划见 [路线及人员分工](program/task_0908/document.pdf) 和 [LaTeX 源文件](program/task_0908/document.tex)。本次只是建立共同开发基线，尚未进行挑战赛道训练或 J6P 适配。
+规划见 [路线及人员分工](program/task_0908.pdf)。仓库只保留此次规划的PDF，不提交TeX源文件。当前只是建立共同开发基线，尚未进行挑战赛道训练或 J6P 适配。
+
+## 内容整理边界
+
+挑战赛道分支移除已结束的独立baseline调研材料、旧第一阶段材料索引及DriveLM实验记录；这些内容仍保留在 `main` 和Git历史中。`program/` 中既有题目、路线和任务PDF不删除；本系统三场景测试报告继续用于压缩前后对照。运行代码、训练工具、模型权重及数据不在本次清理范围内。
 
 ## 服务器工作目录
 
