@@ -5,11 +5,11 @@
 ## 1. 目录结构
 ```text
 tests/
-├── utils/
+├── utils/                     
 │   ├── data_loader.py
-│   ├── evaluator.py
+│   ├── evaluator.py 
 │   └── metrics.py
-|
+|   
 ├── asr_test.py
 ├── qwen_test.py
 ├── denoise_test.py
@@ -20,7 +20,7 @@ tests/
 └── README.md
 
 data/
-├── results/                    # ASR 识别结果 json 报告
+├── results/                    # ASR 识别结果 json 报告 
 ├── test_results/               # 基础数据集测试结果
 │   ├── ASR_result.json
 │   ├── test_summary.json

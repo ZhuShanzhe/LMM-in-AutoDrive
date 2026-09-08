@@ -610,8 +610,10 @@ ModernBERT 默认后端、伪标签防泄漏切分、规则短路、模型服务
 | 翻译将 40 错写为 50 的反事实测试 | 恢复中文源值 40，并产生审计警告 |
 | DrivingIntent 到 CARLA 协议 | 输出 `keep_lane + 40.0 km/h` |
 | 指令解析单元与回归测试 | 122 passed，96 subtests passed |
-| 三模块联合测试 | 342 passed，137 subtests passed |
-| CARLA 控制测试 | 32 passed |
+| 当前 `main` 指令解析与场景理解联合测试 | 322 passed，169 subtests passed |
+| 当前 `main` CARLA 控制测试 | 21 passed |
+| `zsz` 含 VLA 开发测试的三模块联合测试 | 348 passed，169 subtests passed |
+| `zsz` 完整 CARLA 控制测试 | 32 passed |
 
 ## 场景二、场景三中文组合指令修复（2026-07-30）
 
@@ -678,8 +680,10 @@ ModernBERT 默认后端、伪标签防泄漏切分、规则短路、模型服务
 | 实体、目标引用、速度上限、完成态抑制专项检查 | 全部通过 |
 | 场景报告专项测试 | 6 passed，32 subtests passed |
 | 指令解析完整测试 | 128 passed，128 subtests passed |
-| 指令解析、场景理解、轻量 VLA 联合测试 | 348 passed，169 subtests passed |
-| CARLA 控制接口测试 | 32 passed |
+| `main` 指令解析与场景理解联合测试 | 322 passed，169 subtests passed |
+| `main` CARLA 控制接口测试 | 21 passed |
+| `zsz` 指令解析、场景理解、轻量 VLA 联合测试 | 348 passed，169 subtests passed |
+| `zsz` CARLA 控制接口测试 | 32 passed |
 
 以上结果验证的是 ASR 文本进入结构化解析后的动作、实体、约束与接口一致性，不包含
 ASR 识别准确率、中文到英文翻译时延或 CARLA 闭环任务成功率。

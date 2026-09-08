@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build readable train/val camera manifests from full nuScenes trainval."""
+"""Build readable train/val camera manifests from nuScenes trainval or mini."""
 
 from __future__ import annotations
 
@@ -40,6 +40,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataroot", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--version",
+        choices=("v1.0-trainval", "v1.0-mini"),
+        default="v1.0-trainval",
+        help="nuScenes metadata version present below --dataroot.",
+    )
     parser.add_argument("--camera", action="append", choices=CAMERAS)
     return parser.parse_args()
 
@@ -55,11 +61,15 @@ def main() -> None:
     manifests = args.output / "manifests"
     manifests.mkdir(exist_ok=True)
 
-    nusc = NuScenes(version="v1.0-trainval", dataroot=str(args.dataroot), verbose=False)
+    nusc = NuScenes(version=args.version, dataroot=str(args.dataroot), verbose=False)
     exporter.nusc = nusc
+    if args.version == "v1.0-mini":
+        train_scenes, val_scenes = splits.mini_train, splits.mini_val
+    else:
+        train_scenes, val_scenes = splits.train, splits.val
     split_names = {
-        **{name: "train" for name in splits.train},
-        **{name: "val" for name in splits.val},
+        **{name: "train" for name in train_scenes},
+        **{name: "val" for name in val_scenes},
     }
     scenes = {item["token"]: item for item in nusc.scene}
     logs = {item["token"]: item for item in nusc.log}
@@ -141,9 +151,9 @@ def main() -> None:
 
     inventory = {
         "dataset": "nuScenes",
-        "version": "v1.0-trainval",
+        "version": args.version,
         "dataroot": str(args.dataroot),
-        "official_scene_splits": {"train": len(splits.train), "val": len(splits.val)},
+        "official_scene_splits": {"train": len(train_scenes), "val": len(val_scenes)},
         "samples": len(nusc.sample),
         "sample_annotations_3d": len(nusc.sample_annotation),
         "cameras": list(cameras),

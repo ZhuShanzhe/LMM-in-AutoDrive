@@ -1,0 +1,93 @@
+{
+  "schema_version": "portable_vla_model_manifest/1.0",
+  "model_name": "scene3-counterfactual-raw4view-state-environment-vla-v3",
+  "checkpoint_file": "model.pt",
+  "checkpoint_sha256": "9d12e2e6c7a53daf3b53756fb2736cbe09b40cb2197f8753c6e6ff8f6c450c4d",
+  "checkpoint_bytes": 21165039,
+  "parameter_count": 5251633,
+  "trainable_parameter_count": 5251633,
+  "required_modalities": [
+    "text",
+    "front_rgb",
+    "left_rgb",
+    "right_rgb",
+    "rear_rgb",
+    "vehicle_state",
+    "environment_state"
+  ],
+  "optional_modalities": [
+    "lidar_bev"
+  ],
+  "disabled_modalities": [
+    "candidate_entities",
+    "structured_bev"
+  ],
+  "require_raw_camera": true,
+  "use_candidate_entities": false,
+  "use_structured_bev": false,
+  "training_summary": {
+    "train_samples": 17435,
+    "validation_samples": 4199,
+    "best_selection_score": 0.9007258594375958
+  },
+  "baseline_modality_evaluation": {
+    "mode": "baseline",
+    "samples": 3728,
+    "action_accuracy": 0.9315987229347229,
+    "visual_risk_accuracy": 0.8935086131095886,
+    "speed_mae_kmh": 2.1187026500701904,
+    "environment_pair_count": 640,
+    "environment_pair_order_accuracy": 0.99375,
+    "environment_pair_delta_mae_kmh": 0.5181866176860226,
+    "per_action_accuracy": {
+      "accelerate": {
+        "correct": 1342,
+        "samples": 1432,
+        "accuracy": 0.9371508379888268
+      },
+      "decelerate": {
+        "correct": 347,
+        "samples": 359,
+        "accuracy": 0.9665738161559888
+      },
+      "emergency_brake": {
+        "correct": 63,
+        "samples": 163,
+        "accuracy": 0.38650306748466257
+      },
+      "keep_lane": {
+        "correct": 1192,
+        "samples": 1234,
+        "accuracy": 0.965964343598055
+      },
+      "lane_change_left": {
+        "correct": 143,
+        "samples": 147,
+        "accuracy": 0.9727891156462585
+      },
+      "lane_change_right": {
+        "correct": 92,
+        "samples": 95,
+        "accuracy": 0.968421052631579
+      },
+      "stop": {
+        "correct": 103,
+        "samples": 103,
+        "accuracy": 1.0
+      },
+      "turn_left": {
+        "correct": 87,
+        "samples": 88,
+        "accuracy": 0.9886363636363636
+      },
+      "turn_right": {
+        "correct": 104,
+        "samples": 107,
+        "accuracy": 0.9719626168224299
+      }
+    },
+    "mean_action_probability_l1_vs_baseline": 0.0,
+    "mean_risk_probability_l1_vs_baseline": 0.0,
+    "mean_speed_delta_kmh_vs_baseline": 0.0
+  }
+}

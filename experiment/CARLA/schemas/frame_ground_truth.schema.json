@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lmm-autodrive.local/schemas/frame_ground_truth.schema.json",
+  "title": "FrameGroundTruth",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "scene_id",
+    "simulation_frame",
+    "timestamp_s",
+    "route_s_m",
+    "ego",
+    "event_states",
+    "active_events",
+    "actors",
+    "frame_truth_quality",
+    "claim_eligible",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "FrameGroundTruth/1.0.0"
+    },
+    "scene_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "simulation_frame": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "timestamp_s": {
+      "type": "number",
+      "minimum": 0
+    },
+    "route_s_m": {
+      "type": "number",
+      "minimum": 0
+    },
+    "ego": {
+      "$ref": "#/$defs/actorState"
+    },
+    "event_states": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": [
+          "PENDING",
+          "ACTIVE",
+          "RESOLVED"
+        ]
+      }
+    },
+    "active_events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/eventTruth"
+      }
+    },
+    "actors": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/actorState"
+      }
+    },
+    "unavailable_actor_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "runtime_state": {
+      "type": "object"
+    },
+    "frame_truth_quality": {
+      "enum": [
+        "OBSERVED",
+        "PARTIAL",
+        "PROXY",
+        "SCHEDULE_ONLY"
+      ]
+    },
+    "claim_eligible": {
+      "type": "boolean"
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "event_phase_source",
+        "model_output_used",
+        "adjacent_frame_fill_used",
+        "synchronization_key"
+      ],
+      "properties": {
+        "source": {
+          "const": "CARLA_SIMULATOR_STATE"
+        },
+        "event_phase_source": {
+          "const": "ROUTE_SCHEDULE"
+        },
+        "model_output_used": {
+          "const": false
+        },
+        "adjacent_frame_fill_used": {
+          "const": false
+        },
+        "synchronization_key": {
+          "const": "simulation_frame"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "vector3": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        }
+      }
+    },
+    "actorState": {
+      "type": "object",
+      "required": [
+        "actor_id",
+        "transform",
+        "velocity_mps",
+        "lane"
+      ],
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "actor_id": {
+          "type": "integer"
+        },
+        "type_id": {
+          "type": "string"
+        },
+        "blueprint_role_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "alive": {
+          "type": "boolean"
+        },
+        "transform": {
+          "type": "object"
+        },
+        "velocity_mps": {
+          "$ref": "#/$defs/vector3"
+        },
+        "speed_mps": {
+          "type": "number"
+        },
+        "speed_kmh": {
+          "type": "number"
+        },
+        "lane": {
+          "type": "object"
+        },
+        "relation_to_ego": {
+          "type": "object"
+        }
+      }
+    },
+    "eventTruth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "scenario",
+        "state",
+        "risk_labels",
+        "expected_control",
+        "truth_quality",
+        "evidence"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string"
+        },
+        "scenario": {
+          "type": "string"
+        },
+        "state": {
+          "const": "ACTIVE"
+        },
+        "runtime_phase": {
+          "type": [
+            "string",
+            "boolean",
+            "number",
+            "null"
+          ]
+        },
+        "risk_labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "expected_control": {
+          "type": "object",
+          "required": [
+            "allowed_actions",
+            "forbidden_actions"
+          ],
+          "properties": {
+            "allowed_actions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "forbidden_actions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          }
+        },
+        "truth_quality": {
+          "enum": [
+            "OBSERVED",
+            "PARTIAL",
+            "PROXY",
+            "SCHEDULE_ONLY"
+          ]
+        },
+        "evidence": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

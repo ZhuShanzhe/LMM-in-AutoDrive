@@ -4,6 +4,8 @@
 
 本目录保存 Linux、CARLA 0.9.16、Python 3.12.13 下的场景构建、控制协议、日志和评估入口。数据集、传感器图片、视频、逐帧日志和运行输出不提交 Git。
 
+场景三文本到 VLA 在线闭环已完成 6 km 严格测试；复现命令、结果和模型不足见 [SCENE_3_VLA_CLOSED_LOOP_TEST_20260805.md](SCENE_3_VLA_CLOSED_LOOP_TEST_20260805.md)。该测试不使用音频或 ASR，当前 BEV 输入来自实时 CARLA 状态代理，不等同于原始 RGB/LiDAR 端到端感知。
+
 CARLA 控制端只消费稳定的 `ControlDecision 1.0`，因此同时兼容：
 
 1. 原规则链路：场景理解生成 canonical high-level action，经风险门控和 FSM 输出 `ControlDecision`；
@@ -20,14 +22,14 @@ CARLA 0.9.15 / Python 3.7 环境。
 - 场景代码由组员 CARLA 分支持续集成；当前 `main` 副本作为第一阶段统一控制和场景接口。
 - CARLA 服务端与 Python API：统一使用 `0.9.16`，二者版本必须一致。
 - 推荐 Python：`3.12.13`；当前 AutoDL 环境已验证 PyTorch 可识别 RTX 5090 的 `sm_120`。
-- 默认 CARLA 路径：`/root/autodl-tmp/CARLA_0.9.16`，也可通过 `CARLA_ROOT` 覆盖。
+- 默认 CARLA 路径：`$CARLA_ROOT`，也可通过 `CARLA_ROOT` 覆盖。
 - 统一集成环境：Linux（当前验证系统为 Ubuntu 22.04）。
 
 Linux 环境优先直接安装 CARLA 0.9.16 自带的 wheel；`carla_bootstrap.py` 也会从
 `$CARLA_ROOT/PythonAPI/carla/dist` 查找 `.whl` 或 `.egg`：
 
 ```bash
-export CARLA_ROOT=/root/autodl-tmp/CARLA_0.9.16
+export CARLA_ROOT=$CARLA_ROOT
 python -m pip install "$CARLA_ROOT"/PythonAPI/carla/dist/carla-0.9.16-*.whl
 python -c "from importlib.metadata import version; import carla; print(version('carla'))"
 ```
@@ -43,7 +45,7 @@ python -m pip install -i https://pypi.org/simple carla==0.9.16
 当前容器已完成以下安装：
 
 ```text
-CARLA 服务端：/root/autodl-tmp/CARLA_0.9.16（约 19 GB）
+CARLA 服务端：$CARLA_ROOT（约 19 GB）
 CARLA Python API：0.9.16 / CPython 3.12
 ```
 
@@ -63,8 +65,8 @@ CARLA 服务端禁止以 root 身份运行，但 root 可以运行 Python 客户
 用户为 root，因此使用专用 `carla` 用户，并只授予其穿过 `/root` 到数据盘的权限：
 
 ```bash
-export CARLA_ROOT=/root/autodl-tmp/CARLA_0.9.16
-export CARLA_CACHE_DIR=/root/autodl-tmp/carla_cache
+export CARLA_ROOT=$CARLA_ROOT
+export CARLA_CACHE_DIR=/tmp/carla_cache
 id carla >/dev/null 2>&1 || useradd -m -s /bin/bash carla
 setfacl -m u:carla:--x /root
 install -d -o carla -g carla "$CARLA_CACHE_DIR/runtime" "$CARLA_CACHE_DIR/logs"
@@ -72,7 +74,7 @@ chmod 700 "$CARLA_CACHE_DIR/runtime"
 
 runuser -u carla -- env \
   HOME="$CARLA_CACHE_DIR" XDG_RUNTIME_DIR="$CARLA_CACHE_DIR/runtime" \
-  bash -lc 'cd /root/autodl-tmp/CARLA_0.9.16 && \
+  bash -lc 'cd $CARLA_ROOT && \
     ./CarlaUE4.sh -RenderOffScreen -nosound -quality-level=Low -carla-rpc-port=2000'
 ```
 
@@ -117,7 +119,7 @@ python -m scene_understanding.core.prepare_carla_samples \
 
 python -m scene_understanding.core.run_qwen_scene_inference \
   --manifest experiment/CARLA/outputs/runs/emergency_scene_capture/scene_manifest.jsonl \
-  --model-path /root/autodl-tmp/models/Qwen2.5-VL-3B-Instruct \
+  --model-path $MODEL_ROOT/Qwen2.5-VL-3B-Instruct \
   --output experiment/CARLA/outputs/runs/emergency_scene_capture/scene_results.jsonl \
   --limit 10 \
   --fail-fast

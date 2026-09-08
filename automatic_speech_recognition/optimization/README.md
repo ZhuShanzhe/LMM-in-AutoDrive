@@ -12,26 +12,26 @@
 
 ```text
 optimization/
-├── __init__.py
+├── __init__.py 
 ├── config.py
 ├── audio_processor.py
 ├── noise_generator.py
-├── utils.py
-├── DeepFilterNet/
+├── utils.py     
+├── DeepFilterNet/          
 │   ├── __init__.py
-│   ├── config.py
-│   ├── denoiser.py
-│   ├── service.py
-│   └── README.md
+│   ├── config.py    
+│   ├── denoiser.py         
+│   ├── service.py            
+│   └── README.md           
 ├── build_noisy_subset.py
 ├── example.py
-├── requirements.txt
+├── requirements.txt     
 └── README.md
 ```
 
 ## 2. 安装与依赖
 
-+ 环境要求：
++ 环境要求： 
   + Python 3.8+
 
   + PyTorch >= 2.0.0（DeepFilterNet 需要）
@@ -96,3 +96,5 @@ outputs = service.denoise(files, output_json="batch.json")
 python -m df.enhance -m DeepFilterNet3 noisy_audio.wav -o output_dir/
 deepFilter --model DeepFilterNet3 noisy_audio.wav -o output_dir/
 ```
+
+

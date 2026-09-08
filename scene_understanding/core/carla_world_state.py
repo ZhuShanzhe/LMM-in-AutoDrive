@@ -204,6 +204,8 @@ class CarlaWorldStateCollector:
         self.world = world
         self.ego_vehicle = ego_vehicle
         self.max_distance_m = float(max_distance_m)
+        self.last_dropped_actor_count = 0
+        self.total_dropped_actor_samples = 0
 
     def collect(self, *, sensor_events: dict[str, list[dict[str, Any]]] | None = None) -> dict[str, Any]:
         """Return a validated WorldState for the world's latest completed tick."""
@@ -244,22 +246,34 @@ class CarlaWorldStateCollector:
             ego=ego,
         )
 
+        dropped_actor_count = 0
         for actor, category in _actor_groups(self.world.get_actors()):
             if actor.id == self.ego_vehicle.id or not getattr(actor, "is_alive", True):
                 continue
-            record = self._collect_actor(
-                actor,
-                category=category,
-                ego_position=ego_position,
-                ego_velocity=ego_velocity,
-                ego_yaw_deg=ego["rotation_world_deg"]["yaw"],
-                ego_waypoint=ego_waypoint,
-                carla_map=carla_map,
-            )
+            try:
+                record = self._collect_actor(
+                    actor,
+                    category=category,
+                    ego_position=ego_position,
+                    ego_velocity=ego_velocity,
+                    ego_yaw_deg=ego["rotation_world_deg"]["yaw"],
+                    ego_waypoint=ego_waypoint,
+                    carla_map=carla_map,
+                )
+            except (AttributeError, RuntimeError, ValueError):
+                # Traffic Manager can expose a just-spawned, dormant, or
+                # concurrently destroyed non-ego actor with NaN kinematics
+                # for one tick. Such a sample cannot enter a metric
+                # WorldState, but it must not discard every other valid
+                # sensor/object observation in the same frame.
+                dropped_actor_count += 1
+                continue
             if record["distance_m"] <= self.max_distance_m:
                 state["objects"].append(record)
 
         state["objects"].sort(key=lambda item: (item["distance_m"], item["object_id"]))
+        self.last_dropped_actor_count = dropped_actor_count
+        self.total_dropped_actor_samples += dropped_actor_count
 
         weather = _weather_values(self.world.get_weather())
         state["environment"].update(weather)

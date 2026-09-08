@@ -107,6 +107,8 @@ def load_candidates(
                     quality_counts["records_without_valid_target_skipped"] += 1
                     continue
                 image_path = Path(record["image_path"])
+                if not image_path.is_absolute():
+                    image_path = (path.parent / image_path).resolve()
                 if not image_path.is_file():
                     raise FileNotFoundError(image_path)
                 candidates.append(

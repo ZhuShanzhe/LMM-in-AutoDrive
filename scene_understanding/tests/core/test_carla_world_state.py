@@ -161,6 +161,20 @@ class CarlaWorldStateTests(unittest.TestCase):
         state = CarlaWorldStateCollector(self.world, self.ego, max_distance_m=80).collect()
         self.assertNotIn("5", {item["source_object_id"] for item in state["objects"]})
 
+    def test_skips_nonfinite_non_ego_actor_without_dropping_frame(self):
+        invalid = FakeActor(99, "vehicle.audi.tt", float("nan"), 0.0)
+        self.world.actors.append(invalid)
+        collector = CarlaWorldStateCollector(self.world, self.ego)
+
+        state = collector.collect()
+
+        self.assertEqual(validate_world_state(state), [])
+        self.assertNotIn(
+            "99", {item["source_object_id"] for item in state["objects"]}
+        )
+        self.assertEqual(collector.last_dropped_actor_count, 1)
+        self.assertEqual(collector.total_dropped_actor_samples, 1)
+
     def test_collects_traffic_light_state(self):
         state = CarlaWorldStateCollector(self.world, self.ego).collect()
         light = next(item for item in state["objects"] if item["category"] == "traffic_light")

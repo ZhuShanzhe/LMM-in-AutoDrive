@@ -47,7 +47,7 @@ class RouteAutopilotPolicy:
 class BasicTrack5KmScenario(BaseScenario):
     """A continuous urban route with traffic flow and independently owned events."""
 
-    default_map = "Town05_Opt"
+    default_map = "Town04_Opt"
     default_duration_s = 650.0
 
     def __init__(self, world, external_control=True, config_path=None):
@@ -146,12 +146,31 @@ class BasicTrack5KmScenario(BaseScenario):
         self.metrics["simulation_time"] += self.fixed_delta_s
         self.event_manager.tick(self.ego_vehicle)
         self._update_route_metrics()
-        self.traffic.tick(self.route_manager)
-        self.pedestrians.tick(self.route_manager, self.fixed_delta_s)
+        self.traffic.tick(self.route_manager, self.ego_vehicle)
+        self.pedestrians.tick(
+            self.route_manager, self.fixed_delta_s, self.ego_vehicle
+        )
         self._deactivate_traffic_if_due()
 
     def create_decision_policy(self):
         return RouteAutopilotPolicy(self)
+
+    def get_policy_context(self):
+        event_snapshot = self.event_manager.snapshot()
+        events_by_id = {
+            item["id"]: item["scenario"]
+            for item in self.config.get("events", [])
+        }
+        return {
+            "progress_m": self.route_manager.progress_m,
+            "route_target": self.route_manager.target_point(12.0),
+            "default_speed_kmh": self.target_speed_kmh,
+            "completed_event_scenarios": [
+                events_by_id[event_id]
+                for event_id in event_snapshot["completed"]
+                if event_id in events_by_id
+            ],
+        }
 
     def create_controller(self):
         return TrafficManagerRouteController(

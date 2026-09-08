@@ -25,6 +25,7 @@ class AdjacentLeadBrakeEvent:
         self.elapsed_s = 0.0
         self.brake_started_s = None
         self.fixed_delta_s = float(event.get("fixed_delta_s", 0.1))
+        self.brake_at_route_progress_m = event.get("brake_at_route_progress_m")
 
     def setup(self):
         blueprint = self.world.get_blueprint_library().find(
@@ -44,7 +45,11 @@ class AdjacentLeadBrakeEvent:
         self.elapsed_s += self.fixed_delta_s
         brake_after_s = float(self.event.get("brake_after_s", 2.0))
         brake_hold_s = float(self.event.get("brake_hold_s", 2.0))
-        if self.elapsed_s < brake_after_s:
+        route_trigger_reached = (
+            self.brake_at_route_progress_m is None
+            or self.route_manager.progress_m >= float(self.brake_at_route_progress_m)
+        )
+        if self.elapsed_s < brake_after_s or not route_trigger_reached:
             self.vehicle.apply_control(carla.VehicleControl(
                 throttle=float(self.event.get("cruise_throttle", 0.28)),
                 brake=0.0,
@@ -134,11 +139,13 @@ class CutInVehicleEvent:
         self.status = "INITIALIZED"
         self.elapsed_s = 0.0
         self.lane_change_requested = False
+        self.lane_change_requested_s = None
         self.source_lane_id = None
         self.target_lane_id = None
         self.target_road_id = None
         self.merge_observed_s = None
         self.fixed_delta_s = float(event.get("fixed_delta_s", 0.1))
+        self.merge_at_route_progress_m = event.get("merge_at_route_progress_m")
 
     def setup(self):
         blueprint = self.world.get_blueprint_library().find(
@@ -164,11 +171,18 @@ class CutInVehicleEvent:
             self.status = "FAILED"
             return
         self.elapsed_s += self.fixed_delta_s
-        if not self.lane_change_requested and self.elapsed_s >= float(
-            self.event.get("lane_change_after_s", 2.5)
+        route_trigger_reached = (
+            self.merge_at_route_progress_m is None
+            or self.route_manager.progress_m >= float(self.merge_at_route_progress_m)
+        )
+        if (
+            not self.lane_change_requested
+            and self.elapsed_s >= float(self.event.get("lane_change_after_s", 2.5))
+            and route_trigger_reached
         ):
             self.traffic_manager.force_lane_change(self.vehicle, self.direction_right)
             self.lane_change_requested = True
+            self.lane_change_requested_s = self.elapsed_s
             self.status = "MERGING"
         if self.lane_change_requested and self._in_target_lane():
             if self.merge_observed_s is None:
@@ -181,9 +195,12 @@ class CutInVehicleEvent:
         ):
             self.status = "COMPLETED"
             return
-        if self.lane_change_requested and self.elapsed_s >= float(
-            self.event.get("lane_change_after_s", 2.5)
-        ) + float(self.event.get("merge_timeout_s", 12.0)):
+        if (
+            self.lane_change_requested
+            and self.lane_change_requested_s is not None
+            and self.elapsed_s - self.lane_change_requested_s
+            >= float(self.event.get("merge_timeout_s", 12.0))
+        ):
             self.status = "FAILED"
 
     def finished(self):
@@ -195,6 +212,7 @@ class CutInVehicleEvent:
             "actor_id": self.vehicle.id if self.vehicle is not None else None,
             "elapsed_s": round(self.elapsed_s, 3),
             "lane_change_requested": self.lane_change_requested,
+            "lane_change_requested_s": self.lane_change_requested_s,
             "source_lane_id": self.source_lane_id,
             "target_lane_id": self.target_lane_id,
             "current_lane_id": self._current_lane_id(),
@@ -274,7 +292,6 @@ class CutInVehicleEvent:
         )
         return (
             waypoint is not None
-            and waypoint.road_id == self.target_road_id
             and waypoint.lane_id == self.target_lane_id
         )
 
@@ -307,6 +324,7 @@ class PedestrianCrossingEvent:
         self.crossing_observed_s = None
         self.motion_mode = str(event.get("motion_mode", "kinematic")).lower()
         self.fixed_delta_s = float(event.get("fixed_delta_s", 0.1))
+        self.cross_at_route_progress_m = event.get("cross_at_route_progress_m")
 
     def setup(self):
         blueprints = self.world.get_blueprint_library().filter("walker.pedestrian.*")
@@ -362,12 +380,19 @@ class PedestrianCrossingEvent:
         self.direction = lateral_left if side == "right" else carla.Vector3D(
             x=-lateral_left.x, y=-lateral_left.y, z=0.0
         )
-        self.status = "CROSSING"
+        self.status = "WAITING"
 
     def tick(self):
         if self.walker is None or not self.walker.is_alive:
             self.status = "FAILED"
             return
+        if (
+            self.cross_at_route_progress_m is not None
+            and self.route_manager.progress_m < float(self.cross_at_route_progress_m)
+        ):
+            return
+        if self.status == "WAITING":
+            self.status = "CROSSING"
         speed = float(self.event.get("speed_mps", 1.35))
         self.walker.apply_control(carla.WalkerControl(direction=self.direction, speed=speed))
         self.elapsed_s += self.fixed_delta_s

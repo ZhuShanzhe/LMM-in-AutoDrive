@@ -233,7 +233,7 @@ class EmergencyBrakeScenario(BaseScenario):
             self.road_finder
             .find_straight_road(
 
-                min_length=150
+                min_length=120
 
             )
 
@@ -249,32 +249,11 @@ class EmergencyBrakeScenario(BaseScenario):
 
 
         # =====================
-        # ego 后退40m
+        # 从已验证的直路起点出发
         # =====================
 
 
-        ego_candidates = (
-
-            road_wp.previous(
-
-                40
-
-            )
-
-        )
-
-
-        if len(ego_candidates)==0:
-
-            raise RuntimeError(
-
-                "Cannot find ego waypoint"
-
-            )
-
-
-
-        ego_wp = ego_candidates[0]
+        ego_wp = road_wp
 
 
 

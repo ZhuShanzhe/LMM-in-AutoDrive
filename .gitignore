@@ -27,7 +27,8 @@
 /structured_command_parser/cache/
 
 # 模型、权重与检查点
-/models/
+/models/*
+!/models/README.md
 /weights/
 /checkpoints/
 *.ckpt

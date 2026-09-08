@@ -27,6 +27,7 @@ class TemporalSupervisorConfig:
     closing_speed_threshold_mps: float = 0.5
     caution_ttc_s: float = 4.0
     caution_distance_m: float = 8.0
+    caution_crawl_speed_kmh: float = 10.0
     max_state_gap_s: float = 2.0
     max_streams: int = 128
 
@@ -45,6 +46,7 @@ class TemporalSupervisorConfig:
             self.closing_speed_threshold_mps,
             self.caution_ttc_s,
             self.caution_distance_m,
+            self.caution_crawl_speed_kmh,
             self.max_state_gap_s,
         )
         if any(not math.isfinite(value) or value <= 0 for value in numeric_fields):
@@ -241,9 +243,13 @@ class TemporalProposalSupervisor:
             if action not in {"decelerate", "stop", "emergency_brake"}:
                 action = "decelerate"
                 reasons.append("deceleration_risk_constraint")
+            caution_ceiling = max(
+                self.config.caution_crawl_speed_kmh,
+                ego_speed_mps * 3.6 - 3.6,
+            )
             target_speed = min(
-                target_speed,
-                max(0.0, ego_speed_mps * 3.6 - 3.6),
+                max(target_speed, self.config.caution_crawl_speed_kmh),
+                caution_ceiling,
             )
             forced = True
 
@@ -341,6 +347,16 @@ class TemporalProposalSupervisor:
             state.target_speed_kmh = proposed_speed_kmh
             return proposed_speed_kmh
         if risk_limited or action == "decelerate":
+            if (
+                action == "decelerate"
+                and state.target_speed_kmh
+                < self.config.caution_crawl_speed_kmh
+                and proposed_speed_kmh
+                <= self.config.caution_crawl_speed_kmh
+            ):
+                state.target_speed_kmh = proposed_speed_kmh
+                reasons.append("caution_crawl_resume")
+                return proposed_speed_kmh
             reasons.append("speed_increase_blocked_during_deceleration")
             return state.target_speed_kmh
         delta_s = self.config.default_frame_interval_s

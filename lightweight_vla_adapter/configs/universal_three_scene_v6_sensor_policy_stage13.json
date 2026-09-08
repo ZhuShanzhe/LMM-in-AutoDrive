@@ -1,0 +1,84 @@
+{
+  "schema_version": "5.0.0",
+  "model_name": "universal-three-scene-sensor-policy-vla-v6-stage13",
+  "camera_channels": 8,
+  "lidar_channels": 4,
+  "candidate_dim": 12,
+  "ego_dim": 8,
+  "environment_dim": 14,
+  "intent_dim": 768,
+  "hidden_size": 256,
+  "num_layers": 4,
+  "num_heads": 8,
+  "dropout": 0.1,
+  "bev_grid": [
+    8,
+    8
+  ],
+  "bev_input_size": [
+    64,
+    64
+  ],
+  "max_candidates": 32,
+  "intent_max_length": 32,
+  "num_camera_views": 4,
+  "camera_input_width": 224,
+  "camera_input_height": 224,
+  "camera_input_fov": 100.0,
+  "raw_camera_token_grid": [
+    2,
+    2
+  ],
+  "require_raw_camera": true,
+  "use_raw_camera": true,
+  "use_environment": true,
+  "use_candidate_entities": false,
+  "use_structured_bev": true,
+  "fuse_structured_visual_risk": false,
+  "condition_decision_on_visual_risk": true,
+  "use_temporal_risk": true,
+  "risk_type_count": 6,
+  "structured_sensor_sources": [
+    "nuScenes"
+  ],
+  "speed_cap_environment_index": 13,
+  "allow_legacy_checkpoint": true,
+  "required_modalities": [
+    "text",
+    "front_rgb",
+    "vehicle_state",
+    "environment_state"
+  ],
+  "scene_dependent_modalities": {
+    "scene1": [],
+    "scene2": [
+      "left_rgb",
+      "right_rgb",
+      "rear_rgb",
+      "lidar_bev"
+    ],
+    "scene3": [
+      "left_rgb",
+      "right_rgb",
+      "rear_rgb"
+    ]
+  },
+  "policy_input_contract": {
+    "carla_truth_allowed": false,
+    "candidate_entities_allowed": false,
+    "structured_bev_requires_physical_sensor": true,
+    "scene3_structured_bev": "zero_compatibility_tensor",
+    "visual_safety_source": "learned_raw_camera_visual_risk_head"
+  },
+  "deployment": {
+    "precision": "fp16",
+    "adapter_latency_budget_ms": 70,
+    "full_decision_latency_budget_ms": 120,
+    "safety_gate_scope": [
+      "learned_visual_collision_risk",
+      "learned_visual_lane_change_risk",
+      "physical_speed_bound"
+    ]
+  },
+  "high_confidence_threshold": 0.75
+}

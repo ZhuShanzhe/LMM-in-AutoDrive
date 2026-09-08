@@ -89,26 +89,26 @@ automatic_speech_recognition/
 │   └── README.md
 |
 ├── optimization/               # 噪声与方言优化模块
-|   ├── __init__.py
+|   ├── __init__.py 
 |   ├── config.py
 |   ├── audio_processor.py
 |   ├── noise_generator.py
-|   ├── utils.py
-|   ├── DeepFilterNet/
+|   ├── utils.py     
+|   ├── DeepFilterNet/          
 |   │   ├── __init__.py
-|   │   ├── config.py
-|   │   ├── denoiser.py
-|   │   ├── service.py
-|   │   └── README.md
+|   │   ├── config.py    
+|   │   ├── denoiser.py         
+|   │   ├── service.py            
+|   │   └── README.md           
 |   ├── build_noisy_subset.py
 |   ├── example.py
-|   ├── requirements.txt
+|   ├── requirements.txt     
 |   └── README.md
 |
 ├── tests/                      # 测试与评估脚本
-|   ├── utils/
+|   ├── utils/                     
 |   │   ├── data_loader.py
-|   │   ├── evaluator.py
+|   │   ├── evaluator.py 
 |   │   └── metrics.py
 |   ├── asr_test.py
 |   ├── qwen_test.py
@@ -120,12 +120,12 @@ automatic_speech_recognition/
 |   └── README.md
 │
 ├── data/                       # 数据集与输出文件
-│   ├── commands.json
+│   ├── commands.json          
 │   ├── translated_commands.json
-│   ├── wav_files/
+│   ├── wav_files/           
 │   │   ├── file_mapping.json
 │   │   └── command.wav......
-│   ├── wav_files_noise/
+│   ├── wav_files_noise/     
 │   │   ├── wav_files_with_noise/
 │   │   │   ├── file_mapping_noise.json
 │   │   │   └── command_noise.wav......
@@ -133,12 +133,12 @@ automatic_speech_recognition/
 │   │       └── file_mapping_without_noise.json
 │   ├── wav_files_accent/
 │   │   ├── Dongbei Dialect Speech Corpus for TTS/
-│   │   ├── ...
+│   │   ├── ... 
 │   │   └── Sichuan Dialect Speech Corpus for TTS/
 │   └── logging/
 │
 ├── requirements.txt
-└── README.md
+└── README.md 
 ```
 
 ## 3. 安装与配置
@@ -233,7 +233,7 @@ python tests/wav_commands.py \
   )
   pipeline = ASR2(config=config)
   ```
-
+  
 + 核心方法 `process()`：
 ```python
 def process(
@@ -327,8 +327,8 @@ deepFilter --model DeepFilterNet3 noisy_audio.wav -o output_dir/
 
 + 模型对比实验
   + 实验目标：对比不同 ASR 模型在自动驾驶语音指令识别任务上的性能差异。
-  + 对比模型：
-    + `FunASR`：paraformer-zh 模型，轻量级中文 ASR
+  + 对比模型： 
+    + `FunASR`：paraformer-zh 模型，轻量级中文 ASR 
     + `Qwen3-ASR-1.7B`：1.7B 参数多语言模型，支持 30 种语言和 22 种中文方言
 
   + Qwen3-ASR-1.7B 在所有指标上均优于 FunASR，尤其在词级和句子级指标上提升更明显
