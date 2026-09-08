@@ -1327,6 +1327,41 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
             runtime._blocked_lane_change_commanded
         )
 
+    def test_missing_gap_actor_does_not_mark_lane_released(self):
+        for missing in (True, False):
+            with self.subTest(missing=missing):
+                front = mock.Mock(is_alive=False)
+                rear = mock.Mock(is_alive=True)
+                traffic_manager = mock.Mock()
+                runtime = scene_events.EmergencySceneActorRuntime(
+                    carla_module=SimpleNamespace(),
+                    world=mock.Mock(),
+                    carla_map=mock.Mock(),
+                    traffic_manager=traffic_manager,
+                    traffic_manager_port=8000,
+                    actor_sink=[],
+                )
+                runtime._maintenance_vehicle = mock.Mock()
+                runtime._blocked_lane_event = {
+                    "blockage": {
+                        "release_target_lane_after_s": 4.0,
+                        "target_lane_id": -1,
+                        "s_m": 4850.0,
+                    }
+                }
+                runtime._blocked_lane_activation_s = 1.0
+                runtime._gap_control_vehicles = {"rear": rear}
+                if not missing:
+                    runtime._gap_control_vehicles["front"] = front
+                runtime._update_blocked_lane(
+                    ego_route_s_m=4200.0, elapsed_s=10.0
+                )
+                self.assertFalse(runtime._target_lane_released)
+                self.assertEqual(runtime._gap_control_vehicles, {})
+                traffic_manager.set_desired_speed.assert_not_called()
+                front.get_location.assert_not_called()
+                rear.get_location.assert_not_called()
+
     def test_blocked_lane_releases_after_passing_in_target_lane(
         self,
     ):
@@ -1634,6 +1669,29 @@ class SafetyAuditTests(unittest.TestCase):
                 duration_s=0.05,
                 fixed_delta_seconds=0.05,
             )
+
+
+class AuxiliaryCameraSelectionTests(unittest.TestCase):
+    def test_audit_cameras_are_opt_out(self):
+        self.assertFalse(runner.build_parser().parse_args([]).skip_audit_cameras)
+        self.assertTrue(
+            runner.build_parser().parse_args(["--skip-audit-cameras"]).skip_audit_cameras
+        )
+        for mode in ("four-view", "chase-only", "four-view-plus-chase"):
+            for direct in (False, True):
+                for skip in (False, True):
+                    with self.subTest(mode=mode, direct=direct, skip=skip):
+                        expected = None if skip else (
+                            mode if not direct else (
+                                "four-view" if mode != "chase-only" else None
+                            )
+                        )
+                        self.assertEqual(
+                            runner.select_auxiliary_camera_mode(
+                                mode, direct_recording=direct, skip_audit_cameras=skip
+                            ),
+                            expected,
+                        )
 
 
 class DirectVideoRecordingTests(unittest.TestCase):
