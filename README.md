@@ -5,7 +5,7 @@
 ## 挑战赛道规划与分支
 
 挑战赛道沿用现有模块化链路，面向地平线 J6P 进行模型压缩、量化部署和性能验证。
-路线规划及五人分工见 [0908 任务规划 PDF](program/task_0908/document.pdf)，可编辑源文件见 [document.tex](program/task_0908/document.tex)。
+路线规划及五人分工见 [0908 任务规划 PDF](program/task_0908.pdf)。
 
 - `main`：保留基础赛道稳定链路，并收录共享规划文档；不直接进行挑战赛道实验开发。
 - `challenge-track`：挑战赛道集成分支，汇总验证后的模块优化。
