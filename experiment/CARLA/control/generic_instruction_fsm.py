@@ -9,6 +9,7 @@ every scheduled text command.
 from __future__ import annotations
 
 import re
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
@@ -90,11 +91,27 @@ class GenericInstructionFSM:
         self,
         default_speed_kmh: float = 40.0,
         parser: Any | None = None,
+        *,
+        cache_capacity: int = 128,
     ) -> None:
         self.default_speed_kmh = float(default_speed_kmh)
         self.parser = parser
-        self._token_cache: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
-        self._parse_cache: dict[str, dict[str, Any]] = {}
+        if cache_capacity < 1:
+            raise ValueError("cache_capacity must be positive")
+        self.cache_capacity = int(cache_capacity)
+        self._token_cache: OrderedDict = OrderedDict()
+        self._parse_cache: OrderedDict = OrderedDict()
+
+    def clear_caches(self) -> None:
+        """Invalidate language caches after replacing parser weights/config."""
+        self._token_cache.clear()
+        self._parse_cache.clear()
+
+    def _cache_put(self, cache: OrderedDict, key: Any, value: Any) -> None:
+        cache[key] = value
+        cache.move_to_end(key)
+        while len(cache) > self.cache_capacity:
+            cache.popitem(last=False)
 
     def active_command(
         self,
@@ -338,21 +355,23 @@ class GenericInstructionFSM:
         source_text: str,
         command: Mapping[str, Any],
     ) -> dict[str, Any]:
-        key = str(command.get("id") or source_text)
+        key = (str(command.get("id") or ""), source_text)
         if key in self._parse_cache:
+            self._parse_cache.move_to_end(key)
             return self._parse_cache[key]
         try:
             result = self.parser.parse_text(
                 source_text,
-                request_id=f"fsm-{key}",
+                request_id=f"fsm-{command.get('id') or source_text}",
                 modality="TEXT",
                 source_text=source_text,
                 source_language="zh-CN",
             )
         except Exception:
-            result = {}
+            # Transient inference failure must not poison subsequent retries.
+            return {}
         parse_result = result.get("parse_result") or {}
-        self._parse_cache[key] = parse_result
+        self._cache_put(self._parse_cache, key, parse_result)
         return parse_result
 
     @staticmethod
@@ -422,9 +441,10 @@ class GenericInstructionFSM:
         if self.parser is None:
             raise RuntimeError("text encoder is unavailable")
         text = self.semantic_text(parsed)
-        key = cache_key or text
+        key = (cache_key, text)
         cached = self._token_cache.get(key)
         if cached is not None:
+            self._token_cache.move_to_end(key)
             return cached
         parser = self.parser.parser
         parser.load()
@@ -443,7 +463,7 @@ class GenericInstructionFSM:
             tokens.detach().float().cpu(),
             encoded["attention_mask"].detach().bool().cpu(),
         )
-        self._token_cache[key] = result
+        self._cache_put(self._token_cache, key, result)
         return result
 
     def canonical_decision(

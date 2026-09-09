@@ -13,6 +13,11 @@ from .contracts import ACTION_LABELS, VLA_PROPOSAL_SCHEMA_VERSION
 from .raw_sensor_encoder import MultiviewImageEncoder
 
 
+def _valid_token_count(mask: torch.Tensor) -> torch.Tensor:
+    # A finite integer Clip bound avoids int64 sentinel conversion in HBIR.
+    return mask.sum(dim=1, keepdim=True).clamp(min=1, max=max(1, mask.shape[1]))
+
+
 class CrossAttentionBlock(nn.Module):
     def __init__(
         self, hidden_size: int, num_heads: int, dropout: float = 0.1
@@ -42,10 +47,11 @@ class CrossAttentionBlock(nn.Module):
         memory_padding_mask: torch.Tensor | None,
     ) -> torch.Tensor:
         normalized_query = self.query_norm(query)
+        normalized_memory = self.memory_norm(memory)
         attended, _ = self.attention(
             normalized_query,
-            self.memory_norm(memory),
-            self.memory_norm(memory),
+            normalized_memory,
+            normalized_memory,
             key_padding_mask=memory_padding_mask,
             need_weights=False,
         )
@@ -71,6 +77,7 @@ class AdapterOutput:
     lane_risk_logits: torch.Tensor | None = None
     risk_uncertainty: torch.Tensor | None = None
     temporal_used: bool = False
+    sensor_intent_context: torch.Tensor | None = None
 
 
 class LightweightDecisionAdapter(nn.Module):
@@ -102,6 +109,7 @@ class LightweightDecisionAdapter(nn.Module):
         speed_cap_environment_index: int | None = None,
         use_temporal_risk: bool = False,
         risk_type_count: int = 6,
+        use_state_conditioned_risk: bool = False,
     ) -> None:
         super().__init__()
         if not 4 <= num_layers <= 6:
@@ -134,6 +142,17 @@ class LightweightDecisionAdapter(nn.Module):
         self.lane_head = nn.Linear(hidden_size, 3)
         self.confidence_head = nn.Linear(hidden_size, 1)
         self.visual_risk_head = nn.Linear(hidden_size, 3)
+        self.use_state_conditioned_risk = bool(use_state_conditioned_risk)
+        if self.use_state_conditioned_risk:
+            self.state_risk_residual = nn.Sequential(
+                nn.Linear(hidden_size + ego_dim + environment_dim, hidden_size),
+                nn.LayerNorm(hidden_size), nn.GELU(), nn.Linear(hidden_size, 3),
+            )
+            # Preserve the trained visual prior until the new branch is trained.
+            nn.init.zeros_(self.state_risk_residual[-1].weight)
+            nn.init.zeros_(self.state_risk_residual[-1].bias)
+        else:
+            self.state_risk_residual = None
         self.visual_risk_fusion = (
             nn.Sequential(
                 nn.Linear(hidden_size * 3, hidden_size),
@@ -233,7 +252,7 @@ class LightweightDecisionAdapter(nn.Module):
                 (batch, 0), dtype=torch.bool, device=camera_bev.device
             )
         if raw_camera_tokens.shape[1] > 0:
-            valid_visual = raw_camera_mask.sum(dim=1, keepdim=True).clamp_min(1)
+            valid_visual = _valid_token_count(raw_camera_mask)
             raw_camera_summary = (
                 raw_camera_tokens * raw_camera_mask.unsqueeze(-1)
             ).sum(dim=1) / valid_visual
@@ -253,15 +272,15 @@ class LightweightDecisionAdapter(nn.Module):
                 (*candidate_features.shape[:2], self.hidden_size)
             )
             candidate_tokens = projected_candidate_tokens[:, :0]
-            candidate_memory_mask = candidate_mask[:, :0].to(dtype=torch.bool)
+            candidate_memory_mask = torch.zeros(
+                (batch, 0), dtype=torch.bool, device=camera_bev.device
+            )
         if bev_tokens.shape[1] > 0:
             bev_summary = bev_tokens.mean(dim=1)
         else:
             bev_summary = camera_bev.new_zeros((batch, self.hidden_size))
         if self.use_candidate_entities and projected_candidate_tokens.shape[1] > 0:
-            valid_candidates = candidate_memory_mask.sum(
-                dim=1, keepdim=True
-            ).clamp_min(1)
+            valid_candidates = _valid_token_count(candidate_memory_mask)
             candidate_summary = (
                 projected_candidate_tokens
                 * candidate_memory_mask.unsqueeze(-1)
@@ -325,7 +344,7 @@ class LightweightDecisionAdapter(nn.Module):
             dim=1,
         )
         query = self.query_tokens.unsqueeze(0).expand(batch, -1, -1)
-        valid_intent_count = intent_mask.sum(dim=1, keepdim=True).clamp_min(1)
+        valid_intent_count = _valid_token_count(intent_mask)
         intent_summary = (
             intent_tokens * intent_mask.unsqueeze(-1)
         ).sum(dim=1) / valid_intent_count
@@ -336,6 +355,12 @@ class LightweightDecisionAdapter(nn.Module):
         decision_token = query[:, 0]
         target_token = query[:, 1]
         visual_risk_logits = self.visual_risk_head(visual_summary)
+        if self.use_state_conditioned_risk:
+            if environment_features is None:
+                raise ValueError("state-conditioned risk requires environment features")
+            visual_risk_logits = visual_risk_logits + self.state_risk_residual(
+                torch.cat([visual_summary, ego_features, environment_features], dim=-1)
+            )
         temporal_used = False
         risk_input = None
         ordinal_risk_logits = None
@@ -424,6 +449,7 @@ class LightweightDecisionAdapter(nn.Module):
             lane_risk_logits=lane_risk_logits,
             risk_uncertainty=risk_uncertainty,
             temporal_used=temporal_used,
+            sensor_intent_context=torch.cat((raw_camera_summary, bev_summary, intent_summary), dim=-1),
         )
 
 

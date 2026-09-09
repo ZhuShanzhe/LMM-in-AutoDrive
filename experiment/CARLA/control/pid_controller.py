@@ -50,6 +50,12 @@ class EgoPIDController:
         self._crawl_active = False
 
     def run_step(self, intent, dt):
+        sequence_acceleration = None
+        if isinstance(intent, dict) and intent.get('longitudinal_sequence_schema') == 'longitudinal_sequence/1.0':
+            sequence_acceleration = float(intent['target_acceleration_mps2'])
+        tracker = getattr(self, '_sequence_tracker', None)
+        if sequence_acceleration is None and tracker is not None:
+            tracker.reset()
         intent = normalize_intent(intent, self.default_speed_kmh)
         emergency_requested = (
             intent["emergency"] or intent["action"] == "emergency_brake"
@@ -63,6 +69,8 @@ class EgoPIDController:
                 self._emergency_latched = False
                 self._emergency_clear_frames = 0
         if self._emergency_latched:
+            if tracker is not None:
+                tracker.reset()
             # 紧急制动只接管纵向控制，横向车道保持继续生效，避免
             # 车辆在路口已产生转向后继续偏离当前车道。
             hold_lane_intent = dict(intent)
@@ -84,6 +92,15 @@ class EgoPIDController:
             target_speed <= 16.0 and current_speed < 2.0
         )
         throttle, brake = self._longitudinal_control(target_speed, current_speed, dt)
+        if sequence_acceleration is not None:
+            from lightweight_vla_adapter.src.sequence_tracker import SequenceLongitudinalTracker
+            if tracker is None:
+                tracker = self._sequence_tracker = SequenceLongitudinalTracker()
+            # A downstream cap or explicit stop must dominate feedforward acceleration.
+            if target_speed < intent['target_speed_kmh'] - 1e-6 or intent['action'] == 'stop':
+                tracker.reset()
+            else:
+                throttle, brake = tracker.step(target_speed / 3.6, sequence_acceleration, current_speed / 3.6, dt)
         lateral_intent = self._lateral_intent_for_control(intent)
         steer = self._lateral_control(lateral_intent, dt)
         control = self._smooth_control(

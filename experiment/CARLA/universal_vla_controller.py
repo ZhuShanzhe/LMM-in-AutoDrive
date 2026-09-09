@@ -39,7 +39,7 @@ from control.generic_temporal_risk_supervisor import (
 )
 from lightweight_vla_adapter.scripts.run_offline_inference import build_model
 from lightweight_vla_adapter.src.pipeline import LightweightVLAPipeline
-from lightweight_vla_adapter.src.safety_bridge import gate_vla_proposal
+from lightweight_vla_adapter.src.safety_bridge import gate_vla_proposal, enforce_final_lane_policy
 from lightweight_vla_adapter.src.unified_sensor_batch import (
     CAMERA_VIEW_NAMES,
     UNIFIED_SENSOR_BATCH_SCHEMA_VERSION,
@@ -633,12 +633,51 @@ class UniversalVLAController:
             high_confidence_threshold=float(
                 config.get("high_confidence_threshold", 0.55)
             ),
+            fuse_conv_bn=bool(config.get("fuse_conv_bn", False)),
         )
         self.parser = ModernBertCommandService(
             str(parser_model_path),
             device=device,
         )
         self.parser.warmup()
+        self.temporal_decision = None
+        self.motion_history = None
+        self.event_memory = None
+        self.event_finetuned_model = None
+        self.event_baseline_model = None
+        if config.get("event_memory_checkpoint"):
+            if config.get("temporal_decision_checkpoint") or config.get("fuse_conv_bn") or precision != "fp32":
+                raise ValueError("Event-memory pilot requires FP32, unfused model and no legacy residual")
+            from lightweight_vla_adapter.src.event_memory import EventMemoryHead, EventMemoryBuffer, EventMemoryRuntime
+            from lightweight_vla_adapter.src.event_observation import OBSERVATION_VERSION
+            artifact = torch.load(config["event_memory_checkpoint"], map_location="cpu", weights_only=True)
+            if artifact.get('observation_version') != OBSERVATION_VERSION:
+                raise ValueError('Event-memory checkpoint observation preprocessing mismatch')
+            from lightweight_vla_adapter.src.sequence_policy import SequenceEventHead, SequenceMemoryRuntime, SEQUENCE_SCHEMA
+            is_sequence = artifact.get('schema_version') == SequenceEventHead.schema_version
+            if is_sequence and artifact.get('sequence_schema') != SEQUENCE_SCHEMA:
+                raise ValueError('Sequence checkpoint contract mismatch')
+            if artifact.get("schema_version") not in (EventMemoryHead.schema_version, SequenceEventHead.schema_version) or artifact.get("stage") != "carla":
+                raise ValueError("Expected a jointly finetuned event-memory VLA artifact")
+            head = SequenceEventHead() if is_sequence else EventMemoryHead()
+            head.load_state_dict(artifact["head"], strict=True)
+            self.temporal_decision = (SequenceMemoryRuntime(head) if is_sequence else EventMemoryRuntime(head)).to(device).eval()
+            self.event_memory = EventMemoryBuffer()
+            self.event_baseline_model = self.pipeline.model
+            self.event_finetuned_model = build_model(artifact["config"]).to(device).eval()
+            self.event_finetuned_model.load_state_dict(artifact["base"], strict=True)
+        if config.get("temporal_decision_checkpoint"):
+            from lightweight_vla_adapter.src.temporal_decision_residual import TemporalDecisionResidual
+            from lightweight_vla_adapter.src.risk_motion_observation import CausalMotionHistory
+            self.temporal_decision = TemporalDecisionResidual.from_checkpoint(
+                config["temporal_decision_checkpoint"]
+            ).to(device).eval()
+            import hashlib
+            with checkpoint_path.open("rb") as baseline_stream:
+                baseline_hash = hashlib.file_digest(baseline_stream, "sha256").hexdigest()
+            if self.temporal_decision.baseline_sha256 != baseline_hash:
+                raise ValueError("Temporal residual was trained against a different baseline checkpoint")
+            self.motion_history = CausalMotionHistory(length=4, max_gap_s=.3)
         self.fsm = GenericInstructionFSM(
             default_speed_kmh=float(default_speed_kmh),
             parser=self.parser,
@@ -757,6 +796,7 @@ class UniversalVLAController:
             "front",
             maximum_frame=sensor_frame,
         )
+        raw_forward_radar = forward_radar
         # Convert the conic radar aggregate into a route-swept observation.
         # Fail closed on missing legacy bins or unexpected map errors by
         # retaining the original physical distance envelope.
@@ -792,6 +832,11 @@ class UniversalVLAController:
             for index, name in enumerate(CAMERA_ORDER)
         }
         vehicle_state = vehicle_state_tensor(self.world, self.ego)
+        event_authorized = parsed.parsed_intent in {"KEEP_LANE", "SET_SPEED", "ADJUST_SPEED"} and parsed.requested_lane_direction is None
+        if self.event_memory is not None:
+            self.pipeline.model = self.event_finetuned_model if event_authorized else self.event_baseline_model
+            if event_authorized:
+                vehicle_state[:, 3:6] = 0
         environment_state = environment_feature_tensor(
             self.world,
             self.ego,
@@ -838,6 +883,35 @@ class UniversalVLAController:
             ego_speed_kmh=ego_speed_kmh,
         )
         started = time.perf_counter()
+        motion_inputs = None
+        if self.temporal_decision is not None:
+            from lightweight_vla_adapter.src.risk_motion_observation import encode_motion_observation
+            event_front, event_rear = raw_forward_radar, rear_radar
+            if self.event_memory is not None:
+                from lightweight_vla_adapter.src.event_observation import prepare_event_radar
+                event_front = prepare_event_radar(raw_forward_radar)
+                event_rear = prepare_event_radar(rear_radar)
+            motion = encode_motion_observation(
+                event_front, event_rear, frame=sensor_frame,
+                timestamp_s=timestamp_s - (frame - sensor_frame) * self._fixed_delta_seconds,
+                max_age_frames=0,
+            )
+            motion_inputs = {
+                "motion_values": torch.tensor([motion["values"]], dtype=torch.float32),
+                "motion_valid_mask": torch.tensor([motion["valid_mask"]], dtype=torch.bool),
+                "ego_features": vehicle_state,
+            }
+            if self.event_memory is not None:
+                self.event_memory.push(motion, vehicle_state[0].cpu().numpy(), environment_state[0].cpu().numpy(), episode_id=intent_key)
+                history, valid = self.event_memory.tensors()
+                motion_inputs["event_memory"] = torch.from_numpy(history).unsqueeze(0)
+                motion_inputs["event_memory_valid"] = torch.from_numpy(valid).unsqueeze(0)
+            else:
+                self.motion_history.push(motion, episode_id=intent_key)
+                values, masks, steps = self.motion_history.tensors()
+                motion_inputs.update(motion_history=torch.from_numpy(values).unsqueeze(0),
+                    motion_history_valid_mask=torch.from_numpy(masks).unsqueeze(0),
+                    motion_history_step_mask=torch.from_numpy(steps).unsqueeze(0))
         proposal = self.pipeline.predict_proposal(
             batch,
             request_id=canonical["request_id"],
@@ -846,6 +920,10 @@ class UniversalVLAController:
             world_state=policy_state,
             stream_id=intent_key,
             use_model_risk_assessment=True,
+            decision_residual=self.temporal_decision,
+            motion_inputs=motion_inputs,
+            longitudinal_authorized=parsed.parsed_intent in {"KEEP_LANE", "SET_SPEED", "ADJUST_SPEED"}
+            and parsed.requested_lane_direction is None,
         )
         learned_risk = self.pipeline.last_visual_risk_assessment
         risk = fuse_forward_radar_risk(
@@ -853,6 +931,8 @@ class UniversalVLAController:
             forward_radar,
             ego_speed_kmh=ego_speed_kmh,
         )
+        risk["frame_id"] = frame_id
+        risk["sensor_frame_id"] = f"carla_{sensor_frame}"
 
         target_lane_risk = None
         front_view_risk = None
@@ -972,6 +1052,11 @@ class UniversalVLAController:
                     not in {"YIELD", "STOP", "EMERGENCY_BRAKE"},
                 )
             )
+        final_decision, lane_policy_override = enforce_final_lane_policy(
+            final_decision, canonical, risk
+        )
+        if lane_policy_override is not None:
+            directional_override = lane_policy_override
         if self.teacher_force_control:
             final_decision = dict(canonical)
             final_decision["reason"] = "training_teacher_force_control"
@@ -992,6 +1077,19 @@ class UniversalVLAController:
         self._sensor_to_decision_response_ms.append(
             camera_wait_ms + elapsed_ms
         )
+        sequence = risk.get('event_memory', {}).get('longitudinal_sequence') if event_authorized else None
+        raw_sequence_proposal = self.pipeline.last_network_proposal if sequence is not None else {}
+        sequence_accepted = (
+            sequence is not None
+            and str(gated_decision.get('reason', '')).startswith('vla_accepted_')
+            and liveness_override is None and directional_override is None
+            and not self.teacher_force_control
+            and final_decision['action'] == raw_sequence_proposal['action']
+            and abs(float(final_decision.get('target_speed_kmh',0)) - float(raw_sequence_proposal['target_speed_kmh'])) < 1e-5
+        )
+        if sequence_accepted:
+            final_decision['longitudinal_sequence_schema'] = sequence['schema_version']
+            final_decision['target_acceleration_mps2'] = sequence['acceleration_mps2'][0]
         self.route_controller.set_high_level_decision(final_decision)
         accepted = (
             str(gated_decision.get("reason", "")).startswith("vla_accepted_")

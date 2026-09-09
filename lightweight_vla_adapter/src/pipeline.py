@@ -192,6 +192,9 @@ class LightweightVLAPipeline:
         risk_assessment: dict[str, Any] | None = None,
         stream_id: str | None = None,
         use_model_risk_assessment: bool = False,
+        decision_residual=None,
+        motion_inputs: dict[str, torch.Tensor] | None = None,
+        longitudinal_authorized: bool = False,
     ) -> dict[str, Any]:
         if not self.checkpoint_loaded:
             raise RuntimeError(
@@ -207,11 +210,23 @@ class LightweightVLAPipeline:
         started = time.perf_counter()
         with torch.inference_mode():
             model_inputs = self._model_inputs(moved)
+            if longitudinal_authorized and motion_inputs is not None and 'event_memory' in motion_inputs:
+                from .event_observation import prepare_event_ego
+                model_inputs['ego_features'] = prepare_event_ego(
+                    model_inputs['ego_features'], motion_inputs['event_memory'].to(self.device))
             if self.model.use_temporal_risk:
                 model_inputs["history_risk_features"] = (
                     self._risk_history_tensor()
                 )
             output = self.model(**model_inputs)
+            if decision_residual is not None:
+                if motion_inputs is None:
+                    raise ValueError("motion_inputs required for temporal decision residual")
+                motion = {key: value.to(self.device) for key, value in motion_inputs.items()}
+                output = decision_residual(
+                    output, motion,
+                    longitudinal_authorized=torch.tensor([longitudinal_authorized], device=self.device),
+                )
         self._last_visual_risk_assessment = decode_visual_risk_assessment(
             output.visual_risk_logits,
             high_confidence_threshold=self.high_confidence_threshold,
@@ -220,6 +235,14 @@ class LightweightVLAPipeline:
             risk_horizon_logits=output.risk_horizon_logits,
             risk_uncertainty=output.risk_uncertainty,
         )
+        if decision_residual is not None and longitudinal_authorized and bool(
+            motion_inputs["motion_values"][0, 0] * motion_inputs["motion_valid_mask"][0, 0]
+        ):
+            self._last_visual_risk_assessment["source"] = "learned_motion_decision_residual"
+        if decision_residual is not None and getattr(decision_residual, "diagnostics", None):
+            self._last_visual_risk_assessment["event_memory"] = copy.deepcopy(decision_residual.diagnostics)
+            if longitudinal_authorized:
+                self._last_visual_risk_assessment["source"] = "event_memory_vla"
         if self.model.use_temporal_risk:
             self._risk_history.append(output.risk_input_features.detach())
             if len(self._risk_history) > self._risk_history_max:
@@ -240,6 +263,15 @@ class LightweightVLAPipeline:
             model_name=self.model_name,
             latency_ms=latency_ms,
         )[0]
+        self._last_raw_proposal = copy.deepcopy(proposal)
+        from .contracts import ACTION_LABELS
+        self._last_network_proposal = copy.deepcopy(proposal)
+        self._last_network_proposal['action'] = ACTION_LABELS[int(output.action_logits[0].argmax())]
+        self._last_network_proposal['target_speed_kmh'] = float(output.target_speed_kmh.reshape(-1)[0])
+        sequence = getattr(decision_residual, 'diagnostics', {}).get('longitudinal_sequence') if longitudinal_authorized else None
+        if sequence is not None:
+            self._last_network_proposal['longitudinal_sequence_schema'] = sequence['schema_version']
+            self._last_network_proposal['target_acceleration_mps2'] = sequence['acceleration_mps2'][0]
         effective_risk = (
             self._last_visual_risk_assessment
             if use_model_risk_assessment
@@ -295,6 +327,18 @@ class LightweightVLAPipeline:
         if self._last_visual_risk_assessment is None:
             raise RuntimeError("visual risk is unavailable before model inference")
         return copy.deepcopy(self._last_visual_risk_assessment)
+
+    @property
+    def last_raw_proposal(self) -> dict[str, Any]:
+        if not hasattr(self, "_last_raw_proposal"):
+            raise RuntimeError("Raw proposal unavailable before model inference")
+        return copy.deepcopy(self._last_raw_proposal)
+
+    @property
+    def last_network_proposal(self) -> dict[str, Any]:
+        if not hasattr(self, "_last_network_proposal"):
+            raise RuntimeError("No network prediction available")
+        return copy.deepcopy(self._last_network_proposal)
 
     def reset_temporal_state(self, stream_id: str | None = None) -> None:
         self._risk_history.clear()
@@ -355,7 +399,20 @@ class LightweightVLAPipeline:
         temporal_supervisor: TemporalProposalSupervisor | None = None,
         strict_checkpoint: bool = True,
         high_confidence_threshold: float = VISUAL_HIGH_CONFIDENCE_THRESHOLD,
+        fuse_conv_bn: bool = False,
     ) -> "LightweightVLAPipeline":
+        if fuse_conv_bn and dtype not in {None, torch.float32}:
+            raise ValueError(
+                "Experimental Conv/BN folding requires FP32; FP16 has not "
+                "passed per-sample speed/risk parity checks"
+            )
+        if fuse_conv_bn and torch.device(device).type == "cuda" and (
+            torch.backends.cudnn.allow_tf32 or torch.backends.cuda.matmul.allow_tf32
+        ):
+            raise ValueError(
+                "Experimental Conv/BN folding requires disabling CUDA matmul "
+                "and cuDNN TF32 before loading the pipeline"
+            )
         state = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
         incompatible = model.load_state_dict(state, strict=strict_checkpoint)
         if not strict_checkpoint:
@@ -365,6 +422,10 @@ class LightweightVLAPipeline:
                     "legacy checkpoint contains unexpected parameters: "
                     + ", ".join(unexpected)
                 )
+        if fuse_conv_bn:
+            from .inference_optimization import fuse_inference_conv_bn
+
+            model, _ = fuse_inference_conv_bn(model.eval())
         return cls(
             model,
             model_name=model_name,
