@@ -99,6 +99,7 @@ class LightweightDecisionAdapter(nn.Module):
         environment_dim: int = 12,
         num_camera_views: int = 4,
         raw_camera_token_grid: tuple[int, int] = (2, 2),
+        raw_camera_input_size: tuple[int, int] = (224, 224),
         require_raw_camera: bool = False,
         use_raw_camera: bool = True,
         use_environment: bool = True,
@@ -130,6 +131,7 @@ class LightweightDecisionAdapter(nn.Module):
             hidden_size,
             num_views=num_camera_views,
             token_grid=raw_camera_token_grid,
+            input_size=raw_camera_input_size,
         )
         self.query_tokens = nn.Parameter(torch.empty(2, hidden_size))
         nn.init.normal_(self.query_tokens, std=0.02)

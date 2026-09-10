@@ -154,6 +154,11 @@ def main() -> None:
         "checkpoint_loaded": state is not None,
         "checkpoint_format": checkpoint_format,
         "raw_camera_included": "camera_images" in inputs,
+        "raw_camera_input_size": (
+            list(model.raw_camera_encoder.input_size)
+            if "camera_images" in inputs
+            else None
+        ),
         "structured_bev_included": bool(config.get("use_structured_bev", True)),
         "candidate_entities_included": bool(config.get("use_candidate_entities", True)),
         "conv_bn_pairs_fused": fused_pairs,

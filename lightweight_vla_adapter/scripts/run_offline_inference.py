@@ -50,6 +50,10 @@ def build_model(config: dict) -> LightweightDecisionAdapter:
         raw_camera_token_grid=tuple(
             config.get("raw_camera_token_grid", (2, 2))
         ),
+        raw_camera_input_size=(
+            int(config.get("camera_input_height", 224)),
+            int(config.get("camera_input_width", 224)),
+        ),
         require_raw_camera=bool(config.get("require_raw_camera", False)),
         use_raw_camera=bool(config.get("use_raw_camera", True)),
         use_environment=bool(config.get("use_environment", True)),
