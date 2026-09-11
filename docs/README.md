@@ -2,7 +2,7 @@
 
 - [当前架构、范围与结果](../README.md)
 - [分支协作与回归](../CHALLENGE_DEVELOPMENT.md)
-- [路线与五人分工](../program/task_0908.pdf)
+- [五人职责与达标要求](../program/task_0911.pdf)
 - [模型、环境和新版控制接入](../lightweight_vla_adapter/README.md)
 - [信号泛化实验及闭环证据](../lightweight_vla_adapter/CHALLENGE_SIGNAL_GENERALIZATION.md)
 - [指令解析接口](../structured_command_parser/README.md)

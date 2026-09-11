@@ -48,7 +48,7 @@ ASR 文本 -> 指令规范化/组合解析 -> DrivingIntent + ModernBERT token
 - [场景与语义对齐接口](scene_understanding/README.md)
 - [CARLA 控制接口](experiment/CARLA/CARLA_INTERFACE_GUIDE.md)
 - [协作与基准验证](CHALLENGE_DEVELOPMENT.md)
-- [路线和分工](program/task_0908.pdf)
+- [职责与达标要求](program/task_0911.pdf)
 
 ## 已验证结果与边界
 
