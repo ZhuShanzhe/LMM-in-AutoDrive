@@ -88,7 +88,7 @@ Thumbs.db
 wandb/
 runs/
 
-# 第一阶段 main：轻量 VLA 只提交运行时
+# 挑战赛道：运行依赖进入 Git，数据/权重/输出留在本机
 /lightweight_vla_adapter/data/
 /lightweight_vla_adapter/models/
 /lightweight_vla_adapter/checkpoints/

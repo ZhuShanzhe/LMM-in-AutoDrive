@@ -65,6 +65,7 @@ class SynchronizedMultiviewCameraRig:
         fov: float = 100.0,
         sensor_tick: float = 0.05,
         camera_attributes: dict[str, Any] | None = None,
+        front_capture_size: int | None = None,
         retained_frames: int = 12,
         enable_lidar: bool = False,
         lidar_range_m: float = 80.0,
@@ -75,6 +76,9 @@ class SynchronizedMultiviewCameraRig:
     ) -> None:
         self.width = int(width)
         self.height = int(height)
+        self.front_capture_size=int(front_capture_size) if front_capture_size is not None else None
+        self._front_images: OrderedDict[int,np.ndarray] = OrderedDict()
+        self._front_poses: OrderedDict[int,np.ndarray] = OrderedDict()
         self._condition = threading.Condition()
         self._frames: OrderedDict[int, dict[str, torch.Tensor]] = OrderedDict()
         self._latest_complete_frame = -1
@@ -106,6 +110,8 @@ class SynchronizedMultiviewCameraRig:
                 "fov": str(float(fov)),
                 "sensor_tick": str(float(sensor_tick)),
             }
+            if name=='front' and self.front_capture_size is not None:
+                standard.update(image_size_x=str(self.front_capture_size),image_size_y=str(self.front_capture_size))
             for key, value in {**attributes, **standard}.items():
                 if key != "enabled" and blueprint.has_attribute(key):
                     blueprint.set_attribute(key, str(value))
@@ -238,10 +244,17 @@ class SynchronizedMultiviewCameraRig:
         def receive(measurement: Any) -> None:
             frame = int(measurement.frame)
             candidates: list[dict[str, float]] = []
+            tracking_points: list[dict[str, float]] = []
             for detection in measurement:
                 depth_m = float(detection.depth)
                 azimuth_deg = float(np.degrees(detection.azimuth))
                 altitude_deg = float(np.degrees(detection.altitude))
+                if (0.5 <= depth_m <= 80.0 and abs(azimuth_deg) <= 15.0
+                        and abs(altitude_deg) <= 8.0
+                        and radar_relative_height_m(depth_m, detection.altitude) >= -0.65):
+                    tracking_points.append(dict(distance_m=depth_m,
+                        relative_velocity_mps=float(detection.velocity),
+                        azimuth_deg=azimuth_deg, altitude_deg=altitude_deg))
                 if (
                     0.5 <= depth_m <= 80.0
                     and abs(azimuth_deg) <= 8.0
@@ -313,6 +326,14 @@ class SynchronizedMultiviewCameraRig:
                 "schema_version": f"physical_{direction}_radar/1.0",
                 "direction": direction,
                 "sensor_frame": frame,
+                "measurement_timestamp_s": float(measurement.timestamp),
+                "measurement_pose": {
+                    "x": float(measurement.transform.location.x),
+                    "y": float(measurement.transform.location.y),
+                    "yaw_deg": float(measurement.transform.rotation.yaw),
+                },
+                "tracking_points": tracking_points,
+                "tracking_fov_deg": 30.0,
                 "candidate_count": len(candidates),
                 "obstacle_candidate_count": len(obstacles),
                 "closing_candidate_count": len(closing),
@@ -354,9 +375,22 @@ class SynchronizedMultiviewCameraRig:
                 image.height, image.width, 4
             )
             rgb = np.ascontiguousarray(bgra[:, :, 2::-1])
+            front_rgb=rgb if name=='front' and getattr(self,'front_capture_size',None) is not None else None
+            if front_rgb is not None:
+                import cv2
+                rgb=cv2.resize(rgb,(self.width,self.height),interpolation=cv2.INTER_AREA)
             tensor = torch.from_numpy(rgb).permute(2, 0, 1)
             frame = int(image.frame)
             with self._condition:
+                if front_rgb is not None:
+                    self._front_images[frame]=front_rgb
+                    if not hasattr(self,'_front_poses'):self._front_poses=OrderedDict()
+                    if getattr(image,'transform',None) is not None:
+                        self._front_poses[frame]=np.asarray(image.transform.get_inverse_matrix(),dtype=np.float64)
+                    while len(self._front_images)>self._retained_frames:
+                        expired,_=self._front_images.popitem(last=False)
+                        self._front_poses.pop(expired,None)
+                    while len(self._front_poses)>self._retained_frames:self._front_poses.popitem(last=False)
                 bundle = self._frames.setdefault(frame, {})
                 bundle[name] = tensor
                 if all(
@@ -378,6 +412,17 @@ class SynchronizedMultiviewCameraRig:
                     self._frames.popitem(last=False)
 
         return receive
+
+    def front_capture(self,frame):
+        """Return only the exact synchronized front frame, never a newer image."""
+        with self._condition:
+            return self._front_images.get(int(frame))
+
+    def front_capture_inverse(self,frame):
+        """Camera extrinsics at exposure time, not the vehicle's later pose."""
+        with self._condition:
+            pose=getattr(self,'_front_poses',{}).get(int(frame)) if int(frame) in self._front_images else None
+            return None if pose is None else pose.copy()
 
     def _stack_views(
         self,

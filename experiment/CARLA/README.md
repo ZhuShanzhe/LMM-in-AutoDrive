@@ -1,21 +1,8 @@
 # CARLA 自动驾驶场景仿真平台
 
-## 第一阶段 main 范围与双链路
+## 挑战赛道运行范围
 
-本目录保存 Linux、CARLA 0.9.16、Python 3.12.13 下的场景构建、控制协议、日志和评估入口。数据集、传感器图片、视频、逐帧日志和运行输出不提交 Git。
-
-场景三文本到 VLA 在线闭环已完成 6 km 严格测试；复现命令、结果和模型不足见 [SCENE_3_VLA_CLOSED_LOOP_TEST_20260805.md](SCENE_3_VLA_CLOSED_LOOP_TEST_20260805.md)。该测试不使用音频或 ASR，当前 BEV 输入来自实时 CARLA 状态代理，不等同于原始 RGB/LiDAR 端到端感知。
-
-CARLA 控制端只消费稳定的 `ControlDecision 1.0`，因此同时兼容：
-
-1. 原规则链路：场景理解生成 canonical high-level action，经风险门控和 FSM 输出 `ControlDecision`；
-2. VLA 新链路：`lightweight_vla_adapter` 生成 `VLADecisionProposal`，经确定性安全门校验或回退后输出相同的 `ControlDecision`。
-
-VLA 没有安装、输入不完整或被安全门拒绝时，CARLA 自动继续使用原规则链路。两条链路不得在同一帧重复推进 FSM。
-
-一个基于 CARLA 的模块化自动驾驶仿真场景构建框架。本目录统一按
-Linux、CARLA 0.9.16、Python 3.12.13 维护，不再使用旧的 Windows
-CARLA 0.9.15 / Python 3.7 环境。
+本分支保留该模块可复用的运行接口、配置和回归代码。当前联合基准以根目录 README 和轻量 VLA 模块 README 为准；下文历史性能不是新版挑战模型成绩。
 
 ## 当前集成版本
 

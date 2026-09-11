@@ -1,152 +1,63 @@
-# LMM-in-AutoDrive
+# 挑战赛道开发基准
 
-面向 XH-202602“智能驾驶大模型应用场景研究”的模块化语音控制与多模态决策系统。当前分支复用基础赛道稳定链路，作为挑战赛道模型压缩、J6P适配与联调的开发基线；训练数据、模型权重、检查点和大规模实验输出不进入 Git。
+本分支 `challenge-track` 用于挑战赛道的模块适配、模型优化和联合验证，不是最终验收或实车部署版本。当前基准为 **分层观测与递归事件记忆 + 短期纵向序列决策 + 泛化信号灯观测**，基于 Linux x86、CARLA 0.9.16 和 RTX 5090 完成验证。
 
-## 挑战赛道规划与分支
-
-挑战赛道沿用现有模块化链路，面向地平线 J6P 进行模型压缩、量化部署和性能验证。
-路线规划及五人分工见 [0908 任务规划 PDF](program/task_0908.pdf)。
-
-- `main`：保留基础赛道稳定链路，并收录共享规划文档；不直接进行挑战赛道实验开发。
-- `challenge-track`：挑战赛道集成分支，汇总验证后的模块优化。
-- `zsz`：朱善哲个人开发分支，负责指令解析、轻量 VLA 和系统集成；通过评审后合并到 `challenge-track`。
-
-其他成员同样将挑战赛道变更合并到 `challenge-track`；基础赛道必要修复可单独同步到 `main`。
-
-服务器工作目录、现有环境与权重复用、基线回归及分支合并方式见 [挑战赛道开发入口](CHALLENGE_DEVELOPMENT.md)。
-
-## 当前实现
-
-挑战赛道已新增可选的事件记忆与 3 秒纵向速度/加速度序列分支，原默认链路保留。模块接入、无权重接口测试、候选权重获取及已知限制见 [序列策略联调说明](lightweight_vla_adapter/CHALLENGE_HANDOFF.md)。组员先按该说明进行接口适配；新版仍是实验候选，不能把旧链路评测结果直接用于新版。
-
-系统围绕题目要求的四个核心模块组织：
-
-| 题目模块 | 本仓库实现 | 主要输出 |
-|---|---|---|
-| 语音解析 | `automatic_speech_recognition` + `structured_command_parser` | ASR 文本、`DrivingIntent 1.2` |
-| 视觉理解 | `scene_understanding` | `PerceptionFrame`、`WorldState`、候选实体 |
-| 语义对齐 | `scene_understanding` | 实体对齐、TTC、`RiskAssessment` |
-| 动作生成 | 原规则链路或 `lightweight_vla_adapter` | `ControlDecision 1.0` |
-| 仿真执行 | `experiment/CARLA` | CARLA 控制量、日志与场景结果 |
-
-模块说明及压缩前对照结果见 [文档索引](docs/README.md)。
-
-## 双链路架构
-
-仓库同时保留原规则链路和轻量 VLA 新链路。两条链路共享结构化指令、场景理解、风险判断、FSM 和 CARLA 控制协议。
+## 当前架构
 
 ```text
-语音 / 文本
-    |
-    v
-ASR / 翻译
-    |
-    v
-structured_command_parser -> DrivingIntent 1.2
-    |
-    v
-scene_understanding -> WorldState + semantic alignment + RiskAssessment
-    |
-    +---------------------- 原规则链路 ----------------------+
-    |  canonical high-level action -> ControlPlan FSM         |
-    |                                                         |
-    +---------------------- VLA 新链路 -----------------------+
-       camera BEV + LiDAR BEV + entities + ego + intent token
-                         |
-                         v
-       lightweight_vla_adapter -> VLADecisionProposal 1.0
-                         |
-                         v
-       deterministic safety gate + canonical fallback
-                         |
-                         v
-                    ControlPlan FSM
-    |
-    v
-ControlDecision 1.0 -> CARLA protocol -> controller
+ASR 文本 -> 指令规范化/组合解析 -> DrivingIntent + ModernBERT token
+                                      |
+四视角 RGB / LiDAR / 雷达 / 自车状态 -> 观测层
+静态道路、车道与灯头几何 + 当前 RGB -> 信号灯状态与适用车道
+                                      |
+                     目标追踪 + 递归事件/行为记忆
+                                      |
+                     多模态 VLA 决策与短期序列
+                                      |
+                 指令图执行 + 风险约束 + 行为 FSM
+                                      |
+                速度/加速度参考 -> 路线 PID -> CARLA
 ```
 
-原规则链路是默认兜底：VLA 权重未安装、输入不完整、推理失败、置信度不足或安全门拒绝时，系统继续使用 canonical rule decision。VLA 不能绕过紧急制动、目标车道安全、语义对齐失败或 FSM 阻塞处理。
+- 观测层负责同步、有效性、目标连续性与风险状态输入；记忆层保留事件、筛选过时行为，不能把历史目标位置当成当前可靠测量。
+- 决策层融合当前观测、指令与历史，预测动作及未来 3 秒、30 步速度/加速度序列。执行层滚动采用近期参考，不开环执行整段。
+- 常规纵向操作间隔为 0.5 秒，紧急安全响应不等待该间隔。长期指令速度和近期执行参考分别保留。
+- 风险层仍是不可绕过的底线。闭环通过代表完整系统，不代表未经约束的 VLA 原始建议全部正确。
+- 新版灯色来自当前摄像头图像；静态地图只提供车道、停止线和灯头几何，不在线读取 CARLA 动态灯色真值。未知、过期或冲突观测不放行。
 
-## 目录
+## 目录与职责
 
-| 路径 | 内容 |
+| 目录 | 挑战赛道用途 |
 |---|---|
-| `automatic_speech_recognition/` | 中文语音识别、降噪和可选翻译 |
-| `structured_command_parser/` | 英文指令规范化、组合意图解析和 JSON Schema |
-| `scene_understanding/` | 实时感知、视觉语义、实体对齐、风险和原规则决策 |
-| `lightweight_vla_adapter/` | 可选多模态高层决策适配器 |
-| `experiment/CARLA/` | Linux CARLA 0.9.16 场景、控制和评估 |
-| `docs/` | 挑战赛道文档与现有基线结果索引 |
-| `program/` | 题目、计划和任务文档 |
+| `automatic_speech_recognition/` | 语音模块既有接口，交由原负责人适配；本轮未修改或重测 |
+| `structured_command_parser/` | 指令规范化、组合 JSON/意图图和 ModernBERT 编码 |
+| `scene_understanding/` | 场景实体、持续追踪、语义对齐与风险接口 |
+| `lightweight_vla_adapter/` | 观测、事件记忆、决策、序列执行和模型完整性检查 |
+| `experiment/CARLA/` | 可复用场景、传感器、执行器、风险约束及接口测试 |
+| `models/` | 本机只读权重目录；Git 仅保留说明 |
+| `program/` | 已有题目及路线规划 PDF，保持原样 |
+| `docs/` | 当前挑战文档入口 |
 
-## 运行环境
+仅保留挑战运行、接口回归及可复用的模块工具。旧提交报告、VLA 历史候选配置、大规模训练/采集脚本不在本轮集成中；完整实验仍保留在 `zsz` 工作区，历史提交保留在 Git。部分 CARLA 场景文件名含 `basic`，它们仍被场景加载器和回归测试使用，不是遗留提交材料。
 
-统一集成环境：
+## 配置与接入
 
-```text
-Linux / Ubuntu 22.04
-Python 3.12.13
-CARLA 0.9.16
-NVIDIA Driver 580.105.08
-CUDA 13.0
-RTX 5090 / sm_120
-```
+环境、固定权重获取、校验、配置生成和控制接口见 [VLA 模块说明](lightweight_vla_adapter/README.md)。组员应以其中的新版配置接入，不要直接沿用旧三场景启动脚本的默认参数：新版要求 FP32、四视角 RGB 与 LiDAR，并维护连续事件状态。
 
-不同模块的依赖存在差异，不建议在仓库根目录一次性安装所有依赖。按照各模块 README 创建或复用环境：
+- [指令解析接口](structured_command_parser/README.md)
+- [场景与语义对齐接口](scene_understanding/README.md)
+- [CARLA 控制接口](experiment/CARLA/CARLA_INTERFACE_GUIDE.md)
+- [协作与基准验证](CHALLENGE_DEVELOPMENT.md)
+- [路线和分工](program/task_0908.pdf)
 
-- [语音模块](automatic_speech_recognition/README.md)
-- [指令解析](structured_command_parser/README.md)
-- [场景理解](scene_understanding/README.md)
-- [轻量 VLA](lightweight_vla_adapter/README.md)
-- [CARLA 仿真](experiment/CARLA/README.md)
+## 已验证结果与边界
 
-## 模型权重
+新版已完成的 14 次短闭环测试全部通过：10 次红转绿、1 次绿黄红绿、1 次跟车恢复、1 次安全左换道、1 次危险左换道拒绝。完成用例中碰撞、闯红灯及未授权/危险换道均为 0。每次 22 秒，不能换算为长距离或长期可靠性成绩。
 
-权重托管在 Hugging Face 或模块 README 指定的上游仓库，不提交 Git。
+信号灯四分类在 1,024 张验证图及 336 张保留路口测试图上均为 100%；这是有限仿真数据结果。扰动测试中增亮准确率降至 91.96%、变暗为 97.32%，各扰动未出现非绿判绿。
 
-| 模型 | 来源 | 提交包内相对位置 |
-|---|---|---|
-| ModernBERT 指令解析 | 组合指令微调权重 | `models/modernbert-drive-command-compositional/` |
-| YOLO11s 场景检测（可选审核模块） | 驾驶场景检测权重 | `models/scene_understanding/yolo11s_specialized_carla_v1/weights/best.pt` |
-| 三场景通用 VLA V6 sensor policy | 本项目 CARLA + nuScenes 训练；策略端禁用 CARLA actor 真值 | `models/lightweight_vla_adapter/universal_three_scene_v6_sensor_policy/model.pt` |
+标准信号灯用例文本到高层控制调用 P95 为 77.69–103.10 ms；扩展换道用例 P95 为 130.41/134.63 ms。14 次首调用为 410.48–555.96 ms，尚不满足所有调用低于 120 ms。该口径不含 ASR、构造初始化和随后物理执行时间。
 
-权重可随 Docker 镜像交付，也可只读挂载到 `models/`。固定哈希、训练数据来源、指标和已知边界见 [三场景通用 VLA 模型卡](lightweight_vla_adapter/UNIVERSAL_THREE_SCENE_MODEL.md)。
+Town05 的两次闭环尝试在引擎初始化/进入决策前中断，不计为通过；该地图已有离线图像验证，但没有本轮完整闭环结论。当前没有新版 J6P 编译、量化或板端性能结论。
 
-## 三场景统一运行
-
-CARLA 服务端启动后，三个场景共用同一模型权重和决策接口：
-
-```bash
-source submission_env.sh
-bash experiment/CARLA/scripts/run_universal_vla.sh scene1
-bash experiment/CARLA/scripts/run_universal_vla.sh scene2
-bash experiment/CARLA/scripts/run_universal_vla.sh scene3
-```
-
-脚本只使用仓库相对路径，并允许用 `MODEL_ROOT`、`PYTHON_BIN`、`CARLA_HOST`、`CARLA_PORT` 和输出目录参数适配 Docker。测试范围和结果见 [三场景测试报告](program/UNIVERSAL_VLA_THREE_SCENE_TEST_REPORT_20260806.md)。
-
-## 版本与数据边界
-
-当前开发分支保留：
-
-- 运行时源代码和稳定接口；
-- 配置、Schema、最小示例与必要的回归入口；
-- 环境、下载、运行和接入说明；
-- 挑战赛道可复用的训练、数据处理和评测工具；
-- 当前阶段结果摘要和已知边界。
-
-Git 不包含：
-
-- 数据集原文件和生成语料；
-- 模型权重、检查点和 Hugging Face 缓存；
-- 大规模逐样本预测、图片帧、视频、日志和临时输出。
-
-已结束的独立baseline调研、DriveLM实验和旧第一阶段材料索引已从挑战赛道开发分支移除，仍可在 `main` 和Git历史中查阅。既有路线规划PDF、模块代码、训练工具和本系统基线测试结果保持保留。新生成的数据和输出统一受 `.gitignore` 管理。
-
-## 当前边界
-
-- 当前仅完成挑战赛道开发基线同步和目录整理，尚未完成挑战赛道模型压缩或J6P适配。
-- 基础赛道三场景测试结果作为历史对照保留，不能当作J6P部署或压缩后性能。
-- CARLA 和离线指标只代表对应测试范围，不能解释为真实道路安全认证。
-- 各模型必须遵守 Hugging Face 模型卡和上游数据集许可证。
+详细训练划分、测试条件、历史失败与结果见 [信号泛化记录](lightweight_vla_adapter/CHALLENGE_SIGNAL_GENERALIZATION.md)。这组结果足以建立可复现的开发比较起点，不是对任意道路或真实车辆的安全保证。

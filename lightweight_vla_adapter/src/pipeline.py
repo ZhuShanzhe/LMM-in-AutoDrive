@@ -272,6 +272,9 @@ class LightweightVLAPipeline:
         if sequence is not None:
             self._last_network_proposal['longitudinal_sequence_schema'] = sequence['schema_version']
             self._last_network_proposal['target_acceleration_mps2'] = sequence['acceleration_mps2'][0]
+            # Single-speed temporal smoothing is invalid for receding 0.1 s targets.
+            # The Universal controller still applies risk/FSM gates after this return.
+            return proposal
         effective_risk = (
             self._last_visual_risk_assessment
             if use_model_risk_assessment

@@ -58,3 +58,12 @@ def test_hard_routing_has_identical_train_eval_forward():
 
 
 # Label-generation tests remain with the private training worktree.
+def test_planner_corridor_is_not_refiltered_as_heading_corridor():
+    from lightweight_vla_adapter.src.event_observation import prepare_event_radar
+    point=dict(distance_m=20.,relative_velocity_mps=-1.,azimuth_deg=12.)
+    packet=dict(sensor_frame=4,azimuth_obstacle_bins=[point],route_corridor_filter_applied=True,
+        route_corridor_obstacle_bins=[point],route_corridor_half_width_m=1.3)
+    assert prepare_event_radar(packet)['nearest_distance_m'] is None
+    preserved=prepare_event_radar(packet,preserve_route_corridor=True)
+    assert preserved['nearest_distance_m']==20.
+    assert preserved['event_corridor_mode']=='planner_route'

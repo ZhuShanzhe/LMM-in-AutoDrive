@@ -166,8 +166,15 @@ class EventMemoryRuntime(nn.Module):
         self.diagnostics = {}
 
     def forward(self, base_output, batch, *, longitudinal_authorized):
+        extra = {}
+        if self.head.schema_version in ('behavior_segment_sequence/1.0','layered_behavior_sequence/1.0','layered_behavior_sequence/2.0'):
+            extra = dict(behavior_memory=batch['behavior_memory'].float(), behavior_valid=batch['behavior_memory_valid'])
+            if 'recursive_state' in batch:
+                extra['recursive_state'] = batch['recursive_state'].float()
+        if self.head.schema_version in ('layered_behavior_sequence/1.0','layered_behavior_sequence/2.0'):
+            extra['layered_context']=batch['layered_context'].float()
         output = self.head(batch['event_memory'].float(), batch['event_memory_valid'],
-                           base_output.decision_embedding.float())
+                           base_output.decision_embedding.float(), **extra)
         self.last_output = output
         self.diagnostics = dict(schema_version=self.head.schema_version,
             event_probabilities=output['event_logits'][0].sigmoid().detach().cpu().tolist(),
@@ -185,4 +192,20 @@ class EventMemoryRuntime(nn.Module):
             raw_risk_probabilities=output['risk_logits'][0].softmax(-1).detach().cpu().tolist(),
             score_semantics='learned kinematic surrogate; not calibrated real-world probability',
             applied=bool(longitudinal_authorized[0]))
+        if extra:
+            self.diagnostics['behavior_memory'] = dict(
+                extension_probability=float(output['extend_memory_logits'][0].sigmoid()),
+                extended_memory_used=bool(output['extended_memory_used'][0]),
+                completed_segments=int(output['behavior_history_segments'][0]),
+                inheritance_weights=output['inherit_weights'][0].detach().cpu().tolist(),
+                write_weights=output['write_weights'][0].detach().cpu().tolist(),
+                relative_motion_state=output['relative_motion_state'][0].detach().cpu().tolist(),
+                semantics='causal summaries of executed behavior; gate is not a calibrated necessity probability')
+        if 'layered_gates' in output:
+            self.diagnostics['layered_context']=dict(consumed=True,
+                observation_event_gates=output['layered_gates'][0].detach().cpu().tolist(),
+                context_ablated=bool(self.head.force_no_layered_context),
+                events_ablated=bool(self.head.force_no_event_context),
+                long_memory_ablated=bool(self.head.force_current_segment_only),
+                feature_version='layered_observation_event/1.0')
         return self.head.apply(base_output, output, longitudinal_authorized)

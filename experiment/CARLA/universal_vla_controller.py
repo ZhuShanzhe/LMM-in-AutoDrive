@@ -513,6 +513,16 @@ def vehicle_state_tensor(
     return torch.tensor([values], dtype=torch.float32)
 
 
+def resolve_sensor_tick(config, physics_dt_s, decision_interval_frames):
+    decision_dt = float(physics_dt_s) * int(decision_interval_frames)
+    tick = float(config.get('sensor_tick_s',decision_dt))
+    if not math.isfinite(tick) or not float(physics_dt_s) <= tick <= decision_dt:
+        raise ValueError('Sensor tick must lie between physics and decision periods')
+    if abs(tick/float(physics_dt_s)-round(tick/float(physics_dt_s))) > 1e-6:
+        raise ValueError('Sensor tick must be an integer number of physics steps')
+    return tick
+
+
 def environment_feature_tensor(
     world: Any,
     ego: Any | None = None,
@@ -643,8 +653,39 @@ class UniversalVLAController:
         self.temporal_decision = None
         self.motion_history = None
         self.event_memory = None
+        self.behavior_memory = None
+        self.observation_tracker = None
+        self.task_event_memory = None
+        self.task_event_key = None
+        observation_config = config.get('observation_layer', {})
+        self.layered_policy_enabled=observation_config.get('mode')=='experimental_policy'
+        if observation_config.get('mode', 'disabled') not in ('disabled', 'shadow', 'experimental_policy'):
+            raise ValueError('Unknown observation layer mode')
+        if self.layered_policy_enabled and not config.get('simulation_only',False):
+            raise ValueError('Layered candidate requires explicit simulation-only configuration')
+        if self.layered_policy_enabled and not config.get('event_memory_checkpoint'):
+            raise ValueError('Layered policy requires a versioned trained checkpoint')
+        if observation_config.get('mode') in ('shadow','experimental_policy'):
+            from lightweight_vla_adapter.src.tracked_observation import TrackedObservation
+            from lightweight_vla_adapter.src.task_event_memory import TaskEventMemory
+            self.observation_tracker = TrackedObservation()
+            self.task_event_memory = TaskEventMemory()
+        self.route_event_radar = config.get('event_radar_corridor','heading_aligned') == 'planner_route'
+        if config.get('event_radar_corridor','heading_aligned') not in ('heading_aligned','planner_route'):
+            raise ValueError('Unknown event radar corridor mode')
+        self.behavior_state = None
+        self.behavior_intent = None
+        self.behavior_risk_event = None
         self.event_finetuned_model = None
         self.event_baseline_model = None
+        self.sequence_execution = None
+        if config.get('sequence_execution', {}).get('enabled', False):
+            from lightweight_vla_adapter.src.sequence_execution import SequenceExecutionPolicy
+            settings = config['sequence_execution']
+            self.sequence_execution = SequenceExecutionPolicy(
+                interval_s=float(settings.get('operation_interval_s',1.)),
+                forecast_steps=int(settings.get('forecast_average_steps',10)),
+                reference_mode=settings.get('reference_mode','mean_acceleration'))
         if config.get("event_memory_checkpoint"):
             if config.get("temporal_decision_checkpoint") or config.get("fuse_conv_bn") or precision != "fp32":
                 raise ValueError("Event-memory pilot requires FP32, unfused model and no legacy residual")
@@ -654,15 +695,36 @@ class UniversalVLAController:
             if artifact.get('observation_version') != OBSERVATION_VERSION:
                 raise ValueError('Event-memory checkpoint observation preprocessing mismatch')
             from lightweight_vla_adapter.src.sequence_policy import SequenceEventHead, SequenceMemoryRuntime, SEQUENCE_SCHEMA
-            is_sequence = artifact.get('schema_version') == SequenceEventHead.schema_version
+            from lightweight_vla_adapter.src.behavior_memory import BehaviorSequenceHead, BehaviorMemoryBuffer
+            from lightweight_vla_adapter.src.layered_context import LayeredSequenceHead,LAYERED_SCHEMA,DIRECT_LAYERED_SCHEMA,CONTEXT_VERSION
+            is_layered=artifact.get('schema_version') in (LAYERED_SCHEMA,DIRECT_LAYERED_SCHEMA)
+            if is_layered!=self.layered_policy_enabled:
+                raise ValueError('Layered checkpoint and explicit observation policy mode must match')
+            if is_layered and artifact.get('layered_context_version')!=CONTEXT_VERSION:
+                raise ValueError('Layered context preprocessing mismatch')
+            if is_layered and artifact.get('smoke_test',False):
+                raise ValueError('Smoke-test checkpoint cannot drive a scored CARLA evaluation')
+            training_corridor=artifact.get('training_event_radar_corridor')
+            if is_layered and training_corridor in ('planner_route','heading_aligned'):
+                if training_corridor!=config.get('event_radar_corridor','heading_aligned'):
+                    raise ValueError('Training/runtime event radar corridor mismatch')
+            is_behavior = is_layered or artifact.get('schema_version') == BehaviorSequenceHead.schema_version
+            is_sequence = is_behavior or artifact.get('schema_version') == SequenceEventHead.schema_version
             if is_sequence and artifact.get('sequence_schema') != SEQUENCE_SCHEMA:
                 raise ValueError('Sequence checkpoint contract mismatch')
-            if artifact.get("schema_version") not in (EventMemoryHead.schema_version, SequenceEventHead.schema_version) or artifact.get("stage") != "carla":
+            if artifact.get("schema_version") not in (EventMemoryHead.schema_version, SequenceEventHead.schema_version, BehaviorSequenceHead.schema_version,LAYERED_SCHEMA,DIRECT_LAYERED_SCHEMA) or artifact.get("stage") != "carla":
                 raise ValueError("Expected a jointly finetuned event-memory VLA artifact")
-            head = SequenceEventHead() if is_sequence else EventMemoryHead()
+            head = LayeredSequenceHead(direct_sequence=artifact['schema_version']==DIRECT_LAYERED_SCHEMA) if is_layered else BehaviorSequenceHead() if is_behavior else SequenceEventHead() if is_sequence else EventMemoryHead()
             head.load_state_dict(artifact["head"], strict=True)
+            if is_layered:
+                head.force_no_layered_context=bool(observation_config.get('ablate_context',False))
+                head.force_no_event_context=bool(observation_config.get('ablate_events',False))
+                head.force_current_segment_only=bool(observation_config.get('ablate_long_memory',False))
             self.temporal_decision = (SequenceMemoryRuntime(head) if is_sequence else EventMemoryRuntime(head)).to(device).eval()
             self.event_memory = EventMemoryBuffer()
+            if is_behavior:
+                self.behavior_memory = BehaviorMemoryBuffer()
+                self.behavior_state = torch.zeros(1, 6, 32)
             self.event_baseline_model = self.pipeline.model
             self.event_finetuned_model = build_model(artifact["config"]).to(device).eval()
             self.event_finetuned_model.load_state_dict(artifact["base"], strict=True)
@@ -685,21 +747,114 @@ class UniversalVLAController:
         self.supervisor = GenericTemporalRiskSupervisor(
             TemporalRiskSupervisorConfig(hold_seconds=float(hold_seconds))
         )
+        from lightweight_vla_adapter.src.lane_risk_contract import LaneRiskContract
+        self.lane_risk_contract=LaneRiskContract()
+        self._lane_command_key=None
+        self._lane_goal=None
+        self._lane_goal_stable=0
+        self._lane_goal_complete=False
+        self._lane_change_issued=False
+        self.driving_plan=None
         self.modality_schema_version = modality_schema_version
         self.available_cameras = tuple(available_cameras)
         self.enable_lidar = bool(enable_lidar)
+        self._warmup_adapter_before_ready(config)
         self.camera_rig = SynchronizedMultiviewCameraRig(
             world,
             ego,
             width=int(config.get("camera_input_width", 224)),
             height=int(config.get("camera_input_height", 224)),
             fov=float(config.get("camera_input_fov", 100.0)),
-            sensor_tick=float(fixed_delta_seconds) * self.decision_interval_frames,
+            sensor_tick=resolve_sensor_tick(config,fixed_delta_seconds,self.decision_interval_frames),
             camera_attributes=dict(camera_attributes or {}),
+            front_capture_size=config['traffic_signal_observer'].get('capture_size',1280) if config.get('traffic_signal_observer') else None,
             enable_lidar=self.enable_lidar,
             available_cameras=self.available_cameras,
         )
         self._camera_wait_deque: deque[float] = deque(maxlen=64)
+        from lightweight_vla_adapter.src.traffic_control_contract import TrafficControlContract
+        self.traffic_contract=TrafficControlContract()
+        self.signal_observer=None
+        if config.get('traffic_signal_observer'):
+            from control.map_signal_observer import MapSignalObserver
+            self.signal_observer=MapSignalObserver(world.get_map(),self.camera_rig.sensors[0],
+                config['traffic_signal_observer']['detector_weights'],
+                state_checkpoint=config['traffic_signal_observer'].get('state_checkpoint'),
+                static_map_path=config['traffic_signal_observer'].get('static_map_path'),
+                debug_directory=str(Path(output_path).parent/'signal_observer') if config['traffic_signal_observer'].get('debug_directory') else None)
+
+    def _warmup_adapter_before_ready(self,config):
+        """Warm neural kernels only; never advance an intent, memory, or vehicle."""
+        started=time.perf_counter()
+        rgb=torch.zeros(1,3,int(config.get('camera_input_height',224)),int(config.get('camera_input_width',224)))
+        inputs=UnifiedSensorBatch(schema_version=self.modality_schema_version,
+            text_tokens=torch.zeros(1,int(config.get('intent_max_length',32)),int(config.get('intent_dim',768))),
+            text_mask=torch.ones(1,int(config.get('intent_max_length',32)),dtype=torch.bool),
+            front_rgb=rgb,left_rgb=rgb,right_rgb=rgb,rear_rgb=rgb,
+            lidar_bev=torch.zeros(1,int(config.get('lidar_channels',4)),64,64),
+            vehicle_state=torch.zeros(1,int(config.get('ego_dim',8))),
+            environment_state=torch.zeros(1,int(config.get('environment_dim',14))),
+            camera_view_mask=torch.ones(1,4,dtype=torch.bool),
+            modality_mask=default_modality_mask(left_rgb=True,right_rgb=True,rear_rgb=True,lidar_bev=True),
+            frame_id='initialization_only',timestamp_s=0.).to_sensor_batch()
+        original=self.pipeline.model
+        models=[original]
+        for name in ('event_baseline_model','event_finetuned_model'):
+            candidate=getattr(self,name,None)
+            if candidate is not None and not any(candidate is model for model in models):models.append(candidate)
+        try:
+            for model in models:
+                self.pipeline.model=model
+                self.pipeline.warmup(inputs,iterations=5)
+        finally:self.pipeline.model=original
+        self._adapter_warmed=True
+        self._initialization_warmup_ms=(time.perf_counter()-started)*1000.
+
+    def _lane_command_observation(self,command,parsed):
+        self._lane_target_entered=False
+        direction=parsed.requested_lane_direction
+        if direction not in ('left','right'):
+            self._lane_command_key=None
+            return parsed,None
+        from control.pid_controller import EgoPIDController
+        key=(str(command.get('id','')),parsed.source_text)
+        location=self.ego.get_location()
+        waypoint=self.world.get_map().get_waypoint(location)
+        if key!=self._lane_command_key:
+            self._lane_command_key=key
+            target=EgoPIDController._adjacent_driving_lane(waypoint,'lane_change_'+direction)
+            self._lane_goal_waypoint=target
+            self._lane_goal=None if target is None else (target.road_id,target.section_id,target.lane_id)
+            self._lane_goal_stable=0
+            self._lane_goal_complete=False
+            self._lane_change_issued=False
+        if self._lane_goal is None:return parsed,[]
+        if (waypoint.road_id,waypoint.section_id)!=self._lane_goal[:2]:
+            # Follow the latched lane's actual successors across road sections.
+            from lightweight_vla_adapter.src.lane_risk_contract import continued_lane_waypoint
+            target=continued_lane_waypoint(self._lane_goal_waypoint,waypoint,location)
+            if target is not None:
+                self._lane_goal=(target.road_id,target.section_id,target.lane_id)
+                self._lane_goal_waypoint=target
+        yaw=math.radians(waypoint.transform.rotation.yaw)
+        offset=location-waypoint.transform.location
+        centered=abs(-math.sin(yaw)*offset.x+math.cos(yaw)*offset.y)<.5
+        self._lane_target_entered=(waypoint.road_id,waypoint.section_id,waypoint.lane_id)==self._lane_goal
+        arrived=self._lane_target_entered and centered
+        self._lane_goal_stable=self._lane_goal_stable+1 if arrived else 0
+        self._lane_goal_complete=self._lane_goal_complete or self._lane_goal_stable>=5
+        if self._lane_goal_complete:
+            return replace(parsed,parsed_intent='KEEP_LANE',requested_lane_direction=None),None
+        target=(waypoint if self._lane_target_entered else EgoPIDController._lane_with_id(waypoint,self._lane_goal[2])) if (waypoint.road_id,waypoint.section_id)==self._lane_goal[:2] else None
+        if target is None:return parsed,[]
+        self._lane_goal_waypoint=target
+        points=[]
+        for distance in (-10.,0.,10.,20.,30.):
+            choices=target.previous(-distance) if distance<0 else target.next(distance) if distance>0 else [target]
+            if choices:points.append(choices[0].transform.location)
+        tf=self.ego.get_transform();angle=math.radians(tf.rotation.yaw)
+        return parsed,[[math.cos(angle)*(p.x-location.x)+math.sin(angle)*(p.y-location.y),
+            -math.sin(angle)*(p.x-location.x)+math.cos(angle)*(p.y-location.y)] for p in points]
 
     def predict_target_lane_risk(
         self,
@@ -716,6 +871,9 @@ class UniversalVLAController:
 
         if direction not in {"front", "left", "right"}:
             raise ValueError("direction must be 'front', 'left' or 'right'")
+        cache=getattr(self,'_direction_risk_cache',{})
+        if direction in cache:
+            return dict(cache[direction])
         view_name = direction
         if view_name not in self.available_cameras:
             return {
@@ -736,6 +894,8 @@ class UniversalVLAController:
         )
         risk = self.pipeline.predict_visual_risk(masked_batch)
         risk["source"] = f"learned_{view_name}_camera_visual_risk_head"
+        if hasattr(self,'_direction_risk_cache'):
+            self._direction_risk_cache[direction]=dict(risk)
         return risk
 
     def _progress_m(self) -> float:
@@ -747,15 +907,34 @@ class UniversalVLAController:
         return self.fsm.active_command(self.commands, self._progress_m())
 
     def _decide(self, frame: int) -> None:
+        decision_call_started=time.perf_counter()
+        self._direction_risk_cache={}
         progress_m = self._progress_m()
         command = self.fsm.active_command(self.commands, progress_m)
         parsed = self.fsm.parse(command)
+        plan_document=self.fsm.driving_intent(command)
+        plan_step_id=None
+        if plan_document is not None:
+            from lightweight_vla_adapter.src.driving_plan_runtime import DrivingPlanRuntime
+            if self.driving_plan is None:self.driving_plan=DrivingPlanRuntime()
+            feedback_reader=getattr(self.route_controller,'execution_state',None)
+            step=self.driving_plan.prepare(plan_document,frame_id=f'carla_{frame}',
+                timestamp_s=float(self.world.get_snapshot().timestamp.elapsed_seconds),
+                speed_mps=_speed_mps(self.ego),execution_state=feedback_reader() if callable(feedback_reader) else {})
+            step=step or plan_document['intent']['steps'][-1]
+            plan_step_id=step['step_id']
+            parsed=self.fsm.parsed_step(step,parsed.source_text)
+            command=dict(command,id=plan_document['request_id']+':'+plan_step_id)
+        else:self.driving_plan=None
+        parsed,lane_corridor_points=self._lane_command_observation(command,parsed)
         intent_key = parsed.parsed_intent
         if parsed.requested_lane_direction is not None:
             intent_key = f"{parsed.parsed_intent}_{parsed.requested_lane_direction}"
+        if plan_step_id is not None:intent_key+=':'+plan_step_id
         if intent_key != self._last_intent:
             self.pipeline.reset_temporal_state()
             self.supervisor.reset()
+            self.lane_risk_contract.reset()
             self._last_intent = intent_key
 
         tokens, text_mask = self.fsm.encode_tokens(
@@ -797,6 +976,7 @@ class UniversalVLAController:
             maximum_frame=sensor_frame,
         )
         raw_forward_radar = forward_radar
+        route_polyline = []
         # Convert the conic radar aggregate into a route-swept observation.
         # Fail closed on missing legacy bins or unexpected map errors by
         # retaining the original physical distance envelope.
@@ -827,6 +1007,31 @@ class UniversalVLAController:
             "forward_radar": forward_radar,
             "rear_radar": rear_radar,
         }
+        tracked_observation = None
+        observation_compute_ms = 0.
+        if self.observation_tracker is not None:
+            observation_started = time.perf_counter()
+            from lightweight_vla_adapter.src.tracked_observation import capture_ego_state
+            observation_ego = capture_ego_state(self.ego)
+            try:
+                tracked_observation = self.observation_tracker.update(raw_forward_radar,
+                    ego=observation_ego, route_points=route_polyline, now_s=timestamp_s, frame=frame)
+            except Exception as error:
+                # Shadow diagnostics must never interrupt the existing control path.
+                self.observation_tracker.reset()
+                tracked_observation = dict(schema_version='tracked_route_observation/1.0',
+                    status='UNKNOWN', selected=None, entities=[], ego=observation_ego,
+                    timestamp_s=timestamp_s, frame=frame, observer_error=str(error))
+            key = json.dumps(command, sort_keys=True, ensure_ascii=True, default=str)
+            if key != self.task_event_key:
+                if self.task_event_key is not None:
+                    self.task_event_memory.finish(self.task_event_key, reason='REPLACED', timestamp_s=timestamp_s)
+                self.task_event_memory.activate(key, str(parsed.parsed_intent), dict(command), timestamp_s)
+                self.task_event_key = key
+            policy_state['tracked_observation'] = tracked_observation
+            policy_state['task_event_memory'] = self.task_event_memory.decision_context(timestamp_s,tracked_observation.get('target_history'))
+            observation_compute_ms = (time.perf_counter()-observation_started)*1000.
+            tracked_observation['compute_ms'] = observation_compute_ms
         view_tensors = {
             name: images[:, index]
             for index, name in enumerate(CAMERA_ORDER)
@@ -889,7 +1094,8 @@ class UniversalVLAController:
             event_front, event_rear = raw_forward_radar, rear_radar
             if self.event_memory is not None:
                 from lightweight_vla_adapter.src.event_observation import prepare_event_radar
-                event_front = prepare_event_radar(raw_forward_radar)
+                event_front = prepare_event_radar(forward_radar if self.route_event_radar else raw_forward_radar,
+                                                  preserve_route_corridor=self.route_event_radar)
                 event_rear = prepare_event_radar(rear_radar)
             motion = encode_motion_observation(
                 event_front, event_rear, frame=sensor_frame,
@@ -906,6 +1112,27 @@ class UniversalVLAController:
                 history, valid = self.event_memory.tensors()
                 motion_inputs["event_memory"] = torch.from_numpy(history).unsqueeze(0)
                 motion_inputs["event_memory_valid"] = torch.from_numpy(valid).unsqueeze(0)
+                if self.layered_policy_enabled:
+                    from lightweight_vla_adapter.src.layered_context import encode_layered_context
+                    features=encode_layered_context(tracked_observation,policy_state['task_event_memory'],
+                        float(parsed.target_speed_kmh if parsed.target_speed_kmh is not None else self.route_controller.target_speed_kmh),timestamp_s)
+                    motion_inputs['layered_context']=torch.from_numpy(features).unsqueeze(0)
+                if self.behavior_memory is not None:
+                    stamp = float(motion['timestamp_s'])
+                    behavior_intent_key = json.dumps(command, sort_keys=True, ensure_ascii=True, default=str)
+                    last = self.behavior_memory.last_time
+                    if last is not None and (stamp < last or stamp-last > .35):
+                        self.behavior_state = torch.zeros(1,6,32)
+                    if self.behavior_intent is not None and self.behavior_intent != behavior_intent_key:
+                        if hasattr(self.temporal_decision, 'last_output'):
+                            self.behavior_state = self.temporal_decision.last_output['recursive_state'].detach().cpu()
+                        self.behavior_memory.boundary(2)
+                    self.behavior_intent = behavior_intent_key
+                    self.behavior_memory.push(history[-1], stamp, 'controller_episode')
+                    segments, segment_valid = self.behavior_memory.tensors()
+                    motion_inputs['behavior_memory'] = torch.from_numpy(segments).unsqueeze(0)
+                    motion_inputs['behavior_memory_valid'] = torch.from_numpy(segment_valid).unsqueeze(0)
+                    motion_inputs['recursive_state'] = self.behavior_state
             else:
                 self.motion_history.push(motion, episode_id=intent_key)
                 values, masks, steps = self.motion_history.tensors()
@@ -974,10 +1201,14 @@ class UniversalVLAController:
 
         if parsed.requested_lane_direction in {"left", "right"}:
             requested_direction = parsed.requested_lane_direction
-            target_lane_risk = dict(
+            target_lane_risk = dict(self.predict_target_lane_risk(batch, 'front')) if self._lane_target_entered else dict(
                 lane_options.get(requested_direction, {}).get("risk")
                 or self.predict_target_lane_risk(batch, requested_direction)
             )
+            risk=self.lane_risk_contract.update(risk,requested_direction,target_lane_risk,lidar_bev,
+                timestamp_s=timestamp_s,sensor_frame=sensor_frame,
+                frame_age_s=(frame-sensor_frame)*self._fixed_delta_seconds,speed_mps=ego_speed_kmh/3.6,
+                corridor_points=lane_corridor_points,continuing=self._lane_target_entered or self._lane_change_issued)
 
         canonical = self.fsm.canonical_decision(
             parsed,
@@ -986,6 +1217,17 @@ class UniversalVLAController:
             risk=risk,
             ego_speed_kmh=ego_speed_kmh,
         )
+        sequence = risk.get('event_memory', {}).get('longitudinal_sequence') if event_authorized else None
+        execution = getattr(self, 'sequence_execution', None)
+        if sequence is not None and execution is not None:
+            proposal = execution.update(proposal,sequence,timestamp_s=timestamp_s,episode_id=intent_key,
+                speed_kmh=ego_speed_kmh,desired_speed_kmh=min(float(self.route_controller.target_speed_kmh),float(parsed.target_speed_kmh) if parsed.target_speed_kmh is not None else float(self.route_controller.target_speed_kmh)),risk=risk)
+        elif execution is not None:
+            execution.reset()
+        if self.driving_plan is not None:
+            canonical=self.driving_plan.advance(policy_state,risk,
+                alignment=command.get('semantic_alignment'),readiness=command.get('step_readiness'))
+            proposal=dict(proposal,request_id=canonical['request_id'])
         gated_decision = gate_vla_proposal(proposal, canonical, risk)
 
         self.supervisor.observe(
@@ -1009,7 +1251,12 @@ class UniversalVLAController:
             self.supervisor.resume_intent == parsed.parsed_intent
             and self.supervisor.resume_intent is not None
         )
-        final_decision, liveness_override = self.supervisor.apply(
+        sequence_low_risk = (sequence is not None and execution is not None
+            and str(gated_decision.get('reason','')).startswith('vla_accepted_')
+            and risk.get('risk_level') == 'low'
+            and risk.get('recommended_action') not in ('decelerate','emergency_brake')
+            and canonical.get('action') not in ('stop','emergency_brake'))
+        final_decision, liveness_override = (dict(gated_decision), None) if sequence_low_risk else self.supervisor.apply(
             gated_decision,
             canonical,
             risk,
@@ -1061,26 +1308,20 @@ class UniversalVLAController:
             final_decision = dict(canonical)
             final_decision["reason"] = "training_teacher_force_control"
             final_decision["blocked_reason_codes"] = []
-        self.supervisor.record_decision(
-            frame=frame,
-            risk_level=str(risk.get("risk_level", "high")),
-            action=str(final_decision["action"]),
-            target_speed_kmh=float(
-                final_decision.get("target_speed_kmh", 0.0)
-            ),
-            override=directional_override or liveness_override,
-        )
-        elapsed_ms = (time.perf_counter() - started) * 1000.0
-        response_latency_ms = camera_wait_ms + elapsed_ms
-        self._latencies_ms.append(elapsed_ms)
-        self._response_latency_ms.append(response_latency_ms)
-        self._sensor_to_decision_response_ms.append(
-            camera_wait_ms + elapsed_ms
-        )
+        if not self.teacher_force_control:
+            from lightweight_vla_adapter.src.lane_risk_contract import enforce_requested_lane
+            final_decision,requested_lane_override=enforce_requested_lane(final_decision,risk,parsed.requested_lane_direction)
+            directional_override=requested_lane_override or directional_override
+        from lightweight_vla_adapter.src.longitudinal_contract import enforce_longitudinal_contract, enforce_active_instruction_contract
+        final_decision,instruction_diagnostics=enforce_active_instruction_contract(
+            final_decision,parsed.parsed_intent,parsed.target_speed_kmh,ego_speed_kmh)
+        final_decision,contract_diagnostics=enforce_longitudinal_contract(final_decision,risk,ego_speed_kmh)
         sequence = risk.get('event_memory', {}).get('longitudinal_sequence') if event_authorized else None
-        raw_sequence_proposal = self.pipeline.last_network_proposal if sequence is not None else {}
+        raw_sequence_proposal = proposal if sequence is not None and execution is not None else self.pipeline.last_network_proposal if sequence is not None else {}
         sequence_accepted = (
             sequence is not None
+            and not instruction_diagnostics['changed']
+            and final_decision.get('allow_positive_acceleration',True)
             and str(gated_decision.get('reason', '')).startswith('vla_accepted_')
             and liveness_override is None and directional_override is None
             and not self.teacher_force_control
@@ -1090,9 +1331,77 @@ class UniversalVLAController:
         if sequence_accepted:
             final_decision['longitudinal_sequence_schema'] = sequence['schema_version']
             final_decision['target_acceleration_mps2'] = sequence['acceleration_mps2'][0]
+            final_decision['sequence_valid_until_s'] = timestamp_s + .3
+            if execution is not None:
+                final_decision.update(execution.command)
+        # Sequence execution also supplies a setpoint: validate the actual issued command.
+        final_decision,issued_instruction_diagnostics=enforce_active_instruction_contract(
+            final_decision,parsed.parsed_intent,parsed.target_speed_kmh,ego_speed_kmh)
+        if issued_instruction_diagnostics['changed']:
+            sequence_accepted=False
+        final_decision,issued_contract_diagnostics=enforce_longitudinal_contract(final_decision,risk,ego_speed_kmh)
+        signal_observation=None
+        if self.signal_observer is not None:
+            signal_rgb=self.camera_rig.front_capture(sensor_frame)
+            signal_observation=self.signal_observer.observe(self.ego,signal_rgb if signal_rgb is not None else images[0,0],frame=sensor_frame,
+                timestamp_s=timestamp_s-(frame-sensor_frame)*self._fixed_delta_seconds,
+                camera_inverse=self.camera_rig.front_capture_inverse(sensor_frame))
+            signal_observation['image_source']='synchronized_front_capture' if signal_rgb is not None else 'synchronized_low_resolution_fallback'
+        final_decision,traffic_diagnostics=self.traffic_contract.apply(final_decision,signal_observation,
+            timestamp_s=timestamp_s,ego_speed_mps=ego_speed_kmh/3.6)
+        if traffic_diagnostics['changed']:
+            sequence_accepted=False
+        final_decision,issued_contract_diagnostics=enforce_longitudinal_contract(final_decision,risk,ego_speed_kmh)
+        if execution is not None and sequence is not None:
+            risk['sequence_execution'] = dict(execution.diagnostics,forwarded=bool(sequence_accepted))
+        if execution is not None:
+            final_decision['control_valid_until_s'] = timestamp_s + .3
+        final_decision['command_id']=str(command.get('id') or parsed.source_text)
+        if self.driving_plan is not None:
+            final_decision,plan_blocked=self.driving_plan.enforce_execution(final_decision,canonical)
+            if plan_blocked:sequence_accepted=False
+        self.supervisor.record_decision(
+            frame=frame, risk_level=str(risk.get('risk_level','high')),
+            action=str(final_decision['action']),
+            target_speed_kmh=float(final_decision.get('target_speed_kmh',0.)),
+            override=('traffic_control_constraint' if traffic_diagnostics['changed'] else directional_override or liveness_override),
+        )
         self.route_controller.set_high_level_decision(final_decision)
+        if parsed.requested_lane_direction in ('left','right') and final_decision.get('action')=='lane_change_'+parsed.requested_lane_direction:
+            self._lane_change_issued=True
+        text_to_command_wall_ms=(time.perf_counter()-decision_call_started)*1000.
+        elapsed_ms = (time.perf_counter() - started) * 1000.0 + observation_compute_ms
+        response_latency_ms = camera_wait_ms + elapsed_ms
+        self._latencies_ms.append(elapsed_ms)
+        self._response_latency_ms.append(response_latency_ms)
+        self._sensor_to_decision_response_ms.append(response_latency_ms)
+        if self.task_event_memory is not None:
+            from lightweight_vla_adapter.src.behavior_memory import decision_behavior
+            behavior = ('DECELERATE', 'HOLD', 'ACCELERATE')[decision_behavior(final_decision, ego_speed_kmh)]
+            if final_decision.get('action') in ('stop','emergency_brake'):
+                behavior = final_decision['action'].upper()
+            self.task_event_memory.behavior_changed(self.task_event_key, behavior,
+                dict(selected=tracked_observation.get('selected'), status=tracked_observation['status'],
+                     ego=tracked_observation['ego']), timestamp_s)
+            risk['observation_layer'] = tracked_observation
+            risk['task_event_memory'] = self.task_event_memory.decision_context(timestamp_s,tracked_observation.get('target_history'))
+            risk['task_event_memory']['behavior_source']='ISSUED_POST_CONTRACT_CONTROL'
+            risk['layered_context_mode'] = ('experimental_trained_policy' if self.layered_policy_enabled
+                else 'shadow_not_consumed_by_trained_policy')
+        if self.behavior_memory is not None:
+            switched = self.behavior_memory.select(final_decision, float(vehicle_state[0, 0]) * 3.6, timestamp_s)
+            risk_event = final_decision.get('action') == 'emergency_brake'
+            if self.behavior_risk_event is not None and risk_event != self.behavior_risk_event and not switched:
+                self.behavior_memory.boundary(1)
+                switched = True
+            self.behavior_risk_event = risk_event
+            if switched and hasattr(self.temporal_decision, 'last_output'):
+                self.behavior_state = self.temporal_decision.last_output['recursive_state'].detach().cpu()
         accepted = (
             str(gated_decision.get("reason", "")).startswith("vla_accepted_")
+            and not instruction_diagnostics['changed'] and not issued_instruction_diagnostics['changed']
+            and not traffic_diagnostics['changed']
+            and not contract_diagnostics['risk_constraint_active'] and not contract_diagnostics['speed_clamped']
             and liveness_override is None
             and directional_override is None
             and not self.teacher_force_control
@@ -1143,10 +1452,26 @@ class UniversalVLAController:
             "directional_collision_assessment": directional_assessment,
             "vla_proposal": proposal,
             "control_decision": final_decision,
+            "longitudinal_contract": contract_diagnostics,
+            "active_instruction_contract": instruction_diagnostics,
+            "issued_instruction_contract": issued_instruction_diagnostics,
+            "issued_longitudinal_contract": issued_contract_diagnostics,
+            "traffic_control_contract": traffic_diagnostics,
+            "lane_task_feedback": {"target_lane":self._lane_goal,"completed":self._lane_goal_complete},
+            "control_plan_state": self.driving_plan.state if self.driving_plan is not None else None,
+            "execution_feedback": {
+                "scope": "observed_before_current_command; previous_physics_step",
+                "frame": frame,"previous_decision_frame": self._last_frame,
+                "speed_kmh": ego_speed_kmh,
+                "acceleration_xyz_mps2": [float(getattr(self.ego.get_acceleration(),axis)) for axis in ('x','y','z')],
+                "throttle": float(self.ego.get_control().throttle),
+                "brake": float(self.ego.get_control().brake),
+            },
             "model_output_applied": accepted,
             "training_teacher_force_control": self.teacher_force_control,
             "liveness_override": control_override,
             "full_decision_latency_ms": round(elapsed_ms, 3),
+            "text_to_control_command_wall_ms": round(text_to_command_wall_ms,3),
             "sensor_to_decision_response_ms": round(response_latency_ms, 3),
         }
         self._stream.write(json.dumps(record, ensure_ascii=False) + "\n")

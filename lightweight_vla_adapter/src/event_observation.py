@@ -6,9 +6,16 @@ import math
 OBSERVATION_VERSION = 'longitudinal_corridor_radar/1.0'
 
 
-def prepare_event_radar(observation, *, half_width_m=1.6, maximum_speed_mps=80.):
+def prepare_event_radar(observation, *, half_width_m=1.6, maximum_speed_mps=80., preserve_route_corridor=False):
     result = dict(observation or {})
-    bins = result.get('azimuth_obstacle_bins')
+    if preserve_route_corridor:
+        if not result.get('route_corridor_filter_applied') or not isinstance(result.get('route_corridor_obstacle_bins'),list):
+            result.update(sensor_frame=-1,event_observation_error='missing_planner_corridor')
+            bins=[]
+        else:
+            bins=result['route_corridor_obstacle_bins']
+    else:
+        bins = result.get('azimuth_obstacle_bins')
     if bins is None:
         # Synthetic inputs explicitly represent a centered, single return.
         bins = [] if result.get('nearest_distance_m') is None else [dict(
@@ -28,7 +35,7 @@ def prepare_event_radar(observation, *, half_width_m=1.6, maximum_speed_mps=80.)
             invalid += 1
             continue
         angle = math.radians(azimuth)
-        if distance * math.cos(angle) <= 0 or abs(distance * math.sin(angle)) > half_width_m:
+        if distance * math.cos(angle) <= 0 or (not preserve_route_corridor and abs(distance * math.sin(angle)) > half_width_m):
             continue
         selected.append((distance, velocity, azimuth))
     nearest = min(selected, default=None)
@@ -40,6 +47,9 @@ def prepare_event_radar(observation, *, half_width_m=1.6, maximum_speed_mps=80.)
         nearest_closing_velocity_mps=-closing[1] if closing else None,
         event_observation_version=OBSERVATION_VERSION,
         event_corridor_half_width_m=half_width_m, event_invalid_returns=invalid)
+    result['event_corridor_mode']='planner_route' if preserve_route_corridor else 'heading_aligned'
+    if preserve_route_corridor:
+        result['event_corridor_half_width_m']=result.get('route_corridor_half_width_m')
     # A physically impossible packet is unknown, not evidence of an empty road.
     if bins and invalid == len(bins):
         result['sensor_frame'] = -1

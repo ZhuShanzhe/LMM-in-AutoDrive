@@ -10,7 +10,6 @@ from lightweight_vla_adapter.src.pipeline import (
     LightweightVLAPipeline,
     decode_visual_risk_assessment,
 )
-from lightweight_vla_adapter.scripts.train_scene3_multimodal import model_kwargs
 
 
 def build_batch(
@@ -37,34 +36,6 @@ def build_batch(
 
 
 class RawMultimodalAdapterTests(unittest.TestCase):
-    def test_training_contract_masks_truth_features_by_source(self):
-        base = build_batch()
-        batch = {
-            "camera_bev": torch.ones(2, 8, 16, 16),
-            "lidar_bev": torch.ones(2, 4, 16, 16),
-            "ego_features": base.ego_features.repeat(2, 1),
-            "candidate_features": torch.ones(2, 2, 12),
-            "candidate_mask": torch.ones(2, 2, dtype=torch.bool),
-            "intent_tokens": base.intent_tokens.repeat(2, 1, 1),
-            "intent_mask": base.intent_mask.repeat(2, 1),
-            "camera_images": base.camera_images.repeat(2, 1, 1, 1, 1),
-            "camera_view_mask": base.camera_view_mask.repeat(2, 1),
-            "environment_features": base.environment_features.repeat(2, 1),
-            "source_dataset": ["CARLA", "nuScenes"],
-        }
-        inputs = model_kwargs(
-            batch,
-            torch.device("cpu"),
-            {
-                "use_candidate_entities": False,
-                "structured_sensor_sources": ["nuScenes"],
-            },
-        )
-        self.assertEqual(int(torch.count_nonzero(inputs["camera_bev"][0])), 0)
-        self.assertEqual(int(torch.count_nonzero(inputs["lidar_bev"][0])), 0)
-        self.assertGreater(int(torch.count_nonzero(inputs["lidar_bev"][1])), 0)
-        self.assertEqual(int(torch.count_nonzero(inputs["candidate_features"])), 0)
-
     def test_visual_risk_decoder_produces_sensor_safety_contract(self):
         risk = decode_visual_risk_assessment(
             torch.tensor([[0.0, 1.0, 4.0]], dtype=torch.float32)

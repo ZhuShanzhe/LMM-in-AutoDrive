@@ -9,15 +9,18 @@ from typing import Any, Mapping
 from PIL import Image
 
 from .road_structure import road_structure_from_world_state, unavailable_road_structure
+from ..core.target_history import TargetHistory
 
 
 class RealtimePerceptionPipeline:
     def __init__(self, detector: Any, tracker: Any) -> None:
         self.detector = detector
         self.tracker = tracker
+        self.target_history = TargetHistory(retention_s=30.)
 
     def reset(self) -> None:
         self.tracker.reset()
+        self.target_history.reset()
 
     def process(
         self,
@@ -39,6 +42,11 @@ class RealtimePerceptionPipeline:
             x1, y1, x2, y2 = track.pop("bbox_xyxy")
             track["bbox_2d"] = [x1 / width, y1 / height, x2 / width, y2 / height]
 
+        history = (self.target_history.update(f'{source}:{camera_name}',tracks,timestamp_s)
+            if timestamp_s is not None else dict(schema_version='target_history/1.0',
+                status='UNAVAILABLE_TIMESTAMP',retention_s=30.,entries=[],
+                authority='REFERENCE_CONTEXT_ONLY',cross_id_reidentification=False))
+
         road_structure = (
             road_structure_from_world_state(world_state)
             if world_state is not None
@@ -58,6 +66,7 @@ class RealtimePerceptionPipeline:
             "timestamp_s": timestamp_s,
             "image_size": {"width": width, "height": height},
             "tracks": tracks,
+            "target_history": history,
             "road_structure": road_structure,
             "latency_ms": {
                 "detector": round(detector_latency_ms, 3),

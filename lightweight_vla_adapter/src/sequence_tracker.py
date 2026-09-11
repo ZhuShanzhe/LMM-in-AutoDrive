@@ -4,7 +4,10 @@ import math
 
 
 class SequenceLongitudinalTracker:
-    def __init__(self):
+    def __init__(self, integral_limit=8.):
+        if not math.isfinite(integral_limit) or integral_limit <= 0:
+            raise ValueError('Expected a finite positive integral limit')
+        self.integral_limit = integral_limit
         self.reset()
 
     def reset(self):
@@ -21,8 +24,13 @@ class SequenceLongitudinalTracker:
         self.previous_speed=current_speed_mps
         reference=max(-8.,min(3.,acceleration_mps2+.4*(speed_mps-current_speed_mps)))
         error=reference-self.acceleration
-        self.integral=max(-2.,min(2.,self.integral+error*dt))
+        candidate=max(-self.integral_limit,min(self.integral_limit,self.integral+error*dt))
+        candidate_effort=reference+.5*error+.25*candidate
+        # Retain learned drag compensation; freeze only when it worsens actuator saturation.
+        if not ((candidate_effort>3. and error>0.) or (candidate_effort < -7. and error<0.)):
+            self.integral=candidate
         effort=reference+.5*error+.25*self.integral
         if speed_mps<=.05 and current_speed_mps<=.1 and reference<=0:
+            self.integral=0.
             return 0.,.3
         return (min(1.,max(0.,effort/3.)), min(1.,max(0.,-effort/7.)))

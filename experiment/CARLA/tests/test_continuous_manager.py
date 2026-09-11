@@ -52,10 +52,19 @@ class ContinuousScenarioManagerTest(unittest.TestCase):
         ]
         self.route.route_length_m = 20.0
 
-    def test_progress_uses_the_nearest_forward_route_point(self):
+    def test_progress_projects_continuously_between_route_points(self):
         ego = Ego(11.0)
-        self.assertEqual(self.route.update(ego), 10.0)
+        self.assertEqual(self.route.update(ego), 11.0)
         ego.location = Location(19.0)
+        self.assertEqual(self.route.update(ego), 19.0)
+        self.assertEqual(self.route.current_index, 1)
+
+    def test_projected_progress_does_not_regress_or_exceed_route_end(self):
+        ego = Ego(19.0)
+        self.assertEqual(self.route.update(ego), 19.0)
+        ego.location = Location(12.0)
+        self.assertEqual(self.route.update(ego), 19.0)
+        ego.location = Location(25.0)
         self.assertEqual(self.route.update(ego), 20.0)
 
     def test_seek_initializes_progress_for_a_resumed_route_segment(self):

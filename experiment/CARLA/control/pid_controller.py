@@ -50,6 +50,8 @@ class EgoPIDController:
         self._crawl_active = False
 
     def run_step(self, intent, dt):
+        risk_speed_cap=isinstance(intent,dict) and not intent.get('allow_positive_acceleration',True)
+        self._sequence_debug = {'active': False}
         sequence_acceleration = None
         if isinstance(intent, dict) and intent.get('longitudinal_sequence_schema') == 'longitudinal_sequence/1.0':
             sequence_acceleration = float(intent['target_acceleration_mps2'])
@@ -88,6 +90,10 @@ class EgoPIDController:
             target_speed = min(target_speed, self._turn_unsafe_speed_cap_kmh)
             self._turn_unsafe_frames -= 1
         current_speed = self._get_speed_kmh()
+        if risk_speed_cap:
+            target_speed=min(target_speed,current_speed)
+            self._speed_integral=min(self._speed_integral,0.)
+            if sequence_acceleration is not None:sequence_acceleration=min(sequence_acceleration,0.)
         self._crawl_active = (
             target_speed <= 16.0 and current_speed < 2.0
         )
@@ -101,11 +107,15 @@ class EgoPIDController:
                 tracker.reset()
             else:
                 throttle, brake = tracker.step(target_speed / 3.6, sequence_acceleration, current_speed / 3.6, dt)
+                self._sequence_debug['active'] = True
+            self._sequence_debug.update(requested_kmh=intent['target_speed_kmh'],resolved_kmh=target_speed,
+                acceleration_mps2=sequence_acceleration,integral=tracker.integral,turn_unsafe_frames=self._turn_unsafe_frames)
         lateral_intent = self._lateral_intent_for_control(intent)
         steer = self._lateral_control(lateral_intent, dt)
         control = self._smooth_control(
             throttle, brake, steer, dt, lateral_intent["action"]
         )
+        if risk_speed_cap:control.throttle=0.
         self._last_control = control
         return control, intent
 

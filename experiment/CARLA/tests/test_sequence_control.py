@@ -46,3 +46,17 @@ def test_legacy_request_does_not_create_sequence_tracker():
     value = controller()
     value.run_step(dict(action='accelerate', target_speed_kmh=.72), .05)
     assert not hasattr(value, '_sequence_tracker')
+
+
+def test_risk_cap_cannot_reuse_integral_or_smoothed_positive_throttle():
+    value=controller()
+    value.run_step(dict(action='accelerate',target_speed_kmh=15.),.05)
+    value._speed_integral=20.
+    command,_=value.run_step(dict(action='decelerate',target_speed_kmh=15.,allow_positive_acceleration=False),.05)
+    assert command.throttle==0 and value._speed_integral<=0
+
+
+def test_absolute_target_remains_distinct_from_risk_cap():
+    value=controller()
+    command,_=value.run_step(dict(action='decelerate',target_speed_kmh=15.,allow_positive_acceleration=True),.05)
+    assert command.throttle>0

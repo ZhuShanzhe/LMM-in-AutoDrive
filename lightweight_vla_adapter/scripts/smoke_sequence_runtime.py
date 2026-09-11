@@ -1,4 +1,4 @@
-"""Data-free runtime contract check. Synthetic inputs are not performance evidence."""
+"""Data-free layered runtime checks; synthetic input is not driving evidence."""
 
 import argparse
 import hashlib
@@ -14,28 +14,37 @@ if str(ROOT) not in sys.path:
 
 from lightweight_vla_adapter.scripts.run_offline_inference import build_model
 from lightweight_vla_adapter.src.event_observation import OBSERVATION_VERSION
-from lightweight_vla_adapter.src.sequence_policy import SequenceEventHead, SequenceMemoryRuntime, SEQUENCE_SCHEMA
+from lightweight_vla_adapter.src.behavior_memory import SUMMARY_DIM, SUMMARY_SLOTS
+from lightweight_vla_adapter.src.layered_context import (
+    LayeredSequenceHead, LAYERED_SCHEMA, DIRECT_LAYERED_SCHEMA, CONTEXT_VERSION,
+)
+from lightweight_vla_adapter.src.sequence_policy import SequenceMemoryRuntime, SEQUENCE_SCHEMA
 
 
 def smoke(checkpoint=None, device='cpu'):
     torch.manual_seed(911)
     torch.set_num_threads(2)
-    config = json.loads((ROOT/'lightweight_vla_adapter/configs/challenge_sequence_v2.json').read_text())
-    head = SequenceEventHead().to(device).eval()
+    config = json.loads((ROOT/'lightweight_vla_adapter/configs/challenge_signal_generalization.json').read_text())
     artifact = None
     digest = None
+    direct = True
     if checkpoint:
         with open(checkpoint, 'rb') as stream:
             digest = hashlib.file_digest(stream, 'sha256').hexdigest()
         artifact = torch.load(checkpoint, map_location='cpu', weights_only=True)
-        if (artifact.get('schema_version') != head.schema_version or artifact.get('stage') != 'carla'
+        if (artifact.get('schema_version') not in (LAYERED_SCHEMA, DIRECT_LAYERED_SCHEMA)
+                or artifact.get('stage') != 'carla'
                 or artifact.get('sequence_schema') != SEQUENCE_SCHEMA
-                or artifact.get('observation_version') != OBSERVATION_VERSION):
+                or artifact.get('observation_version') != OBSERVATION_VERSION
+                or artifact.get('layered_context_version') != CONTEXT_VERSION
+                or artifact.get('smoke_test', False)):
             raise ValueError('Checkpoint contract mismatch')
+        direct = artifact['schema_version'] == DIRECT_LAYERED_SCHEMA
         config = artifact['config']
-        head.load_state_dict(artifact['head'], strict=True)
+    head = LayeredSequenceHead(direct_sequence=direct).to(device).eval()
     base = build_model(config).to(device).eval()
     if artifact is not None:
+        head.load_state_dict(artifact['head'], strict=True)
         base.load_state_dict(artifact['base'], strict=True)
     zero = lambda *shape: torch.zeros(*shape, device=device)
     inputs = dict(camera_bev=zero(1,8,64,64), lidar_bev=zero(1,4,64,64),
@@ -47,7 +56,11 @@ def smoke(checkpoint=None, device='cpu'):
     memory = zero(1,80,52)
     memory[:,-1,40] = 5./40.
     memory[:,-1,42] = .3
-    batch = dict(event_memory=memory, event_memory_valid=torch.ones(1,80,dtype=torch.bool,device=device))
+    behavior_valid = zero(1,SUMMARY_SLOTS).bool()
+    behavior_valid[:,-1] = True
+    batch = dict(event_memory=memory, event_memory_valid=torch.ones(1,80,dtype=torch.bool,device=device),
+                 behavior_memory=zero(1,SUMMARY_SLOTS,SUMMARY_DIM), behavior_memory_valid=behavior_valid,
+                 recursive_state=zero(1,6,32), layered_context=zero(1,48))
     runtime = SequenceMemoryRuntime(head)
     with torch.inference_mode():
         original = base(**inputs)
@@ -62,8 +75,9 @@ def smoke(checkpoint=None, device='cpu'):
     torch.testing.assert_close(speed, torch.cat((torch.tensor([5.]),speed[:-1])) + .1*acceleration)
     assert abs(float(result.target_speed_kmh.reshape(-1)[0]) - float(speed[0])*3.6) < 1e-4
     return dict(status='pass', checkpoint_sha256=digest, device=device,
+                schema_version=head.schema_version,
                 weight_mode='trained' if checkpoint else 'random contract fixture',
-                scope='Synthetic input shape, weight loading, authorization and kinematic consistency only',
+                scope='Synthetic shape, trained asset loading, authorization and kinematic consistency only',
                 sequence=seq)
 
 

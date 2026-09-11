@@ -1,0 +1,121 @@
+{
+  "schema_version": "challenge_runtime_assets/1.0",
+  "version": "signal-generalization-v2-phase-recovery-v1",
+  "files": [
+    {
+      "path": "challenge/lamp_state_v2.pt",
+      "bytes": 229109,
+      "sha256": "d8470bf6a176037ba74e2a28f790ebb5b5ab8abe73625b37960e7f6128b4b370"
+    },
+    {
+      "path": "challenge/phase_recovery_v1.pt",
+      "bytes": 23432490,
+      "sha256": "5bd639ccb0c09326742c9d5c76a9ddaade7c983d51ce25e0f9d762d64af56fb3"
+    },
+    {
+      "path": "lightweight_vla_adapter/universal_three_scene_v6_sensor_policy/model.pt",
+      "bytes": 21165103,
+      "sha256": "06c774e3a5eead95e230b55b65a3d86c52ba93110c6046506be21dd69ecb2165"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/LICENSE",
+      "bytes": 2208,
+      "sha256": "070afdfea3bf663033fc50ad5b9cd302ea152839541d6099c63abcec979a2412"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/LICENSE_CHECKSUMS",
+      "bytes": 531,
+      "sha256": "4e7a3604b450bdeca02d8a642777d6bd014d9c2b89159c02cf7f7ec2ae7dbe53"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/NOTICE",
+      "bytes": 1134,
+      "sha256": "de1b979b6cd7887ab33a1e7967f3632c66aeff17ccdf43009b873ffe7dda4d98"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/README.md",
+      "bytes": 3813,
+      "sha256": "9e7bea996ad8fd7e8fe6cc064b14d2b6a8bb2cac574c6bc355c9877d2c8bcd48"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/SHA256SUMS",
+      "bytes": 688,
+      "sha256": "9ce08b93ac28a7321f0a5c8661cc310db27130d961b3ba3e5c7e637cd8726bc9"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/config.json",
+      "bytes": 1209,
+      "sha256": "a28a731c5ce92c719837ef11d8be440abd7ae73bd84d6a6b4a633e3e84cc0946"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/inference_config.json",
+      "bytes": 1682,
+      "sha256": "8a396c0ca3e5db082e4cbd5b48e40a344a335a78273f295b944005c6ee9dce48"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/label_schema.json",
+      "bytes": 837,
+      "sha256": "c93a901ebe31ede9df8e8a5f5a355455eb9826c6eeba6aa54b8414526fcf5625"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/licenses/MODERNBERT-APACHE-2.0.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/licenses/SIMLINGO-NON-COMMERCIAL.txt",
+      "bytes": 9715,
+      "sha256": "68757a40ab1ea0bb9723f3473694d4c2c85e2db73996e558a601ae4e65a082ff"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/licenses/TALK2CAR-CC-BY-NC-SA-4.0.txt",
+      "bytes": 21009,
+      "sha256": "d256c8b3941ef17b9cd763d2a5113bbe887c6bec3d5250c5681fbbc3eb04ea15"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/model.safetensors",
+      "bytes": 298041696,
+      "sha256": "55b0683be1d75355a69720bc30b900e171579f7f1fe345c710dd05e14d5d7af9"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/multitask_heads.pt",
+      "bytes": 137103,
+      "sha256": "fca6481f3afcf0cd3a9d9d99952655556c443e7ab3178706e77014c17e4cba8d"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/semantic_token_head.pt",
+      "bytes": 17413,
+      "sha256": "ec7765685d5acb46e4a7a9f23837212f17092074f90fafcbc9f1a41151995f82"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/semantic_token_head_metrics.json",
+      "bytes": 2254,
+      "sha256": "f5086090c863144dc674bcebdd5a722d2391e6df017dbca3bf9636b52aceb88d"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/special_tokens_map.json",
+      "bytes": 694,
+      "sha256": "ea97ecdbcc73713039d8d64dbb05e3689495c96657fbd9a18f5bed381be81049"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/test_metrics_calibrated.json",
+      "bytes": 772,
+      "sha256": "74454c111c5bc4703be9988358fc766335d491e433c921d82f46b596e82fa5c5"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/tokenizer.json",
+      "bytes": 3583228,
+      "sha256": "6c8aaa9a542084f2457eab775d4eeb51f92a70c0fd9de28d5edb0ddec3c08d30"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/tokenizer_config.json",
+      "bytes": 20840,
+      "sha256": "2966a59b9e9cf122279aec1249e22e5bc7ad8430c754e95031b13fd128d4e560"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/training_summary.json",
+      "bytes": 2022,
+      "sha256": "2b8de916d8b46c673795d342f38e1e71e1355f34754e7edb72c82d9c781f8963"
+    }
+  ]
+}
