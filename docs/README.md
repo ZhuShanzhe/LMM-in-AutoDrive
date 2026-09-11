@@ -1,8 +1,8 @@
 # 文档索引
 
-## 路线规划
+## 任务分工
 
-[挑战赛道路线与人员分工](../program/task_0908.pdf)。题目、总体计划及历次任务PDF保留在 [program/](../program/) 原位置。
+[挑战赛道职责与达标要求](../program/task_0911.pdf)。题目、总体计划及历次任务PDF保留在 [program/](../program/) 原位置。
 
 ## Baseline 调研
 
