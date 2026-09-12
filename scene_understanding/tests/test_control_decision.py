@@ -138,7 +138,7 @@ class ControlDecisionTests(unittest.TestCase):
         self.assertEqual(validate_control_decision(result), [])
         self.assertEqual(result["decision_status"], "READY")
         self.assertEqual(result["action"], "decelerate")
-        self.assertEqual(result["target_speed_kmh"], 36.0)
+        self.assertEqual(result["target_speed_kmh"], 31.0)
         self.assertEqual(result["source_step_id"], "step_1")
 
     def test_risk_deceleration_overrides_lane_change(self):
@@ -152,6 +152,26 @@ class ControlDecisionTests(unittest.TestCase):
         self.assertEqual(result["decision_status"], "BLOCKED")
         self.assertEqual(result["action"], "decelerate")
         self.assertIn("risk_requires_deceleration", result["blocked_reason_codes"])
+
+    def test_adjust_speed_increase_raises_target_by_five_kmh(self):
+        intent = driving_intent(
+            "ADJUST_SPEED", {"change": "INCREASE"}, target=None
+        )
+        result = self.build(intent)
+
+        self.assertEqual(result["decision_status"], "READY")
+        self.assertEqual(result["action"], "accelerate")
+        self.assertEqual(result["target_speed_kmh"], 41.0)
+
+    def test_adjust_speed_hold_keeps_current_speed(self):
+        intent = driving_intent(
+            "ADJUST_SPEED", {"change": "HOLD"}, target=None
+        )
+        result = self.build(intent)
+
+        self.assertEqual(result["decision_status"], "READY")
+        self.assertEqual(result["action"], "keep_lane")
+        self.assertEqual(result["target_speed_kmh"], 36.0)
 
     def test_emergency_risk_has_highest_priority(self):
         intent = driving_intent("KEEP_LANE")
