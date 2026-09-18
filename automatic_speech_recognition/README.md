@@ -116,27 +116,29 @@ bash scripts/run_asr_optimization.sh
     ```
 
 + PTQ 量化环境依赖：
-    | 依赖项 | 版本 / 说明 |
-    |:---|:---|
-    | 操作系统 | Ubuntu 22.04 |
-    | Python | 3.10 |
-    | libpython3.10 | - |
-    | python3-devel | - |
-    | python3-pip | - |
-    | gcc & g++ | 12.2.1 |
-    | graphviz | - |
+
+| 依赖项 | 版本 / 说明 |
+|:---|:---|
+| 操作系统 | Ubuntu 22.04 |
+| Python | 3.10 |
+| libpython3.10 | - |
+| python3-devel | - |
+| python3-pip | - |
+| gcc & g++ | 12.2.1 |
+| graphviz | - |
 
 + QAT 量化环境依赖：
-    | 硬件/操作系统 | GPU | CPU |
-    |:---|:---|:---|
-    | OS | Ubuntu 22.04 | Ubuntu 22.04 |
-    | CUDA | 12.8 | N/A |
-    | Python | 3.10 | 3.10 |
-    | torch | 2.8.0+cu128 | 2.8.0+cpu |
-    | torchvision | 0.23.0+cu128 | 0.23.0+cpu |
-    | 推荐显卡 | Titan V / 2080Ti / V100 / 3090 | N/A |
 
-    + 完成 QAT 模型训练后，可在当前训练环境安装相关工具包，并直接通过接口调用的方式完成后续的模型转换工作。
+| 硬件/操作系统 | GPU | CPU |
+|:---|:---|:---|
+| OS | Ubuntu 22.04 | Ubuntu 22.04 |
+| CUDA | 12.8 | N/A |
+| Python | 3.10 | 3.10 |
+| torch | 2.8.0+cu128 | 2.8.0+cpu |
+| torchvision | 0.23.0+cu128 | 0.23.0+cpu |
+| 推荐显卡 | Titan V / 2080Ti / V100 / 3090 | N/A |
+
++ 完成 QAT 模型训练后，可在当前训练环境安装相关工具包，并直接通过接口调用的方式完成后续的模型转换工作。
 
 ### 6.2 环境部署
 + **环境部署方式选择（本项自推荐 Docker 路线）**：
