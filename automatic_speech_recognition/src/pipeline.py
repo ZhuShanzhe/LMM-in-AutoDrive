@@ -1,166 +1,249 @@
-import os
-import time
-import json
 import logging
-from typing import Optional, Dict, Any
+import os
+import sys
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from asr.service import FunASRService
-from asr.config import FunASRConfig
-from .config import ASRConfig
-from translation.service import Translation
-from translation.config import ModelConfig
+import yaml
 
-logger = logging.getLogger(__name__)
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
+from src.asr import Qwen3ASRService
+from src.asr.optimization import build_optimizer
+from src.asr.utils import load_yaml, save_json, to_rel_path
+from src.utils import DEFAULT_NUM_GPUS, resolve_device
 
-class ASR:
-    """
-    Pipeline that takes an audio file, performs ASR (Chinese), and optionally translates it to English.
-    Translation model is loaded lazily only when needed.
-    """
+logger = logging.getLogger("pipeline")
+
+OUTPUT_LANGUAGES = ("chinese", "english", "both")
+_ALIASES = {"zh": "chinese", "cn": "chinese", "en": "english", "eng": "english"}
+
+def _load_optimization_config(config: Optional[Union[str, Dict[str, Any]]]) -> Optional[Dict[str, Any]]:
+    """Accept a yaml path, a dict, or None; return a config dict or None."""
+    if config is None:
+        return None
+    if isinstance(config, dict):
+        return config
+    path = config if os.path.isabs(config) else os.path.join(str(ROOT), config)
+    if not os.path.exists(path):
+        logger.warning("optimization config not found: %s", path)
+        return None
+    return load_yaml(path)
+
+class ASRPipeline:
+    """External-facing facade combining ASR, optimization and translation."""
 
     def __init__(
         self,
-        config: Optional[ASRConfig] = None,
-        asr_mode: str = "single",
-        asr_device: str = "cuda:0",
-        asr_model: Optional[str] = None,
-        asr_vad_model: Optional[str] = None,
-        asr_punc_model: Optional[str] = None,
-        asr_spk_model: Optional[str] = None,
-        trans_model_name: str = "Qwen/Qwen2.5-3B-Instruct",
-        trans_load_type: str = "custom",
-        trans_model_path: Optional[str] = None,
-        trans_src_lang: str = "zho_Hans",
-        trans_tgt_lang: str = "eng_Latn",
-        trans_max_length: int = 512,
-        trans_generation_max_length: Optional[int] = None,
-        trans_num_beams: int = 4,
-        trans_temperature: float = 0.0,
-        trans_device: str = "cuda:0",
+        asr_model_path: str = "models/Qwen3-ASR-1.7B",
+        asr_device: Optional[str] = None,
+        asr_num_gpus: int = DEFAULT_NUM_GPUS,
+        asr_dtype: str = "bfloat16",
+        asr_attn_implementation: Optional[str] = None,
+        language: Optional[str] = None,
+        # --- optimization ---
+        enable_optimization: bool = False,
+        optimization_config: Optional[Union[str, Dict[str, Any]]] = None,
+        # --- translation ---
+        enable_translation: bool = False,
+        translator_model_path: str = "models/Qwen3-1.7B",
+        translator_device: Optional[str] = None,
+        translator_num_gpus: int = DEFAULT_NUM_GPUS,
+        translator_dtype: str = "bfloat16",
+        # --- output ---
+        output_language: str = "chinese",
         output_dir: str = "outputs",
+        enable_guard: bool = False,
         raise_on_error: bool = False,
-    ):
-        if config is not None:
-            self.config = config
-        else:
-            self.config = ASRConfig(
-                asr_mode=asr_mode,
-                asr_device=asr_device,
-                asr_model=asr_model,
-                asr_vad_model=asr_vad_model,
-                asr_punc_model=asr_punc_model,
-                asr_spk_model=asr_spk_model,
-                trans_model_name=trans_model_name,
-                trans_load_type=trans_load_type,
-                trans_model_path=trans_model_path,
-                trans_src_lang=trans_src_lang,
-                trans_tgt_lang=trans_tgt_lang,
-                trans_max_length=trans_max_length,
-                trans_generation_max_length=trans_generation_max_length,
-                trans_num_beams=trans_num_beams,
-                trans_temperature=trans_temperature,
-                trans_device=trans_device,
-                output_dir=output_dir,
-                raise_on_error=raise_on_error,
-            )
+    ) -> None:
+        self.output_language = self._normalize_language(output_language)
+        self.output_dir = output_dir
+        self.raise_on_error = raise_on_error
+        self.enable_optimization = enable_optimization
+        self.enable_translation = enable_translation
 
-        asr_cfg = FunASRConfig(
-            mode=self.config.asr_mode,
-            device=self.config.asr_device,
-            model=self.config.asr_model,
-            vad_model=self.config.asr_vad_model,
-            punc_model=self.config.asr_punc_model,
-            spk_model=self.config.asr_spk_model,
+        frontend: Optional[Callable] = None
+        dialect_normalizer: Optional[Callable] = None
+        if enable_optimization:
+            opt_cfg = _load_optimization_config(
+                optimization_config or "configs/asr/optimization.yaml")
+            if opt_cfg:
+                frontend, dialect_normalizer = build_optimizer(opt_cfg).as_hooks()
+            else:
+                logger.warning("optimization enabled but no valid config; skipping.")
+
+        guard = None
+        if enable_guard:
+            from src.asr.guard import ASROutputGuard
+            guard = ASROutputGuard()
+
+        self.asr = Qwen3ASRService(
+            model_id_or_path=asr_model_path,
+            device=asr_device or resolve_device(asr_num_gpus),
+            dtype=asr_dtype,
+            attn_implementation=asr_attn_implementation,
+            language=language,
+            frontend=frontend,
+            dialect_normalizer=dialect_normalizer,
+            guard=guard,
+            output_dir=output_dir,
+            raise_on_error=raise_on_error,
         )
-        self.asr = FunASRService(config=asr_cfg)
 
         self.translator = None
+        self._translator_args = dict(
+            model_id_or_path=translator_model_path,
+            device_map=translator_device or resolve_device(translator_num_gpus),
+            dtype=translator_dtype,
+            source_lang="Chinese",
+            target_lang="English",
+            output_dir=output_dir,
+            raise_on_error=raise_on_error,
+        )
 
-        os.makedirs(self.config.output_dir, exist_ok=True)
+    @staticmethod
+    def _normalize_language(value: str) -> str:
+        key = (value or "chinese").strip().lower()
+        key = _ALIASES.get(key, key)
+        if key not in OUTPUT_LANGUAGES:
+            raise ValueError(
+                f"unsupported output_language: {value}; "
+                f"expected one of {OUTPUT_LANGUAGES} (aliases: zh, cn, en, eng)"
+            )
+        return key
 
     def _ensure_translator(self):
-        """
-        Lazy initialization of the translation service.
-        """
         if self.translator is None:
-            logger.info("Loading translation model (lazy initialization)...")
-            trans_cfg = ModelConfig(
-                model_name=self.config.trans_model_name,
-                load_type=self.config.trans_load_type,
-                model_path=self.config.trans_model_path,
-                device=self.config.trans_device,
-                max_length=self.config.trans_max_length,
-            )
-            self.translator = Translation(
-                model_name=self.config.trans_model_name,
-                load_type=self.config.trans_load_type,
-                model_path=self.config.trans_model_path,
-                src_lang=self.config.trans_src_lang,
-                tgt_lang=self.config.trans_tgt_lang,
-                max_length=self.config.trans_max_length,
-                generation_max_length=self.config.trans_generation_max_length,
-                num_beams=self.config.trans_num_beams,
-                temperature=self.config.trans_temperature,
-                raise_on_error=self.config.raise_on_error,
-            )
-            logger.info("Translation model loaded successfully.")
+            from src.translator import Qwen3TranslatorService
+            self.translator = Qwen3TranslatorService(**self._translator_args)
         return self.translator
 
     def process(
         self,
-        audio_path: str,
+        audio: str,
         output_json: Optional[str] = None,
-        translate: bool = True
+        output_language: Optional[str] = None,
+        use_frontend: Optional[bool] = None,
+        use_dialect: Optional[bool] = None,
+        save_enhanced: Optional[str] = None,
+        translate: Optional[bool] = None,
     ) -> Dict[str, Any]:
-        """
-        Process a single audio file: ASR and optional translation.
+        """Run the full pipeline on one audio file.
 
         Args:
-            audio_path: Path to the input WAV file.
-            output_json: Optional path to save the JSON result.
-            translate: If True, translate Chinese text to English.
+            audio: input wav path.
+            output_json: optional path to write the JSON result.
+            output_language: override default; "chinese" / "english" / "both".
+            use_frontend / use_dialect: override optimization switches per call.
+            save_enhanced: optional path to save the denoised audio.
+            translate: override the translation switch per call.
 
         Returns:
-            Dictionary containing transcription and optional translation.
+            dict with keys: audio_file, text (Chinese), translation, output_text,
+            language, timing and applied-flag fields.
         """
-        start_total = time.perf_counter()
+        asr_rec = self.asr.transcribe_file(
+            audio,
+            output_json=None,
+            use_frontend=use_frontend,
+            use_dialect=use_dialect,
+            save_enhanced=save_enhanced,
+        )
+        chinese = asr_rec.get("text", "")
 
-        asr_start = time.perf_counter()
-        asr_result = self.asr.transcribe(audio_path, print_result=False)
-        asr_text = asr_result.get("text", "")
-        asr_time = time.perf_counter() - asr_start
+        want_translation = self.enable_translation if translate is None else translate
+        english = ""
+        if want_translation and chinese:
+            english = self._ensure_translator().translate_zh_to_en(chinese)
 
-        if translate and asr_text:
-            translator = self._ensure_translator()
-            trans_start = time.perf_counter()
-            english_text = translator.translate_text(asr_text)
-            trans_time = time.perf_counter() - trans_start
-        else:
-            english_text = ""
-            trans_time = 0.0
+        lang = self._normalize_language(output_language or self.output_language)
+        output_text = self._select_output(chinese, english, lang)
 
-        total_time = time.perf_counter() - start_total
-
-        result = {
-            "audio_file": audio_path,
-            "chinese_text": asr_text,
-            "english_translation": english_text,
-            "asr_processing_time_seconds": asr_time,
-            "translation_time_seconds": trans_time,
-            "total_time_seconds": total_time,
+        record: Dict[str, Any] = {
+            "audio_file": to_rel_path(audio),
+            "text": chinese,
+            "translation": english,
+            "output_text": output_text,
+            "output_language": lang,
+            "language": asr_rec.get("language"),
+            "success": bool(output_text),
+            "frontend_applied": asr_rec.get("frontend_applied", False),
+            "dialect_normalized": asr_rec.get("dialect_normalized", False),
+            "translation_applied": bool(want_translation and english),
+            "processing_time_seconds": asr_rec.get("processing_time_seconds"),
         }
+        for key in ("guard_safe", "guard_reasons", "slots"):
+            if key in asr_rec:
+                record[key] = asr_rec[key]
+        if output_json:
+            save_json(record, self._resolve_output(output_json))
+        return record
 
-        if output_json is None:
-            stem = Path(audio_path).stem
-            output_json = os.path.join(self.config.output_dir, f"{stem}_result.json")
-        self._save_json(result, output_json)
+    def process_batch(
+        self,
+        audio_paths: List[str],
+        output_json: Optional[str] = None,
+        output_language: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Dict[str, Any]]:
+        records = [self.process(path, output_language=output_language, **kwargs) for path in audio_paths]
+        if output_json:
+            save_json({"count": len(records), "records": records}, self._resolve_output(output_json))
+        return records
 
-        return result
+    def process_dir(
+        self,
+        input_dir: str,
+        output_json: Optional[str] = None,
+        output_language: Optional[str] = None,
+        **kwargs: Any,
+    ) -> List[Dict[str, Any]]:
+        exts = (".wav", ".flac", ".mp3")
+        files = sorted(os.path.join(input_dir, n) for n in os.listdir(input_dir) if n.lower().endswith(exts))
+        return self.process_batch(files, output_json=output_json, output_language=output_language, **kwargs)
+
+    @classmethod
+    def from_yaml(cls, path: str) -> "ASRPipeline":
+        with open(path, "r", encoding="utf-8") as fh:
+            cfg = yaml.safe_load(fh) or {}
+        asr_cfg = cfg.get("asr", {}) or {}
+        trans_cfg = cfg.get("translation", {}) or {}
+        out_cfg = cfg.get("output", {}) or {}
+        opt_cfg = cfg.get("optimization", {}) or {}
+        guard_cfg = cfg.get("guard", {}) or {}
+
+        return cls(
+            asr_model_path=asr_cfg.get("model_id_or_path", "models/Qwen3-ASR-1.7B"),
+            asr_device=asr_cfg.get("device"),
+            asr_num_gpus=int(asr_cfg.get("num_gpus", 1)),
+            asr_dtype=asr_cfg.get("dtype", "bfloat16"),
+            asr_attn_implementation=asr_cfg.get("attn_implementation"),
+            language=asr_cfg.get("language"),
+            enable_optimization=bool(opt_cfg.get("enabled", False)),
+            optimization_config=opt_cfg.get("config", "configs/asr/optimization.yaml"),
+            enable_translation=bool(trans_cfg.get("enabled", False)),
+            translator_model_path=trans_cfg.get("model_id_or_path", "models/Qwen3-1.7B"),
+            translator_device=trans_cfg.get("device_map"),
+            translator_num_gpus=int(trans_cfg.get("num_gpus", 1)),
+            translator_dtype=trans_cfg.get("dtype", "bfloat16"),
+            output_language=out_cfg.get("language", "chinese"),
+            output_dir=out_cfg.get("dir", "outputs"),
+            enable_guard=bool(guard_cfg.get("enabled", False)),
+            raise_on_error=bool(cfg.get("raise_on_error", False)),
+        )
 
     @staticmethod
-    def _save_json(data: Dict[str, Any], filepath: str) -> None:
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        logger.info(f"Result saved to: {filepath}")
+    def _select_output(chinese: str, english: str, lang: str) -> str:
+        if lang == "chinese":
+            return chinese
+        if lang == "english":
+            return english or chinese
+        if chinese and english:
+            return f"{chinese}\t{english}"
+        return chinese or english
+
+    @staticmethod
+    def _resolve_output(path: str) -> str:
+        return path if os.path.isabs(path) else os.path.join(str(ROOT), path)

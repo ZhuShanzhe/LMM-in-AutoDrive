@@ -1,0 +1,17 @@
+sample_rate: 16000
+seed: 42
+noise_types: ["white", "pink", "brown"]
+snr_db_list: [20, 15, 10, 5]
+variants_per_file: 1      # noisy clips per clean clip; omit or null keeps the full noise_types x snr_db_list grid
+real_noise_dir: ""        # optional folder of real noise .wav clips; "" disables
+tasks:
+  - name: "standard_noise"
+    input_mapping: "data/wav_files/standard/mapping.json"
+    output_dir: "data/wav_files/noise/standard_noise"
+    mapping_file: "data/wav_files/noise/standard_noise/mapping.json"
+    log_file: "logs/tts/build_standard_noise.log"
+
+  # - name: "dialect_noise"
+  #   input_mapping: "data/wav_files/dialect/mapping.json"
+  #   output_dir: "data/wav_files/noise/dialect_noise"
+  #   mapping_file: "data/wav_files/noise/dialect_noise/mapping.json"

@@ -1,0 +1,53 @@
+model_id_or_path: "models/Qwen3-TTS-12Hz-1.7B"
+device_map: null                             
+num_gpus: 1                                      # number of GPUs to use; 1 degenerates to cuda:0
+dtype: "bfloat16"
+attn_implementation: ""                          # "flash_attention_2" if installed
+language: "Chinese"
+
+commands_file: "data/commands/Chinese-commands.json"
+output_dir: "data/wav_files/dialect"
+mapping_file: "data/wav_files/dialect/mapping.json"
+log_file: "logs/tts/build_dialect.log"
+
+target_sample_rate: 16000
+batch_size: 4
+gen_kwargs:
+  max_new_tokens: 2048
+
+# true  -> every profile reads the whole command set (one full set per dialect)
+# false -> profiles rotate across commands (one dialect per command)
+per_profile_all: false
+
+# --- dialect profiles (speaker + accent instruct) ---
+profiles:
+  - name: "sichuan"
+    speaker: "Eric"
+    instruct: "请用四川口音自然朗读，尾音上扬、略带椒盐味。"
+  - name: "beijing"
+    speaker: "Dylan"
+    instruct: "请用北京口音自然朗读，儿化音明显、语气轻松。"
+  - name: "dongbei"
+    speaker: "Vivian"
+    instruct: "请用东北口音朗读，语调豪爽、略带大碴子味。"
+  - name: "shaanxi"
+    speaker: "Uncle_Fu"
+    instruct: "请用陕西方言口音朗读，厚重朴实、拖腔明显。"
+  - name: "shandong"
+    speaker: "Uncle_Fu"
+    instruct: "请用山东口音朗读，语调直朴、鼻音略重。"
+  - name: "henan"
+    speaker: "Serena"
+    instruct: "请用河南口音朗读，语调圆润平实。"
+  - name: "shanghai"
+    speaker: "Vivian"
+    instruct: "请用带上海腔调的普通话朗读，语调软糯。"
+  - name: "cantonese"
+    speaker: "Uncle_Fu"
+    instruct: "请用带广东腔调的普通话朗读，尾音短促。"
+  - name: "hunan"
+    speaker: "Serena"
+    instruct: "请用带湖南腔调的普通话朗读，语速略快。"
+  - name: "tianjin"
+    speaker: "Dylan"
+    instruct: "请用天津口音朗读，语调幽默俏皮、抑扬夸张。"

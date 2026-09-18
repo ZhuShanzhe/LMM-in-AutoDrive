@@ -1,0 +1,1 @@
+"""Training package for ASR fine-tuning (LoRA / structural adapters)."""

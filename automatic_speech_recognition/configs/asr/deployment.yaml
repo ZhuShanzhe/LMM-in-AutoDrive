@@ -1,0 +1,24 @@
+backend: "onnx"                 # pytorch | onnx | j6p
+model_id_or_path: "models/Qwen3-ASR-1.7B"
+onnx_path: "outputs/compression/quantized/asr_encoder.onnx"
+device: null               
+num_gpus: 1                     # number of GPUs to use; 1 degenerates to cuda:0
+dtype: "bfloat16"
+
+j6p:
+  march: "bayes"                # set to the march reported by the J6P toolchain
+  compile_mode: "latency"
+  input_type_rt: "nv12"
+  input_layout_rt: "NHWC"
+  calibration_type: "default"
+  output_dir: "outputs/deployment/j6p"
+
+probe:
+  warmup: 3
+  repeats: 20
+
+budget:
+  latency_ms: 200      
+  power_w: 25
+  memory_mb: 512
+  utilization: 0.80

@@ -1,361 +1,115 @@
-# 自动驾驶语音指令处理流水线
+# 自动驾驶语音识别与指令处理（automatic_speech_recognition）
 
-## 第一阶段 main 范围
++ 车载语音指令处理链路：**语音识别 → 推理期优化 → 中英翻译 → 指令解析对接**，并提供轻量化、J6P 部署适配与统一评测。
 
-本模块独立提供中文 ASR、噪声/方言优化和可选中英翻译，输出文本后交给 `structured_command_parser`。它不直接负责 `DrivingIntent` 的最终结构校验、场景语义对齐或车辆控制。
+## 1. 目录结构
 
-`main` 保留运行代码、配置、最小示例和题目要求的 ASR 测试入口；语音数据集、生成音频、逐样本识别结果、日志和大规模评测 JSON 不进入 Git，统一在 `data/README.md` 中说明。模型权重继续从本 README 指定的模型仓库或团队共享地址下载到数据盘。
-
-推荐统一路径：
-
-```text
-/root/autodl-tmp/models/asr/
-/root/autodl-tmp/models/translation/
-```
-
-ASR 不属于当前 VLA 决策模块的性能联调范围，但属于 XH-202602 第一阶段完整语音入口，接口保持独立。
-
-+ 一个面向自动驾驶场景的模块化语音处理工具包，提供从语音指令采集、识别、翻译到合成的全链路解决方案。项目涵盖 ASR（语音识别）、机器翻译、语音合成（TTS）、指令解析以及噪声/方言优化等核心模块，所有组件均支持离线运行与 GPU 加速，便于集成到车载系统中。
-
-## 1. 项目概述
-+ 本项目旨在构建面向自动驾驶的语音识别系统，涵盖以下功能：
-
-  + 语音识别（ASR）：将驾驶员的语音指令（中文）转录为文本，提供 FunASR（轻量级）和 Qwen3‑ASR（高精度多语言）两种后端。
-
-  + 机器翻译：将中文指令翻译为英文（可选），便于多语言场景或后续处理。
-
-  + 语音合成（TTS）：将文本指令合成为自然语音，支持方言/情感控制，并可添加背景噪声以模拟真实环境。
-
-  + 指令解析：从自然语言中提取结构化驾驶意图（如“减速”、“左转”），输出 JSON 格式。
-
-  + 优化模块：针对方言/噪声语音的优化算法，提升 ASR 在复杂声学环境下的识别准确率。
-
-  + 端到端流水线：将 ASR + 翻译 + 指令解析串联，实现单次调用完成从音频到结构化意图的全流程。
-
-+ 所有组件均设计为离线优先，支持 GPU 加速，适合车载边缘部署。
-
-## 2. 项目结构
 ```text
 automatic_speech_recognition/
-├── example/                    # 示例脚本（各模块的用法演示）
-│   ├── asr_example.py
-│   ├── asr2_example.py
-│   └── denoiser_example.py
-│
-├── src/                        # 核心源代码
-│   ├── asr/                    # FunASR 语音识别
-│   │   ├── __init__.py
-│   │   ├── config.py
-│   │   ├── funasr_model.py
-│   │   ├── service.py
-│   │   ├── utils.py
-│   │   ├── example.py
-│   │   ├── requirements.txt
-│   │   └── README.md
-│   │
-│   ├── asr2/                   # Qwen3-ASR 语音识别
-│   │   ├── __init__.py
-│   │   ├── config.py
-│   │   ├── asr_model.py
-│   │   ├── service.py
-│   │   ├── utils.py
-│   │   ├── example.py
-│   │   ├── requirements.txt
-│   │   └── README.md
-│   │
-│   ├── translation/            # 中英翻译
-│   │   ├── __init__.py
-│   │   ├── config.py
-│   │   ├── translator.py
-│   │   ├── service.py
-│   │   ├── example.py
-│   │   ├── requirements.txt
-│   │   └── README.md
-│   │
-│   ├── tts/                    # 语音合成 (ChatTTS)
-│   │   ├── __init__.py
-│   │   ├── config.py
-│   │   ├── model.py
-│   │   ├── service.py
-│   │   ├── noise_utils.py
-│   │   ├── example.py
-│   │   ├── requirements.txt
-│   │   └── README.md
-│   │
-│   ├── pipeline.py             # ASR + 翻译（FunASR 后端）
-│   ├── pipeline2.py            # ASR + 翻译（Qwen3-ASR 后端，推荐）
-│   ├── config.py
-│   ├── __init__.py
-│   └── README.md
-|
-├── optimization/               # 噪声与方言优化模块
-|   ├── __init__.py 
-|   ├── config.py
-|   ├── audio_processor.py
-|   ├── noise_generator.py
-|   ├── utils.py     
-|   ├── DeepFilterNet/          
-|   │   ├── __init__.py
-|   │   ├── config.py    
-|   │   ├── denoiser.py         
-|   │   ├── service.py            
-|   │   └── README.md           
-|   ├── build_noisy_subset.py
-|   ├── example.py
-|   ├── requirements.txt     
-|   └── README.md
-|
-├── tests/                      # 测试与评估脚本
-|   ├── utils/                     
-|   │   ├── data_loader.py
-|   │   ├── evaluator.py 
-|   │   └── metrics.py
-|   ├── asr_test.py
-|   ├── qwen_test.py
-|   ├── denoise_test.py
-|   ├── accent_test.py
-|   ├── commands.py
-|   ├── wav_commands.py
-|   ├── noise_commands.py
-|   └── README.md
-│
-├── data/                       # 数据集与输出文件
-│   ├── commands.json          
-│   ├── translated_commands.json
-│   ├── wav_files/           
-│   │   ├── file_mapping.json
-│   │   └── command.wav......
-│   ├── wav_files_noise/     
-│   │   ├── wav_files_with_noise/
-│   │   │   ├── file_mapping_noise.json
-│   │   │   └── command_noise.wav......
-│   │   └── wav_files_without_noise/
-│   │       └── file_mapping_without_noise.json
-│   ├── wav_files_accent/
-│   │   ├── Dongbei Dialect Speech Corpus for TTS/
-│   │   ├── ... 
-│   │   └── Sichuan Dialect Speech Corpus for TTS/
-│   └── logging/
-│
-├── requirements.txt
-└── README.md 
+├── src/                      # 核心源码
+│   ├── pipeline.py            # ASRPipeline：对外统一入口
+│   ├── asr/                   # 语音识别（服务 + 优化 + 轻量化 + 部署）
+│   ├── translator/            # 中英翻译（Qwen3-1.7B）
+│   └── tts/                   # 语音合成（Qwen3-TTS）
+├── training/                 # 微调：数据准备 / LoRA / 适配器 / 评估
+├── tests/                    # 可运行测试 + 评测工具（utils/）
+├── configs/                  # 全部配置（asr / training / translation / tts）
+├── resources/dialect/        # 方言词典资源（JSON）
+├── examples/                 # 最小可运行示例
+├── recoder/                  # 麦克风录音（独立组件）
+├── scripts/                  # 端到端任务链脚本
+├── models/                   # 模型权重（不入 Git）
+└── requirements.txt
 ```
 
-## 3. 安装与配置
-+ 环境要求：
-  + Python 3.10 ~ 3.12（推荐 3.12）
+## 2. 安装
 
-  + NVIDIA GPU（推荐）或 CPU（内存 ≥ 16 GB）
-
-  + CUDA 11.8 或以上及对应驱动程序
-
-+ 安装总依赖：
 ```shell
 pip install -r requirements.txt
+# GPU 版 PyTorch（可选）
+pip3 install torch torchvision torchaudio --index-url https://mirrors.nju.edu.cn/pytorch/whl/cu118
 ```
 
-+ 安装子模块依赖：
++ 注意：若环境中已有 `torch`，请确保版本与 `torchvision`、`torchaudio` 一致：
 ```shell
-# FunASR
-cd src/asr && pip install -r requirements.txt
-# Qwen3-ASR
-cd src/asr2 && pip install -r requirements.txt
-# translation
-cd src/translation && pip install -r requirements.txt
-# TTS
-cd src/tts && pip install -r requirements.txt
+pip3 show torch torchvision torchaudio       # 确保一致
 ```
 
-### 模型权重
-+ 本项目模块依赖多个预训练模型完成语音识别、翻译与合成任务。
-+ 模型权重下载：
-+ 下载后的目录结构应为：
++ 注意：`onnxruntime` 版本需与 `torch` 版本一致。
 
-```text
-└── models/                     # 预训练模型（需自行下载）
-    ├── rvcmd_linux_amd64       # ChatTTS 模型
-    ├── Qwen2.5-3B-Instruct     # Qwen2.5 翻译模型
-    └── Qwen3-ASR-1.7B          # Qwen3-ASR 模型
-```
+## 3. 模型准备
 
-## 4. 输入接口
+| 模型 | 用途 | 默认路径 |
+|:---|:---|:---|
+| Qwen3-ASR-1.7B | 语音识别 | `models/Qwen3-ASR-1.7B` |
+| Qwen3-1.7B | 中英翻译 | `models/Qwen3-1.7B` |
+| Qwen3-TTS-12Hz-1.7B | 语音合成（造数据） | `models/Qwen3-TTS-12Hz-1.7B` |
 
-+ 本项目的各模块提供了统一的输入接口，支持命令行调用与Python API两种方式，方便灵活集成。
+## 4. 快速开始
 
-### 语音识别测试
+```python
+from src.pipeline import ASRPipeline
 
-```shell
-python tests/qwen_test.py \
-    --dataset data/wav_files/file_mapping.json \   # 数据集 JSON 路径
-    --output_dir data/test_results_qwen3 \         # 结果输出目录
-    --asr_device cuda:0 \                          # 设备（cuda:0 / cpu）
-    --load_type local \                            # 加载类型（local / custom）
-    --model_path models/Qwen3-ASR-1.7B             # 本地模型路径
-```
-
-### 语音指令生成
-
-```shell
-python tests/wav_commands.py \
-    --dataset data/translated_commands.json \       # 中文指令集
-    --output_dir data/wav_files \                   # 输出 WAV 文件目录
-    --load_type local \                             # TTS 模型加载方式
-    --model_path models/rvcmd_linux_amd64           # ChatTTS 模型路径
-    --noise_enabled False                           # 是否添加噪声
-```
-
-### `pipeline` 接口
-
-+ 由于两种 `pipeline` 的接口形式基本一致，这里仅展示基于后端 `Qwen3-ASR-1.7B` 的接口说明。
-+ 参数设置可以通过两种方法实现：
-  + 直接传参（最常用）：
-  ```python
-  pipeline = ASR2(
-    asr_load_type="local",                     # 加载方式：local / custom
-    asr_model_path="./models/Qwen3-ASR-1.7B",  # 本地模型路径（若 load_type=local）
-    asr_device="cuda:0",                       # 设备
-    asr_language="Chinese",                    # 识别语言（必须为完整名称）
-    trans_load_type="custom",                  # 翻译模型加载方式
-    trans_model_name="Qwen/Qwen2.5-3B-Instruct", # 翻译模型名称
-    output_dir="outputs",                      # 结果输出目录
-    raise_on_error=False,                      # 是否抛出异常
-  )
-  ```
-  + 使用配置类（适合参数较多或需要复用）：
-  ```python
-  config = Qwen3PipelineConfig(
-    load_type="local",
-    model_path="./models/Qwen3-ASR-1.7B",
-    language="Chinese",
-    trans_load_type="custom",
-    trans_model_name="Qwen/Qwen2.5-3B-Instruct",
+pipe = ASRPipeline(
+    asr_model_path="models/Qwen3-ASR-1.7B",
+    enable_optimization=True,          # 降噪 + 方言归一
+    optimization_config="configs/asr/optimization.yaml",
+    enable_translation=True,           # 中 -> 英
+    output_language="english",         # chinese | english | both
     output_dir="outputs",
-  )
-  pipeline = ASR2(config=config)
-  ```
-  
-+ 核心方法 `process()`：
-```python
-def process(
-    self,
-    audio_path: str,                           # 输入音频路径（WAV，16kHz单声道）
-    output_json: Optional[str] = None,         # 可选，保存结果JSON路径
-    translate: bool = True,                    # 是否翻译为英文
-    language: Optional[str] = None,            # 覆盖ASR语言（如 "Chinese"）
-    enable_enhancement: Optional[bool] = None, # 覆盖降噪开关
-    enable_dialect_mapping: Optional[bool] = None, # 覆盖方言映射
-    **kwargs                                   # 其他参数透传给ASR服务
-) -> Dict[str, Any]:
-    ...
+)
+result = pipe.process("audio.wav", output_json="outputs/result.json")
+print(result["text"], "|", result["translation"], "|", result["output_text"])
 ```
 
-### 噪声优化接口
+## 5. 完整流程
 
-+ `optimization` 模块提供了完整的噪声处理工具链，包含噪声增强（Augmentation）和语音增强（Denoising）两大核心功能，用于构建带噪测试集和提升 ASR 在噪声环境下的鲁棒性。
-```python
-from optimization import DenoiseService, DenoiserConfig
-
-config = DenoiserConfig(model_name="DeepFilterNet3", output_sr=16000)
-service = DenoiseService(config)
-output = service.denoise("noisy.wav", output_path="clean.wav", output_json="result.json")
-print(f"Time: {output['processing_time_seconds']:.3f}s")
-
-files = ["noisy1.wav", "noisy2.wav"]
-outputs = service.denoise(files, output_json="batch.json")
-```
-
-+ 或者使用命令行调用（`DeepFilterNet` 官方工具），下面提供两种可行的方案：
 ```shell
-python -m df.enhance -m DeepFilterNet3 noisy_audio.wav -o output_dir/
-```
-```shell
-deepFilter --model DeepFilterNet3 noisy_audio.wav -o output_dir/
-```
+# 0) 构建数据集（可选，若已有 Chinese-commands.json 与语音集可跳过）
+# Linux/MacOS: export DASHSCOPE_API_KEY=sk-ws-...      Windows: $env:DASHSCOPE_API_KEY="sk-ws-..."
+python training/dataset/translation.py   --config configs/translation/qwen_mt.yaml
+python training/dataset/build_dataset.py --kind standard --config configs/tts/standard.yaml
+python training/dataset/build_dataset.py --kind dialect  --config configs/tts/dialect.yaml
+python training/dataset/build_dataset.py --kind noise    --config configs/tts/noise.yaml
 
-### 数据格式
-+ 音频输入：本项目的 ASR 模块接受 16kHz 采样率、单声道 WAV 格式 的音频文件。其他格式需先转换为 WAV（可使用 ffmpeg 或 librosa 预处理）。
+# 1) 基线评测（标准 / 噪声 / 方言）
+python tests/asr_test.py     --dataset data/wav_files/standard/mapping.json       # --limit 20
+python tests/noise_test.py   --dataset data/wav_files/noise/standard_noise/mapping.json # --limit 20
+python tests/dialect_test.py --dataset data/wav_files/dialect/mapping.json # --dialect sichuan --limit 20
 
-+ 数据集 JSON：测试脚本使用的 JSON 文件需包含以下字段：
-```json
-{
-  "index": 1,
-  "original": "turn left at the intersection",
-  "translation": "在交叉路口左转",
-  "audio_file": "data/wav_files/command_0001.wav"
-}
-```
+# 2) 轻量化（ONNX 导出 + INT8 量化）
+python -m src.asr.compression.quantize --config configs/asr/compression.yaml
 
-## 5. 输出接口
-+ 所有核心模块均支持将结果保存为 JSON 文件，格式统一如下：
+# 3) 微调（可选：LoRA / 结构适配器）
+python -m training.dataset.augmentation --config configs/training/augmentation.yaml
+python -m training.train    --config configs/training/finetune.yaml
+python -m training.evaluate --config configs/training/finetune.yaml --checkpoint outputs/asr_finetune
 
-```json
-{
-  "audio_file": "audio.wav",
-  "text": "识别出的中文文本",
-  "processing_time_seconds": 1.234
-}
+# 4) 一键串起评测与轻量化
+bash scripts/run_asr_optimization.sh
 ```
 
-+ 流水线输出包含额外的翻译和耗时字段：
+## 6. 模块文档
 
-```json
-{
-  "audio_file": "audio.wav",
-  "chinese_text": "请减速至40公里每小时",
-  "english_translation": "Please decelerate to 40 km/h",
-  "asr_processing_time_seconds": 1.234,
-  "translation_time_seconds": 0.567,
-  "total_time_seconds": 1.801
-}
-```
+| 模块 | 文档 |
+|:---|:---|
+| 统一入口 ASRPipeline | [src/README.md](src/README.md) |
+| 语音识别 | [src/asr/README.md](src/asr/README.md) |
+| 推理期优化 | [src/asr/optimization/README.md](src/asr/optimization/README.md) |
+| 中英翻译 | [src/translator/README.md](src/translator/README.md) |
+| 语音合成 | [src/tts/README.md](src/tts/README.md) |
+| 微调 | [training/README.md](training/README.md) |
+| 测试与评测 | [tests/README.md](tests/README.md) |
+| 示例 | [examples/README.md](examples/README.md) |
 
-## 6. 实验
+## 7. 说明
 
-### 6.1 已完成的实验
-+ 标准语音指令数据集构建与基准测试
++ 权重、数据集与生成语料不入 Git；`data/` 下音频需自行生成或替换。
++ 日志由 `src/utils.py` 统一提供（`setup_logging` / `log_and_print`），各任务不再自带副本；每次运行会**清空并重写**自己的日志文件，默认落在 `logs/` 下（如 `logs/tests/asr_test.log`、`logs/compression.log`、`logs/tts/build_standard.log`），可用 `--log-file ""` 关闭落盘。
++ 推理期优化免训练；模型级微调在 `training/`；评测代码统一在 `tests/`。
++ x86 仿真结果不等同于 J6P 板端性能；功耗与利用率仅在板端测量有效。
 
-  + 实验目标：构建面向自动驾驶场景的标准中文语音指令数据集，并建立 ASR 性能基准。
+## 8. 参考资料
 
-  + 数据集来源：基于 Talk2Car 数据集。该数据集包含 11,959 条自然语言指令，对应 9,217 张城市道路场景图像，其中训练集包含 8,349 条指令。原始指令为英文，描述了自动驾驶车辆应执行的操作（如“turn left to pick up the pedestrian at the corner”）。
-
-  + 两种模型在字符级识别上均表现优异（>95%），说明关键字词识别能力较强。
-
-+ 噪声鲁棒性测试
-
-  + 实验目标：评估 ASR 模型在噪声环境下的性能下降程度。
-  + 白噪声导致字符准确率下降约 7.5% ，句子准确率下降近 10%。
-
-+ 模型对比实验
-  + 实验目标：对比不同 ASR 模型在自动驾驶语音指令识别任务上的性能差异。
-  + 对比模型： 
-    + `FunASR`：paraformer-zh 模型，轻量级中文 ASR 
-    + `Qwen3-ASR-1.7B`：1.7B 参数多语言模型，支持 30 种语言和 22 种中文方言
-
-  + Qwen3-ASR-1.7B 在所有指标上均优于 FunASR，尤其在词级和句子级指标上提升更明显
-
-+ 方言与多语言扩展实验：
-  + 实验目标：评估 ASR 模型在多种中文方言及多语言场景下的识别性能，构建方言语音指令数据集。
-+ 优化策略实验：
-  + 实验目标：验证前端语音增强（降噪）和后端方言映射对 ASR 性能的提升效果。
-
-
-### 6.2 待完成的实验
-
-+ 真实场景部署测试：
-  + 实验目标：在实际车载环境下验证 ASR 系统的端到端性能。
-+ 多模态融合实验：
-  + 实验目标：探索将视觉信息（如摄像头画面）与语音指令融合，提升复杂场景下的指令理解准确率。
-
-## 7. 许可边界
-
-| 模型 | 许可证 | 来源 | 说明 |
-|:----:|:----:|:----:|:----:|
-| Qwen3-ASR-1.7B | Apache-2.0 | Qwen 团队 / Hugging Face | 高性能多语言语音识别模型 |
-| ChatTTS 模型（rvcmd_linux_amd64） | Apache-2.0 | FunAudioLLM / ModelScope | 文本转语音模型，含方言/情感控制 |
-| Paraformer-zh（FunASR） | MIT | ModelScope | 中文语音识别模型 |
-| FSMN-VAD | MIT | ModelScope | 语音活动检测模型 |
-| CT-PUNC | MIT | ModelScope | 标点恢复模型 |
-| CAM++（说话人识别） | MIT | ModelScope | 说话人分离模型 |
-| Qwen2.5-3B-Instruct | Apache-2.0 | Qwen 团队 | 中英翻译模型 |
-
-+ 模块中涉及的所有模型权重可以从网站下载：https://box.nju.edu.cn/library/cb15c094-108b-4fd8-b978-42f00bae1b02/ASR_Model/
++ https://github.com/QwenLM/Qwen3-ASR
++ https://github.com/QwenLM/Qwen3-TTS

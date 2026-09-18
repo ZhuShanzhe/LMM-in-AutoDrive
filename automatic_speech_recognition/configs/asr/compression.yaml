@@ -1,0 +1,36 @@
+model_id_or_path: "models/Qwen3-ASR-1.7B"
+export_dir: "outputs/compression/onnx"
+quantized_dir: "outputs/compression/quantized"
+opset: 17
+dtype: "float32"
+input_name: "input_features"
+# Fixed mel length the audio encoder is exported for; must be a multiple of 100 (n_window * 2). Audio is padded or truncated to this length at runtime.
+mel_frames: 3000
+
+quantization:
+  mode: "dynamic"            # dynamic (no calibration) | static (needs calibration)
+  per_channel: true
+  weight_type: "auto"
+
+calibration:
+  num_samples: 100
+  seed: 42
+  # true  -> carve the calibration set out of eval.manifest; the remainder is used for evaluation, so the two sets stay disjoint.
+  # false -> draw from pool_manifests, which must not overlap eval.manifest.
+  holdout: true
+  pool_manifests:
+    - "data/wav_files/standard/mapping.json"
+
+eval:
+  manifest: "data/wav_files/standard/mapping.json"  # produced by: python tests/asr_test.py --dataset <manifest> --save-dir outputs/tests/standard
+  baseline_details: "outputs/tests/standard/details.json"
+  limit: 200
+  budget: 0.03
+  output_json: "outputs/compression/accuracy_regression.json"
+  device: null         
+  num_gpus: 1                     # number of GPUs to use; 1 degenerates to cuda:0
+  dtype: "bfloat16"
+  # ONNX Runtime execution providers for the quantized encoder.
+  # Empty list -> auto-detect, preferring CUDA when onnxruntime-gpu is installed.
+  # Pin it explicitly to fail loudly instead, e.g. ["CUDAExecutionProvider"].
+  providers: []

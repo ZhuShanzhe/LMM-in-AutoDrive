@@ -1,0 +1,16 @@
+api_key_env: "DASHSCOPE_API_KEY"                 # API Key
+base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+model: "qwen-mt-plus"
+source_lang: "English"
+target_lang: "Chinese"
+
+input_file: "data/commands/English-commands.json"
+output_file: "data/commands/Chinese-commands.json"
+checkpoint_file: "data/commands/Chinese-commands.cache.json"
+log_file: "logs/data/translation.log"
+
+concurrency: 1
+max_retries: 6
+retry_base_delay: 2.0
+request_interval: 1.0
+save_interval: 10

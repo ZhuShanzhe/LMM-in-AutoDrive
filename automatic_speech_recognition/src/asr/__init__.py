@@ -1,3 +1,3 @@
-from .config import FunASRConfig
-from .funasr_model import FunASRModel
-from .service import FunASRService
+from .qwen3_asr_service import Qwen3ASRService
+
+__all__ = ["Qwen3ASRService"]

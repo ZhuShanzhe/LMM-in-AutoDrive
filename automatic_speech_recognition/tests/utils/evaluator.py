@@ -1,80 +1,143 @@
-from typing import List, Dict, Any, Optional, Callable
-from collections import defaultdict
+import json
+import logging
+import os
+import statistics
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from .metrics import evaluate_pair
-from .data_loader import load_test_json, save_results_to_json
+from src.asr.utils import save_json, to_rel_path
+from src.asr.text_metrics import is_empty, is_same
+from src.utils import log_and_print
 
+from .metrics import summarize
+
+logger = logging.getLogger("tests.evaluator")
 
 class ASREvaluator:
-    """
-    Evaluator for speech recognition accuracy.
-    """
+    def __init__(
+        self,
+        transcribe: Callable[[str], Dict[str, Any]],
+        records: List[Dict[str, Any]],
+        enable_slots: bool = False,
+        transcribes: Optional[List[Callable[[str], Dict[str, Any]]]] = None,
+    ):
+        self.transcribes = list(transcribes) if transcribes else [transcribe]
+        self.transcribe = self.transcribes[0]
+        self.records = records
+        self.enable_slots = enable_slots
 
-    def __init__(self, tokenizer: Optional[Callable[[str], List[str]]] = None):
-        self.tokenizer = tokenizer
-        self.results = None
+    def _run_one(self, rec: Dict[str, Any], transcribe: Optional[Callable[[str], Dict[str, Any]]] = None) -> Tuple[str, str, Dict[str, Any]]:
+        result = (transcribe or self.transcribe)(rec["audio_file"])
+        return rec["text"], result.get("text", ""), result
 
-    def evaluate_from_json(self, json_file: str, output_json: Optional[str] = None) -> Dict[str, Any]:
-        data = load_test_json(json_file)
-        return self.evaluate(data, output_json)
+    def _run_parallel(self, workers: int):
+        lanes = self.transcribes
 
-    def evaluate(self, data: List[Dict[str, str]], output_json: Optional[str] = None) -> Dict[str, Any]:
-        references = [item['reference'] for item in data]
-        hypotheses = [item['hypothesis'] for item in data]
-        return self.evaluate_lists(references, hypotheses, output_json)
+        def _task(i: int) -> Tuple[str, str, Dict[str, Any]]:
+            return self._run_one(self.records[i], lanes[i % len(lanes)])
 
-    def evaluate_lists(self, references: List[str], hypotheses: List[str],
-                       output_json: Optional[str] = None) -> Dict[str, Any]:
-        if len(references) != len(hypotheses):
-            raise ValueError("Number of references and hypotheses must match.")
+        log_and_print(f"[evaluator] {workers} workers across {len(lanes)} device lane(s)")
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            yield from pool.map(_task, range(len(self.records)))
 
-        per_sample = []
-        total_cer = 0.0
-        total_wer = 0.0
-        total_acc = 0
-        n = len(references)
+    def _build_summary(self, refs: List[str], hyps: List[str], latencies: List[float], failures: int) -> Dict[str, Any]:
+        summary: Dict[str, Any] = summarize(refs, hyps, include_slots=self.enable_slots)
+        summary["empty_hypotheses"] = failures
+        if latencies:
+            summary["latency_mean_ms"] = round(statistics.mean(latencies) * 1000, 2)
+            summary["latency_p95_ms"] = round(sorted(latencies)[max(0, int(0.95 * (len(latencies) - 1)))] * 1000, 2)
+        return summary
 
-        for ref, hyp in zip(references, hypotheses):
-            metrics = evaluate_pair(ref, hyp, self.tokenizer)
-            per_sample.append({
-                "reference": ref,
-                "hypothesis": hyp,
-                "metrics": metrics
-            })
-            total_cer += metrics['cer']
-            total_wer += metrics['wer']
-            if metrics['sentence_accuracy']:
-                total_acc += 1
+    def run(
+        self, 
+        save_dir: Optional[str] = None,
+        latency_key: str = "processing_time_seconds",
+        progress: bool = True, 
+        progress_every: int = 10,
+        save_every: int = 50,
+        stream_file: Optional[str] = None,
+        label: str = "asr_test",
+        workers: int = 1,
+    ) -> Dict[str, Any]:
+        refs, hyps, details = [], [], []
+        latencies: List[float] = []
+        failures = 0
+        total = len(self.records)
 
-        overall = {
-            "total_samples": n,
-            "average_cer": total_cer / n if n else 0.0,
-            "average_wer": total_wer / n if n else 0.0,
-            "sentence_accuracy_rate": total_acc / n if n else 0.0,
-        }
+        summary_path = details_path = None
+        stream = None
+        if save_dir:
+            os.makedirs(save_dir, exist_ok=True)
+            summary_path = os.path.join(save_dir, "summary.json")
+            details_path = os.path.join(save_dir, "details.json")
+            stream_path = stream_file or os.path.join(save_dir, "details.jsonl")
+            stream = open(stream_path, "w", encoding="utf-8")
 
-        result = {
-            "overall": overall,
-            "per_sample": per_sample,
-        }
+        parallel = workers > 1 and len(self.transcribes) > 1
+        if workers > 1 and not parallel:
+            log_and_print(f"[{label}] warning: {workers} workers requested but only one device lane; running sequentially")
+        outcomes = self._run_parallel(workers) if parallel else (self._run_one(rec) for rec in self.records)
 
-        self.results = result
+        try:
+            for i, (rec, outcome) in enumerate(zip(self.records, outcomes), 1):
+                ref, hyp, result = outcome
+                refs.append(ref)
+                hyps.append(hyp)
+                if is_empty(hyp):
+                    failures += 1
+                latency = result.get(latency_key)
+                if isinstance(latency, (int, float)):
+                    latencies.append(float(latency))
+                detail = {
+                    "index": rec.get("index"),
+                    "audio_file": to_rel_path(rec["audio_file"]),
+                    "reference": ref,
+                    "hypothesis": hyp,
+                    "correct": is_same(ref, hyp),
+                    "latency_seconds": latency,
+                }
+                if rec.get("dialect"):
+                    detail["dialect"] = rec["dialect"]
+                details.append(detail)
 
-        if output_json:
-            save_results_to_json(result, output_json)
+                if stream is not None:
+                    stream.write(json.dumps(detail, ensure_ascii=False) + "\n")
+                    stream.flush()
 
-        return result
+                if progress and (i % progress_every == 0 or i == total):
+                    interim = summarize(refs, hyps)
+                    log_and_print(f"[{label}] progress {i}/{total} | CER {interim['cer']} | "
+                                  f"SER {interim['ser']} | empty {failures} | last: {hyp}")
 
-    def print_summary(self) -> None:
-        if self.results is None:
-            print("No results available. Run evaluate() first.")
-            return
-        overall = self.results['overall']
-        print("=" * 50)
-        print("ASR Evaluation Summary")
-        print("=" * 50)
-        print(f"Total samples: {overall['total_samples']}")
-        print(f"Average CER: {overall['average_cer']:.4f}")
-        print(f"Average WER: {overall['average_wer']:.4f}")
-        print(f"Sentence Accuracy: {overall['sentence_accuracy_rate']:.2%}")
-        print("=" * 50)
+                if summary_path and (i % save_every == 0 or i == total):
+                    save_json(self._build_summary(refs, hyps, latencies, failures),
+                              summary_path)
+        finally:
+            if hasattr(outcomes, "close"):
+                outcomes.close()
+            if stream is not None:
+                stream.close()
+
+        summary = self._build_summary(refs, hyps, latencies, failures)
+        if save_dir:
+            save_json(summary, summary_path)
+            save_json(details, details_path)
+            logger.info("results saved -> %s", save_dir)
+            log_and_print(f"[{label}] results saved -> {summary_path}")
+        return summary
+
+def report(summary: Dict[str, Any], title: str = "ASR Test") -> str:
+    lines = [f"== {title} ==",
+             f"samples        : {summary.get('samples')}",
+             f"CER            : {summary.get('cer')}",
+             f"SER            : {summary.get('ser')}"]
+    if "critical_score" in summary:
+        lines += [f"critical_score : {summary.get('critical_score')}",
+                  f"direction_match: {summary.get('direction_match')}",
+                  f"negation_match : {summary.get('negation_match')}",
+                  f"quantity_recall: {summary.get('quantity_recall')}"]
+    if "latency_mean_ms" in summary:
+        lines.append(f"latency_mean_ms: {summary.get('latency_mean_ms')}")
+    if "empty_hypotheses" in summary:
+        lines.append(f"empty_hypotheses: {summary.get('empty_hypotheses')}")
+    return "\n".join(lines)

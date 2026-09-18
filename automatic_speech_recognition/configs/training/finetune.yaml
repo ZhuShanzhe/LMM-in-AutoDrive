@@ -1,0 +1,45 @@
+model_id_or_path: "models/Qwen3-ASR-1.7B"
+device_map: "cuda:0"
+dtype: "bfloat16"
+attn_implementation: null
+sample_rate: 16000
+prompt: "Transcribe the audio into Chinese text."
+max_length: 2048
+
+method: "lora"
+
+# --- data ---
+manifest: "data/optimization/train_manifest.jsonl"      
+eval_manifest: "data/optimization/eval_manifest.jsonl" 
+replay_manifest: "data/optimization/clean_manifest.jsonl"
+replay_ratio: 0.3
+
+# --- LoRA (used when method=lora) ---
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: ["q_proj", "k_proj", "v_proj", "o_proj"]
+
+# --- Adapter (used when method=adapter) ---
+adapter:
+  target: "audio"                 # "audio" encoder or "decoder" LM
+  bottleneck: 64
+  dropout: 0.0
+  last_n: 6             
+
+# --- optimization ---
+output_dir: "outputs/asr_finetune"
+batch_size: 2
+grad_accum: 8
+learning_rate: 0.0001
+epochs: 3
+warmup_ratio: 0.03
+logging_steps: 10
+save_steps: 200
+gradient_checkpointing: true
+bf16: true
+
+# --- evaluation ---
+eval_batch_size: 1
+eval_max_new_tokens: 256
