@@ -9,6 +9,10 @@ every scheduled text command.
 from __future__ import annotations
 
 import re
+import math
+import copy
+import hashlib
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
@@ -44,7 +48,8 @@ INTENT_TO_ACTION = {
 }
 
 _SPEED_PATTERN = re.compile(
-    r"(\d+(?:\.\d+)?)\s*(?:km/?h|kmh|kph|公里每小时|公里/小时|迈)"
+    r"(\d+(?:\.\d+)?)\s*(?:km/?h|kmh|kph|kilomet(?:er|re)s?\s+per\s+hour|公里每小时|公里/小时|迈)",
+    re.IGNORECASE,
 )
 
 
@@ -90,11 +95,27 @@ class GenericInstructionFSM:
         self,
         default_speed_kmh: float = 40.0,
         parser: Any | None = None,
+        *,
+        cache_capacity: int = 128,
     ) -> None:
         self.default_speed_kmh = float(default_speed_kmh)
         self.parser = parser
-        self._token_cache: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
-        self._parse_cache: dict[str, dict[str, Any]] = {}
+        if cache_capacity < 1:
+            raise ValueError("cache_capacity must be positive")
+        self.cache_capacity = int(cache_capacity)
+        self._token_cache: OrderedDict = OrderedDict()
+        self._parse_cache: OrderedDict = OrderedDict()
+
+    def clear_caches(self) -> None:
+        """Invalidate language caches after replacing parser weights/config."""
+        self._token_cache.clear()
+        self._parse_cache.clear()
+
+    def _cache_put(self, cache: OrderedDict, key: Any, value: Any) -> None:
+        cache[key] = value
+        cache.move_to_end(key)
+        while len(cache) > self.cache_capacity:
+            cache.popitem(last=False)
 
     def active_command(
         self,
@@ -189,12 +210,11 @@ class GenericInstructionFSM:
             and use_parser_model
             and self.parser is not None
             and source_text
-            and command.get("id") is not None
+            and (command.get("id") is not None or (
+                not re.search(r"[\u4e00-\u9fff]",source_text) and not self._neutral_cruise(source_text)))
         ):
-            # Only scheduled commands (which carry an id) may override the
-            # neutral keep-lane envelope with a model interpretation.  The
-            # default cruise instruction has no id and must never be turned
-            # into an unintended deceleration by the learned parser.
+            # IDs are transport metadata, not a requirement for user commands.
+            # Keep the known neutral cruise fallback deterministic.
             model_parsed = self._parser_result(source_text, command)
             parsed = self._merge_parser_result(parsed, model_parsed)
         parsed.source_text = source_text
@@ -254,6 +274,11 @@ class GenericInstructionFSM:
     ) -> ParsedInstruction:
         lowered = text.lower()
         speed = self._extract_speed(text)
+
+        if re.fullmatch(r"\s*(?:please\s+)?(?:emergency\s+brake|brake\s+in\s+an\s+emergency)(?:\s+now)?[.!]?\s*", lowered):
+            return ParsedInstruction(parsed_intent="EMERGENCY_BRAKE",target_speed_kmh=0.)
+        if re.fullmatch(r"\s*(?:please\s+)?(?:stop(?:\s+(?:the\s+)?(?:vehicle|car))?|come\s+to\s+a\s+stop)(?:\s+(?:now|safely))?[.!]?\s*", lowered):
+            return ParsedInstruction(parsed_intent="STOP",target_speed_kmh=0.)
 
         if "变道" in lowered or "避让" in lowered or "换道" in lowered:
             if "左" in lowered:
@@ -324,6 +349,31 @@ class GenericInstructionFSM:
         return ParsedInstruction(parsed_intent="KEEP_LANE", target_speed_kmh=speed)
 
     @staticmethod
+    def _neutral_cruise(text: str) -> bool:
+        return bool(re.fullmatch(
+            r"\s*(?:keep|continue(?:\s+driving)?)(?:\s+safely)?\s+(?:(?:in\s+)?the\s+)?(?:current\s+)?lane"
+            r"(?:\s+at\s+\d+(?:\.\d+)?\s*(?:km/?h|kph|kilomet(?:er|re)s?\s+per\s+hour))?[.!]?\s*",
+            text,re.IGNORECASE))
+
+    def driving_intent(self,command):
+        """Retain a supplied plan or a multi-step result already parsed this frame."""
+        if isinstance(command.get('driving_intent'),Mapping):
+            return copy.deepcopy(command['driving_intent'])
+        text=str(command.get('text') or command.get('source_text') or '')
+        cached=self._parse_cache.get((str(command.get('id') or ''),text)) or {}
+        intent=cached.get('intent') or {}
+        if len(intent.get('steps') or [])<2:return None
+        result=copy.deepcopy(cached);result.pop('intent',None)
+        return dict(schema_version='1.2.0',request_id=str(command.get('id') or 'plan-'+hashlib.sha256(text.encode()).hexdigest()[:16]),
+            input=dict(modality='TEXT',language='en-US',raw_text=text,normalized_text=text),
+            intent=copy.deepcopy(intent),parse_result=result)
+
+    def parsed_step(self,step,source_text):
+        parsed=self._merge_parser_result(ParsedInstruction(),dict(status='VALID',confidence=1.,intent=dict(steps=[step])))
+        parsed.source_text=source_text
+        return parsed
+
+    @staticmethod
     def _extract_speed(text: str) -> float | None:
         match = _SPEED_PATTERN.search(text)
         if match is None:
@@ -338,21 +388,26 @@ class GenericInstructionFSM:
         source_text: str,
         command: Mapping[str, Any],
     ) -> dict[str, Any]:
-        key = str(command.get("id") or source_text)
+        key = (str(command.get("id") or ""), source_text)
         if key in self._parse_cache:
+            self._parse_cache.move_to_end(key)
             return self._parse_cache[key]
         try:
             result = self.parser.parse_text(
                 source_text,
-                request_id=f"fsm-{key}",
+                request_id=f"fsm-{command.get('id') or source_text}",
                 modality="TEXT",
                 source_text=source_text,
-                source_language="zh-CN",
+                source_language="zh-CN" if re.search(r"[\u4e00-\u9fff]",source_text) else "en-US",
             )
         except Exception:
-            result = {}
-        parse_result = result.get("parse_result") or {}
-        self._parse_cache[key] = parse_result
+            # Transient inference failure must not poison subsequent retries.
+            return {}
+        parse_result = dict(result.get("parse_result") or {})
+        # DrivingIntent keeps intent beside parse_result, not inside it.
+        if isinstance(result.get("intent"),Mapping):
+            parse_result["intent"] = result["intent"]
+        self._cache_put(self._parse_cache, key, parse_result)
         return parse_result
 
     @staticmethod
@@ -365,9 +420,12 @@ class GenericInstructionFSM:
         intent = parsed.parsed_intent
         steps = (parse_result.get("intent") or {}).get("steps") or []
         if steps:
-            action = str(steps[0].get("action", "")).upper()
+            step=steps[0]
+            action = str(step.get("action", "")).upper()
+            parameters=step.get("parameters") or {}
             mapping = {
                 "KEEP_LANE": "KEEP_LANE",
+                "SET_SPEED": "SET_SPEED",
                 "ADJUST_SPEED": "SET_SPEED",
                 "CHANGE_LANE": "CHANGE_LANE_LEFT",
                 "STOP": "STOP",
@@ -376,13 +434,31 @@ class GenericInstructionFSM:
                 "TURN": "TURN_LEFT",
             }
             merged = mapping.get(action)
+            if action == "ADJUST_SPEED" and str(parameters.get("change","")).upper() == "DECREASE":
+                merged="DECELERATE"
+            direction=str(parameters.get("direction","")).upper()
+            if action in {"CHANGE_LANE","TURN"}:
+                if direction not in {"LEFT","RIGHT"}:
+                    return parsed
+                merged=("CHANGE_LANE_" if action=="CHANGE_LANE" else "TURN_")+direction
+            target_speed=parsed.target_speed_kmh
+            try:
+                if parameters.get("target_speed_mps") is not None:
+                    target_speed=float(parameters["target_speed_mps"])*3.6
+                elif parameters.get("target_speed_kmh") is not None:
+                    target_speed=float(parameters["target_speed_kmh"])
+                if target_speed is not None and (not math.isfinite(target_speed) or target_speed<0):
+                    return parsed
+            except (TypeError,ValueError):
+                return parsed
+            if merged in {"STOP","EMERGENCY_BRAKE"}:target_speed=0.
             if merged is not None and intent == "KEEP_LANE":
                 parsed = ParsedInstruction(
                     parsed_intent=merged,
                     requested_lane_direction=(
-                        "left" if merged == "CHANGE_LANE_LEFT" else None
+                        direction.lower() if action=="CHANGE_LANE" else None
                     ),
-                    target_speed_kmh=parsed.target_speed_kmh,
+                    target_speed_kmh=target_speed,
                     confidence=float(parse_result.get("confidence", 0.0) or 0.0),
                 )
         return parsed
@@ -422,9 +498,10 @@ class GenericInstructionFSM:
         if self.parser is None:
             raise RuntimeError("text encoder is unavailable")
         text = self.semantic_text(parsed)
-        key = cache_key or text
+        key = (cache_key, text)
         cached = self._token_cache.get(key)
         if cached is not None:
+            self._token_cache.move_to_end(key)
             return cached
         parser = self.parser.parser
         parser.load()
@@ -443,7 +520,7 @@ class GenericInstructionFSM:
             tokens.detach().float().cpu(),
             encoded["attention_mask"].detach().bool().cpu(),
         )
-        self._token_cache[key] = result
+        self._cache_put(self._token_cache, key, result)
         return result
 
     def canonical_decision(
@@ -520,7 +597,7 @@ class GenericInstructionFSM:
             "lane_change_right": "CHANGE_LANE",
             "turn_left": "TURN",
             "turn_right": "TURN",
-        }[action]
+        }[INTENT_TO_ACTION[parsed.parsed_intent]]
         return {
             "schema_version": "1.0.0",
             "request_id": request_id,

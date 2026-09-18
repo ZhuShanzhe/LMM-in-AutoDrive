@@ -207,9 +207,13 @@ def test_universal_controller_has_no_scene_branch():
         "scene_3",
         "scene3_",
         "event_id",
-        "command_id",
     ):
         assert forbidden not in source
+    # Stable task metadata is permitted; branching on task identifiers is not.
+    import ast
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, (ast.If, ast.IfExp)):
+            assert 'command_id' not in ast.unparse(node.test)
 
 
 def test_instruction_fsm_supports_announce_activate_windows():

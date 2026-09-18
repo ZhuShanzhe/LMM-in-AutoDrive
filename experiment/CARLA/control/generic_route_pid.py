@@ -48,6 +48,8 @@ class GenericRoutePID:
         self._target_speed = float(target_speed_kmh)
         self._target_lane: str | None = None
         self._emergency = False
+        self._sequence_command = {}
+        self._sequence_expiry = None
         self._pid = EgoPIDController(
             ego,
             world.get_map(),
@@ -58,6 +60,10 @@ class GenericRoutePID:
         """Store one gated VLA decision for the current control step."""
 
         self._action = str(decision.get("action", "keep_lane"))
+        self._source_step_id=decision.get('source_step_id')
+        self._command_id=decision.get('command_id') or self._action+':'+str(self._source_step_id)
+        self._allow_positive_acceleration=bool(decision.get('allow_positive_acceleration',True))
+        self._longitudinal_control_mode=decision.get('longitudinal_control_mode','ABSOLUTE_SPEED')
         try:
             speed = float(decision.get("target_speed_kmh", 0.0))
         except (TypeError, ValueError):
@@ -69,6 +75,32 @@ class GenericRoutePID:
             self._target_speed = 0.0
         self._target_lane = decision.get("target_lane")
         self._emergency = bool(decision.get("emergency", False))
+        self._sequence_command = {}
+        self._sequence_expiry = None
+        control_expiry = decision.get('control_valid_until_s')
+        if control_expiry is not None:
+            try:
+                control_expiry = float(control_expiry)
+                if not math.isfinite(control_expiry):raise ValueError('Nonfinite expiry')
+                self._sequence_expiry = control_expiry
+            except (TypeError,ValueError):
+                self._action, self._target_speed = 'stop', 0.
+        if decision.get('longitudinal_sequence_schema') == 'longitudinal_sequence/1.0':
+            try:
+                acceleration = float(decision['target_acceleration_mps2'])
+                expiry = float(decision['sequence_valid_until_s'])
+                valid = math.isfinite(speed) and math.isfinite(acceleration) and -8.0001 <= acceleration <= 3.0001 and math.isfinite(expiry)
+            except (KeyError,TypeError,ValueError):
+                valid = False
+            if not valid:
+                self._action, self._target_speed = 'stop', 0.
+            else:
+                # A speed cap may cancel feedforward, but cannot extend command validity.
+                self._sequence_expiry = min(expiry,self._sequence_expiry) if self._sequence_expiry is not None else expiry
+                acceleration = max(-8.,min(3.,acceleration))
+                if abs(self._target_speed-speed) < 1e-6 and not self._emergency:
+                    self._sequence_command = dict(longitudinal_sequence_schema='longitudinal_sequence/1.0',
+                        target_acceleration_mps2=acceleration,sequence_valid_until_s=expiry)
 
     def progress_m(self) -> float:
         if self.route_context is not None:
@@ -531,6 +563,9 @@ class GenericRoutePID:
             "target_location": None,
             "emergency": self._emergency,
             "route_target_trusted": False,
+            "allow_positive_acceleration": getattr(self,'_allow_positive_acceleration',True),
+            "longitudinal_control_mode": getattr(self,'_longitudinal_control_mode','ABSOLUTE_SPEED'),
+            "command_id": getattr(self,'_command_id',self._action),
         }
         if self._junction_or_road_transition_ahead():
             # Sharpness-aware junction ceiling: the cap falls with the actual
@@ -574,11 +609,17 @@ class GenericRoutePID:
             self.route_manager is not None
             and self._junction_or_road_transition_ahead()
         )
+        expiry = self._sequence_expiry
+        if expiry is not None and self.world.get_snapshot().timestamp.elapsed_seconds > expiry:
+            intent.update(action='stop',target_speed_kmh=0.,emergency=False)
+        elif self._sequence_command and abs(intent['target_speed_kmh']-self._target_speed)<1e-6:
+            intent.update(self._sequence_command)
         control, _ = self._pid.run_step(intent, self.fixed_delta_seconds)
         return control
 
     def execution_state(self) -> dict[str, Any]:
         return {
+            "source_step_id": getattr(self,'_source_step_id',None),
             "action": self._action,
             "target_speed_kmh": self._target_speed,
             "target_lane": self._target_lane,

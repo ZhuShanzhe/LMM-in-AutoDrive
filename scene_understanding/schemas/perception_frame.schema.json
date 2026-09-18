@@ -16,6 +16,7 @@
       "properties": {"width": {"type": "integer", "minimum": 1}, "height": {"type": "integer", "minimum": 1}}
     },
     "tracks": {"type": "array", "items": {"$ref": "#/$defs/track"}},
+    "target_history": {"$ref": "#/$defs/targetHistory"},
     "road_structure": {"$ref": "#/$defs/roadStructure"},
     "latency_ms": {
       "type": "object", "additionalProperties": false, "required": ["detector", "total"],
@@ -27,6 +28,31 @@
     }
   },
   "$defs": {
+    "targetHistory": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "status", "retention_s", "entries", "authority", "cross_id_reidentification"],
+      "properties": {
+        "schema_version": {"const": "target_history/1.0"},
+        "status": {"enum": ["AVAILABLE", "UNAVAILABLE_TIMESTAMP"]},
+        "source": {"type": "string"}, "timestamp_s": {"type": "number"},
+        "retention_s": {"const": 30.0}, "authority": {"const": "REFERENCE_CONTEXT_ONLY"},
+        "cross_id_reidentification": {"const": false},
+        "entries": {"type": "array", "items": {
+          "type": "object", "additionalProperties": false,
+          "required": ["source", "track_id", "first_seen_s", "last_seen_s", "last_observation", "identity_evidence", "status", "age_s", "expires_at_s", "usable_as_current_observation", "historical_position_extrapolated"],
+          "properties": {
+            "source": {"type": "string"}, "track_id": {"type": "string"},
+            "first_seen_s": {"type": "number"}, "last_seen_s": {"type": "number"},
+            "last_observation": {"$ref": "#/$defs/track"},
+            "identity_evidence": {"enum": ["NEW_UPSTREAM_TRACK_ID", "SAME_UPSTREAM_TRACK_ID"]},
+            "status": {"enum": ["CURRENT", "HISTORICAL"]},
+            "age_s": {"type": "number", "minimum": 0}, "expires_at_s": {"type": "number"},
+            "usable_as_current_observation": {"type": "boolean"},
+            "historical_position_extrapolated": {"const": false}
+          }
+        }}
+      }
+    },
     "bbox": {
       "type": "array", "minItems": 4, "maxItems": 4,
       "prefixItems": [{"type": "number", "minimum": 0, "maximum": 1}, {"type": "number", "minimum": 0, "maximum": 1}, {"type": "number", "minimum": 0, "maximum": 1}, {"type": "number", "minimum": 0, "maximum": 1}]
