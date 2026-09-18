@@ -106,6 +106,7 @@ runs/
 /automatic_speech_recognition/models/
 /automatic_speech_recognition/outputs/
 /automatic_speech_recognition/logs/
+/automatic_speech_recognition/resources/horizon_toolchain/
 
 # 场景理解与 CARLA 运行产物
 /scene_understanding/data/
