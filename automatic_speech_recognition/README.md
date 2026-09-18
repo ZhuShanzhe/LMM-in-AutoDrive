@@ -213,8 +213,25 @@ bash scripts/run_asr_optimization.sh
 
 + 检查 onnx 模型是否符合要求：
 ```shell
-conda create -n oe python=3.10 -y && conda activate oe
+conda create -n oe python=3.10 -y
+conda activate oe
+# 或者 conda create -p /root/autodl-tmp/envs/oe python=3.10 -y && conda activate root/autodl-tmp/envs/oe
 pip install hmct-2.8.4-cp310-cp310-linux_x86_64.whl
+pip install horizon_tc_ui-3.5.16-py3-none-any.whl
+pip install hbdk4_march-4.11.11-cp310-abi3-manylinux_2_28_x86_64.whl
+pip install hbdk4_compiler-4.11.11-cp310-cp310-manylinux_2_28_x86_64.whl
+```
++ 注意：检查 `numpy` 版本，确保 `numpy==1.23.0`，否则会报错。
+```shell
+# 限制 numpy 版本为 1.23.0
+cat > /tmp/oe-constraints.txt << 'EOF'
+> numpy==1.23.0
+> EOF
+
+pip install -c /tmp/oe-constraints.txt numba scipy scikit-image pywavelets lazy-loader networkx pillow imageio tifffile packaging imageio-ffmpeg
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+```
+```shell
 hb_compile --model outputs/compression/onnx/asr_encoder.onnx --march nash-p
 ```
 
@@ -237,6 +254,7 @@ hb_compile --model outputs/compression/onnx/asr_encoder.onnx --march nash-p
 + 日志由 `src/utils.py` 统一提供（`setup_logging` / `log_and_print`），各任务不再自带副本；每次运行会**清空并重写**自己的日志文件，默认落在 `logs/` 下（如 `logs/tests/asr_test.log`、`logs/compression.log`、`logs/tts/build_standard.log`），可用 `--log-file ""` 关闭落盘。
 + 推理期优化免训练；模型级微调在 `training/`；评测代码统一在 `tests/`。
 + x86 仿真结果不等同于 J6P 板端性能；功耗与利用率仅在板端测量有效。
++ 所有未上传到 Github 的文件均可在 https://box.nju.edu.cn/library/6c251e83-c7ab-4eb3-89cc-8e3b00d14249/ASR_Training/ 下获取。
 
 ## 9. 参考资料
 
