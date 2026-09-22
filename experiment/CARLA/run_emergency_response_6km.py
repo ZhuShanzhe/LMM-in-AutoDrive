@@ -2217,6 +2217,7 @@ def run_simulation(
     vehicle_state_recorder: VehicleStateRecorder | None = None,
     ego_controller: Any | None = None,
     ego_route_plan: Sequence[tuple[Any, Any]] | None = None,
+    benchmark_assessment: Any | None = None,
 ) -> bool:
     tick_count: int | None = None
     if duration_s > 0.0:
@@ -2237,8 +2238,17 @@ def run_simulation(
         if ego_controller is not None:
             control = ego_controller.run_step()
             control.manual_gear_shift = False
-            ego.apply_control(control)
+            submit = getattr(ego_controller, 'apply_control', None)
+            if callable(submit):
+                submit(control)
+            else:
+                ego.apply_control(control)
         frame = world.tick()
+        if benchmark_assessment is not None:
+            snapshot=world.get_snapshot()
+            if snapshot.frame != frame:
+                raise RuntimeError('benchmark snapshot does not match world tick')
+            benchmark_assessment.observe(snapshot)
         try:
             ego_location = ego.get_location()
         except RuntimeError as error:
@@ -2406,7 +2416,15 @@ def main(
 ) -> int:
     global carla
 
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    parser.add_argument('--benchmark-assessment', action='store_true', help='Record independent scene_3 task assessment')
+    parser.add_argument('--benchmark-task', default='all', help='Assessment target ID or activation-order number; does not change driving route')
+    parser.add_argument('--vla-record-sensors', action='store_true', help='Save lossless actual VLA sensor inputs for offline replay')
+    args = parser.parse_args(argv)
+    from benchmark.selection import validate_assessment_args
+    validate_assessment_args(args, 'scene_3')
+    if args.vla_record_sensors and args.ego_controller != 'vla-route-pid':
+        parser.error('--vla-record-sensors requires --ego-controller vla-route-pid')
     try:
         validate_args(args)
     except ValueError as error:
@@ -2476,6 +2494,7 @@ def main(
     ego_plan: list[tuple[Any, Any]] | None = None
     route_context: Town05RouteContext | None = None
     result = 1
+    benchmark_assessment = None
 
     try:
         client = carla.Client(
@@ -2767,6 +2786,9 @@ def main(
         event_actor_runtime.spawn_background_traffic(
             runtime_config["traffic"]
         )
+        for event in runtime_config['events']:
+            if event['id'] == 'scene3_temporary_pedestrian':
+                event_actor_runtime.prepare_temporary_pedestrian(event)
         scheduler = EmergencyEventScheduler(
             runtime_config["events"],
             output_path=(
@@ -2798,6 +2820,7 @@ def main(
                 fixed_delta_seconds=args.fixed_delta_seconds,
                 available_cameras=("front", "left", "right", "rear"),
                 enable_lidar=False,
+                sensor_recording_dir=output_dir/'model_inputs' if args.vla_record_sensors else None,
                 default_speed_kmh=effective_ego_speed_kmh,
                 hold_seconds=float(
                     runtime_config.get("decision_interfaces", {})
@@ -2824,6 +2847,12 @@ def main(
             )
 
         world.tick()
+        if args.benchmark_assessment:
+            from benchmark.episode import attach_episode
+            benchmark_assessment = attach_episode('scene_3',ego_plan,world,ego,
+                output_dir/'benchmark',runtime_config_path,task_selector=args.benchmark_task,
+                run_metadata=dict(traffic_seed=args.seed,controller=args.ego_controller,
+                                  sensor_recording=bool(args.vla_record_sensors)))
         route_completed = run_simulation(
             world=world,
             carla_map=route_context.adapter,
@@ -2847,6 +2876,7 @@ def main(
             vehicle_state_recorder=vehicle_state_recorder,
             ego_controller=ego_controller,
             ego_route_plan=ego_plan,
+            benchmark_assessment=benchmark_assessment,
         )
 
         vehicle_state_recorder.close()
@@ -3131,6 +3161,10 @@ def main(
         )
         result = 1
     finally:
+        from benchmark.episode import finish_episode
+        assessment_exit_code=finish_episode(benchmark_assessment)
+        if result==0:
+            result=assessment_exit_code
         # Release navigation helpers while their actor handles are alive.
         if ego_controller is not None and hasattr(ego_controller, "close"):
             ego_controller.close()

@@ -131,9 +131,31 @@
       ]
     },
     {
+      "id": "compound_slow_vehicle",
+      "kind": "route_slow_vehicle",
+      "actor_role": "scene2_compound_slow_vehicle",
+      "complete_progress_m": 1350.0,
+      "anchor_progress_m": 1020.0,
+      "activate_progress_m": 950.0,
+      "target_speed_kmh": 20.0,
+      "variants": [
+        {"variant_id": "steady_20", "target_speed_kmh": 20.0},
+        {"variant_id": "steady_18", "target_speed_kmh": 18.0}
+      ],
+      "ground_truth": {
+        "evidence_mode": "observed",
+        "actor_roles": ["scene2_compound_slow_vehicle"],
+        "allowed_control_actions": ["decelerate", "stop", "keep_lane", "lane_change_left"],
+        "risk_labels": ["slow_lead_vehicle", "overtake_candidate"]
+      }
+    },
+    {
       "id": "crosswalk_pedestrian",
+      "physical_staging": true,
+      "endpoint_clearance_m": 1.5,
+      "retain_after_completion": true,
       "kind": "crossing_pedestrian",
-      "anchor_progress_m": 950.9,
+      "anchor_progress_m": 932.4278,
       "activate_progress_m": 830.0,
       "walker_speed_mps": 1.45,
       "ground_truth": {
@@ -174,19 +196,28 @@
           "pause_ticks": 30
         }
       ],
-      "crosswalk_polygon_index": 2,
-      "completion_distance_m": 1.5
+      "crosswalk_polygon_index": 57,
+      "completion_distance_m": 0.3
     },
     {
       "id": "bus_stop_passengers",
       "kind": "bus_stop",
+      "retain_after_completion": true,
+      "passengers": [
+        {"role_name": "scene2_bus_passenger_1", "longitudinal_offset_m": -5.0, "lateral_walk_m": 1.5},
+        {"role_name": "scene2_bus_passenger_2", "longitudinal_offset_m": 5.0, "lateral_walk_m": 1.5},
+        {"role_name": "scene2_bus_passenger_3", "longitudinal_offset_m": 8.0, "lateral_walk_m": 1.5}
+      ],
       "anchor_progress_m": 1045.0,
       "activate_progress_m": 990.0,
       "passenger_speed_mps": 1.1,
       "ground_truth": {
         "evidence_mode": "observed",
         "actor_roles": [
-          "scene2_bus_stop_bus"
+          "scene2_bus_stop_bus",
+          "scene2_bus_passenger_1",
+          "scene2_bus_passenger_2",
+          "scene2_bus_passenger_3"
         ],
         "actor_role_prefixes": [
           "scene2_bus_passenger_"
@@ -223,6 +254,7 @@
     {
       "id": "slow_cyclist",
       "kind": "cyclist",
+      "retain_after_completion": true,
       "anchor_progress_m": 1575.0,
       "activate_progress_m": 1500.0,
       "resolve_progress_m": 1725.0,

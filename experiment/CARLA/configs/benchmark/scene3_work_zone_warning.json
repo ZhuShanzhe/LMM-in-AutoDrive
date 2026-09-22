@@ -1,0 +1,12 @@
+{
+  "schema_version":"task_oracle/1.0", "scene_id":"scene_3",
+  "source_sha256":"4e2e5332725afe3f382d00db97f50a9a9364999319f72c07a4b3c00be747459b",
+  "task_id":"scene3_work_zone_warning", "activate_m":2850, "end_route_s_m":3050,
+  "timeout_s":90, "max_frame_gap_s":0.15, "violation_budget":0,
+  "coverage":{"status":"PARTIAL","missing":["warning_sign_and_work_zone_observation","adaptive_safe_speed","first_50m_response_quality","warning_to_closure_handoff"]},
+  "threshold_notes":{"max_speed_kmh":"Source wet-road limit is an upper bound; capped interval ends before the overlapping closure command, not the whole warning task."},
+  "steps":[
+    {"kind":"speed_ceiling","max_speed_kmh":32,"hold_s":1},
+    {"kind":"maintain_interval","from_route_s_m":2900,"until_route_s_m":2970,"max_sample_distance_m":5,"max_speed_kmh":32}
+  ]
+}

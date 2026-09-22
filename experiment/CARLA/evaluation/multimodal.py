@@ -8,6 +8,7 @@ from pathlib import Path
 import threading
 import time
 from typing import Any, Mapping
+from evaluation.sensor_calibration import calibration_document, sensor_record
 
 from scene2_runtime_interface import (
     build_multimodal_frame_bundle,
@@ -86,6 +87,7 @@ class ExactFrameSensorSuite:
         import carla
 
         library = self.world.get_blueprint_library()
+        calibration = {}
         for name, values in self.CAMERA_TRANSFORMS.items():
             blueprint = library.find("sensor.camera.rgb")
             for attribute, value in (
@@ -98,12 +100,12 @@ class ExactFrameSensorSuite:
                 if blueprint.has_attribute(attribute):
                     blueprint.set_attribute(attribute, value)
             x, y, z, yaw = values
+            mounting = carla.Transform(
+                carla.Location(x=x, y=y, z=z), carla.Rotation(yaw=yaw)
+            )
             actor = self.world.spawn_actor(
                 blueprint,
-                carla.Transform(
-                    carla.Location(x=x, y=y, z=z),
-                    carla.Rotation(yaw=yaw),
-                ),
+                mounting,
                 attach_to=self.ego,
                 attachment_type=carla.AttachmentType.Rigid,
             )
@@ -115,6 +117,7 @@ class ExactFrameSensorSuite:
                 )
             )
             self.registry.add(actor)
+            calibration[name] = sensor_record(actor, mounting)
 
         blueprint = library.find("sensor.lidar.ray_cast")
         for attribute, value in (
@@ -128,9 +131,10 @@ class ExactFrameSensorSuite:
                 blueprint.set_attribute(attribute, value)
         directory = self.output_dir / "lidar"
         directory.mkdir(parents=True, exist_ok=True)
+        mounting = carla.Transform(carla.Location(z=2.6))
         lidar = self.world.spawn_actor(
             blueprint,
-            carla.Transform(carla.Location(z=2.6)),
+            mounting,
             attach_to=self.ego,
             attachment_type=carla.AttachmentType.Rigid,
         )
@@ -138,6 +142,11 @@ class ExactFrameSensorSuite:
             lambda measurement: self._save_lidar(directory, measurement)
         )
         self.registry.add(lidar)
+        calibration["lidar"] = sensor_record(lidar, mounting)
+        path = self.output_dir / "sensor_calibration.json"
+        temporary = path.with_suffix(".tmp")
+        temporary.write_text(json.dumps(calibration_document(calibration), indent=2) + "\n", encoding="utf-8")
+        temporary.replace(path)
 
     def _mark_saved(self, sensor_name: str, frame: int) -> None:
         with self._condition:
@@ -171,6 +180,13 @@ class ExactFrameSensorSuite:
         temporary_path = directory / ".{0:08d}.tmp.ply".format(frame)
         measurement.save_to_disk(str(temporary_path))
         temporary_path.replace(final_path)
+        raw = bytes(measurement.raw_data)
+        if len(raw) % 16:
+            raise ValueError("LiDAR raw buffer must contain float32 x,y,z,intensity tuples")
+        raw_path = directory / "{0:08d}.xyzi.bin".format(frame)
+        raw_temporary = directory / ".{0:08d}.xyzi.tmp".format(frame)
+        raw_temporary.write_bytes(raw)
+        raw_temporary.replace(raw_path)
         self._mark_saved("lidar", frame)
 
     def _frame_is_complete(self, frame: int) -> bool:
@@ -280,6 +296,7 @@ class Scene2RuntimeInterface:
         output_dir: Path,
         config: Mapping[str, Any],
     ) -> None:
+        self.output_dir = output_dir
         self.scene_id = str(config["scene_id"])
         self.intent_log = _JsonlWriter(
             output_dir / "driving_intent.jsonl"
@@ -335,6 +352,10 @@ class Scene2RuntimeInterface:
         speed_kmh: Any,
     ) -> dict[str, Any]:
         transform = ego.get_transform()
+        velocity = ego.get_velocity()
+        acceleration = ego.get_acceleration()
+        angular_velocity = ego.get_angular_velocity()
+        control = ego.get_control()
         waypoint = world.get_map().get_waypoint(
             transform.location,
             project_to_road=True,
@@ -359,6 +380,30 @@ class Scene2RuntimeInterface:
                     "roll": transform.rotation.roll,
                 },
                 "speed_kmh": round(float(speed_kmh(ego)), 3),
+                "speed_limit_kmh": round(float(ego.get_speed_limit()), 3),
+                "velocity_mps": {
+                    "x": velocity.x,
+                    "y": velocity.y,
+                    "z": velocity.z,
+                },
+                "acceleration_mps2": {
+                    "x": acceleration.x,
+                    "y": acceleration.y,
+                    "z": acceleration.z,
+                },
+                "angular_velocity_deg_s": {
+                    "x": angular_velocity.x,
+                    "y": angular_velocity.y,
+                    "z": angular_velocity.z,
+                },
+                "control": {
+                    "throttle": float(control.throttle),
+                    "brake": float(control.brake),
+                    "steer": float(control.steer),
+                    "reverse": bool(control.reverse),
+                    "hand_brake": bool(control.hand_brake),
+                    "gear": int(control.gear),
+                },
             },
             "lane": {
                 "road_id": int(waypoint.road_id) if waypoint else None,
@@ -400,6 +445,30 @@ class Scene2RuntimeInterface:
             sensor_frames,
             intent.get("request_id") if intent else None,
         )
+        artifact_frame = int(frame)
+        bundle["timestamp_s"] = float(world_state["timestamp_s"])
+        bundle["artifacts"] = {
+            name: {
+                "path": (
+                    "rgb/{0}/{1:08d}.png".format(name, artifact_frame)
+                    if name != "lidar"
+                    else "lidar/{0:08d}.ply".format(artifact_frame)
+                ),
+                "encoding": "png" if name != "lidar" else "ply",
+            }
+            for name in REQUIRED_SENSOR_NAMES
+        }
+        bundle["vehicle_state"] = {
+            "path": "world_state.jsonl",
+            "key": "simulation_frame",
+            "value": artifact_frame,
+        }
+        bundle["artifacts"]["lidar_raw"] = {
+            "path": "lidar/{0:08d}.xyzi.bin".format(artifact_frame),
+            "encoding": "float32_le_xyzi",
+            "columns": ["x", "y", "z", "intensity"],
+            "coordinate_frame": "lidar_sensor",
+        }
         self.bundle_log.write(bundle)
         return bundle
 

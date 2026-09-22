@@ -697,10 +697,13 @@ def crosswalk_polygon_endpoints(
     carla_map: Any,
     polygon_index: int,
     inset_m: float = 0.35,
+    clearance_m: float = 0.0,
 ) -> tuple[Any, Any]:
     """Return pedestrian endpoints along an official crosswalk long axis."""
 
     import carla
+    if not math.isfinite(clearance_m) or clearance_m < 0:
+        raise ValueError('crosswalk clearance must be finite and nonnegative')
 
     def point_distance(left: Any, right: Any) -> float:
         return math.hypot(
@@ -767,6 +770,9 @@ def crosswalk_polygon_endpoints(
     )
     start_projection = minimum + inset
     target_projection = maximum - inset
+    if clearance_m > 0:
+        start_projection = minimum - clearance_m
+        target_projection = maximum + clearance_m
     if target_projection - start_projection < 4.0:
         raise RuntimeError("selected crosswalk is too short for Scene 2")
     return (
@@ -934,6 +940,7 @@ class DeterministicSceneEvents:
         events: Sequence[Mapping[str, Any]],
         seed: int,
         episode_index: int = 0,
+        preserve_roles: Sequence[str] = (),
     ) -> None:
         self.world = world
         self.traffic_manager = traffic_manager
@@ -954,12 +961,26 @@ class DeterministicSceneEvents:
         self.bindings: dict[str, Any] = {}
         self.spawn_diagnostics: dict[str, dict[str, Any]] = {}
         self.slow_vehicle: Any | None = None
+        self.route_slow_vehicles: dict[str, Any] = {}
+        for event in self.events:
+            if event['kind'] == 'route_slow_vehicle':
+                if event.get('resolve_progress_m') is not None:
+                    raise ValueError('route slow vehicles remain physical until episode cleanup')
+                if not 0 <= float(event['activate_progress_m']) < float(event['anchor_progress_m']):
+                    raise ValueError('route slow vehicle release must precede its parked position')
+                if float(event['complete_progress_m']) <= float(event['anchor_progress_m']):
+                    raise ValueError('route slow vehicle event end must follow its parked position')
         self.cyclist: Any | None = None
         self.cyclist_transform: Any | None = None
         self.bus: Any | None = None
         self.bus_transform: Any | None = None
         self.bus_active_ticks = 0
         self._retired_events: set[str] = set()
+        self.preserve_roles = frozenset(str(role) for role in preserve_roles)
+        self.preserve_roles |= frozenset(
+            role for event in self.events if event.get('retain_after_completion',False)
+            for role in event.get('ground_truth',{}).get('actor_roles',[])
+        )
         self._spawned = False
 
     def _set_desired_speed(
@@ -1058,6 +1079,13 @@ class DeterministicSceneEvents:
             roles = ["scene2_slow_cyclist"]
         else:
             roles = []
+
+        retained = [role for role in roles if role in self.preserve_roles]
+        if retained:
+            for role in retained:
+                self.spawn_diagnostics.setdefault(role, {}).update(
+                    retirement="deferred_for_independent_evaluation")
+            return 0
 
         retired = sum(
             1
@@ -1161,15 +1189,40 @@ class DeterministicSceneEvents:
             }
         )
 
+    def _spawn_route_slow_vehicle(self, event: Mapping[str, Any]) -> None:
+        """Park before capture; release in place without teleporting or hiding."""
+        import carla
+        role = str(event['actor_role'])
+        actor = self._spawn_vehicle(
+            ('vehicle.audi.tt', 'vehicle.nissan.micra'),
+            self._waypoint(float(event['anchor_progress_m'])), role,
+            hidden_staging=False,
+        )
+        actor.set_autopilot(False, self.traffic_manager.get_port())
+        actor.apply_control(carla.VehicleControl(brake=1.0, hand_brake=True))
+        self.route_slow_vehicles[str(event['id'])] = actor
+        self.spawn_diagnostics[role]['activation_source'] = 'physical_parked_release'
+
+    def _activate_route_slow_vehicle(self, event: Mapping[str, Any]) -> None:
+        import carla
+        actor = self.route_slow_vehicles[str(event['id'])]
+        if not actor.is_alive:
+            raise RuntimeError('route slow vehicle disappeared before release')
+        actor.apply_control(carla.VehicleControl())
+        actor.set_autopilot(True, self.traffic_manager.get_port())
+        self._set_desired_speed(actor, float(event['target_speed_kmh']), 60.0)
+        self.traffic_manager.auto_lane_change(actor, False)
+        self.traffic_manager.update_vehicle_lights(actor, True)
+
     def _activate_bus(self) -> None:
-        """Restore the staged bus only when its event becomes active."""
+        """Keep the physically staged bus stationary without relocating it."""
 
         if self.bus is None or self.bus_transform is None:
-            return
+            raise RuntimeError('bus-stop actor was not prepared')
+        if not self.bus.is_alive:
+            raise RuntimeError('bus-stop actor disappeared before activation')
         import carla
 
-        self.bus.set_transform(self.bus_transform)
-        self.bus.set_simulate_physics(True)
         self.bus.set_autopilot(
             False,
             self.traffic_manager.get_port(),
@@ -1183,7 +1236,7 @@ class DeterministicSceneEvents:
         )
         self.spawn_diagnostics["scene2_bus_stop_bus"].update(
             {
-                "activation_source": "captured_bus_stop_transform",
+                "activation_source": "physical_parked_bus_no_relocation",
                 "activation_location": {
                     "x": round(
                         float(self.bus_transform.location.x), 3
@@ -1292,6 +1345,7 @@ class DeterministicSceneEvents:
         *,
         pause_fraction: float | None = None,
         pause_ticks: int = 0,
+        physical_staging: bool = False,
     ) -> ScriptedWalker:
         import carla
 
@@ -1472,7 +1526,6 @@ class DeterministicSceneEvents:
             y=float(activation_transform.location.y),
             z=float(activation_transform.location.z),
         )
-        actor.set_simulate_physics(False)
         hidden_transform = carla.Transform(
             carla.Location(
                 x=float(activation_transform.location.x),
@@ -1485,15 +1538,19 @@ class DeterministicSceneEvents:
                 roll=float(activation_transform.rotation.roll),
             ),
         )
-        actor.set_transform(hidden_transform)
+        if physical_staging:
+            actor.apply_control(carla.WalkerControl(speed=0.0))
+        else:
+            actor.set_simulate_physics(False)
+            actor.set_transform(hidden_transform)
         self.registry.add(actor)
         self.bindings[role_name] = actor
         self.spawn_diagnostics[role_name] = {
             "attempts": attempts,
             "source": source,
-            "staging": "hidden_physics_disabled",
+            "staging": "physical_waiting" if physical_staging else "hidden_physics_disabled",
             "collision_survival": "invincible_actor",
-            "reactivation": "two_phase_physics_then_transform",
+            "reactivation": "start_walking_in_place" if physical_staging else "two_phase_physics_then_transform",
             "activation_transform_source": "spawn_candidate",
             "configured_walker_speed_mps": float(speed_mps),
         }
@@ -1502,7 +1559,7 @@ class DeterministicSceneEvents:
             actor,
             selected_target,
             speed_mps,
-            activation_transform=activation_transform,
+            activation_transform=None if physical_staging else activation_transform,
             pause_fraction=pause_fraction,
             pause_ticks=pause_ticks,
         )
@@ -1535,6 +1592,10 @@ class DeterministicSceneEvents:
             self.traffic_manager.get_port(),
         )
 
+        for event in self.events:
+            if event['kind'] == 'route_slow_vehicle':
+                self._spawn_route_slow_vehicle(event)
+
         crossing_config = by_kind["crossing_pedestrian"]
         crossing_waypoint = self._waypoint(
             float(crossing_config["anchor_progress_m"])
@@ -1548,6 +1609,7 @@ class DeterministicSceneEvents:
             start, target = crosswalk_polygon_endpoints(
                 self.world.get_map(),
                 int(crosswalk_polygon_index),
+                clearance_m=float(crossing_config.get('endpoint_clearance_m',0.0)),
             )
         if bool(crossing_config.get("reverse_direction", False)):
             start, target = target, start
@@ -1559,6 +1621,7 @@ class DeterministicSceneEvents:
                 float(crossing_config["walker_speed_mps"]),
                 pause_fraction=crossing_config.get("pause_fraction"),
                 pause_ticks=int(crossing_config.get("pause_ticks", 0)),
+                physical_staging=bool(crossing_config.get('physical_staging',False)),
             )
         )
 
@@ -1576,9 +1639,7 @@ class DeterministicSceneEvents:
                 "crosswalk_length_m": distance_2d(start, target),
             }
         )
-        # Town05's official crosswalk polygon ends at a curb.
-        # Accept completion only after the walker has cleared the
-        # carriageway, while allowing the final curb collision.
+        # Event completion is separate from the oracle's footprint-clear test.
         self.scripted_walkers[
             "crosswalk_pedestrian"
         ].completion_distance_m = float(
@@ -1614,8 +1675,10 @@ class DeterministicSceneEvents:
             ),
             bus_waypoint,
             "scene2_bus_stop_bus",
-            hidden_staging=True,
+            hidden_staging=False,
         )
+        self.bus_transform = self._vehicle_spawn_transforms['scene2_bus_stop_bus']
+        self.bus.set_autopilot(False,self.traffic_manager.get_port())
         self.reserved_locations.append(self.bus_transform.location)
         self.bus.apply_control(
             carla.VehicleControl(hand_brake=True)
@@ -1649,7 +1712,17 @@ class DeterministicSceneEvents:
         passenger_speed = float(
             bus_config["passenger_speed_mps"]
         )
-        for index, longitudinal in enumerate((-5.0, 5.0, 8.0)):
+        passenger_layout = bus_config.get('passengers', [
+            dict(role_name=f'scene2_bus_passenger_{i+1}',longitudinal_offset_m=offset,lateral_walk_m=1.5)
+            for i,offset in enumerate((-5.0,5.0,8.0))])
+        roles = [p['role_name'] for p in passenger_layout]
+        if not roles or len(set(roles)) != len(roles) or any(not r.startswith('scene2_bus_passenger_') for r in roles):
+            raise ValueError('bus passengers require unique scene2_bus_passenger_ roles')
+        for passenger in passenger_layout:
+            longitudinal = float(passenger['longitudinal_offset_m'])
+            lateral = float(passenger['lateral_walk_m'])
+            if not math.isfinite(longitudinal) or not math.isfinite(lateral) or lateral == 0:
+                raise ValueError('invalid passenger movement offsets')
             passenger_road = self._waypoint(
                 float(bus_config["anchor_progress_m"]) + longitudinal
             )
@@ -1674,18 +1747,18 @@ class DeterministicSceneEvents:
             # locally traversable side and use a target that can be reached
             # before that curb.  The previous third-passenger direction
             # pointed into the collision volume and could never complete.
-            lateral = 1.5
             target = carla.Location(
                 x=start.x + passenger_right.x * lateral,
                 y=start.y + passenger_right.y * lateral,
                 z=start.z,
             )
-            key = "bus_passenger_{0}".format(index + 1)
+            key = passenger['role_name'].removeprefix('scene2_')
             self.scripted_walkers[key] = self._spawn_walker(
                 start,
                 target,
-                "scene2_{0}".format(key),
+                passenger['role_name'],
                 passenger_speed,
+                physical_staging=True,
             )
 
         prop_blueprint = self.world.get_blueprint_library().find(
@@ -1722,23 +1795,11 @@ class DeterministicSceneEvents:
         self.cyclist_transform = self._vehicle_spawn_transforms[
             "scene2_slow_cyclist"
         ]
-        hidden = carla.Transform(
-            carla.Location(
-                x=float(self.cyclist_transform.location.x),
-                y=float(self.cyclist_transform.location.y),
-                z=-20.0,
-            ),
-            carla.Rotation(
-                pitch=float(self.cyclist_transform.rotation.pitch),
-                yaw=float(self.cyclist_transform.rotation.yaw),
-                roll=float(self.cyclist_transform.rotation.roll),
-            ),
-        )
-        self.cyclist.set_simulate_physics(False)
-        self.cyclist.set_transform(hidden)
+        self.cyclist.set_autopilot(False,self.traffic_manager.get_port())
+        self.cyclist.apply_control(carla.VehicleControl(brake=1.0,hand_brake=True))
         self.spawn_diagnostics["scene2_slow_cyclist"].update(
             {
-                "activation_source": "captured_spawn_transform",
+                "activation_source": "physical_parked_cyclist_release",
                 "activation_location": {
                     "x": round(
                         float(self.cyclist_transform.location.x), 3
@@ -1777,6 +1838,8 @@ class DeterministicSceneEvents:
                 )
                 if event["kind"] == "slow_vehicle":
                     self._activate_slow_vehicle(event, progress_m)
+                elif event['kind'] == 'route_slow_vehicle':
+                    self._activate_route_slow_vehicle(event)
                 elif event["kind"] == "crossing_pedestrian":
                     self.scripted_walkers[
                         "crosswalk_pedestrian"
@@ -1787,14 +1850,14 @@ class DeterministicSceneEvents:
                         if key.startswith("bus_passenger_"):
                             walker.start()
                 elif event["kind"] == "cyclist":
+                    import carla
+                    if self.cyclist is None or not self.cyclist.is_alive:
+                        raise RuntimeError('staged cyclist disappeared before activation')
                     if (
                         self.cyclist is not None
                         and self.cyclist_transform is not None
                     ):
-                        self.cyclist.set_transform(
-                            self.cyclist_transform
-                        )
-                        self.cyclist.set_simulate_physics(True)
+                        self.cyclist.apply_control(carla.VehicleControl())
                         self.cyclist.set_autopilot(
                             True,
                             self.traffic_manager.get_port(),
@@ -1815,6 +1878,8 @@ class DeterministicSceneEvents:
         for event in self.events:
             event_id = str(event["id"])
             resolve_at = event.get("resolve_progress_m")
+            if event['kind'] == 'route_slow_vehicle':
+                resolve_at = event['complete_progress_m']
             if (
                 resolve_at is not None
                 and self.states[event_id] == "ACTIVE"
@@ -1829,7 +1894,8 @@ class DeterministicSceneEvents:
                         "variant_id": self.selected_variants[event_id],
                     }
                 )
-                self._retire_event_actors(event_id)
+                if event['kind'] != 'route_slow_vehicle':
+                    self._retire_event_actors(event_id)
 
         crossing = self.scripted_walkers.get(
             "crosswalk_pedestrian"

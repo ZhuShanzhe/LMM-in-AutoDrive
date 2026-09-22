@@ -7,6 +7,7 @@ the CARLA Python API may not be installed.
 
 from __future__ import annotations
 
+import math
 from typing import Any, MutableSequence, Sequence
 
 
@@ -146,7 +147,6 @@ class EmergencySceneActorRuntime:
         ) = None
         self._walker_blueprint_candidates: list[Any] = []
         self._worker_phase = "NOT_SPAWNED"
-        self._crossing_worker_respawn_count = 0
         self._maintenance_vehicle: Any | None = None
         self._blocked_lane_event: dict[str, Any] | None = None
         self._blocked_lane_activation_s: float | None = None
@@ -308,7 +308,8 @@ class EmergencySceneActorRuntime:
             self._activate_work_zone(event)
             return
         if event["id"] == "scene3_temporary_pedestrian":
-            self._activate_temporary_pedestrian(event)
+            if self._worker_phase == "NOT_SPAWNED":
+                self._activate_temporary_pedestrian(event)
             return
         if event["id"] == "scene3_blocked_lane":
             self._activate_blocked_lane(
@@ -372,30 +373,6 @@ class EmergencySceneActorRuntime:
             self._cut_in_phase = "RESOLVED"
             return
         if event["id"] == "scene3_temporary_pedestrian":
-            if (
-                self._worker_phase == "CROSSING"
-                and self._crossing_worker is not None
-                and self._crossing_worker_target_location is not None
-            ):
-                # Some Town05 walker blueprints keep a stale physics pose
-                # after repeated synchronous set_location calls.  The actor
-                # has occupied the crossing for the full event window; place
-                # it on the declared destination before resolving so the
-                # recovery contract is physical as well as semantic.
-                self._crossing_worker.set_location(
-                    self._crossing_worker_target_location
-                )
-                self._crossing_worker.apply_control(
-                    self._carla.WalkerControl(
-                        direction=self._carla.Vector3D(
-                            x=0.0, y=0.0, z=0.0
-                        ),
-                        speed=0.0,
-                        jump=False,
-                    )
-                )
-                self._worker_phase = "YIELDED_CLEAR"
-                print("WORKER CLEARED AT EVENT BOUNDARY")
             if self._worker_phase != "YIELDED_CLEAR":
                 raise RuntimeError(
                     "worker crossing did not clear "
@@ -1188,6 +1165,12 @@ class EmergencySceneActorRuntime:
             f"after {attempted} attempts"
         )
 
+    def prepare_temporary_pedestrian(self, event: dict[str, Any]) -> None:
+        """Stage stable worker identities before the episode starts."""
+        if event.get('id') != 'scene3_temporary_pedestrian':
+            raise ValueError('expected temporary pedestrian event')
+        self._activate_temporary_pedestrian(event)
+
     def _activate_temporary_pedestrian(
         self,
         event: dict[str, Any],
@@ -1241,10 +1224,19 @@ class EmergencySceneActorRuntime:
             blueprints
         )
 
-        # The crossing worker is armed now but spawned only when the
-        # ego reaches the configured trigger distance.  This avoids a
-        # dormant CARLA walker handle while preserving the static
-        # roadside worker.
+        worker = self._spawn_work_zone_worker(worker_config=crossing_config, blueprints=blueprints)
+        worker.apply_control(self._carla.WalkerControl(speed=0.0, jump=False))
+        self._crossing_worker = worker
+        self._worker_actors.append(worker)
+        self._actor_sink.append(worker)
+        from worker_clearance import worker_clear_of_lane
+        if not hasattr(self._map,'route_waypoint'):
+            raise RuntimeError('worker preparation requires actual ego route lane geometry')
+        lane=self._map.route_waypoint(float(crossing_config['start_s_m']))
+        planned_clearance=worker_clear_of_lane(worker,lane,
+            target_location=self._crossing_worker_target_location)
+        if not planned_clearance['clear']:
+            raise RuntimeError('configured worker destination cannot clear ego route lane: '+str(planned_clearance))
         for index, worker_config in enumerate(
             worker_configs[1:],
             start=1,
@@ -1321,24 +1313,14 @@ class EmergencySceneActorRuntime:
                     "start_s_m"
                 ]
             )
-            trigger_distance_m = 75.0
+            from worker_clearance import worker_trigger_ready
             gap_m = spawn_s_m - ego_route_s_m
-            if gap_m > trigger_distance_m:
+            if not worker_trigger_ready(spawn_s_m,ego_route_s_m,self._worker_event or {}):
                 return
-            if gap_m <= 0.0:
-                raise RuntimeError(
-                    "worker crossing trigger was "
-                    "missed"
-                )
 
-            worker = self._spawn_work_zone_worker(
-                worker_config=(
-                    self._crossing_worker_config
-                ),
-                blueprints=(
-                    self._walker_blueprint_candidates
-                ),
-            )
+            worker = self._crossing_worker
+            if worker is None or not worker.is_alive:
+                raise RuntimeError('staged crossing worker missing before trigger')
             location = worker.get_location()
             if (
                 self._crossing_worker_target_location is None
@@ -1378,11 +1360,9 @@ class EmergencySceneActorRuntime:
             self._crossing_worker_start_elapsed_s = (
                 elapsed_s
             )
-            self._worker_actors.append(worker)
-            self._actor_sink.append(worker)
             self._worker_phase = "CROSSING"
             print(
-                "WORKER CROSSING SPAWNED AND "
+                "STAGED WORKER CROSSING "
                 "TRIGGERED | "
                 f"gap={gap_m:.1f} m | "
                 f"target=({self._crossing_worker_target_location.x:.2f}, "
@@ -1396,30 +1376,7 @@ class EmergencySceneActorRuntime:
         ):
             return
         if not self._crossing_worker.is_alive:
-            if (
-                self._crossing_worker_respawn_count >= 1
-                or self._crossing_worker_config is None
-            ):
-                raise RuntimeError(
-                    "crossing worker was destroyed "
-                    "unexpectedly after recovery"
-                )
-            # Town05_Opt can occasionally retire a walker actor while its
-            # synchronous trajectory is being updated. Recover once at the
-            # same deterministic trajectory time instead of aborting the
-            # remaining 2.6 km of the evaluation route.
-            recovered = self._spawn_work_zone_worker(
-                worker_config=self._crossing_worker_config,
-                blueprints=self._walker_blueprint_candidates,
-            )
-            self._crossing_worker = recovered
-            self._worker_actors.append(recovered)
-            self._actor_sink.append(recovered)
-            self._crossing_worker_respawn_count += 1
-            print(
-                "WORKER CROSSING ACTOR RECOVERED | "
-                f"attempt={self._crossing_worker_respawn_count}"
-            )
+            raise RuntimeError('crossing worker destroyed; event identity cannot be replaced')
         location = (
             self._crossing_worker.get_location()
         )
@@ -1434,11 +1391,8 @@ class EmergencySceneActorRuntime:
                     "crossing worker trajectory "
                     "was not initialized"
                 )
-            start = (
-                self._crossing_worker_start_location
-            )
-            distance_x = self._crossing_worker_target_location.x - start.x
-            distance_y = self._crossing_worker_target_location.y - start.y
+            distance_x = self._crossing_worker_target_location.x - location.x
+            distance_y = self._crossing_worker_target_location.y - location.y
             distance = (distance_x * distance_x + distance_y * distance_y) ** 0.5
             crossing_speed_mps = float(
                 (self._worker_event or {})
@@ -1447,30 +1401,19 @@ class EmergencySceneActorRuntime:
                     "speed_mps", 1.8
                 )
             )
-            duration_s = max(
-                distance / crossing_speed_mps,
-                0.5,
-            )
-            progress = min(
-                max(
-                    (
-                        elapsed_s
-                        - self
-                        ._crossing_worker_start_elapsed_s
-                    )
-                    / duration_s,
-                    0.0,
-                ),
-                1.0,
-            )
-            self._crossing_worker.set_location(
-                self._carla.Location(
-                    x=start.x + distance_x * progress,
-                    y=start.y + distance_y * progress,
-                    z=start.z,
-                )
-            )
-            if progress >= 1.0:
+            if not math.isfinite(crossing_speed_mps) or crossing_speed_mps <= 0:
+                raise RuntimeError('crossing speed must be finite and positive')
+            if distance <= 0.25:
+                from worker_clearance import worker_clear_of_lane
+                anchor=float(self._crossing_worker_config['start_s_m'])
+                if not hasattr(self._map,'route_waypoint'):
+                    raise RuntimeError('worker clearance requires actual ego route lane geometry')
+                lane=self._map.route_waypoint(anchor)
+                clearance=worker_clear_of_lane(self._crossing_worker,lane)
+                if not clearance['clear']:
+                    self._crossing_worker.apply_control(self._carla.WalkerControl(speed=0.0,jump=False))
+                    raise RuntimeError('worker destination still occupies ego route lane; scene geometry invalid: '
+                                       +str(clearance))
                 self._crossing_worker.apply_control(
                     self._carla.WalkerControl(
                         direction=(
@@ -1490,6 +1433,10 @@ class EmergencySceneActorRuntime:
                     f"target=({self._crossing_worker_target_location.x:.2f}, "
                     f"{self._crossing_worker_target_location.y:.2f})"
                 )
+            else:
+                self._crossing_worker.apply_control(self._carla.WalkerControl(
+                    direction=self._carla.Vector3D(x=distance_x/distance,y=distance_y/distance,z=0.0),
+                    speed=min(crossing_speed_mps,max(0.1,distance*2)),jump=False))
             return
 
     def _activate_blocked_lane(

@@ -1,0 +1,17 @@
+{
+  "schema_version": "task_oracle/1.0",
+  "scene_id": "scene_2",
+  "source_sha256": "438a34fee37db8a8e026f8c157c875a32aff53ef6e1b2638585fdb4aff72e6f4",
+  "task_id": "s2_t05_cmd_15",
+  "activate_m": 7000,
+  "timeout_s": 240,
+  "max_frame_gap_s": 0.15,
+  "violation_budget": 0,
+  "steps": [
+    {"kind": "straight_junction", "max_heading_change_deg": 20, "max_lateral_error_m": 0.5, "hold_s": 1},
+    {"kind": "turn", "direction": "RIGHT", "min_heading_change_deg": 45, "max_lateral_error_m": 0.5, "hold_s": 1},
+    {"kind": "turn", "direction": "RIGHT", "min_heading_change_deg": 45, "max_lateral_error_m": 0.5, "hold_s": 1},
+    {"kind": "speed", "target_kmh": 45, "tolerance_kmh": 2, "hold_s": 2},
+    {"kind": "destination", "max_distance_m": 3, "max_remaining_m": 3}
+  ]
+}

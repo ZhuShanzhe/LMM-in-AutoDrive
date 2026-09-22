@@ -280,7 +280,7 @@ class VoiceSchedulePolicyTest(unittest.TestCase):
 
 
 class RouteDirectiveTest(unittest.TestCase):
-    def test_turn_directive_selects_the_rightmost_branch(self):
+    def test_turn_directive_does_not_consume_same_road_bend(self):
         start = Waypoint(0, yaw=0)
         straight = Waypoint(5, yaw=0)
         right = Waypoint(5, yaw=35)
@@ -295,8 +295,9 @@ class RouteDirectiveTest(unittest.TestCase):
             directives=[{"id": "right", "distance_m": 0, "action": "turn_right"}],
         )
 
-        self.assertEqual(len(manager.applied_directives), 1)
-        self.assertEqual(route[1]["yaw"], 35)
+        self.assertEqual(len(manager.applied_directives), 0)
+        self.assertEqual(manager.unapplied_directives[0]["id"], "right")
+        self.assertEqual(route[1]["yaw"], 0)
 
     def test_target_point_returns_a_future_route_point(self):
         start = Waypoint(0)
