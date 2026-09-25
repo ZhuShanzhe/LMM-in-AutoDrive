@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from ..text_metrics import corpus_cer
 from ..utils import to_rel_path
-from src.utils import DEFAULT_NUM_GPUS, log_and_print, resolve_device, setup_logging
+from ...utils import DEFAULT_NUM_GPUS, log_and_print, resolve_device, setup_logging
 
 logger = logging.getLogger(__name__)
 

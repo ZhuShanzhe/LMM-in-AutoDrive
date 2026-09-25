@@ -1,19 +1,15 @@
 import logging
 import os
-import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from src.asr import Qwen3ASRService
-from src.asr.optimization import build_optimizer
-from src.asr.utils import load_yaml, save_json, to_rel_path
-from src.utils import DEFAULT_NUM_GPUS, resolve_device
+from .asr import Qwen3ASRService
+from .asr.optimization import build_optimizer
+from .asr.utils import load_yaml, save_json, to_rel_path
+from .utils import DEFAULT_NUM_GPUS, resolve_device
 
 logger = logging.getLogger("pipeline")
 
@@ -76,7 +72,7 @@ class ASRPipeline:
 
         guard = None
         if enable_guard:
-            from src.asr.guard import ASROutputGuard
+            from .asr.guard import ASROutputGuard
             guard = ASROutputGuard()
 
         self.asr = Qwen3ASRService(
@@ -116,7 +112,7 @@ class ASRPipeline:
 
     def _ensure_translator(self):
         if self.translator is None:
-            from src.translator import Qwen3TranslatorService
+            from .translator import Qwen3TranslatorService
             self.translator = Qwen3TranslatorService(**self._translator_args)
         return self.translator
 

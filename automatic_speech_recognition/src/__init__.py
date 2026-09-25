@@ -8,9 +8,9 @@ from typing import Any
 __all__ = ["Qwen3TTSService", "Qwen3TranslatorService", "Qwen3ASRService"]
 
 _LAZY = {
-    "Qwen3TTSService": ("src.tts", "Qwen3TTSService"),
-    "Qwen3TranslatorService": ("src.translator", "Qwen3TranslatorService"),
-    "Qwen3ASRService": ("src.asr", "Qwen3ASRService"),
+    "Qwen3TTSService": (__name__ + ".tts", "Qwen3TTSService"),
+    "Qwen3TranslatorService": (__name__ + ".translator", "Qwen3TranslatorService"),
+    "Qwen3ASRService": (__name__ + ".asr", "Qwen3ASRService"),
 }
 
 def __getattr__(name: str) -> Any:

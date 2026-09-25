@@ -56,7 +56,7 @@ class CandidateContractTests(unittest.TestCase):
     def test_challenge_config_keeps_candidate_entities_disabled(self) -> None:
         root = Path(__file__).resolve().parents[2]
         config = json.loads(
-            (root / "lightweight_vla_adapter/configs/challenge_sequence_v2.json").read_text(encoding="utf-8")
+            (root / "lightweight_vla_adapter/configs/challenge_signal_generalization.json").read_text(encoding="utf-8")
         )
         self.assertIs(config["use_candidate_entities"], False)
         self.assertIs(config["policy_input_contract"]["candidate_entities_allowed"], False)

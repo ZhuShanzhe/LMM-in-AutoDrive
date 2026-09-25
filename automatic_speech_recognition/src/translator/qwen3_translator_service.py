@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from src.utils import DEFAULT_NUM_GPUS, resolve_device
+from ..utils import DEFAULT_NUM_GPUS, resolve_device
 
 from .utils import load_yaml, save_json
 

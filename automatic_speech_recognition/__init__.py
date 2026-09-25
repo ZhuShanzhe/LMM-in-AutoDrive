@@ -1,1 +1,1 @@
-from src.pipeline import ASRPipeline
+from .src.pipeline import ASRPipeline

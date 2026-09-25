@@ -21,7 +21,7 @@ class FullAdapterFusionTests(unittest.TestCase):
         torch.set_num_threads(2)
         root = Path(__file__).resolve().parents[2]
         config = json.loads(
-            (root / "lightweight_vla_adapter/configs/challenge_sequence_v2.json").read_text(
+            (root / "lightweight_vla_adapter/configs/challenge_signal_generalization.json").read_text(
                 encoding="utf-8"
             )
         )

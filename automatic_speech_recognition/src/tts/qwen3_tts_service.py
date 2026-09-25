@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from qwen_tts import Qwen3TTSModel
 
-from src.utils import DEFAULT_NUM_GPUS, resolve_device
+from ..utils import DEFAULT_NUM_GPUS, resolve_device
 
 from .utils import add_noise, read_wav, save_wav_16k
 

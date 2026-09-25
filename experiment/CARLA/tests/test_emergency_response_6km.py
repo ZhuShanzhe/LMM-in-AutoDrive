@@ -922,7 +922,7 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
             2,
         )
 
-    def test_crossing_worker_spawns_at_trigger_only(
+    def test_staged_crossing_worker_starts_at_trigger_only(
         self,
     ):
         worker = mock.Mock()
@@ -956,6 +956,9 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
             )
         )
         runtime._worker_phase = "ARMED"
+        worker.is_alive = True
+        runtime._crossing_worker = worker
+        actor_sink.append(worker)
         runtime._crossing_worker_config = {
             "role_name": "scene3_crossing_worker",
             "start_lane_id": -4,
@@ -980,7 +983,7 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
             elapsed_s=1.0,
         )
 
-        runtime._spawn_work_zone_worker.assert_called_once()
+        runtime._spawn_work_zone_worker.assert_not_called()
         worker.apply_control.assert_called_once()
         self.assertEqual(
             runtime._worker_phase,
@@ -993,13 +996,13 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
             elapsed_s=5.0,
         )
 
-        worker.set_location.assert_called()
+        worker.set_location.assert_not_called()
         self.assertEqual(
             runtime._worker_phase,
-            "YIELDED_CLEAR",
+            "CROSSING",
         )
 
-    def test_crossing_worker_recovers_once_if_actor_is_retired(self):
+    def test_crossing_worker_rejects_destroyed_actor_identity(self):
         retired = mock.Mock()
         retired.is_alive = False
         recovered = mock.Mock()
@@ -1044,16 +1047,15 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         runtime._crossing_worker_start_elapsed_s = 1.0
         runtime._spawn_work_zone_worker = mock.Mock(return_value=recovered)
 
-        runtime._update_worker_crossing(
-            ego_route_s_m=3230.0,
-            elapsed_s=2.0,
-        )
-
-        runtime._spawn_work_zone_worker.assert_called_once()
-        self.assertIs(runtime._crossing_worker, recovered)
-        self.assertEqual(runtime._crossing_worker_respawn_count, 1)
-        self.assertEqual(actor_sink, [recovered])
-        recovered.set_location.assert_called_once()
+        with self.assertRaisesRegex(RuntimeError, "event identity cannot be replaced"):
+            runtime._update_worker_crossing(
+                ego_route_s_m=3230.0,
+                elapsed_s=2.0,
+            )
+        runtime._spawn_work_zone_worker.assert_not_called()
+        self.assertIs(runtime._crossing_worker, retired)
+        self.assertEqual(actor_sink, [])
+        recovered.set_location.assert_not_called()
 
     def test_ego_starts_with_automatic_lane_changes_disabled(
         self,

@@ -4,7 +4,7 @@ import tempfile
 import time
 from typing import Any, Dict, List, Optional
 
-from src.utils import DEFAULT_NUM_GPUS, resolve_device, resolve_num_gpus
+from ...utils import DEFAULT_NUM_GPUS, resolve_device, resolve_num_gpus
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ class ASRRuntime:
 
     def _get_service(self):
         if self._service is None:
-            from src.asr import Qwen3ASRService
+            from .. import Qwen3ASRService
             self._service = Qwen3ASRService(
                 model_id_or_path=self._model_id, device=self.device,
                 dtype=self.dtype, language=self.language,

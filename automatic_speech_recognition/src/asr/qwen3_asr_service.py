@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
-from src.utils import DEFAULT_NUM_GPUS, resolve_device, resolve_num_gpus
+from ..utils import DEFAULT_NUM_GPUS, resolve_device, resolve_num_gpus
 
 from .utils import load_audio, load_yaml, normalize_text, save_audio, save_json, to_rel_path
 

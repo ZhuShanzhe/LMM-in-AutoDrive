@@ -1,8 +1,11 @@
 # 挑战赛道文档
 
+- [0925 提交前五人分工](../program/task_0925.md)
+- [0925 成员分支合并与核验](CHALLENGE_MERGE_20260925.md)
+
 - [当前架构、范围与结果](../README.md)
 - [分支协作与回归](../CHALLENGE_DEVELOPMENT.md)
-- [五人职责与达标要求](../program/task_0911.pdf)
+- [0911 原职责与达标要求（历史）](../program/task_0911.pdf)
 - [模型、环境和新版控制接入](../lightweight_vla_adapter/README.md)
 - [信号泛化实验及闭环证据](../lightweight_vla_adapter/CHALLENGE_SIGNAL_GENERALIZATION.md)
 - [指令解析接口](../structured_command_parser/README.md)
