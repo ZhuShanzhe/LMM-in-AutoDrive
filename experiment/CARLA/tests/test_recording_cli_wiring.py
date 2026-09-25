@@ -24,4 +24,7 @@ def test_non_model_multimodal_capture_uses_independent_assessment(name):
     source=(root/name).read_text(encoding='utf-8')
     assert "--record-multimodal requires --benchmark-assessment" in source
     assert 'multimodal_capture.observe(' in source
+    expected = ('commands=commands' if name == 'run_control_experiment.py'
+                else 'commands=active_commands')
+    assert expected in source
     assert 'multimodal_capture.close()' in source

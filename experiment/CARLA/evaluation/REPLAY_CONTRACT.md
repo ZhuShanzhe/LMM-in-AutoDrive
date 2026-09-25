@@ -24,7 +24,12 @@ intent 结构及 parse_result 来源。无请求 ID 时为 null，不自动沿�
 competition_schedule 表示脚本构造，不能计为解析模型的正确预测。
 指令顶层的 route_s_m 等额外字段不传递；input、intent 和 parse_result 属于
 上游指令接口内容，此处保留其语义，不代替上游完整 schema 或可信来源校验。
-同源 manifest 1.3 覆盖各帧指令、时间、场景上下文、标定及声明的原始LiDAR文件；不可与旧版哈希直接比较。
+场景一、三的新标准采集另有逐帧 `command_context.jsonl`，只记录当帧有效的
+场景预设文本；`source=scene_schedule_not_model_parse`，不代表 ModernBERT 已解析，
+也不代表控制器必然执行了该指令。空 `commands` 表示该帧没有当前指令，不能沿用上一条。
+回放仅暴露 id/text，不传递进度等评测字段，要求帧号和时间戳与传感器 bundle 匹配。
+同源 manifest 1.4 覆盖该文本、各帧指令、时间、场景上下文、标定及原始LiDAR；
+不可与旧版哈希直接比较。
 
 新采集由 ExactFrameSensorSuite 写出 sensor_calibration.json，包括实际传感器属性、
 sensor_to_ego 齐次矩阵、相机光学坐标变换及理想针孔内参。镜头畸变及后处理属性

@@ -1058,6 +1058,7 @@ def main():
                         if unified_vla is not None
                         else None
                     ),
+                    "voice_text": unified_vla.active_command().get("text", ""),
                     "request_id": f"unified-{int(decision_snapshot.frame)}",
                     "frame_id": f"carla_{int(decision_snapshot.frame)}",
                 }
@@ -1110,7 +1111,14 @@ def main():
             if benchmark_assessment is not None:
                 benchmark_assessment.observe(snapshot)
             if multimodal_capture is not None:
-                multimodal_capture.observe(snapshot, benchmark_assessment.hint)
+                command_id = normalized_intent.get("command_id")
+                command_text = normalized_intent.get("voice_text")
+                commands = ([{"id": command_id, "text": command_text}]
+                            if isinstance(command_id, str) and command_id.strip()
+                            and isinstance(command_text, str) and command_text.strip()
+                            else [])
+                multimodal_capture.observe(snapshot, benchmark_assessment.hint,
+                                           commands=commands)
             sim_time = snapshot.timestamp.elapsed_seconds - start_sim_time
             observed_delta_s = max(
                 1e-6, snapshot.timestamp.elapsed_seconds - previous_snapshot_time

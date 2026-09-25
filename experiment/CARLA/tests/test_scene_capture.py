@@ -66,7 +66,8 @@ def test_standard_capture_replays_only_policy_telemetry(tmp_path, monkeypatch):
     capture.start()
     frame = capture.phase_frame + 1
     snapshot = NS(frame=frame, timestamp=NS(elapsed_seconds=.35))
-    assert capture.observe(snapshot, 1400.0)
+    assert capture.observe(snapshot, 1400.0,
+                           commands=[{"id": "c01", "text": "Keep lane."}])
     capture.close()
 
     dataset = SynchronizedReplayDataset(capture.root, require_calibration=True)
@@ -77,6 +78,11 @@ def test_standard_capture_replays_only_policy_telemetry(tmp_path, monkeypatch):
     assert "route_s_m" not in replay.vehicle_state
     assert "actor_id" not in replay.vehicle_state
     assert "lidar_raw" in replay.artifacts
+    assert replay.command_context == {
+        "source": "scene_schedule_not_model_parse",
+        "commands": [{"id": "c01", "text": "Keep lane."}],
+    }
+    assert replay.driving_intent is None
     assert json.loads((capture.root / "capture_summary.json").read_text())["recorded_frames"] == 1
 
 

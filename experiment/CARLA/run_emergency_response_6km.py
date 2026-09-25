@@ -2219,6 +2219,7 @@ def run_simulation(
     ego_route_plan: Sequence[tuple[Any, Any]] | None = None,
     benchmark_assessment: Any | None = None,
     multimodal_capture: Any | None = None,
+    scheduled_commands: Sequence[dict[str, Any]] = (),
 ) -> bool:
     tick_count: int | None = None
     if duration_s > 0.0:
@@ -2253,7 +2254,15 @@ def run_simulation(
         if multimodal_capture is not None:
             if benchmark_assessment is None:
                 raise RuntimeError('multimodal capture requires independent assessment')
-            multimodal_capture.observe(world.get_snapshot(), benchmark_assessment.hint)
+            progress_m = benchmark_assessment.hint
+            active_commands = [
+                {'id': command['id'], 'text': command['text']}
+                for command in scheduled_commands
+                if float(command['trigger_progress_m']) <= progress_m
+                < float(command['end_progress_m'])
+            ]
+            multimodal_capture.observe(world.get_snapshot(), progress_m,
+                                       commands=active_commands)
         try:
             ego_location = ego.get_location()
         except RuntimeError as error:
@@ -2896,6 +2905,7 @@ def main(
             ego_route_plan=ego_plan,
             benchmark_assessment=benchmark_assessment,
             multimodal_capture=multimodal_capture,
+            scheduled_commands=runtime_config["voice_input"]["commands"],
         )
 
         vehicle_state_recorder.close()

@@ -75,6 +75,8 @@ python -m benchmark.report outputs/scene2_full/benchmark/summary.json --output o
 不依赖模型权重的标准传感器数据可在三个正式入口使用`--record-multimodal`
 与`--benchmark-assessment`录制；场景二原有该开关，场景一、三现在也支持。
 场景一、三的标准传感器文件位于各自运行目录的`multimodal/`，不与演示相机共用`rgb/`。
+其`command_context.jsonl`逐帧记录当前场景指令文本，无指令时为空；这是场景调度
+记录，不是模型解析产物，也不代表执行成功。
 例如场景一：
 
 ```powershell

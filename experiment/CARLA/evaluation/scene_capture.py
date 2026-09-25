@@ -55,6 +55,7 @@ class SceneCaptureSession:
         self.phase_frame: int | None = None
         self._states = None
         self._bundles = None
+        self._commands = None
         self.recorded = 0
         self._failed = False
         self._closed = False
@@ -62,7 +63,8 @@ class SceneCaptureSession:
     def start(self) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
         for name in ("world_state.jsonl", "multimodal_frame_bundle.jsonl",
-                     "sensor_calibration.json", "interface_manifest.json", "capture_summary.json"):
+                     "command_context.jsonl", "sensor_calibration.json",
+                     "interface_manifest.json", "capture_summary.json"):
             if (self.root / name).exists():
                 raise FileExistsError(f"capture output already exists: {self.root / name}")
         try:
@@ -75,12 +77,13 @@ class SceneCaptureSession:
                 raise RuntimeError(f"{self.scene_id}: sensor cadence did not stabilize: {observed}")
             self._states = (self.root / "world_state.jsonl").open("x", encoding="utf-8")
             self._bundles = (self.root / "multimodal_frame_bundle.jsonl").open("x", encoding="utf-8")
+            self._commands = (self.root / "command_context.jsonl").open("x", encoding="utf-8")
             (self.root / "interface_manifest.json").write_text(json.dumps({
                 "scene_id": self.scene_id,
                 "schema_version": "carla_exact_frame_capture/1.0",
                 "sensor_stride_frames": self.stride,
                 "phase_frame": self.phase_frame,
-                "driving_intent_source": "not_recorded; command schedule is separate",
+                "driving_intent_source": "not_recorded; current scheduled text is in command_context.jsonl",
                 "evaluator_truth_location": "separate run benchmark/episode_truth.jsonl",
                 "policy_state_contract": "ego_telemetry_allowlist/1.0",
             }, indent=2) + "\n", encoding="utf-8")
@@ -88,8 +91,10 @@ class SceneCaptureSession:
             self.close()
             raise
 
-    def observe(self, snapshot: Any, route_s_m: float) -> bool:
-        if self.phase_frame is None or self._states is None or self._bundles is None:
+    def observe(self, snapshot: Any, route_s_m: float,
+                commands: list[dict[str, str]] | None = None) -> bool:
+        if (self.phase_frame is None or self._states is None or self._bundles is None
+                or self._commands is None):
             raise RuntimeError("capture session is not started")
         frame = int(snapshot.frame)
         if frame < self.phase_frame or (frame - self.phase_frame) % self.stride:
@@ -138,11 +143,27 @@ class SceneCaptureSession:
         bundle["artifacts"]["lidar_raw"] = {
             "path": f"lidar/{frame:08d}.xyzi.bin", "encoding": "float32_le_xyzi",
         }
+        active_commands = list(commands or [])
+        if any(not isinstance(item, dict) or not isinstance(item.get("id"), str)
+               or not item["id"].strip()
+               or not isinstance(item.get("text"), str) or not item["text"].strip()
+               for item in active_commands):
+            self._failed = True
+            raise ValueError("invalid current command context")
+        command_context = {
+            "simulation_frame": frame, "timestamp_s": state["timestamp_s"],
+            "source": "scene_schedule_not_model_parse",
+            "commands": [{"id": item["id"], "text": item["text"]}
+                         for item in active_commands],
+        }
         try:
             self._states.write(json.dumps(state, allow_nan=False) + "\n")
             self._bundles.write(json.dumps(bundle, allow_nan=False) + "\n")
+            self._commands.write(json.dumps(command_context, ensure_ascii=False,
+                                            allow_nan=False) + "\n")
             self._states.flush()
             self._bundles.flush()
+            self._commands.flush()
         except Exception:
             self._failed = True
             raise
@@ -159,6 +180,9 @@ class SceneCaptureSession:
         if self._bundles is not None:
             self._bundles.close()
             self._bundles = None
+        if self._commands is not None:
+            self._commands.close()
+            self._commands = None
         errors = self.registry.close()
         if self.phase_frame is not None:
             (self.root / "capture_summary.json").write_text(json.dumps({
