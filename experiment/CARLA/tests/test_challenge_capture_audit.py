@@ -8,7 +8,7 @@ from evaluation.model_rig_capture import ModelRigCapture
 from evaluation.sensor_replay import DatasetValidationError
 
 
-def make_run(root, scene, *, truth_frame=11, truth_time=.55):
+def make_run(root, scene, *, truth_frame=11, truth_time=.55, missing_sensor=None):
     inputs = root / "model_inputs"
     writer = ModelRigCapture(inputs)
     camera = SimpleNamespace(type_id="sensor.camera.rgb", attributes={
@@ -17,12 +17,22 @@ def make_run(root, scene, *, truth_frame=11, truth_time=.55):
     mounting = SimpleNamespace(get_matrix=lambda: [
         [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1],
     ])
-    writer.register("front", camera, mounting)
-    writer.record("front", SimpleNamespace(frame=10, timestamp=.5,
-                  raw_data=bytes([3, 2, 1, 255])), "uint8_bgra", width=1, height=1)
+    cameras = ("front", "left", "right", "rear")
+    for name in cameras:
+        if name == missing_sensor:
+            continue
+        writer.register(name, camera, mounting)
+        writer.record(name, SimpleNamespace(frame=10, timestamp=.5,
+                      raw_data=bytes([3, 2, 1, 255])), "uint8_bgra", width=1, height=1)
+    if missing_sensor != "lidar":
+        lidar = SimpleNamespace(type_id="sensor.lidar.ray_cast", attributes={})
+        writer.register("lidar", lidar, mounting)
+        writer.record("lidar", SimpleNamespace(frame=10, timestamp=.5,
+                      raw_data=bytes(16)), "float32_le_xyzi")
     writer.record_decision(decision={"simulation_frame": 11, "answer": "SECRET"},
         context={"timestamp_s": .55, "vehicle_state_tensor": [[1]]},
-        camera_names=["front"], sensor_frame=10, lidar_enabled=False,
+        camera_names=[name for name in cameras if name != missing_sensor],
+        sensor_frame=10, lidar_enabled=missing_sensor != "lidar",
         radar_observations={})
     writer.close()
     assessment = root / "benchmark"
@@ -70,3 +80,12 @@ def test_audit_requires_real_recorded_frames(tmp_path):
              for scene in ("scene_1", "scene_2", "scene_3")}
     with pytest.raises(DatasetValidationError, match="need"):
         audit_captures(roots, 1000)
+
+
+@pytest.mark.parametrize("missing_sensor", ("left", "lidar"))
+def test_audit_rejects_incomplete_model_modalities(tmp_path, missing_sensor):
+    roots = {scene: make_run(tmp_path / scene, scene,
+             missing_sensor=missing_sensor if scene == "scene_2" else None)
+             for scene in ("scene_1", "scene_2", "scene_3")}
+    with pytest.raises(DatasetValidationError, match="incomplete four-view"):
+        audit_captures(roots, 3)

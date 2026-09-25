@@ -13,6 +13,7 @@ from evaluation.sensor_replay import DatasetValidationError, _load_jsonl
 
 
 SCENES = ("scene_1", "scene_2", "scene_3")
+REQUIRED_MODEL_SENSORS = ("front", "left", "right", "rear", "lidar")
 
 
 def _file_hash(path: Path) -> str:
@@ -64,6 +65,20 @@ def audit_scene(scene: str, run_root: Path, count: int) -> dict:
     inputs = ModelRigReplayDataset(root / "model_inputs")
     frames = list(inputs)
     for frame in frames:
+        if not set(REQUIRED_MODEL_SENSORS).issubset(frame.artifacts):
+            raise DatasetValidationError(
+                f"{scene}: incomplete four-view and LiDAR input at decision frame {frame.simulation_frame}"
+            )
+        sensor_frames = {
+            frame.sensor_metadata[name]["simulation_frame"] for name in REQUIRED_MODEL_SENSORS
+        }
+        sensor_times = [
+            float(frame.sensor_metadata[name]["timestamp_s"]) for name in REQUIRED_MODEL_SENSORS
+        ]
+        if len(sensor_frames) != 1 or max(sensor_times) - min(sensor_times) > 1e-3:
+            raise DatasetValidationError(
+                f"{scene}: multimodal sensors are not synchronized at decision frame {frame.simulation_frame}"
+            )
         record = truth.get(frame.simulation_frame)
         if record is None or not math.isclose(
             float(record["sim_time_s"]), frame.timestamp_s, rel_tol=0.0, abs_tol=1e-3
