@@ -793,6 +793,10 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
                 scene_events.BACKGROUND_TRAFFIC_PLAN
             )
         }
+        available.update(
+            (lane_id, s_m)
+            for lane_id, s_m, _ in scene_events.BACKGROUND_TRAFFIC_PLAN[:4]
+        )
         carla_map = mock.Mock()
         carla_map.get_waypoint_xodr.side_effect = (
             lambda _road_id, lane_id, s_m: (
@@ -837,17 +841,15 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         ]
         self.assertEqual(
             actual_lane_ids,
-            [-2] * len(scene_events.BACKGROUND_TRAFFIC_PLAN),
+            [-3, -1, -3, -1] + [-2] * (len(scene_events.BACKGROUND_TRAFFIC_PLAN) - 4),
         )
 
-    def test_background_traffic_does_not_occupy_initial_route(self):
-        first_background_s_m = min(
-            s_m
-            for _lane_id, s_m, _speed_kmh in (
-                scene_events.BACKGROUND_TRAFFIC_PLAN
-            )
+    def test_initial_background_traffic_uses_adjacent_lane(self):
+        self.assertEqual(
+            [lane_id for lane_id, _, _ in scene_events.BACKGROUND_TRAFFIC_PLAN[:4]],
+            [-3, -1, -3, -1],
         )
-        self.assertGreater(first_background_s_m, 1550.0)
+        self.assertLess(scene_events.BACKGROUND_TRAFFIC_PLAN[0][1], 250.0)
 
     def test_worker_spawn_retries_equivalent_pose(
         self,

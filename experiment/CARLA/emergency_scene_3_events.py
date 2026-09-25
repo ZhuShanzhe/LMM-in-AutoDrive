@@ -47,10 +47,10 @@ BACKGROUND_VEHICLE_BLUEPRINT_IDS = (
 )
 
 BACKGROUND_TRAFFIC_PLAN = (
-    (-2, 1800.0, 24.0),
-    (-1, 1950.0, 22.0),
-    (-2, 2100.0, 26.0),
-    (-1, 2250.0, 25.0),
+    (-3, 70.0, 28.0),
+    (-1, 90.0, 30.0),
+    (-3, 190.0, 29.0),
+    (-1, 210.0, 27.0),
     (-1, 2400.0, 23.0),
     (-1, 2550.0, 27.0),
     (-1, 2700.0, 24.0),
@@ -571,9 +571,34 @@ class EmergencySceneActorRuntime:
         print(
             "BACKGROUND TRAFFIC ARMED | "
             f"planned={len(self._background_plan)} | "
-            f"spawn_behind=80.0 m | reserved_for_gap="
+            f"early_adjacent_lanes=4 | spawn_behind=80.0 m | reserved_for_gap="
             f"{reserved_gap_vehicle_count} | configured={expected_private_count}"
         )
+
+        for plan in self._background_plan[:4]:
+            role_name = str(plan["role_name"])
+            lane_id = int(plan["lane_id"])
+            self._background_spawned_roles.add(role_name)
+            if self._map.get_waypoint_xodr(1, lane_id, float(plan["s_m"])) is None:
+                print(f"BACKGROUND EARLY SPAWN SKIPPED | role={role_name} | no adjacent lane")
+                continue
+            try:
+                actor = self._spawn_moving_vehicle(
+                    actor_config={
+                        "role_name": role_name,
+                        "lane_id": lane_id,
+                        "s_m": float(plan["s_m"]),
+                    },
+                    blueprint_ids=plan["blueprint_ids"],
+                    target_speed_kmh=float(plan["speed_kmh"]),
+                    color=str(plan["color"]),
+                    maximum_spawn_attempts=4,
+                )
+            except RuntimeError as error:
+                print(f"BACKGROUND EARLY SPAWN SKIPPED | role={role_name} | {error}")
+                continue
+            self._background_vehicles.append(actor)
+            print(f"BACKGROUND EARLY SPAWNED | role={role_name} | lane={lane_id}")
 
     def _retire_background_traffic(
         self,
