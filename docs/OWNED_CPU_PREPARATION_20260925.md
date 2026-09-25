@@ -58,4 +58,4 @@ GPU 环境依赖补充与现有 PyTorch 对应的 torchvision，未改动服务�
 - `owned_isolated_runtime_v2/report.json`：修复后独立包检查及优化对比。
 - `owned_isolated.log`：首次隔离加载失败，保留故障记录。
 
-2026-09-25 的实现与验证在服务器独立审核工作区 `challenge-review-20260925` 完成。2026-09-26 按负责人要求整理进入挑战分支提交；本次提交不含模型、缓存或临时测试包。提交时服务器 SSH 端口拒绝连接，合并在本地独立工作区进行，服务器工作区尚未同步本次提交。
+2026-09-25 的实现与验证在服务器独立审核工作区 `challenge-review-20260925` 完成。2026-09-26 已将代码提交 `4365199` 快进合并并推送至 `challenge-track`；提交不含模型、缓存或临时测试包。服务器开机后，联合工作区 `/root/autodl-tmp/worktrees/challenge-track` 已同步该提交。合并后再次回归：360 项测试、144 项子测试通过，40.78 秒，记录为 `merged_owned_tests_0926.log`。未修改 `main`、`zsz` 或默认权重。
