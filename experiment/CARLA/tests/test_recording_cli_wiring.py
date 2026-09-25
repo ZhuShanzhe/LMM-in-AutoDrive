@@ -16,3 +16,12 @@ def test_recording_option_passed_only_to_universal_controller(name):
     value=next(k.value for k in calls[0].keywords if k.arg=='sensor_recording_dir')
     assert isinstance(value,ast.IfExp)
     assert isinstance(value.test,ast.Attribute) and value.test.attr=='vla_record_sensors'
+
+
+@pytest.mark.parametrize('name', ['run_control_experiment.py', 'run_emergency_response_6km.py'])
+def test_non_model_multimodal_capture_uses_independent_assessment(name):
+    root=Path(__file__).resolve().parents[1]
+    source=(root/name).read_text(encoding='utf-8')
+    assert "--record-multimodal requires --benchmark-assessment" in source
+    assert 'multimodal_capture.observe(' in source
+    assert 'multimodal_capture.close()' in source

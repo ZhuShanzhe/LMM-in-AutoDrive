@@ -11,7 +11,7 @@ from evaluation.challenge_capture_audit import (
 from evaluation.model_rig_capture import ModelRigCapture
 from evaluation.model_rig_replay import ModelRigReplayDataset
 from evaluation.replay_benchmark import run
-from evaluation.sensor_replay import DatasetValidationError
+from evaluation.sensor_replay import DatasetValidationError, SynchronizedReplayDataset
 
 
 def make_run(root, scene, *, truth_frame=11, truth_time=.55, missing_sensor=None,
@@ -59,6 +59,46 @@ def make_run(root, scene, *, truth_frame=11, truth_time=.55, missing_sensor=None
                     "sim_time_s": truth_time + .5 * index,
                     "private_actor_truth": "SECRET"}) + "\n"
         for index in range(decisions)), encoding="utf-8")
+    return root
+
+
+def make_standard_run(root, scene, *, truth_x=1, time_offset=0, nested=False):
+    sensor_root = root / "multimodal" if nested else root
+    sensor_root.mkdir(parents=True)
+    sensors = ("front_rgb", "left_rgb", "right_rgb", "rear_rgb", "lidar")
+    (sensor_root / "sensor_calibration.json").write_text(json.dumps({
+        "schema_version": "carla_sensor_calibration/1.0",
+        "sensors": {name: {} for name in sensors},
+    }))
+    artifacts = {}
+    for name in sensors:
+        path = (f"rgb/{name}/00000011.png" if name != "lidar" else "lidar/00000011.ply")
+        file = sensor_root / path
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_bytes(b"sensor")
+        artifacts[name] = {"path": path}
+    (sensor_root / "lidar/00000011.xyzi.bin").write_bytes(bytes(16))
+    artifacts["lidar_raw"] = {"path": "lidar/00000011.xyzi.bin", "encoding": "float32_le_xyzi"}
+    (sensor_root / "multimodal_frame_bundle.jsonl").write_text(json.dumps({
+        "simulation_frame": 11, "scene_id": scene, "timestamp_s": .55,
+        "status": "COMPLETE", "synchronization": {"exact": True},
+        "artifacts": artifacts,
+    }) + "\n")
+    (sensor_root / "world_state.jsonl").write_text(json.dumps({
+        "simulation_frame": 11, "timestamp_s": .55,
+        "ego": {"actor_id": 17, "speed_kmh": 35,
+                 "location": {"x": 1, "y": 2, "z": 3}},
+    }) + "\n")
+    assessment = root / "benchmark"
+    assessment.mkdir()
+    (assessment / "manifest.json").write_text(json.dumps({
+        "scene_id": scene, "source_sha256": "a" * 64,
+    }))
+    (assessment / "run_outcome.json").write_text(json.dumps({"status": "CHECK_FAILED"}))
+    (assessment / "episode_truth.jsonl").write_text(json.dumps({
+        "frame": 11, "sim_time_s": .55 + time_offset,
+        "actors": {"17": {"x": truth_x, "y": 2, "z": 3}},
+    }) + "\n")
     return root
 
 
@@ -156,3 +196,56 @@ def test_task_interval_selection_requires_real_route_coverage(scene):
     assert set(chosen) == {task.task_id for task in catalog.tasks}
     with pytest.raises(DatasetValidationError, match=catalog.tasks[-1].task_id):
         _task_coverage_indices(scene, frames[:-1], truth, catalog.source_sha256)
+
+
+def test_standard_sensor_selection_is_not_labeled_model_input(tmp_path):
+    roots = {scene: make_standard_run(tmp_path / scene, scene, time_offset=10)
+             for scene in ("scene_1", "scene_2", "scene_3")}
+    report = audit_captures(roots, 3, require_task_coverage=False,
+                            capture_format="synchronized")
+    assert report["capture_format"] == "synchronized"
+    assert all(not scene["model_input_equivalent"] for scene in report["scenes"])
+    path = tmp_path / "standard_selection.json"
+    path.write_text(json.dumps(report))
+    dataset = SynchronizedReplayDataset(roots["scene_1"], require_calibration=True)
+
+    class Adapter:
+        def predict(self, frame):
+            return {"speed": frame.vehicle_state["speed_kmh"]}
+
+    summary = run(dataset, Adapter(), tmp_path / "standard_replay", adapter_id="fixture",
+                  adapter_config={}, selection_path=path, scene_id="scene_1")
+    assert summary["status"] == "COMPLETED"
+    assert summary["evaluation_selection"]["successful_outputs"] == 1
+
+
+def test_standard_capture_rejects_wrong_truth_pose(tmp_path):
+    roots = {scene: make_standard_run(tmp_path / scene, scene,
+             truth_x=5 if scene == "scene_2" else 1)
+             for scene in ("scene_1", "scene_2", "scene_3")}
+    with pytest.raises(DatasetValidationError, match="ego pose"):
+        audit_captures(roots, 3, require_task_coverage=False,
+                       capture_format="synchronized")
+
+
+def test_standard_capture_rejects_invalid_session_summary(tmp_path):
+    roots = {scene: make_standard_run(tmp_path / scene, scene)
+             for scene in ("scene_1", "scene_2", "scene_3")}
+    (roots["scene_1"] / "capture_summary.json").write_text(json.dumps({
+        "status": "INVALID", "recorded_frames": 1,
+    }))
+    with pytest.raises(DatasetValidationError, match="marked invalid"):
+        audit_captures(roots, 3, require_task_coverage=False,
+                       capture_format="synchronized")
+
+
+def test_nested_standard_capture_keeps_assessment_outside_sensor_root(tmp_path):
+    roots = {scene: make_standard_run(tmp_path / scene, scene, nested=True)
+             for scene in ("scene_1", "scene_2", "scene_3")}
+    report = audit_captures(roots, 3, require_task_coverage=False,
+                            capture_format="synchronized")
+    path = tmp_path / "selection.json"
+    path.write_text(json.dumps(report))
+    dataset = SynchronizedReplayDataset(roots["scene_3"] / "multimodal")
+    assert validate_replay_selection(path, "scene_3", dataset,
+                                     dataset.integrity_manifest()) == {11}

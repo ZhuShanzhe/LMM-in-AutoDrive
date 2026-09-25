@@ -215,8 +215,8 @@ def main(argv=None) -> int:
         parser.error("output directory already exists")
     if args.repeat < 1 or not math.isfinite(args.deadline_ms) or args.deadline_ms <= 0 or (args.max_frames is not None and args.max_frames <= 0):
         parser.error("deadline and frame limit must be positive finite values")
-    if args.selection is not None and (args.format != "model-rig" or args.scene is None or args.max_frames is not None):
-        parser.error("--selection requires --format model-rig, --scene and full-sequence replay")
+    if args.selection is not None and (args.scene is None or args.max_frames is not None):
+        parser.error("--selection requires --scene and full-sequence replay")
     if args.format == "model-rig":
         from evaluation.model_rig_replay import ModelRigReplayDataset
         dataset = ModelRigReplayDataset(args.dataset)

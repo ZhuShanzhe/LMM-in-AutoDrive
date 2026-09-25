@@ -72,15 +72,30 @@ python -m benchmark.report outputs/scene2_full/benchmark/summary.json --output o
 
 ### 核对三场景同源数据
 
-三个场景先分别完成模型传感器录制（`--vla-record-sensors`）和独立任务评测
-（`--benchmark-assessment`），再对实际采集的目录运行：
+不依赖模型权重的标准传感器数据可在三个正式入口使用`--record-multimodal`
+与`--benchmark-assessment`录制；场景二原有该开关，场景一、三现在也支持。
+场景一、三的标准传感器文件位于各自运行目录的`multimodal/`，不与演示相机共用`rgb/`。
+例如场景一：
 
 ```powershell
-python -m evaluation.challenge_capture_audit --scene-1 outputs/scene1_full --scene-2 outputs/scene2_full --scene-3 outputs/scene3_full --frames 1000 --output outputs/challenge_1000_frames.json
+python run_control_experiment.py basic_voice_urban_5km --scenario-config configs/basic_voice_urban_5km.json --decision-source voice_schedule --benchmark-assessment --record-multimodal --stop-when-goal-reached --output-dir outputs/scene1_full
 ```
 
-审计要求每场景有足够的模型决策帧、同一传感器帧的四视角与 LiDAR，
-且每个决策帧均有同帧、同时间的独立仿真真值；
+三个标准采集目录齐备后使用`--format synchronized`生成索引；这只是标准传感器数据，
+不应称作模型实际消费输入，也没有伪造DrivingIntent：
+
+```powershell
+python -m evaluation.challenge_capture_audit --format synchronized --scene-1 outputs/scene1_full --scene-2 outputs/scene2_full --scene-3 outputs/scene3_full --frames 1000 --output outputs/challenge_1000_standard.json
+```
+
+真实VLA运行则分别启用`--vla-record-sensors`和独立任务评测，再对`model_inputs/`
+采集运行原生输入审计：
+
+```powershell
+python -m evaluation.challenge_capture_audit --format model-rig --scene-1 outputs/scene1_vla --scene-2 outputs/scene2_vla --scene-3 outputs/scene3_vla --frames 1000 --output outputs/challenge_1000_model.json
+```
+
+审计要求每场景有足够的同步帧、四视角与 LiDAR，且有对应的独立仿真真值；
 输出三个场景的采集指纹、评测状态及任务区间覆盖加均匀抽样的帧索引。
 某项任务路段没有模型输入帧时会拒绝生成正式索引；未采集到的数据不会补造。
 索引用于指标抽样；有状态模型必须从各自采集的完整原序列回放，不能直接跳帧推理。

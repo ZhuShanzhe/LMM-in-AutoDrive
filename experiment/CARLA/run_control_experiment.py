@@ -415,6 +415,8 @@ def parse_args():
     parser.add_argument('--benchmark-assessment', action='store_true', help='Record independent scene_1 task assessment')
     parser.add_argument('--benchmark-task', default='all', help='Assessment target ID or activation-order number; does not change driving route')
     parser.add_argument('--vla-record-sensors', action='store_true', help='Save lossless actual VLA sensor inputs for offline replay')
+    parser.add_argument('--record-multimodal', action='store_true',
+                        help='Record exact-frame four-view RGB, LiDAR and ego state without requiring VLA')
     parser.add_argument('--benchmark-speed-limit-guard', action='store_true',
                         help='Cap configured voice-schedule baseline speed at the reported vehicle limit')
     parser.add_argument('--benchmark-traffic-guard', action='store_true',
@@ -578,6 +580,8 @@ def parse_args():
     validate_assessment_args(args, 'scene_1')
     if args.vla_record_sensors and args.decision_source != 'vla_scene_bridge':
         parser.error('--vla-record-sensors requires --decision-source vla_scene_bridge')
+    if args.record_multimodal and not args.benchmark_assessment:
+        parser.error('--record-multimodal requires --benchmark-assessment for independent truth')
     if (args.benchmark_speed_limit_guard or args.benchmark_traffic_guard) and (
         args.decision_source != 'voice_schedule' or not args.benchmark_assessment
     ):
@@ -696,6 +700,7 @@ def main():
     scenario.fixed_delta_s = args.fixed_delta_s
     monitor = None
     benchmark_assessment = None
+    multimodal_capture = None
     camera = None
     scene_capture = None
     live_perception = None
@@ -948,6 +953,12 @@ def main():
         for event in call_scenario_method(scenario, "drain_event_log", []):
             logger.log_event(event)
         start_location = ego.get_location()
+        if args.record_multimodal:
+            from evaluation.scene_capture import SceneCaptureSession
+            multimodal_capture = SceneCaptureSession(
+                world, ego, Path(output_dir)/'multimodal', 'scene_1', args.fixed_delta_s,
+            )
+            multimodal_capture.start()
         if args.benchmark_assessment:
             from benchmark.episode import attach_episode
             benchmark_assessment = attach_episode('scene_1',scenario.route_manager.route,world,ego,
@@ -955,7 +966,8 @@ def main():
                 run_metadata=dict(decision_source=args.decision_source,
                                   policy_source='VLA_MODEL' if args.decision_source=='vla_scene_bridge' else 'NON_VLA_CONTROL',
                                   target_speed_kmh=args.target_speed_kmh,
-                                  sensor_recording=bool(args.vla_record_sensors)))
+                                  sensor_recording=bool(args.vla_record_sensors),
+                                  standard_multimodal_recording=bool(args.record_multimodal)))
         previous_location = start_location
         travelled_distance_m = 0.0
         start_sim_time = world.get_snapshot().timestamp.elapsed_seconds
@@ -1097,6 +1109,8 @@ def main():
                         normalized_intent['baseline_execution_feedback']=feedback
             if benchmark_assessment is not None:
                 benchmark_assessment.observe(snapshot)
+            if multimodal_capture is not None:
+                multimodal_capture.observe(snapshot, benchmark_assessment.hint)
             sim_time = snapshot.timestamp.elapsed_seconds - start_sim_time
             observed_delta_s = max(
                 1e-6, snapshot.timestamp.elapsed_seconds - previous_snapshot_time
@@ -1314,6 +1328,8 @@ def main():
         print(metrics)
     finally:
         from benchmark.episode import finish_episode
+        if multimodal_capture is not None:
+            multimodal_capture.close()
         assessment_exit_code=finish_episode(benchmark_assessment)
         if unified_vla is not None:
             try:

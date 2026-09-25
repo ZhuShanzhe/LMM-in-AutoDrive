@@ -2218,6 +2218,7 @@ def run_simulation(
     ego_controller: Any | None = None,
     ego_route_plan: Sequence[tuple[Any, Any]] | None = None,
     benchmark_assessment: Any | None = None,
+    multimodal_capture: Any | None = None,
 ) -> bool:
     tick_count: int | None = None
     if duration_s > 0.0:
@@ -2249,6 +2250,10 @@ def run_simulation(
             if snapshot.frame != frame:
                 raise RuntimeError('benchmark snapshot does not match world tick')
             benchmark_assessment.observe(snapshot)
+        if multimodal_capture is not None:
+            if benchmark_assessment is None:
+                raise RuntimeError('multimodal capture requires independent assessment')
+            multimodal_capture.observe(world.get_snapshot(), benchmark_assessment.hint)
         try:
             ego_location = ego.get_location()
         except RuntimeError as error:
@@ -2420,11 +2425,15 @@ def main(
     parser.add_argument('--benchmark-assessment', action='store_true', help='Record independent scene_3 task assessment')
     parser.add_argument('--benchmark-task', default='all', help='Assessment target ID or activation-order number; does not change driving route')
     parser.add_argument('--vla-record-sensors', action='store_true', help='Save lossless actual VLA sensor inputs for offline replay')
+    parser.add_argument('--record-multimodal', action='store_true',
+                        help='Record exact-frame four-view RGB, LiDAR and ego state without requiring VLA')
     args = parser.parse_args(argv)
     from benchmark.selection import validate_assessment_args
     validate_assessment_args(args, 'scene_3')
     if args.vla_record_sensors and args.ego_controller != 'vla-route-pid':
         parser.error('--vla-record-sensors requires --ego-controller vla-route-pid')
+    if args.record_multimodal and not args.benchmark_assessment:
+        parser.error('--record-multimodal requires --benchmark-assessment for independent truth')
     try:
         validate_args(args)
     except ValueError as error:
@@ -2495,6 +2504,7 @@ def main(
     route_context: Town05RouteContext | None = None
     result = 1
     benchmark_assessment = None
+    multimodal_capture = None
 
     try:
         client = carla.Client(
@@ -2847,13 +2857,20 @@ def main(
             )
 
         world.tick()
+        if args.record_multimodal:
+            from evaluation.scene_capture import SceneCaptureSession
+            multimodal_capture = SceneCaptureSession(
+                world, ego, output_dir/'multimodal', 'scene_3', args.fixed_delta_seconds,
+            )
+            multimodal_capture.start()
         if args.benchmark_assessment:
             from benchmark.episode import attach_episode
             benchmark_assessment = attach_episode('scene_3',ego_plan,world,ego,
                 output_dir/'benchmark',runtime_config_path,task_selector=args.benchmark_task,
                 run_metadata=dict(traffic_seed=args.seed,controller=args.ego_controller,
                                   policy_source='VLA_MODEL' if args.ego_controller=='vla-route-pid' else 'NON_VLA_CONTROL',
-                                  sensor_recording=bool(args.vla_record_sensors)))
+                                  sensor_recording=bool(args.vla_record_sensors),
+                                  standard_multimodal_recording=bool(args.record_multimodal)))
         route_completed = run_simulation(
             world=world,
             carla_map=route_context.adapter,
@@ -2878,6 +2895,7 @@ def main(
             ego_controller=ego_controller,
             ego_route_plan=ego_plan,
             benchmark_assessment=benchmark_assessment,
+            multimodal_capture=multimodal_capture,
         )
 
         vehicle_state_recorder.close()
@@ -3163,6 +3181,8 @@ def main(
         result = 1
     finally:
         from benchmark.episode import finish_episode
+        if multimodal_capture is not None:
+            multimodal_capture.close()
         assessment_exit_code=finish_episode(benchmark_assessment)
         if result==0:
             result=assessment_exit_code

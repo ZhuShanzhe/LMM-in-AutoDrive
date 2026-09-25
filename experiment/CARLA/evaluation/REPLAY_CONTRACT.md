@@ -166,12 +166,19 @@ capture_summary记录成功不代表已经完成完整模型离线重放；仍�
 
 ## 三场景同源抽样对比
 
-在三个正式运行目录均有`model_inputs/`和`benchmark/`后，运行
+模型原生格式在三个正式运行目录均有`model_inputs/`和`benchmark/`后，运行
 `python -m evaluation.challenge_capture_audit --scene-1 <场景一目录> --scene-2 <场景二目录> --scene-3 <场景三目录> --frames 1000 --output <新索引文件>`。
 审计核对四视角与LiDAR来自同一传感器帧，并与各自独立评测日志按决策帧、时间戳关联。
 不足指定帧数、缺模态、评测未收尾或真值缺帧均拒绝生成索引。索引记录各场景输入和真值
 指纹及覆盖每项任务距离区间的评测帧，再均匀补齐数量；不包含真值内容，也不证明
 特殊事件真的发生或任务已经完成。
+
+场景一、三另支持不依赖VLA权重的`--record-multimodal --benchmark-assessment`；
+与场景二原有标准采集一起，可通过上述审计加`--format synchronized`生成三场景
+标准传感器索引。该格式使用独立的四视角/LiDAR采集rig与车辆状态，
+不等价于团队VLA实际消费的模型rig，也不包含未实际产出的DrivingIntent；
+默认每10个仿真帧采样一次。标准格式回放使用`--format synchronized`和相同的
+`--selection`、`--scene`参数，仍需适配器提供模型真实预处理。
 
 模型回放时对每个场景分别执行：
 
