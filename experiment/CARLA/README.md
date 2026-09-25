@@ -67,6 +67,8 @@ python -m benchmark.report outputs/scene2_full/benchmark/summary.json --output o
 ```
 
 输出`report.md`和`report.json`；可传入多个场景的结果文件进行汇总。
+正式运行记录与报告会区分`VLA_MODEL`、`NON_VLA_CONTROL`和`EXTERNAL`；
+旧记录未声明来源时显示`UNDECLARED`，不自动算作模型结果。
 
 ### 核对三场景同源数据
 

@@ -2852,6 +2852,7 @@ def main(
             benchmark_assessment = attach_episode('scene_3',ego_plan,world,ego,
                 output_dir/'benchmark',runtime_config_path,task_selector=args.benchmark_task,
                 run_metadata=dict(traffic_seed=args.seed,controller=args.ego_controller,
+                                  policy_source='VLA_MODEL' if args.ego_controller=='vla-route-pid' else 'NON_VLA_CONTROL',
                                   sensor_recording=bool(args.vla_record_sensors)))
         route_completed = run_simulation(
             world=world,

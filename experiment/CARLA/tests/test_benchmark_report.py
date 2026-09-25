@@ -38,3 +38,24 @@ def test_report_preserves_segment_traffic_evidence(tmp_path):
     output=markdown(report)
     assert '500-1000 m' in output
     assert 'below 3=40.0%' in output
+
+
+def test_report_keeps_model_and_non_model_runs_identifiable(tmp_path):
+    from benchmark.report import markdown
+    paths = []
+    for source in ('VLA_MODEL', 'NON_VLA_CONTROL', 'EXTERNAL'):
+        path = tmp_path / (source + '.json')
+        path.write_text(json.dumps({
+            'scene_id': 'scene_2',
+            'run_metadata': {'runner': {'policy_source': source}},
+            'tasks': {'task': {'status': 'SUCCESS', 'instruction_status': 'SUCCESS'}},
+        }))
+        paths.append(path)
+    report = summarize(paths)
+    assert [row['policy_source'] for row in report['runs']] == [
+        'VLA_MODEL', 'NON_VLA_CONTROL', 'EXTERNAL',
+    ]
+    table = markdown(report)
+    assert '| Policy |' in table
+    assert '| VLA_MODEL |' in table
+    assert '| NON_VLA_CONTROL |' in table

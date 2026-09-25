@@ -1476,6 +1476,8 @@ def main() -> int:
             benchmark_assessment = attach_episode('scene_2',route,world,ego,output_dir/'benchmark',args.config,
                 initial_route_s_m=start_progress_m,task_selector=args.benchmark_task,
                 run_metadata=dict(traffic_seed=int(config['traffic']['seed']),vla_enabled=bool(vla_enabled),
+                                  policy_source=('EXTERNAL' if args.external_ego_control else
+                                                 'VLA_MODEL' if vla_enabled else 'NON_VLA_CONTROL'),
                                   external_ego_control=bool(args.external_ego_control),
                                   sensor_recording=bool(args.vla_record_sensors)))
         start_time = float(start_snapshot.timestamp.elapsed_seconds)

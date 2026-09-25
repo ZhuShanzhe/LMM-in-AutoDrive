@@ -41,8 +41,14 @@ def summarize(paths):
             denominator = len(tasks) - counts['NOT_RUN']
             verified = sum(r.get('status') == 'SUCCESS' and r.get('instruction_status') == 'SUCCESS'
                            for r in tasks.values())
+            metadata = data.get('run_metadata') or {}
+            runner = metadata.get('runner', {}) if isinstance(metadata, dict) else {}
+            source = runner.get('policy_source', 'UNDECLARED') if isinstance(runner, dict) else 'UNDECLARED'
+            if source not in {'VLA_MODEL', 'NON_VLA_CONTROL', 'EXTERNAL'}:
+                source = 'UNDECLARED'
             runs.append(dict(path=str(path), sha256=hashlib.sha256(payload).hexdigest(),
                 evidence_status='READABLE_ASSESSMENT', scene_id=data.get('scene_id'),
+                policy_source=source,
                 source_sha256=data.get('source_sha256'), map_geometry_sha256=data.get('map_geometry_sha256'),
                 route_sha256=data.get('route_sha256'),run_metadata=data.get('run_metadata'),
                 assessment_profile_sha256=data.get('assessment_profile_sha256'),
@@ -68,17 +74,17 @@ def summarize(paths):
 
 def markdown(report):
     lines=['# Independent Assessment Report', '',
-           '| Run | Scene | Eligible tasks | Criteria pass | Verified lower bound | Safety |',
-           '|---|---|---:|---:|---:|---|']
+           '| Run | Scene | Policy | Eligible tasks | Criteria pass | Verified lower bound | Safety |',
+           '|---|---|---|---:|---:|---:|---|']
     def cell(value):
         return str(value).replace('|', '\\|').replace('\n', ' ')
     def rate(value):
         return 'N/A' if value is None else f'{value:.1%}'
     for index, run in enumerate(report['runs'], 1):
         if run['evidence_status']!='READABLE_ASSESSMENT':
-            lines.append(f'| {index} | INVALID/MISSING | N/A | N/A | N/A | UNKNOWN |')
+            lines.append(f'| {index} | INVALID/MISSING | UNDECLARED | N/A | N/A | N/A | UNKNOWN |')
         else:
-            lines.append(f"| {index} | {cell(run['scene_id'])} | {run['eligible_tasks']} | "
+            lines.append(f"| {index} | {cell(run['scene_id'])} | {cell(run['policy_source'])} | {run['eligible_tasks']} | "
                          f"{rate(run['recorded_criteria_pass_rate'])} | {rate(run['verified_completion_lower_bound'])} | "
                          f"{cell(run['episode_safety'].get('status', 'UNKNOWN'))} |")
     lines.extend(['', '## Evidence'])

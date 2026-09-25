@@ -952,7 +952,9 @@ def main():
             from benchmark.episode import attach_episode
             benchmark_assessment = attach_episode('scene_1',scenario.route_manager.route,world,ego,
                 Path(output_dir)/'benchmark',scenario_config_path,task_selector=args.benchmark_task,
-                run_metadata=dict(decision_source=args.decision_source,target_speed_kmh=args.target_speed_kmh,
+                run_metadata=dict(decision_source=args.decision_source,
+                                  policy_source='VLA_MODEL' if args.decision_source=='vla_scene_bridge' else 'NON_VLA_CONTROL',
+                                  target_speed_kmh=args.target_speed_kmh,
                                   sensor_recording=bool(args.vla_record_sensors)))
         previous_location = start_location
         travelled_distance_m = 0.0
