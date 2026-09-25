@@ -13,6 +13,14 @@ import torch
 
 
 CAMERA_ORDER = ("front", "left", "right", "rear")
+
+
+def camera_rgb_tensor(rgb, width, height, *, resize=False):
+    if resize:
+        import cv2
+        rgb = cv2.resize(rgb, (width, height), interpolation=cv2.INTER_AREA)
+    return torch.from_numpy(np.ascontiguousarray(rgb)).permute(2, 0, 1)
+
 CAMERA_TRANSFORMS = {
     "front": (1.45, 0.0, 1.55, -3.0, 0.0),
     "left": (0.15, -0.65, 1.50, -2.0, -90.0),
@@ -73,7 +81,13 @@ class SynchronizedMultiviewCameraRig:
         radar_range_m: float = 80.0,
         lidar_channels: int = 32,
         available_cameras: Sequence[str] | None = None,
+        recording_dir: str | None = None,
+        recording_limits: dict | None = None,
     ) -> None:
+        self._capture = None
+        if recording_dir is not None:
+            from evaluation.model_rig_capture import ModelRigCapture
+            self._capture = ModelRigCapture(recording_dir, **dict(recording_limits or {}))
         self.width = int(width)
         self.height = int(height)
         self.front_capture_size=int(front_capture_size) if front_capture_size is not None else None
@@ -116,17 +130,18 @@ class SynchronizedMultiviewCameraRig:
                 if key != "enabled" and blueprint.has_attribute(key):
                     blueprint.set_attribute(key, str(value))
             x, y, z, pitch, yaw = CAMERA_TRANSFORMS[name]
+            mounting = carla.Transform(carla.Location(x=x, y=y, z=z),
+                                      carla.Rotation(pitch=pitch, yaw=yaw, roll=0.0))
             sensor = world.spawn_actor(
                 blueprint,
-                carla.Transform(
-                    carla.Location(x=x, y=y, z=z),
-                    carla.Rotation(pitch=pitch, yaw=yaw, roll=0.0),
-                ),
+                mounting,
                 attach_to=ego,
                 attachment_type=carla.AttachmentType.Rigid,
             )
             sensor.listen(self._callback(name))
             self.sensors.append(sensor)
+            if self._capture is not None:
+                self._capture.register(name, sensor, mounting)
         if self.enable_lidar:
             blueprint = library.find("sensor.lidar.ray_cast")
             lidar_attributes = {
@@ -139,14 +154,17 @@ class SynchronizedMultiviewCameraRig:
             for key, value in lidar_attributes.items():
                 if blueprint.has_attribute(key):
                     blueprint.set_attribute(key, value)
+            mounting = carla.Transform(carla.Location(z=2.6))
             lidar = world.spawn_actor(
                 blueprint,
-                carla.Transform(carla.Location(z=2.6)),
+                mounting,
                 attach_to=ego,
                 attachment_type=carla.AttachmentType.Rigid,
             )
             lidar.listen(self._lidar_callback)
             self.sensors.append(lidar)
+            if self._capture is not None:
+                self._capture.register("lidar", lidar, mounting)
         if self.enable_radar:
             for direction, x, yaw in (
                 ("front", 2.0, 0.0),
@@ -163,17 +181,17 @@ class SynchronizedMultiviewCameraRig:
                 for key, value in radar_attributes.items():
                     if blueprint.has_attribute(key):
                         blueprint.set_attribute(key, value)
+                mounting = carla.Transform(carla.Location(x=x, z=1.0), carla.Rotation(yaw=yaw))
                 radar = world.spawn_actor(
                     blueprint,
-                    carla.Transform(
-                        carla.Location(x=x, z=1.0),
-                        carla.Rotation(yaw=yaw),
-                    ),
+                    mounting,
                     attach_to=ego,
                     attachment_type=carla.AttachmentType.Rigid,
                 )
                 radar.listen(self._radar_callback(direction))
                 self.sensors.append(radar)
+                if self._capture is not None:
+                    self._capture.register("radar_" + direction, radar, mounting)
 
     def view_available(self, name: str) -> bool:
         return name in self.available_cameras
@@ -218,6 +236,9 @@ class SynchronizedMultiviewCameraRig:
         return torch.from_numpy(channels)
 
     def _lidar_callback(self, measurement: Any) -> None:
+        capture = getattr(self, "_capture", None)
+        if capture is not None:
+            capture.record("lidar", measurement, "float32_le_xyzi")
         frame = int(measurement.frame)
         tensor = self._rasterize_lidar(measurement)
         with self._condition:
@@ -242,6 +263,10 @@ class SynchronizedMultiviewCameraRig:
             raise ValueError("radar direction must be 'front' or 'rear'")
 
         def receive(measurement: Any) -> None:
+            capture = getattr(self, "_capture", None)
+            if capture is not None:
+                capture.record("radar_" + direction, measurement,
+                               "float32_le_velocity_azimuth_altitude_depth")
             frame = int(measurement.frame)
             candidates: list[dict[str, float]] = []
             tracking_points: list[dict[str, float]] = []
@@ -371,15 +396,15 @@ class SynchronizedMultiviewCameraRig:
 
     def _callback(self, name: str):
         def receive(image: Any) -> None:
+            capture = getattr(self, "_capture", None)
+            if capture is not None:
+                capture.record(name, image, "uint8_bgra", width=int(image.width), height=int(image.height))
             bgra = np.frombuffer(image.raw_data, dtype=np.uint8).reshape(
                 image.height, image.width, 4
             )
             rgb = np.ascontiguousarray(bgra[:, :, 2::-1])
             front_rgb=rgb if name=='front' and getattr(self,'front_capture_size',None) is not None else None
-            if front_rgb is not None:
-                import cv2
-                rgb=cv2.resize(rgb,(self.width,self.height),interpolation=cv2.INTER_AREA)
-            tensor = torch.from_numpy(rgb).permute(2, 0, 1)
+            tensor = camera_rgb_tensor(rgb, self.width, self.height, resize=front_rgb is not None)
             frame = int(image.frame)
             with self._condition:
                 if front_rgb is not None:
@@ -567,3 +592,6 @@ class SynchronizedMultiviewCameraRig:
             except RuntimeError:
                 pass
         self.sensors.clear()
+        capture = getattr(self, "_capture", None)
+        if capture is not None:
+            capture.close()

@@ -1,5 +1,43 @@
 # CARLA 自动驾驶场景仿真平台
 
+## 背景车流持续维护
+
+`FixedRouteTraffic` 新增可选的 `route_density` 模式：按测试路线前方的距离和同向车道检查缺口，
+优先回收远处背景车辆，备用容量不足时在安全位置补车。近处车辆与任务专用减速车辆不参与回收。
+路口内不补车，候选位置检查车间距离；每个维护周期最多处理两辆车，重复回收有冷却时间。
+
+`configs/basic_voice_traffic_preview.json` 是独立的基础路线交通扩展配置，保留原基础场景配置不变。
+当前初始化96个车辆候选位，总量上限128；目标巡航速度42–50 km/h，仍遵守信号灯和跟车规则。
+前方400–800米为补车检查区，350米以内禁止生命周期生成/回收操作。
+该距离保护用于减少近处突现，不等价于所有相机视角中的严格遮挡证明。
+
+```bash
+python tools/build_basic_traffic_preview.py
+python tools/preview_route_traffic.py --output outputs/traffic_preview --ffmpeg ffmpeg --speed-kmh 50
+python tools/summarize_route_traffic.py outputs/traffic_preview/traffic.jsonl
+```
+
+巡览工具沿路线移动相机，输出1080p视频、路线与配置快照、逐帧车流日志。
+汇总包括各公里区间车辆数、同向车辆数、空档时长及至少三辆车的覆盖率。
+这些是前向几何区域计数，不等同于无遮挡可见车辆数，也不代表模型闭环驾驶通过。
+路口信号灯造成的正常成队与疏散不应通过关闭交通规则消除。
+
+## 同源数据采集与回放
+
+场景运行可按同一个 CARLA `simulation_frame` 采集四路 RGB、LiDAR 和
+动态车辆状态。完整帧不允许使用相邻时刻的数据补齐。采集结果无需启动
+CARLA 即可校验和回放：
+
+```bash
+python -m evaluation.sensor_replay outputs/scene2_run \
+  --output outputs/scene2_run/replay.jsonl \
+  --integrity-manifest outputs/scene2_run/same_source_manifest.json
+```
+
+清单包含每个传感器文件和车辆状态记录的 SHA-256。原版与优化版测试只有
+引用相同的 `dataset_sha256` 才视为同源。`--speed 1` 按记录时间回放，较大
+数值用于加速回放，默认 `0` 表示不等待的离线评测。
+
 ## 挑战赛道运行范围
 
 本分支保留该模块可复用的运行接口、配置和回归代码。当前联合基准以根目录 README 和轻量 VLA 模块 README 为准；下文历史性能不是新版挑战模型成绩。

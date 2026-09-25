@@ -267,7 +267,15 @@ def parse_args() -> argparse.Namespace:
             "then exit before spawning actors."
         ),
     )
-    return parser.parse_args()
+    parser.add_argument('--benchmark-assessment', action='store_true', help='Record independent scene_2 task assessment')
+    parser.add_argument('--benchmark-task', default='all', help='Assessment target ID or activation-order number; does not change driving route')
+    parser.add_argument('--vla-record-sensors', action='store_true', help='Save lossless actual VLA sensor inputs for offline replay')
+    parser.add_argument('--benchmark-compound-driver', action='store_true',
+                        help='Explicit truth-based task-3 control baseline, not model evaluation')
+    args = parser.parse_args()
+    from benchmark.selection import validate_assessment_args
+    validate_assessment_args(args, 'scene_2')
+    return args
 
 
 def build_vla_command_schedule(
@@ -873,6 +881,28 @@ def command_event_requirements_met(
     )
 
 
+def commands_for_segment(commands, start_progress_m):
+    """Cold segment runs omit earlier commands, without claiming they ran."""
+    start=float(start_progress_m)
+    if not math.isfinite(start) or start<0:
+        raise ValueError('segment start must be finite and nonnegative')
+    selected,skipped=[],[]
+    previous=-1.0
+    identities=set()
+    for command in commands:
+        position=float(command['announce_at_m'])
+        identity=str(command['id'])
+        if not math.isfinite(position) or position<0 or position<previous or identity in identities:
+            raise ValueError('command schedule must be finite, ordered and uniquely identified')
+        previous=position
+        identities.add(identity)
+        if position<start:
+            skipped.append(identity)
+        else:
+            selected.append(command)
+    return selected,skipped
+
+
 def ready_commands_in_order(
     commands: list[Mapping[str, Any]],
     announced: set[str],
@@ -967,7 +997,14 @@ def main() -> int:
     args = parse_args()
     config_path = args.config.resolve()
     config = load_config(config_path)
+    start_progress_m = float(args.start_progress_m)
+    runtime_commands,skipped_command_ids=commands_for_segment(config['commands'],start_progress_m)
     vla_enabled = args.vla_checkpoint is not None
+    if args.vla_record_sensors and not vla_enabled:
+        raise ValueError('--vla-record-sensors requires --vla-checkpoint')
+    if args.benchmark_compound_driver and (vla_enabled or args.external_ego_control
+            or not args.benchmark_assessment or args.duration<=0 or args.start_progress_m>800):
+        raise ValueError('compound driver requires independent assessment, finite duration, start<=800, no model/external control')
     if vla_enabled and (
         args.vla_config is None or args.command_parser_model is None
     ):
@@ -1033,6 +1070,7 @@ def main() -> int:
     event_log = JsonlWriter(output_dir / "events.jsonl")
     command_log = JsonlWriter(output_dir / "commands.jsonl")
     registry = ActorRegistry()
+    benchmark_assessment = None
     client = None
     world = None
     original_settings = None
@@ -1191,7 +1229,6 @@ def main() -> int:
                 "structured voice commands do not match the planned route; "
                 "inspect route_command_audit.json"
             )
-        start_progress_m = max(0.0, float(args.start_progress_m))
         start_route_index = min(
             range(len(route_distances)),
             key=lambda index: abs(
@@ -1253,6 +1290,7 @@ def main() -> int:
             )
 
         agent = None
+        compound_driver = None
         behavior_profile = None
         agent_target_speed_kmh = None
         if not args.external_ego_control and not vla_enabled:
@@ -1286,6 +1324,11 @@ def main() -> int:
             print(
                 "BehaviorAgent autonomous tailgating lane changes: disabled"
             )
+
+        if args.benchmark_compound_driver:
+            from benchmark.compound_driver import CompoundDriver
+            compound_driver=CompoundDriver(world,ego,agent,route,route_distances,events,config['commands'],
+                                           output_dir/'compound_driver.jsonl')
 
         for _ in range(30):
             ego.apply_control(carla.VehicleControl(brake=1.0))
@@ -1376,7 +1419,7 @@ def main() -> int:
             from control.generic_route_pid import GenericRoutePID
             from universal_vla_controller import UniversalVLAController
 
-            vla_commands = build_vla_command_schedule(config)
+            vla_commands = build_vla_command_schedule({**config,'commands':runtime_commands})
             route_context_view = SimpleNamespace(
                 distances_m=route_distances,
                 tracker=tracker,
@@ -1411,6 +1454,7 @@ def main() -> int:
                 fixed_delta_seconds=float(args.fixed_delta_seconds),
                 available_cameras=("front", "left", "right", "rear"),
                 enable_lidar=True,
+                sensor_recording_dir=output_dir/'model_inputs' if args.vla_record_sensors else None,
                 default_speed_kmh=float(
                     config["route"]["target_speed_kmh"]
                 ),
@@ -1427,6 +1471,13 @@ def main() -> int:
         current_command = None
         latest_intent = None
         start_snapshot = world.get_snapshot()
+        if args.benchmark_assessment:
+            from benchmark.episode import attach_episode
+            benchmark_assessment = attach_episode('scene_2',route,world,ego,output_dir/'benchmark',args.config,
+                initial_route_s_m=start_progress_m,task_selector=args.benchmark_task,
+                run_metadata=dict(traffic_seed=int(config['traffic']['seed']),vla_enabled=bool(vla_enabled),
+                                  external_ego_control=bool(args.external_ego_control),
+                                  sensor_recording=bool(args.vla_record_sensors)))
         start_time = float(start_snapshot.timestamp.elapsed_seconds)
         frame_counter = 0
         progress_m = 0.0
@@ -1441,7 +1492,7 @@ def main() -> int:
 
             progress_m = tracker.update(ego.get_location())
             for command in ready_commands_in_order(
-                config["commands"],
+                runtime_commands,
                 announced,
                 progress_m,
                 events.states,
@@ -1489,7 +1540,7 @@ def main() -> int:
 
             if unified_vla is not None:
                 control = unified_vla.run_step()
-                ego.apply_control(control)
+                unified_vla.apply_control(control)
             elif agent is not None:
                 desired_speed_kmh = route_aware_preview_speed_kmh(
                     progress_m,
@@ -1521,7 +1572,12 @@ def main() -> int:
                     behavior_profile.max_speed = desired_speed_kmh
                     agent.set_target_speed(desired_speed_kmh)
                     agent_target_speed_kmh = desired_speed_kmh
-                control = agent.run_step()
+                if compound_driver is not None:
+                    desired_speed_kmh=compound_driver.update(snapshot,progress_m,desired_speed_kmh)
+                    behavior_profile.max_speed=desired_speed_kmh
+                    agent.set_target_speed(desired_speed_kmh)
+                    agent_target_speed_kmh=desired_speed_kmh
+                control = carla.VehicleControl(brake=1.0) if agent.done() else agent.run_step()
                 centering_now = planned_turn_window_active(
                     progress_m,
                     route_command_audit["global_maneuvers"],
@@ -1538,6 +1594,8 @@ def main() -> int:
                         )
                     ),
                 )
+                if compound_driver is not None and compound_driver.owns_plan:
+                    centering_now=False
                 lateral_error_m = 0.0
                 if centering_now:
                     correction, lateral_error_m = (
@@ -1573,10 +1631,14 @@ def main() -> int:
                     )
                     turn_centering_active = centering_now
                 control.manual_gear_shift = False
+                if compound_driver is not None:
+                    compound_driver.record_control(snapshot,control)
                 ego.apply_control(control)
 
             frame = world.tick()
             post_snapshot = world.get_snapshot()
+            if benchmark_assessment is not None:
+                benchmark_assessment.observe(post_snapshot)
             simulation_time_s = (
                 float(post_snapshot.timestamp.elapsed_seconds) - start_time
             )
@@ -1696,6 +1758,14 @@ def main() -> int:
             >= float(config["route"]["target_length_m"]),
             "route_command_audit": route_command_audit,
             "commands_announced": len(announced),
+            "segment_command_schedule": {
+                "start_progress_m": start_progress_m,
+                "mode": "cold_segment" if start_progress_m>0 else "full_route",
+                "eligible_command_ids": [str(c['id']) for c in runtime_commands],
+                "skipped_before_start_ids": skipped_command_ids,
+                "announced_ids": [str(c['id']) for c in runtime_commands if str(c['id']) in announced],
+                "restores_previous_instruction_state": False,
+            },
             "traffic_vehicles_spawned": len(traffic.vehicles),
             "ambient_walkers_spawned": len(traffic.walkers),
             "traffic_hybrid_physics": {
@@ -1741,6 +1811,13 @@ def main() -> int:
                     else "CARLA BehaviorAgent demonstration controller"
                 ),
                 "competition_metric_eligible": bool(vla_enabled),
+                "compound_baseline_task": 's2_t05_cmd_03' if compound_driver is not None else None,
+                "compound_baseline_uses_simulator_truth": compound_driver is not None,
+                "behavior_agent_executes_announced_commands": False if agent is not None else None,
+                "behavior_agent_scope": (
+                    "route_cruise_and_obstacle_response_not_compound_instruction_execution"
+                    if agent is not None else None
+                ),
             },
         }
         if vla_enabled:
@@ -1810,10 +1887,14 @@ def main() -> int:
             encoding="utf-8",
         )
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+        from benchmark.episode import finish_episode
+        assessment_exit_code=finish_episode(benchmark_assessment)
         if args.competition_run and not all(measurable_checks.values()):
-            return 2
-        return 0
+            return assessment_exit_code or 2
+        return assessment_exit_code
     finally:
+        from benchmark.episode import finish_episode
+        finish_episode(benchmark_assessment)
         if unified_vla is not None:
             try:
                 unified_vla.close()

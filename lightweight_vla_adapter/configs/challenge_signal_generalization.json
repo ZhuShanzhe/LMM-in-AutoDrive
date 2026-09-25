@@ -1,6 +1,10 @@
 {
   "schema_version": "5.0.0",
   "model_name": "phase-recovery-epoch_06",
+  "sensor_requirements": {
+    "cameras": ["front", "left", "right", "rear"],
+    "lidar": true
+  },
   "traffic_signal_observer": {
     "capture_size": 1280,
     "detector_weights": "models/pretrained/yolo11s.pt",

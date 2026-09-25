@@ -24,6 +24,7 @@ LOGICAL_CENTRE_LANE = -2
 LOGICAL_RIGHT_LANE = -3
 LOGICAL_SHOULDER_LANE = -4
 LOGICAL_SIDEWALK_LANE = -5
+LOGICAL_LEFT_ROADSIDE_LANE = -6
 
 
 def _lane_type_name(waypoint: Any | None) -> str:
@@ -75,9 +76,9 @@ def _driving_lane_family(waypoint: Any) -> list[Any]:
     return [*reversed(left), waypoint, *right]
 
 
-def _roadside_lane(waypoint: Any, lane_type: str) -> Any | None:
+def _roadside_lane(waypoint: Any, lane_type: str, sides=("right", "left")) -> Any | None:
     wanted = lane_type.lower()
-    for side in ("right", "left"):
+    for side in sides:
         current = waypoint
         method = "get_right_lane" if side == "right" else "get_left_lane"
         for _ in range(8):
@@ -149,6 +150,9 @@ class Town05RouteMapAdapter:
             )
         if logical_lane_id == LOGICAL_SIDEWALK_LANE:
             return _roadside_lane(route_waypoint, "sidewalk")
+        if logical_lane_id == LOGICAL_LEFT_ROADSIDE_LANE:
+            return _roadside_lane(route_waypoint, "shoulder", ("left",)) or _roadside_lane(
+                route_waypoint, "sidewalk", ("left",))
         raise ValueError(f"unsupported Scene 3 logical lane {logical_lane_id}")
 
     def get_waypoint_xodr(
@@ -313,11 +317,8 @@ def validate_scene3_event_anchors(
                 sample_m += 50.0
             context.adapter.validate_anchor(end_m, required_lanes)
         elif scenario == "temporary_worker_crossing":
-            lanes = {
-                int(worker[key])
-                for worker in event["workers"]
-                for key in ("start_lane_id", "destination_lane_id")
-            }
-            context.adapter.validate_anchor(distance_m, tuple(sorted(lanes)))
+            for worker in event['workers']:
+                context.adapter.validate_anchor(float(worker['start_s_m']),
+                    (int(worker['start_lane_id']),int(worker['destination_lane_id'])))
         elif scenario == "work_zone_advance_warning":
             context.adapter.validate_anchor(distance_m, (event["props"]["lane_id"],))

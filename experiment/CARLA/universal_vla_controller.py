@@ -592,6 +592,7 @@ class UniversalVLAController:
         default_speed_kmh: float = 40.0,
         hold_seconds: float = 20.0,
         modality_schema_version: str = UNIFIED_SENSOR_BATCH_SCHEMA_VERSION,
+        sensor_recording_dir: Path | None = None,
     ) -> None:
         if decision_interval_frames < 1:
             raise ValueError("decision_interval_frames must be at least 1")
@@ -620,9 +621,18 @@ class UniversalVLAController:
         self._response_latency_ms: list[float] = []
         self._sensor_to_decision_response_ms: list[float] = []
         self._stream = output_path.open("w", encoding="utf-8")
+        self._execution_journal = None
+        self._execution_log_path = output_path.with_name(output_path.stem + '_execution.jsonl')
+        from evaluation.resources import OnlineResourceJournal
+        self._resource_journal = OnlineResourceJournal(output_path)
 
         with config_path.open(encoding="utf-8") as handle:
             config = json.load(handle)
+        from control.sensor_contract import resolve_sensor_contract
+        self.sensor_contract = resolve_sensor_contract(config, available_cameras, enable_lidar)
+        recording_dir = sensor_recording_dir if sensor_recording_dir is not None else config.get('sensor_recording_dir')
+        if recording_dir is not None and Path(recording_dir).exists():
+            raise ValueError('sensor recording directory already exists: ' + str(recording_dir))
         self.teacher_force_control = bool(
             config.get("teacher_force_control", False)
         )
@@ -744,6 +754,14 @@ class UniversalVLAController:
             default_speed_kmh=float(default_speed_kmh),
             parser=self.parser,
         )
+        self.command_queue = None
+        dispatch_mode = config.get('command_dispatch_mode', 'route_latest')
+        if dispatch_mode not in ('route_latest', 'completion_serial'):
+            raise ValueError('unknown command dispatch mode')
+        if dispatch_mode == 'completion_serial':
+            from control.command_dispatch import CompletionCommandQueue
+            self.command_queue = CompletionCommandQueue(
+                self.commands, timeout_s=float(config.get('command_timeout_s', 120)))
         self.supervisor = GenericTemporalRiskSupervisor(
             TemporalRiskSupervisorConfig(hold_seconds=float(hold_seconds))
         )
@@ -756,8 +774,8 @@ class UniversalVLAController:
         self._lane_change_issued=False
         self.driving_plan=None
         self.modality_schema_version = modality_schema_version
-        self.available_cameras = tuple(available_cameras)
-        self.enable_lidar = bool(enable_lidar)
+        self.available_cameras = tuple(self.sensor_contract['cameras'])
+        self.enable_lidar = self.sensor_contract['lidar']
         self._warmup_adapter_before_ready(config)
         self.camera_rig = SynchronizedMultiviewCameraRig(
             world,
@@ -770,6 +788,8 @@ class UniversalVLAController:
             front_capture_size=config['traffic_signal_observer'].get('capture_size',1280) if config.get('traffic_signal_observer') else None,
             enable_lidar=self.enable_lidar,
             available_cameras=self.available_cameras,
+            recording_dir=recording_dir,
+            recording_limits=config.get('sensor_recording_limits'),
         )
         self._camera_wait_deque: deque[float] = deque(maxlen=64)
         from lightweight_vla_adapter.src.traffic_control_contract import TrafficControlContract
@@ -904,6 +924,8 @@ class UniversalVLAController:
     def active_command(self) -> dict[str, Any]:
         """Return the route-triggered command currently selected by the FSM."""
 
+        if self.command_queue is not None:
+            return dict(self.command_queue.current or {'text':'Continue driving safely in the current lane.'})
         return self.fsm.active_command(self.commands, self._progress_m())
 
     def _decide(self, frame: int) -> None:
@@ -911,6 +933,13 @@ class UniversalVLAController:
         self._direction_risk_cache={}
         progress_m = self._progress_m()
         command = self.fsm.active_command(self.commands, progress_m)
+        if self.command_queue is not None:
+            feedback = None
+            if self.driving_plan is not None and self.driving_plan.document is not None:
+                feedback = dict(request_id=self.driving_plan.document['request_id'],
+                                plan_status=(self.driving_plan.state or {}).get('plan_status'))
+            command = self.command_queue.select(progress_m,
+                float(self.world.get_snapshot().timestamp.elapsed_seconds), feedback)
         parsed = self.fsm.parse(command)
         plan_document=self.fsm.driving_intent(command)
         plan_step_id=None
@@ -1446,6 +1475,7 @@ class UniversalVLAController:
             },
             "camera_view_mask": view_mask[0].tolist(),
             "sensor_batch_schema_version": self.modality_schema_version,
+            "sensor_contract": dict(self.sensor_contract),
             "risk_assessment": risk,
             "target_lane_risk_assessment": target_lane_risk,
             "front_view_risk_assessment": front_view_risk,
@@ -1459,6 +1489,7 @@ class UniversalVLAController:
             "traffic_control_contract": traffic_diagnostics,
             "lane_task_feedback": {"target_lane":self._lane_goal,"completed":self._lane_goal_complete},
             "control_plan_state": self.driving_plan.state if self.driving_plan is not None else None,
+            "command_dispatch": self.command_queue.status() if self.command_queue is not None else {"mode":"route_latest"},
             "execution_feedback": {
                 "scope": "observed_before_current_command; previous_physics_step",
                 "frame": frame,"previous_decision_frame": self._last_frame,
@@ -1476,6 +1507,35 @@ class UniversalVLAController:
         }
         self._stream.write(json.dumps(record, ensure_ascii=False) + "\n")
         self._stream.flush()
+        capture = getattr(self.camera_rig, "_capture", None)
+        if capture is not None:
+            capture.record_decision(
+                decision=record,
+                context={
+                    "timestamp_s": timestamp_s,
+                    "command": command,
+                    "driving_intent": plan_document,
+                    "plan_step_id": plan_step_id,
+                    "vehicle_state_tensor": vehicle_state.detach().cpu().tolist(),
+                    "environment_state_tensor": environment_state.detach().cpu().tolist(),
+                    "camera_view_mask": view_mask.detach().cpu().tolist(),
+                    "camera_preprocessing": {
+                        "width": self.camera_rig.width,
+                        "height": self.camera_rig.height,
+                        "resize_front": self.camera_rig.front_capture_size is not None,
+                        "implementation": "camera_rgb_tensor/1.0",
+                    },
+                    "modality_mask": dict(modality_mask),
+                    "radar_corridor_route_points": route_polyline,
+                    "raw_forward_radar": raw_forward_radar,
+                    "rear_radar": rear_radar,
+                    "scope": "observed model inputs; not evaluator truth or full recurrent-state checkpoint",
+                },
+                camera_names=self.available_cameras,
+                sensor_frame=sensor_frame,
+                lidar_enabled=self.enable_lidar,
+                radar_observations={"front": raw_forward_radar, "rear": rear_radar},
+            )
         self._last_overlay = {
             "asr_text": str(command.get("text", "")),
             "parsed_intent": parsed.parsed_intent,
@@ -1487,6 +1547,9 @@ class UniversalVLAController:
         }
 
     def run_step(self) -> Any:
+        self._resource_journal.start()
+        if self._execution_journal is not None:
+            self._execution_journal.observe(self.world, self.ego)
         try:
             frame = int(self.world.get_snapshot().frame)
             if frame - self._last_frame >= self.decision_interval_frames:
@@ -1554,6 +1617,12 @@ class UniversalVLAController:
             )
             self._stream.flush()
         return self.route_controller.run_step()
+
+    def apply_control(self, control) -> None:
+        if self._execution_journal is None:
+            from evaluation.control_execution import ControlExecutionJournal
+            self._execution_journal = ControlExecutionJournal(self._execution_log_path)
+        self._execution_journal.apply(self.world, self.ego, control, self._last_frame)
 
     def overlay(self) -> dict[str, Any]:
         return dict(self._last_overlay)
@@ -1626,6 +1695,16 @@ class UniversalVLAController:
         }
 
     def close(self) -> None:
-        self.camera_rig.close()
-        if not self._stream.closed:
-            self._stream.close()
+        self._resource_journal.close()
+        try:
+            if self._execution_journal is not None:
+                try:
+                    self._execution_journal.observe(self.world, self.ego)
+                finally:
+                    self._execution_journal.close()
+        finally:
+            try:
+                self.camera_rig.close()
+            finally:
+                if not self._stream.closed:
+                    self._stream.close()

@@ -23,6 +23,8 @@ from run_complex_avoidance_town05 import (
     lane_invasion_is_restricted,
     load_config,
     ready_commands_in_order,
+    commands_for_segment,
+    build_vla_command_schedule,
     road_option_name,
     route_aware_preview_speed_kmh,
     planned_turn_window_active,
@@ -356,6 +358,37 @@ class Scene2Town05Tests(unittest.TestCase):
             ],
             ["first", "second"],
         )
+
+    def test_segment_omits_old_commands_without_counting_them_as_announced(self):
+        commands=[{'id':'old','announce_at_m':0,'requires_event_states':{'old_event':'RESOLVED'}},
+                  {'id':'boundary','announce_at_m':800},
+                  {'id':'later','announce_at_m':900}]
+        selected,skipped=commands_for_segment(commands,800)
+        self.assertEqual(skipped,['old'])
+        self.assertEqual([c['id'] for c in selected],['boundary','later'])
+        announced=set()
+        self.assertEqual(ready_commands_in_order(selected,announced,801,{}),[commands[1]])
+        self.assertEqual(announced,set())
+        self.assertEqual(len(commands),3)
+
+    def test_full_route_keeps_zero_distance_command(self):
+        commands=[{'id':'first','announce_at_m':0}]
+        self.assertEqual(commands_for_segment(commands,0),(commands,[]))
+
+    def test_segment_rejects_invalid_schedule_or_origin(self):
+        commands=[{'id':'first','announce_at_m':0}]
+        for origin in (-1,float('nan'),float('inf')):
+            with self.assertRaises(ValueError): commands_for_segment(commands,origin)
+        for bad in (commands*2,[{'id':'a','announce_at_m':2},{'id':'b','announce_at_m':1}]):
+            with self.assertRaises(ValueError): commands_for_segment(bad,0)
+
+    def test_model_schedule_uses_same_segment_selection(self):
+        config=load_config(ROOT/'configs/scene_2_town05_runtime.json')
+        selected,skipped=commands_for_segment(config['commands'],780)
+        schedule=build_vla_command_schedule({**config,'commands':selected})
+        self.assertEqual(len(schedule),len(selected))
+        self.assertEqual(skipped,['s2_t05_cmd_01','s2_t05_cmd_02'])
+        self.assertEqual(len(config['commands']),15)
 
     def test_road_option_name_supports_int_enum(self):
         class RoadOption(IntEnum):

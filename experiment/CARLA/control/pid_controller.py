@@ -1083,6 +1083,15 @@ class EgoPIDController:
             lane_type=carla.LaneType.Driving,
         )
         current_lane_id = getattr(waypoint, "lane_id", None)
+        pose = self.vehicle.get_transform()
+        lateral_error = heading_error = None
+        if waypoint is not None:
+            lane_pose = waypoint.transform
+            yaw = math.radians(lane_pose.rotation.yaw)
+            lateral_error = (-(pose.location.x-lane_pose.location.x)*math.sin(yaw)
+                             +(pose.location.y-lane_pose.location.y)*math.cos(yaw))
+            heading_error = math.degrees(self._angle_delta(
+                math.radians(pose.rotation.yaw), yaw))
         in_target_lane = (
             self._lane_change_target_lane_id is not None
             and current_lane_id == self._lane_change_target_lane_id
@@ -1094,6 +1103,10 @@ class EgoPIDController:
         return {
             "speed_kmh": self._get_speed_kmh(),
             "current_lane_id": current_lane_id,
+            "lane_change_command_id": self._lane_change_command_id,
+            "in_junction": bool(waypoint.is_junction) if waypoint is not None else None,
+            "lateral_error_m": lateral_error,
+            "heading_error_deg": heading_error,
             "target_lane_id": self._lane_change_target_lane_id,
             "lane_change_completed": (
                 self._lane_change_target_lane_id is not None

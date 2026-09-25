@@ -29,7 +29,8 @@
       "middle_lane_id": -2,
       "right_lane_id": -3,
       "shoulder_lane_id": -4,
-      "sidewalk_lane_id": -5
+      "sidewalk_lane_id": -5,
+      "left_roadside_lane_id": -6
     },
     "logical_route_id": 1,
     "actual_road_and_lane_ids_are_resolved_at_runtime": true
@@ -400,7 +401,7 @@
           "role_name": "scene3_crossing_worker",
           "start_lane_id": -4,
           "start_s_m": 3330.0,
-          "destination_lane_id": -2,
+          "destination_lane_id": -6,
           "high_visibility": true
         },
         {

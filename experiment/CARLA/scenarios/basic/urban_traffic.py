@@ -8,7 +8,7 @@ import random
 
 
 class FixedRouteTraffic:
-    """Fixed actor pool with out-of-view recycling and no runtime spawning."""
+    """Seeded traffic with protected near-field actors and bounded replenishment."""
 
     def __init__(self, world, client, route_manager, config):
         self.world = world
@@ -26,6 +26,8 @@ class FixedRouteTraffic:
         self._last_actor_recycle_tick = {}
         self._visible_count = 0
         self._recycle_count = 0
+        self._density_diagnostics = {}
+        self._density_spawn_count = 0
 
     def setup(self):
         if not self.config.get("enabled", True):
@@ -93,6 +95,8 @@ class FixedRouteTraffic:
         self.traffic_manager.vehicle_percentage_speed_difference(
             actor, max(-80.0, min(80.0, 100.0 * (speed_limit - desired_speed) / speed_limit))
         )
+        if self.config.get('absolute_cruise_speed', False):
+            self.traffic_manager.set_desired_speed(actor, desired_speed)
         if bool(self.config.get("traffic_manager_set_path", True)):
             route = self._traffic_manager_path(
                 waypoint,
@@ -116,6 +120,7 @@ class FixedRouteTraffic:
             "speed_kmh": desired_speed,
             "auto_lane_change": bool(spec.get("auto_lane_change", False)),
         })
+        return actor
 
     def _configure_lane_change(self, actor, spec):
         """Enable sparse Traffic Manager lane changes for selected NPCs."""
@@ -209,6 +214,8 @@ class FixedRouteTraffic:
                 actor,
                 max(-80.0, min(80.0, 100.0 * (speed_limit - item["speed_kmh"]) / speed_limit)),
             )
+            if self.config.get('absolute_cruise_speed', False):
+                self.traffic_manager.set_desired_speed(actor, item["speed_kmh"])
             item["triggered"] = True
             self.spawn_log.append({
                 "id": item["id"], "status": "scripted_slowdown",
@@ -218,7 +225,11 @@ class FixedRouteTraffic:
         self._maintain_visible_pool(ego_vehicle, float(ego_progress_m))
 
     def _maintain_visible_pool(self, ego_vehicle, ego_progress_m):
+        self._visible_count = len(self._visible_actors(ego_vehicle))
         if not bool(self.config.get("recycle_enabled", True)):
+            return
+        if self.config.get("maintenance_mode") == "route_density":
+            self._maintain_route_density(ego_vehicle, ego_progress_m)
             return
         visible = self._visible_actors(ego_vehicle)
         self._visible_count = len(visible)
@@ -286,6 +297,95 @@ class FixedRouteTraffic:
             # camera range. Count them only after they physically enter the
             # forward visibility cone on a later tick.
             self._visible_count = len(self._visible_actors(ego_vehicle))
+
+    def _maintain_route_density(self, ego_vehicle, progress):
+        """Fill upcoming lane gaps while preserving a bounded actor pool."""
+        interval = max(1, int(self.config.get("density_check_ticks", 10)))
+        if self._tick_count % interval:
+            return
+        ego_location = ego_vehicle.get_location()
+        protected_radius = float(self.config.get("lifecycle_protected_radius_m", 350.0))
+        spacing = max(15.0, float(self.config.get("density_spacing_m", 55.0)))
+        start = float(self.config.get("density_ahead_start_m", 400.0))
+        end = float(self.config.get("density_ahead_end_m", 800.0))
+        alive = [a for a in self.actors if a.is_alive]
+        positions = [(a, a.get_location()) for a in alive]
+        # Never recycle the near-future population just to refill another cell.
+        sources = []
+        scripted_ids = {item['actor'].id for item in self._scripted}
+        for actor, location in positions:
+            if actor.id in scripted_ids:
+                continue
+            if location.distance(ego_location) <= protected_radius:
+                continue
+            if self._tick_count - self._last_actor_recycle_tick.get(actor.id, -100000) < 600:
+                continue
+            point = min(self.route_manager.route,
+                        key=lambda p: (p['x'] - location.x)**2 + (p['y'] - location.y)**2)
+            relative = float(point['distance_m']) - progress
+            if relative < -protected_radius or relative > end + 300:
+                sources.append(actor)
+        filled = 0
+        added = 0
+        gaps = 0
+        # Rotate lane priority so unsuccessful lane-1 candidates cannot starve others.
+        lanes = list(self.config.get('density_lanes', [1, 2, 3, 4])) or [1]
+        actor_limit = max(len(alive), int(self.config.get('density_max_actors', len(alive))))
+        templates = [spec for spec in self.config.get('vehicles', [])
+                     if not spec.get('scripted_slowdown')]
+        shift = (self._tick_count // interval) % len(lanes)
+        lanes = lanes[shift:] + lanes[:shift]
+        distance = progress + start
+        while distance < min(progress + end, self.route_manager.route_length_m - 20):
+            for lane in lanes:
+                waypoint = self._waypoint_at(distance, lane)
+                if waypoint is None or waypoint.is_junction:
+                    continue
+                location = waypoint.transform.location
+                if location.distance(ego_location) <= protected_radius:
+                    continue
+                occupied = False
+                safe = True
+                for other, other_location in positions:
+                    delta = other_location - location
+                    forward = waypoint.transform.get_forward_vector()
+                    longitudinal = abs(delta.x * forward.x + delta.y * forward.y)
+                    lateral = abs(delta.x * forward.y - delta.y * forward.x)
+                    if lateral < 2.5 and longitudinal < spacing * 0.8:
+                        occupied = True
+                    if other_location.distance(location) < 12:
+                        safe = False
+                if occupied:
+                    continue
+                gaps += 1
+                if not safe or filled >= 2:
+                    continue
+                actor = sources.pop() if sources else None
+                if actor is not None:
+                    replacement = self._replace_actor(actor, distance, lane, waypoint,
+                                                       ego_speed_kmh=self._vehicle_speed_kmh(ego_vehicle))
+                elif len(positions) < actor_limit and templates:
+                    spec = dict(templates[self._density_spawn_count % len(templates)])
+                    spec.update(id=f'density_{self._density_spawn_count:05d}',
+                                route_distance_m=distance, lane_from_right=lane)
+                    replacement = self._spawn_vehicle(spec)
+                    if replacement is not None:
+                        self._density_spawn_count += 1
+                        added += 1
+                else:
+                    continue
+                if replacement is not None:
+                    if actor is not None:
+                        self._last_actor_recycle_tick.pop(actor.id, None)
+                        positions = [(a, p) for a, p in positions if a.id != actor.id]
+                        self._recycle_count += 1
+                    self._last_actor_recycle_tick[replacement.id] = self._tick_count
+                    positions.append((replacement, location))
+                    filled += 1
+            distance += spacing
+        self._density_diagnostics = dict(gaps=gaps, replacements=filled - added, added=added,
+                                         total_added=self._density_spawn_count,
+                                         eligible_sources=len(sources), progress_m=round(progress, 1))
 
     def _in_turn_clearance(self, ego_progress_m):
         for window in self.config.get("traffic_clear_windows_m", []):
@@ -601,6 +701,8 @@ class FixedRouteTraffic:
             replacement,
             max(-80.0, min(80.0, 100.0 * (speed_limit - desired_speed) / speed_limit)),
         )
+        if self.config.get('absolute_cruise_speed', False):
+            self.traffic_manager.set_desired_speed(replacement, desired_speed)
         if bool(self.config.get("traffic_manager_set_path", True)):
             route = self._traffic_manager_path(
                 waypoint,
@@ -622,7 +724,9 @@ class FixedRouteTraffic:
         actor.destroy()
         self.spawn_log.append({
             "id": spec.get("id", "actor_{0}".format(replacement.id)),
-            "status": "respawned_out_of_view",
+            "status": ("respawned_outside_protected_radius"
+                       if self.config.get('maintenance_mode') == 'route_density'
+                       else "respawned_out_of_view"),
             "old_actor_id": old_actor_id,
             "actor_id": replacement.id,
             "route_distance_m": round(distance_m, 1),
@@ -638,6 +742,7 @@ class FixedRouteTraffic:
             "active_actor_count": sum(1 for actor in self.actors if actor.is_alive),
             "visible_actor_count": self._visible_count,
             "recycle_count": self._recycle_count,
+            "density": dict(self._density_diagnostics),
             "traffic_event_count": len(self.spawn_log),
             "recent_traffic_events": list(self.spawn_log[-history_limit:]),
             "scripted_event_count": len(self._scripted),

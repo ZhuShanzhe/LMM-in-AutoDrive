@@ -1,0 +1,15 @@
+{
+  "schema_version": "task_oracle/1.0",
+  "scene_id": "scene_2",
+  "source_sha256": "438a34fee37db8a8e026f8c157c875a32aff53ef6e1b2638585fdb4aff72e6f4",
+  "task_id": "s2_t05_cmd_03",
+  "activate_m": 800,
+  "timeout_s": 90,
+  "max_frame_gap_s": 0.15,
+  "violation_budget": 0,
+  "steps": [
+    {"kind": "yield_pedestrian", "target_role": "scene2_crosswalk_pedestrian", "require_stop": false, "min_speed_drop_kmh": 5, "stop_hold_s": 0.5, "stopped_kmh": 0.5, "clear_hold_s": 0.5},
+    {"kind": "lane_change", "direction": "LEFT", "start_route_s_m": 975.61, "hold_s": 1, "max_lateral_error_m": 0.35, "max_heading_error_deg": 5},
+    {"kind": "overtake", "target_role": "scene2_compound_slow_vehicle", "rear_clearance_m": 8, "hold_s": 1}
+  ]
+}

@@ -412,6 +412,13 @@ def resolve_scenario_config(config_path, output_dir, resume_progress_m):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="CARLA control and evaluation runner")
+    parser.add_argument('--benchmark-assessment', action='store_true', help='Record independent scene_1 task assessment')
+    parser.add_argument('--benchmark-task', default='all', help='Assessment target ID or activation-order number; does not change driving route')
+    parser.add_argument('--vla-record-sensors', action='store_true', help='Save lossless actual VLA sensor inputs for offline replay')
+    parser.add_argument('--benchmark-speed-limit-guard', action='store_true',
+                        help='Cap configured voice-schedule baseline speed at the reported vehicle limit')
+    parser.add_argument('--benchmark-traffic-guard', action='store_true',
+                        help='Use truth-based official hazard detection for the simulator baseline only')
     parser.add_argument("scenario", choices=sorted(SCENARIOS))
     parser.add_argument("--host", default="localhost")
     parser.add_argument("--port", type=int, default=2000)
@@ -567,6 +574,14 @@ def parse_args():
     parser.add_argument("--qwen-min-visual-tokens", type=int, default=256)
     parser.add_argument("--qwen-max-visual-tokens", type=int, default=512)
     args = parser.parse_args()
+    from benchmark.selection import validate_assessment_args
+    validate_assessment_args(args, 'scene_1')
+    if args.vla_record_sensors and args.decision_source != 'vla_scene_bridge':
+        parser.error('--vla-record-sensors requires --decision-source vla_scene_bridge')
+    if (args.benchmark_speed_limit_guard or args.benchmark_traffic_guard) and (
+        args.decision_source != 'voice_schedule' or not args.benchmark_assessment
+    ):
+        parser.error('benchmark guards require --benchmark-assessment and --decision-source voice_schedule')
     if args.decision_source == "json_file" and not args.decision_json:
         parser.error("--decision-json is required when --decision-source json_file")
     if args.decision_source == "scene_bridge" and not args.driving_intent_json:
@@ -680,6 +695,7 @@ def main():
     scenario.client = client
     scenario.fixed_delta_s = args.fixed_delta_s
     monitor = None
+    benchmark_assessment = None
     camera = None
     scene_capture = None
     live_perception = None
@@ -695,6 +711,14 @@ def main():
         scenario.setup()
         world.tick()
         ego = scenario.get_ego_vehicle()
+        baseline_traffic_guard=None
+        baseline_lane_feedback=None
+        if args.benchmark_assessment and args.decision_source=='voice_schedule':
+            from benchmark.execution_feedback import LaneExecutionFeedback
+            baseline_lane_feedback=LaneExecutionFeedback()
+        if args.benchmark_traffic_guard:
+            from benchmark.traffic_guard import BenchmarkTrafficGuard
+            baseline_traffic_guard=BenchmarkTrafficGuard(ego)
         if (
             args.scene_world_state_output
             or args.live_perception
@@ -818,6 +842,7 @@ def main():
                 fixed_delta_seconds=args.fixed_delta_s,
                 available_cameras=("front",),
                 enable_lidar=False,
+                sensor_recording_dir=Path(output_dir)/'model_inputs' if args.vla_record_sensors else None,
                 default_speed_kmh=args.target_speed_kmh,
             )
             policy = None
@@ -923,6 +948,12 @@ def main():
         for event in call_scenario_method(scenario, "drain_event_log", []):
             logger.log_event(event)
         start_location = ego.get_location()
+        if args.benchmark_assessment:
+            from benchmark.episode import attach_episode
+            benchmark_assessment = attach_episode('scene_1',scenario.route_manager.route,world,ego,
+                Path(output_dir)/'benchmark',scenario_config_path,task_selector=args.benchmark_task,
+                run_metadata=dict(decision_source=args.decision_source,target_speed_kmh=args.target_speed_kmh,
+                                  sensor_recording=bool(args.vla_record_sensors)))
         previous_location = start_location
         travelled_distance_m = 0.0
         start_sim_time = world.get_snapshot().timestamp.elapsed_seconds
@@ -1027,17 +1058,43 @@ def main():
                     time.perf_counter() - decision_start
                 ) * 1000.0
                 control_start = time.perf_counter()
+                baseline_speed_guard = None
+                baseline_traffic_evidence = None
+                if args.benchmark_speed_limit_guard:
+                    from benchmark.baseline_speed_guard import guard_speed
+                    intent, baseline_speed_guard = guard_speed(intent, ego.get_speed_limit())
+                if baseline_traffic_guard is not None:
+                    intent, baseline_traffic_evidence=baseline_traffic_guard.apply(intent)
                 control, normalized_intent = controller.run_step(
                     intent, control_delta_s
                 )
+                if baseline_speed_guard is not None:
+                    normalized_intent['baseline_speed_limit_guard'] = baseline_speed_guard
+                if baseline_traffic_evidence is not None:
+                    normalized_intent['baseline_traffic_guard'] = baseline_traffic_evidence
                 control_latency_ms = (
                     time.perf_counter() - control_start
                 ) * 1000.0
             call_scenario_method(scenario, "report_intent", None, normalized_intent)
             if control is not None:
-                ego.apply_control(control)
+                if unified_vla is not None:
+                    unified_vla.apply_control(control)
+                else:
+                    ego.apply_control(control)
             world.tick()
             snapshot = world.get_snapshot()
+            if baseline_lane_feedback is not None:
+                read_execution=getattr(controller,'get_execution_state',None)
+                if read_execution is not None:
+                    execution_state=read_execution()
+                    feedback=baseline_lane_feedback.update(normalized_intent,execution_state,
+                                                           snapshot.timestamp.elapsed_seconds-start_sim_time)
+                    normalized_intent['baseline_execution_state']=execution_state
+                    if feedback is not None:
+                        policy.mark_completed(feedback['command_id'])
+                        normalized_intent['baseline_execution_feedback']=feedback
+            if benchmark_assessment is not None:
+                benchmark_assessment.observe(snapshot)
             sim_time = snapshot.timestamp.elapsed_seconds - start_sim_time
             observed_delta_s = max(
                 1e-6, snapshot.timestamp.elapsed_seconds - previous_snapshot_time
@@ -1254,6 +1311,8 @@ def main():
         print("[Done] Metrics written to {0}".format(output_dir))
         print(metrics)
     finally:
+        from benchmark.episode import finish_episode
+        assessment_exit_code=finish_episode(benchmark_assessment)
         if unified_vla is not None:
             try:
                 unified_vla.close()
@@ -1282,6 +1341,8 @@ def main():
             client.get_world().apply_settings(original_settings)
         scenario.destroy()
 
+    return assessment_exit_code
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

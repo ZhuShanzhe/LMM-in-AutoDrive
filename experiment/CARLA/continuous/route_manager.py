@@ -23,8 +23,10 @@ class RouteManager:
         ``distance_m``.  The resulting route, not the directive itself, is
         then used by the controller as the geometric reference.
         """
-        if step_m <= 0.0:
-            raise ValueError("step_m must be positive")
+        if not math.isfinite(step_m) or step_m <= 0.0:
+            raise ValueError("step_m must be finite and positive")
+        if not math.isfinite(length_m) or length_m <= 0.0:
+            raise ValueError("length_m must be finite and positive")
         if start_location is None:
             spawn_points = self.map.get_spawn_points()
             if not spawn_points:
@@ -37,7 +39,7 @@ class RouteManager:
         self.applied_directives = []
         self.unapplied_directives = []
         distance_m = 0.0
-        while waypoint is not None and distance_m < float(length_m):
+        while waypoint is not None:
             transform = waypoint.transform
             self.route.append({
                 "x": round(transform.location.x, 3),
@@ -50,7 +52,10 @@ class RouteManager:
                 "lane_id": int(waypoint.lane_id),
                 "is_junction": bool(waypoint.is_junction),
             })
-            next_waypoints = waypoint.next(step_m)
+            if distance_m >= float(length_m):
+                break
+            travel_step=min(float(step_m),float(length_m)-distance_m)
+            next_waypoints = waypoint.next(travel_step)
             directive = self._next_due_directive(pending_directives, distance_m)
             if directive is not None:
                 entry_waypoint = waypoint
@@ -70,7 +75,7 @@ class RouteManager:
                     waypoint = self._choose_straight(waypoint, next_waypoints)
             else:
                 waypoint = self._choose_straight(waypoint, next_waypoints)
-            distance_m += float(step_m)
+            distance_m += travel_step
         self.route_length_m = self.route[-1]["distance_m"] if self.route else 0.0
         self.progress_m = 0.0
         self.current_index = 0
@@ -230,8 +235,22 @@ class RouteManager:
             location.x - point["x"], location.y - point["y"]
         )
 
-    def is_finished(self, tolerance_m=10.0):
-        return self.progress_m >= max(0.0, self.route_length_m - float(tolerance_m))
+    def is_finished(self, tolerance_m=10.0, location=None):
+        tolerance = float(tolerance_m)
+        if not math.isfinite(tolerance) or tolerance < 0:
+            raise ValueError("goal tolerance must be finite and nonnegative")
+        if not self.route or not math.isfinite(self.progress_m):
+            return False
+        if self.progress_m < max(0.0, self.route_length_m - tolerance):
+            return False
+        if location is None:
+            return True
+        last = self.route[-1]
+        distance = math.sqrt(sum(
+            (float(getattr(location, axis)) - float(last[axis])) ** 2
+            for axis in ("x", "y", "z")
+        ))
+        return math.isfinite(distance) and distance <= tolerance
 
     @staticmethod
     def _next_due_directive(directives, distance_m):
@@ -267,20 +286,24 @@ class RouteManager:
         )
 
     def _choose_turn(self, waypoint, candidates, action):
-        if not candidates:
+        if not candidates or waypoint.is_junction:
             return None
         reference_yaw = math.radians(waypoint.transform.rotation.yaw)
         choices = []
         for candidate in candidates:
-            endpoint = self._trace_branch_endpoint(candidate, 40.0, 5.0)
+            endpoint = self._trace_junction_exit(candidate)
+            if endpoint is None:
+                continue
+            if action!='u_turn' and endpoint.road_id==waypoint.road_id:
+                continue
             delta = self._angle_delta(
                 math.radians(endpoint.transform.rotation.yaw),
                 reference_yaw,
             )
             if action == "u_turn":
-                if abs(delta) < math.radians(90.0):
+                if abs(delta) < math.radians(135.0):
                     continue
-            elif abs(delta) < math.radians(12.0) or abs(delta) > math.radians(150.0):
+            elif abs(delta) < math.radians(45.0) or abs(delta) > math.radians(150.0):
                 continue
             choices.append((delta, candidate))
         if not choices:
@@ -293,17 +316,23 @@ class RouteManager:
         desired = [item for item in choices if item[0] < 0.0]
         return min(desired, key=lambda item: item[0])[1] if desired else None
 
-    def _trace_branch_endpoint(self, waypoint, horizon_m, step_m):
-        """Follow a connector far enough to distinguish a gradual turn."""
+    def _trace_junction_exit(self, waypoint, horizon_m=160.0, step_m=5.0):
+        """A turn must enter a junction and reach its first nonjunction exit."""
+        if not waypoint.is_junction:
+            return None
         current = waypoint
         travelled = 0.0
         while current is not None and travelled < float(horizon_m):
             candidates = current.next(step_m)
             if not candidates:
-                break
+                return None
             current = self._choose_straight(current, candidates)
             travelled += float(step_m)
-        return current or waypoint
+            if current.lane_type!=waypoint.lane_type:
+                return None
+            if not current.is_junction:
+                return current
+        return None
 
     @staticmethod
     def _is_same_direction_driving_lane(reference, candidate):

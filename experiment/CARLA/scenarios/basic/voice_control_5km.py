@@ -179,7 +179,9 @@ class BasicVoiceControl5KmScenario(BaseScenario):
             self.failure("illegal_lane_invasion")
             return
 
-        if self.route_manager.is_finished(self.goal_tolerance_m):
+        if self.route_manager.is_finished(
+            self.goal_tolerance_m, location=self.ego_vehicle.get_location()
+        ):
             if self.emitted_command_ids != self.command_ids:
                 self.failure("route_finished_before_all_commands_emitted")
             elif not all(
