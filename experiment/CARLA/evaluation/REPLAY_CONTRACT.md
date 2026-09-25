@@ -163,3 +163,23 @@ capture_summary记录成功不代表已经完成完整模型离线重放；仍�
 输入哈希跨轮变化、初始化失败或推理失败会停止后续轮次。每轮包含首帧推理，不隐式预热。
 汇总提供逐轮P50/P95与预测JSON精确一致性；预测中若含自身计时字段，也会参与精确比较。
 精确一致不代表语义正确或闭环成功。同一进程多轮并非冷进程/GPU冷启动性能测试。
+
+## 三场景同源抽样对比
+
+在三个正式运行目录均有`model_inputs/`和`benchmark/`后，运行
+`python -m evaluation.challenge_capture_audit --scene-1 <场景一目录> --scene-2 <场景二目录> --scene-3 <场景三目录> --frames 1000 --output <新索引文件>`。
+审计核对四视角与LiDAR来自同一传感器帧，并与各自独立评测日志按决策帧、时间戳关联。
+不足指定帧数、缺模态、评测未收尾或真值缺帧均拒绝生成索引。索引记录各场景输入和真值
+指纹及均匀抽取的评测帧，但不包含真值内容，也不证明抽样已覆盖全部特殊事件。
+
+模型回放时对每个场景分别执行：
+
+```powershell
+python -m evaluation.replay_benchmark <场景目录>/model_inputs --format model-rig --selection <索引文件> --scene scene_1 --adapter team_adapter:create --config <模型配置.json> --output <新结果目录>
+```
+
+上述`team_adapter:create`是组员在模型环境中提供的工厂接口，不是仓库内置模型。
+回放先依次推理该场景采集的**所有**决策帧，再只对索引所列帧单独汇总延时；
+`predictions.jsonl`为每帧标注`selected_for_evaluation`。这能维持有状态模型的历史输入，
+不等价于动作改变环境后的闭环。回放前会复核整段模型输入、场景配置与独立真值指纹；
+目录搬迁不影响按内容验证。没有真实模型权重或未采集三个场景时不能生成正式对比结果。

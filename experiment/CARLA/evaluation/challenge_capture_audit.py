@@ -131,6 +131,46 @@ def audit_captures(roots: dict[str, Path], frame_count: int = 1000) -> dict:
     }
 
 
+def validate_replay_selection(path: Path, scene: str, dataset: ModelRigReplayDataset,
+                              manifest: dict) -> set[int]:
+    """Bind selected evaluation frames to the exact full replay input and truth file."""
+    try:
+        report = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise DatasetValidationError("invalid same-source selection file") from error
+    if not isinstance(report, dict) or report.get("schema_version") != "challenge_same_source_selection/1.0":
+        raise DatasetValidationError("unsupported same-source selection schema")
+    matches = [row for row in report.get("scenes", [])
+               if isinstance(row, dict) and row.get("scene_id") == scene]
+    if len(matches) != 1:
+        raise DatasetValidationError("selection has no unique scene: " + scene)
+    entry = matches[0]
+    if entry.get("input_dataset_sha256") != manifest["dataset_sha256"]:
+        raise DatasetValidationError("selection uses a different model-input capture")
+    assessment = dataset.root.parent / "benchmark"
+    try:
+        metadata = json.loads((assessment / "manifest.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise DatasetValidationError("replay assessment manifest missing or invalid") from error
+    if (not isinstance(metadata, dict) or metadata.get("scene_id") != scene
+            or metadata.get("source_sha256") != entry.get("assessment_source_sha256")):
+        raise DatasetValidationError("replay assessment scene or source changed")
+    truth_path = assessment / "episode_truth.jsonl"
+    if not truth_path.is_file() or _file_hash(truth_path) != entry.get("truth_file_sha256"):
+        raise DatasetValidationError("selection independent truth changed or disappeared")
+    hashes = {row["simulation_frame"]: row["input_sha256"] for row in manifest["frames"]}
+    selected = entry.get("selected")
+    if not isinstance(selected, list) or not selected:
+        raise DatasetValidationError("selection contains no evaluation frames")
+    ids: set[int] = set()
+    for row in selected:
+        frame = row.get("simulation_frame") if isinstance(row, dict) else None
+        if (type(frame) is not int or frame in ids or hashes.get(frame) != row.get("input_sha256")):
+            raise DatasetValidationError("selection frame is duplicate or has changed")
+        ids.add(frame)
+    return ids
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     for scene in SCENES:

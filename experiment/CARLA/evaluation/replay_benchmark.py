@@ -27,7 +27,8 @@ def _percentile(values: list[float], fraction: float) -> float | None:
 
 def run(dataset: SynchronizedReplayDataset, adapter: Any, output: Path, *,
         adapter_id: str, adapter_config: dict, deadline_ms: float = 150.0,
-        max_frames: int | None = None, collect_resources: bool = False) -> dict:
+        max_frames: int | None = None, collect_resources: bool = False,
+        selection_path: Path | None = None, scene_id: str | None = None) -> dict:
     """Adapter: predict(frame)->JSON object, optional reset/synchronize/close."""
     if not math.isfinite(deadline_ms) or deadline_ms <= 0:
         raise ValueError("deadline_ms must be finite and positive")
@@ -35,12 +36,19 @@ def run(dataset: SynchronizedReplayDataset, adapter: Any, output: Path, *,
         raise ValueError("max_frames must be positive")
     # Hash before invoking user code, preserving the original input identity.
     manifest = dataset.integrity_manifest()
+    selected_frames = None
+    if selection_path is not None:
+        if scene_id is None or max_frames is not None:
+            raise ValueError("same-source selection requires a scene and full-sequence replay")
+        from evaluation.challenge_capture_audit import validate_replay_selection
+        selected_frames = validate_replay_selection(selection_path, scene_id, dataset, manifest)
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     (output / "input_manifest.json").write_text(
         json.dumps(manifest, indent=2, allow_nan=False), encoding="utf-8")
     synchronize = getattr(adapter, "synchronize", None)
     latencies: list[float] = []
+    selected_latencies: list[float] = []
     failed = 0
     count = 0
     fatal_error = None
@@ -61,6 +69,8 @@ def run(dataset: SynchronizedReplayDataset, adapter: Any, output: Path, *,
                 row = {"simulation_frame": frame.simulation_frame,
                        "timestamp_s": frame.timestamp_s,
                        "request_id": frame.driving_intent_request_id}
+                if selected_frames is not None:
+                    row["selected_for_evaluation"] = frame.simulation_frame in selected_frames
                 started = None
                 try:
                     payload = deepcopy(frame)
@@ -76,6 +86,8 @@ def run(dataset: SynchronizedReplayDataset, adapter: Any, output: Path, *,
                     # Round-trip detaches mutable outputs and rejects NaN/Inf.
                     prediction = json.loads(json.dumps(prediction, allow_nan=False))
                     latencies.append(elapsed)
+                    if selected_frames is not None and frame.simulation_frame in selected_frames:
+                        selected_latencies.append(elapsed)
                     row.update(status="OK", latency_ms=elapsed, output=prediction,
                                deadline_exceeded=elapsed > deadline_ms)
                 except Exception as error:
@@ -100,9 +112,10 @@ def run(dataset: SynchronizedReplayDataset, adapter: Any, output: Path, *,
             except Exception as error:
                 close_error = {"type": type(error).__name__, "message": str(error)}
     expected = min(len(dataset), max_frames) if max_frames else len(dataset)
+    selection_incomplete = selected_frames is not None and len(selected_latencies) != len(selected_frames)
     summary = {
         "schema_version": "offline_replay_benchmark/1.0",
-        "status": "FAILED" if failed or fatal_error or close_error or count != expected or not expected else "COMPLETED",
+        "status": "FAILED" if failed or fatal_error or close_error or count != expected or not expected or selection_incomplete else "COMPLETED",
         "evaluation_scope": "offline_model_invocation_only",
         "closed_loop_success": None,
         "adapter": adapter_id, "adapter_config": adapter_config,
@@ -118,6 +131,16 @@ def run(dataset: SynchronizedReplayDataset, adapter: Any, output: Path, *,
         "deadline_ms": deadline_ms,
         "deadline_exceeded_outputs": sum(value > deadline_ms for value in latencies),
     }
+    if selected_frames is not None:
+        summary["evaluation_selection"] = {
+            "scene_id": scene_id, "selection_file": str(selection_path),
+            "requested_frames": len(selected_frames), "successful_outputs": len(selected_latencies),
+            "latency_ms": {"p50": _percentile(selected_latencies, .5),
+                           "p95": _percentile(selected_latencies, .95),
+                           "max": max(selected_latencies) if selected_latencies else None},
+            "deadline_exceeded_outputs": sum(value > deadline_ms for value in selected_latencies),
+            "scope": "selected evaluation frames after full chronological model replay",
+        }
     (output / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2,
                                                   allow_nan=False) + "\n", encoding="utf-8")
     return summary
@@ -183,6 +206,8 @@ def main(argv=None) -> int:
     parser.add_argument("--deadline-ms", type=float, default=150)
     parser.add_argument("--allow-missing-calibration", action="store_true")
     parser.add_argument("--format", choices=("synchronized", "model-rig"), default="synchronized")
+    parser.add_argument("--selection", type=Path, help="Three-scene same-source selection manifest")
+    parser.add_argument("--scene", choices=("scene_1", "scene_2", "scene_3"))
     parser.add_argument("--no-resources", action="store_true")
     parser.add_argument("--repeat", type=int, default=1, help="Fresh model instances on identical replay inputs")
     args = parser.parse_args(argv)
@@ -190,6 +215,8 @@ def main(argv=None) -> int:
         parser.error("output directory already exists")
     if args.repeat < 1 or not math.isfinite(args.deadline_ms) or args.deadline_ms <= 0 or (args.max_frames is not None and args.max_frames <= 0):
         parser.error("deadline and frame limit must be positive finite values")
+    if args.selection is not None and (args.format != "model-rig" or args.scene is None or args.max_frames is not None):
+        parser.error("--selection requires --format model-rig, --scene and full-sequence replay")
     if args.format == "model-rig":
         from evaluation.model_rig_replay import ModelRigReplayDataset
         dataset = ModelRigReplayDataset(args.dataset)
@@ -205,12 +232,14 @@ def main(argv=None) -> int:
     if args.repeat > 1:
         summary = run_repeated(dataset, factory_fn, args.output, repetitions=args.repeat,
                   adapter_id=args.adapter, adapter_config=config, deadline_ms=args.deadline_ms,
-                  max_frames=args.max_frames, collect_resources=not args.no_resources)
+                  max_frames=args.max_frames, collect_resources=not args.no_resources,
+                  selection_path=args.selection, scene_id=args.scene)
     else:
         adapter = factory_fn(deepcopy(config))
         summary = run(dataset, adapter, args.output, adapter_id=args.adapter,
                   adapter_config=config, deadline_ms=args.deadline_ms, max_frames=args.max_frames,
-                  collect_resources=not args.no_resources)
+                  collect_resources=not args.no_resources,
+                  selection_path=args.selection, scene_id=args.scene)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0 if summary["status"] == "COMPLETED" else 1
 
