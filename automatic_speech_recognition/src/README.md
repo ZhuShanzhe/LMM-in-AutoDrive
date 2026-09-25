@@ -1,201 +1,129 @@
-# 语音处理流水线
-+ 一个面向自动驾驶场景的模块化语音处理工具包。本仓库提供了端到端的流水线，涵盖：
+# ASRPipeline 对外统一入口
 
-  + ASR（自动语音识别） – 将中文语音转录为文本
++ `src/pipeline.py` 中的 `ASRPipeline` 是 `automatic_speech_recognition` 对外推荐的单一入口，将语音识别、（可选）推理期优化与（可选）中英翻译串联为一次调用。
++ 可设定：ASR 模型路径、是否启用优化、输出中文还是英文、输出文件地址等；翻译器仅在需要英文时才加载。
++ 子模块（`asr/`、`translator/`、`tts/`）的细节见各自目录下的 `README.md`，本文件只介绍 `ASRPipeline`。
 
-  + 翻译 – 将中文文本翻译为英文
-
-  + TTS（语音合成） – 生成带方言/情感控制的自然语音，并可添加背景噪声
-
-  + 指令解析 – 从自然语言指令中提取结构化驾驶意图
-
-+ 流水线 – 将 “ASR + 翻译 + 指令解析” 组合为单次调用
-
-+ 所有组件均设计为离线优先、支持 GPU 加速，且易于集成到更大的系统中
-
-## 1. 项目结构
+## 1. 目录结构
 
 ```text
 src/
-├── asr/                      # 自动语音识别
+├── __init__.py                 # 惰性导出（按需加载子模块）
+├── utils.py                    # 全项目共享工具：日志（setup_logging / log_and_print）
+├── pipeline.py                 # ASRPipeline：对外统一入口（ASR + 可选优化 + 可选翻译）
+├── asr/  
 │   ├── __init__.py
-│   ├── config.py 
-│   ├── funasr_model.py
-|   ├── service.py
-|   ├── utils.py
-|   ├── example.py
-|   ├── requirements.txt
-|   └── README.md
-│
-├── asr2/                    # Qwen3-ASR
-|   ├── __init__.py           
-|   ├── config.py            
-|   ├── asr_model.py             
-|   ├── service.py          
-|   ├── utils.py            
-|   ├── example.py
-|   ├── requirements.txt       
-|   └── README.md        
-|
-├── translation/              # 机器翻译（中 ↔ 英）
-|   ├── __init__.py
-|   ├── config.py          
-|   ├── translator.py      
-|   ├── service.py         
-|   ├── example.py         
-|   ├── requirements.txt
-|   └── README.md
-│
-├── tts/                      # 语音合成
-|   ├── __init__.py
-|   ├── config.py          
-|   ├── model.py      
-|   ├── service.py
-|   ├── noise_utils.py        
-|   ├── example.py        
-|   ├── requirements.txt   
-|   └── README.md
-|
-├── __init__.py                 
-├── config.py  
-├── pipeline.py
-├── pipeline2.py
+│   ├── qwen3_asr_service.py    # Qwen3ASRService
+│   ├── slots.py                # 驾驶语义槽位
+│   ├── guard.py                # 异常输出安全守卫
+│   ├── utils.py              
+│   ├── optimization/           # 推理期优化（免训练）
+│   │   ├── __init__.py
+│   │   ├── optimizer.py      
+│   │   ├── frontend.py        
+│   │   ├── dialect.py        
+│   │   ├── lexicons.py       
+│   │   └── README.md
+│   ├── compression/            # ONNX 导出 + PTQ 量化
+│   ├── deployment/             # J6P 转换 / 统一运行时 / 资源测量
+│   └── README.md
+├── translator/               
+├── tts/    
 └── README.md
 ```
 
-## 2. 模块概述
+## 2. 构造参数
 
-### FunASR 语音识别
-+ 基于 `FunASR` 的中文语音识别服务，支持单句和说话人分离模式，主要特性：
+| 参数 | 类型 | 默认值 | 说明 |
+|:---|:---|:---|:---|
+| `asr_model_path` | `str` | `models/Qwen3-ASR-1.7B` | ASR 模型路径 |
+| `asr_device` | `str` | `cuda:0` | ASR 运行设备 |
+| `asr_dtype` | `str` | `bfloat16` | ASR 精度 |
+| `asr_attn_implementation` | `Optional[str]` | `None` | 注意力实现（如 `flash_attention_2`） |
+| `language` | `Optional[str]` | `None` | ASR 语言；`None` 自动检测 |
+| `enable_optimization` | `bool` | `False` | 是否启用降噪 + 方言归一 |
+| `optimization_config` | `Union[str, dict]` | `None` | 优化配置（yaml 路径或 dict） |
+| `enable_translation` | `bool` | `False` | 是否中译英 |
+| `translator_model_path` | `str` | `models/Qwen3-1.7B` | 翻译模型路径 |
+| `translator_device` | `str` | `cuda:0` | 翻译设备 |
+| `translator_dtype` | `str` | `bfloat16` | 翻译精度 |
+| `output_language` | `str` | `chinese` | `chinese` / `english` / `both`（别名 `zh/cn/en/eng`） |
+| `output_dir` | `str` | `outputs` | 默认输出目录 |
+| `enable_guard` | `bool` | `False` | 是否启用异常输出安全守卫 |
+| `raise_on_error` | `bool` | `False` | 出错时是否抛出异常 |
 
-  + 支持 `paraformer-zh` 等模型
+## 3. 接口介绍
 
-  + 单条/批量转录，JSON 输出
+| 方法 | 说明 |
+|:---|:---|
+| `from_yaml(path)` | 从 YAML 构建 pipeline |
+| `process(audio, output_json=None, output_language=None, use_frontend=None, use_dialect=None, save_enhanced=None, translate=None)` | 处理单个音频 |
+| `process_batch(audio_paths, output_json=None, output_language=None, **kwargs)` | 批量处理 |
+| `process_dir(input_dir, output_json=None, output_language=None, **kwargs)` | 处理目录内音频 |
 
-+ 快速开始：
++ 单次调用可覆盖开关：`output_language`、`use_frontend`、`use_dialect`、`translate`、`save_enhanced`、`output_json`（相对路径按仓库根解析）。
 
-```python
-from asr import FunASRService, FunASRConfig
+## 4. 返回字段
 
-config = FunASRConfig(mode="single", device="cuda:0")
-service = FunASRService(config)
-result = service.transcribe("audio.wav", output_json="result.json")
-print(result["text"])
+```json
+{
+  "audio_file": "audio.wav",
+  "text": "前方路口请左转",
+  "translation": "Turn left at the intersection ahead.",
+  "output_text": "Turn left at the intersection ahead.",
+  "output_language": "english",
+  "language": "Chinese",
+  "success": true,
+  "frontend_applied": true,
+  "dialect_normalized": true,
+  "translation_applied": true,
+  "processing_time_seconds": 0.42,
+  "guard_safe": true,
+  "guard_reasons": [],
+  "slots": {"direction": ["left"], "action": [], "negation": false, "quantities": []}
+}
 ```
 
-### Qwen3-ASR 语音识别
-+ 基于 `Qwen3-ASR-1.7B` 的多语言语音识别服务，支持 30 种语言和 22 种中文方言，识别精度高，支持本地模型加载。
++ `output_text` 由 `output_language` 决定：`chinese` 为中文原文；`english` 为英文译文（无译文时回退中文）；`both` 为 `中文\t英文`。
++ 启用 `enable_guard` 时，才会出现 `guard_safe` / `guard_reasons` / `slots` 字段。
++ `process_batch` / `process_dir` 的 JSON 输出为 `{"count": N, "records": [...]}`。
 
-+ 快速开始：
+## 5. 快速开始
 
 ```python
-from asr2 import Qwen3ASRService, Qwen3ASRConfig
+from src.pipeline import ASRPipeline
 
-config = Qwen3ASRConfig(
-    load_type="local",
-    model_path="./models/Qwen3-ASR-1.7B",
-    language="Chinese"
+pipe = ASRPipeline(
+    asr_model_path="models/Qwen3-ASR-1.7B",
+    enable_optimization=True,
+    optimization_config="configs/asr/optimization.yaml",
+    enable_translation=True,
+    output_language="english",
+    output_dir="outputs",
 )
-service = Qwen3ASRService(config)
-result = service.transcribe("audio.wav", output_json="result.json")
-print(result["text"])
+result = pipe.process("audio.wav", output_json="outputs/result.json")
+print(result["text"])          # 中文原文
+print(result["translation"])   # 英文译文
+print(result["output_text"])   # 按 output_language 选择的结果
 ```
 
-### Qwen2.5-3B-Instruct 中英文翻译
-+ 基于 `Qwen2.5-3B-Instruct` 的翻译服务，支持中英双向翻译，支持单条/批量/文件输入，输出 JSON 含时间和结果。
+## 6. 日志（utils.py）
 
-+ 快速开始：
++ 全项目的日志由 `src/utils.py` 统一提供，各任务（数据构建、翻译、微调、评测、测试、轻量化）不再各自实现。
++ 接口：
+  + `setup_logging(log_file=None, level=INFO)`：为本次运行准备日志；文件以 **`mode="w"`** 打开，**每次运行先清空**，同时会移除旧 handler，避免同进程内重复输出。传空字符串则只输出到控制台。
+  + `log_and_print(message, level=INFO)`：同一行同时写入控制台与日志文件，并逐条 flush。
+  + `resolve_log_path(log_file)`：相对路径按仓库根解析。
++ 日志挂在 root logger 上，因此 `src/` 与 `training/` 内部的 `logger.info/warning` 也会一并写入当次日志文件，便于事后排查。
 
 ```python
-from translation import Translation
+from src.utils import log_and_print, setup_logging
 
-service = Translation(src_lang="zho_Hans", tgt_lang="eng_Latn")
-result = service.translate("请减速至40km/h")
-print(result)  # "Please decelerate to 40 km/h"
+setup_logging("logs/run.log")
+log_and_print("task started")
 ```
 
-### ChatTTS 语音合成
-+ 基于 `ChatTTS` 的语音合成服务，支持单条/批量合成，可添加白噪声/粉噪声/自定义环境噪声，输出为 `.wav` 文件。
+## 7. 参考资料
 
-+ 快速开始：
-```python
-from tts import ChatTTSService
++ https://github.com/QwenLM/Qwen3-ASR
 
-service = ChatTTSService(model_path="./models/rvcmd_linux_amd64")
-filepath = service.synthesize("今天天气真好")
-print(filepath)  # outputs/command_0001.wav
-```
-
-### `Pipeline` 语音识别模块整合
-+ `pipeline.py`：ASR + Translation 组合，将 FunASR 识别和翻译串联，输入音频，输出中文转录和英文翻译
-```python
-from pipeline import ASR
-
-pipeline = ASR(asr_mode="single", trans_num_beams=4)
-result = pipeline.process("audio.wav", output_json="result.json")
-print(result["chinese_text"], result["english_translation"])
-```
-
-+ `pipeline2.py`（推荐）：基于高性能 Qwen3-ASR 的流水线，同样支持可选翻译
-```python
-from pipeline2 import ASR2
-
-pipeline = ASR2(
-    asr_load_type="local",
-    asr_model_path="./models/Qwen3-ASR-1.7B",
-    trans_load_type="custom",
-    trans_model_name="Qwen/Qwen2.5-3B-Instruct",
-)
-result = pipeline.process("audio.wav", translate=False)
-
-result = pipeline.process("audio.wav", translate=True)
-```
-
-## 3. 数据集构建
-
-### 标准语音指令数据集
-+ 使用 Talk2Car 文本指令数据集 + TTS 构建语音指令数据集：
-
-```
-  Talk2Car
-      │
-      ▼
- command.json
-      │
-      ▼
-提取驾驶指令文本
-      │
-      ▼
- TTS(多说话人)
-      │
-      ▼
- command.wav
-      │
-      ▼
-（添加噪声/方言）
-      │
-      ▼
- 语音指令数据集
-      │
-      ▼
- ASR 语音识别
-      │
-      ▼
-  测试准确率
-```
-
-+ 结果：生成 `command_0001.wav` ~ `command_8349.wav` 共 `8349` 条语音指令，每条语音指令都包含一项或多项基础操控（部分存在无关指令），用于测试基础语音指令识别的准确率。
-
-## 4. 测试与评估
-+ 测试模块位于 `tests/` 目录，提供批量测试、指标计算和结果汇总功能。
-
-## 5. 日志
-+ 所有模块均使用 `Python` 的 `logging`，每个模块有独立的 `logger`。您可以这样配置：
-
-```python
-import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-```
