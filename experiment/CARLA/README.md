@@ -68,6 +68,20 @@ python -m benchmark.report outputs/scene2_full/benchmark/summary.json --output o
 
 输出`report.md`和`report.json`；可传入多个场景的结果文件进行汇总。
 
+### 核对三场景同源数据
+
+三个场景先分别完成模型传感器录制（`--vla-record-sensors`）和独立任务评测
+（`--benchmark-assessment`），再对实际采集的目录运行：
+
+```powershell
+python -m evaluation.challenge_capture_audit --scene-1 outputs/scene1_full --scene-2 outputs/scene2_full --scene-3 outputs/scene3_full --frames 1000 --output outputs/challenge_1000_frames.json
+```
+
+审计要求每场景有足够的模型决策帧，且每个决策帧均有同帧、同时间的独立仿真真值；
+输出三个场景的采集指纹、评测状态及均匀抽样的帧索引。未采集到的数据不会补造。
+索引用于指标抽样；有状态模型必须从各自采集的完整原序列回放，不能直接跳帧推理。
+采集真值只供评测，不传入模型适配器。该审计不代替真实闭环或任务成功判定。
+
 ## 详细说明
 
 - [任务管理与运行参数](benchmark/README.md)
