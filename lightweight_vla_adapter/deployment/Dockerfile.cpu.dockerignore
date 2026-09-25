@@ -1,0 +1,16 @@
+**
+!structured_command_parser/
+!structured_command_parser/**
+!lightweight_vla_adapter/
+!lightweight_vla_adapter/**
+**/outputs/**
+**/data/**
+**/models/**
+**/logs/**
+**/__pycache__/**
+**/.pytest_cache/**
+**/*.pt
+**/*.safetensors
+**/*.onnx
+**/*.bc
+**/*.hbm

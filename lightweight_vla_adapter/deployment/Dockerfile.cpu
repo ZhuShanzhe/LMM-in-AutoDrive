@@ -1,0 +1,12 @@
+FROM python:3.12.13-slim-bookworm
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
+    OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 \
+    HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+WORKDIR /app
+COPY lightweight_vla_adapter/deployment/requirements-cpu.txt /tmp/requirements-cpu.txt
+RUN python -m pip install --no-cache-dir -r /tmp/requirements-cpu.txt
+COPY structured_command_parser /app/structured_command_parser
+COPY lightweight_vla_adapter /app/lightweight_vla_adapter
+ENV PYTHONPATH=/app
+ENTRYPOINT ["python", "lightweight_vla_adapter/scripts/check_owned_cpu_runtime.py"]
+CMD ["--model-root", "/models", "--output", "/results/check"]

@@ -1,6 +1,28 @@
 # 挑战运行权重
 
-Git 不含权重、缓存或数据集。固定清单为 `lightweight_vla_adapter/configs/challenge_assets.json`。当前新权重没有上传 Hugging Face，不能用旧 HF 候选文件替代。所有模型均沿用相应许可和使用范围，不因此获得新的商业或道路部署授权。
+Git 不含权重、缓存或数据集。固定清单为 `lightweight_vla_adapter/configs/challenge_assets.json`。2026-09-25 已实际验证下列公开下载源，23 个文件的大小和 SHA256 均符合原清单。所有模型均沿用相应许可和使用范围，不因此获得新的商业或道路部署授权。
+
+## Hugging Face 下载（推荐）
+
+- [挑战权重](https://huggingface.co/twlk666/lmm-autodrive-challenge-assets)：固定版本 `0f570798313a3e3ed7d5c867a60413c8a0bbf48b`。
+- [ModernBERT](https://huggingface.co/UNIC0RN-Zhu/modernbert-drive-command-base)：固定版本 `a32da623a40923cb90b689c49c7b989c29e30fc1`。
+
+下载脚本从 `challenge_asset_sources.json` 读取固定版本，匿名下载并逐文件校验，不需要上传新的链接或提供 Token。ModernBERT 使用与冻结清单一致的历史版本；其最新 README 已变化，不应直接下载最新分支替代。挑战仓库中的旧 `sequence_policy_v2.pt` 不在当前清单内，不作为默认权重。
+
+在仓库根目录和已配置的 Python 环境中运行：
+
+```bash
+export HF_HOME=/root/autodl-tmp/hf_cache_owned_0925
+MODEL_ROOT=/root/autodl-tmp/models/challenge-assets-pinned
+python lightweight_vla_adapter/scripts/download_challenge_assets.py --model-root "$MODEL_ROOT"
+python lightweight_vla_adapter/scripts/prepare_challenge_runtime.py \
+  --model-root "$MODEL_ROOT" --map Town04 \
+  --output lightweight_vla_adapter/outputs/runtime/Town04.json
+```
+
+其他机器可替换 `MODEL_ROOT` 和缓存路径。已有且校验正确的文件跳过；不匹配的已有文件会导致停止，不自动覆盖。独立 ASR、场景理解模型不属于这份 23 文件清单。
+
+CPU 离线检查与容器使用见 [部署说明](../lightweight_vla_adapter/deployment/README.md)。
 
 ## 服务器
 
