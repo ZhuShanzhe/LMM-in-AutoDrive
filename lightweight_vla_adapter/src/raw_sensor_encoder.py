@@ -19,8 +19,12 @@ class MultiviewImageEncoder(nn.Module):
         *,
         num_views: int = 4,
         token_grid: tuple[int, int] = (2, 2),
+        input_size: tuple[int, int] = (224, 224),
     ) -> None:
         super().__init__()
+        self.input_size = tuple(int(value) for value in input_size)
+        if len(self.input_size) != 2 or min(self.input_size) <= 0:
+            raise ValueError("input_size must contain two positive dimensions")
         from torchvision.models import mobilenet_v3_small
 
         backbone = mobilenet_v3_small(weights=None)
@@ -76,7 +80,7 @@ class MultiviewImageEncoder(nn.Module):
             pixels = pixels.clamp(0.0, 1.0)
         pixels = F.interpolate(
             pixels,
-            size=(224, 224),
+            size=self.input_size,
             mode="bilinear",
             align_corners=False,
         )
