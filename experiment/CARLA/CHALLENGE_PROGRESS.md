@@ -15,3 +15,14 @@
 - **日志与报告**：记录演员轨迹、交通分布、碰撞及实线违规事件，统计运行延迟和资源占用，输出JSON与Markdown报告。
 - **运行管理**：支持中断数据保留、磁盘容量保护，以及传感器、车辆和仿真设置的清理恢复。
 
+## 运行
+
+启动 CARLA 0.9.16 后，在仓库根目录使用已安装 CARLA Python API 的环境运行。每次指定新的输出目录：
+
+```text
+python experiment/CARLA/run_control_experiment.py basic_voice_control_5km --benchmark-assessment --record-multimodal --duration-s 800 --output-dir outputs/scene1_run
+python experiment/CARLA/run_complex_avoidance_town05.py --benchmark-assessment --record-multimodal --duration 0 --output-dir outputs/scene2_run
+python experiment/CARLA/run_emergency_response_6km.py --benchmark-assessment --record-multimodal --duration 0 --output-dir outputs/scene3_run
+```
+
+`--benchmark-task` 可指定任务编号或 ID，但只筛选评测，不改变驾驶路线或从任务起点开始。完整多模态同步情况见各运行目录的 `multimodal/capture_summary.json`，任务结果见 `benchmark/summary.json`。默认控制器是场景基线；接入模型时需明确选择模型控制入口，不能将基线结果算作模型闭环结果。
