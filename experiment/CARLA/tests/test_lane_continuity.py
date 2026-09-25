@@ -3,7 +3,8 @@ from types import SimpleNamespace as NS
 import pytest
 
 from benchmark.catalog import ConfigError
-from benchmark.lane_continuity import build_lane_corridor, trace_lane_corridor
+from benchmark.lane_continuity import (build_lane_corridor, trace_lane_corridor,
+                                       trace_lane_change_keys)
 
 
 class Location:
@@ -85,3 +86,48 @@ def test_invalid_lane_corridors_are_rejected(fault):
         wps[1].next=lambda distance:[successor]
     elif fault=='sparse': route[-1]['distance_m']=100
     with pytest.raises(ConfigError): build_lane_corridor(world_map,route,0,Location)
+
+
+def test_lane_change_target_identity_continues_after_junction():
+    route = [dict(x=i*5, y=0, z=0, distance_m=i*5,
+                  road_id=(1 if i == 0 else 99 if i == 1 else 2),
+                  section_id=0, lane_id=6) for i in range(4)]
+    entries = []
+    for point in route:
+        road = point['road_id']
+        target = NS(road_id=road, section_id=0, lane_id=5,
+                    lane_type='Driving', is_junction=False,
+                    transform=NS(rotation=NS(yaw=0)))
+        entry = NS(road_id=road, section_id=0, lane_id=6,
+                   lane_type='Driving', is_junction=road == 99,
+                   lane_change='Left', transform=NS(rotation=NS(yaw=0)),
+                   get_left_lane=lambda target=target: target)
+        entries.append(entry)
+    world_map = NS(get_waypoint=lambda location: entries[int(location.x/5)])
+    fixture = dict(entry_lane_key='1:0:6', target_lane_key='1:0:5')
+
+    keys = trace_lane_change_keys(world_map, route, 0, 15, 'LEFT', Location, fixture)
+
+    assert keys['entry_lane_keys'] == ['1:0:6', '2:0:6']
+    assert keys['target_lane_keys'] == ['1:0:5', '2:0:5']
+    route[2]['lane_id'] = 7
+    with pytest.raises(ConfigError, match='route/map mismatch'):
+        trace_lane_change_keys(world_map, route, 0, 15, 'LEFT', Location, fixture)
+
+
+def test_lane_change_skips_overlapping_junction_connector():
+    route, wps, world_map = setup()
+    for wp in wps:
+        wp.is_junction = False
+        wp.lane_change = 'Left'
+        wp.get_left_lane = lambda wp=wp: NS(
+            road_id=wp.road_id, section_id=0, lane_id=-2,
+            lane_type='Driving', is_junction=False,
+            transform=NS(rotation=NS(yaw=0)))
+    overlap = NS(road_id=99, section_id=0, lane_id=-1,
+                 lane_type='Driving', is_junction=True)
+    world_map.get_waypoint = lambda loc: overlap if loc.x == 5 else wps[int(loc.x/5)]
+    fixture = dict(entry_lane_key='1:0:-1', target_lane_key='1:0:-2')
+    keys = trace_lane_change_keys(world_map, route, 0, 15, 'LEFT', Location, fixture)
+    assert keys['entry_lane_keys'] == ['1:0:-1', '2:0:-1']
+    assert keys['target_lane_keys'] == ['1:0:-2', '2:0:-2']

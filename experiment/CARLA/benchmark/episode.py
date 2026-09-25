@@ -273,6 +273,7 @@ class EpisodeAssessment:
                             raise ConfigError('current lane differs from destination route corridor')
                 elif step['kind'] in {'lane_change','guarded_lane_change'}:
                     location=snapshot.find(self.binding.actor_id).get_transform().location
+                    anchor=profile['activate_m']
                     if i>0:
                         previous = fixture['steps'].get(str(i-1), {})
                         if 'start_route_s_m' in step:
@@ -287,7 +288,19 @@ class EpisodeAssessment:
                             raise ConfigError('sequential lane entry outside remaining route')
                         point=min(self.route,key=lambda p:abs(p['distance_m']-anchor))
                         location=self.location_factory(**{k:point[k] for k in ('x','y','z')})
-                    fixture['steps'][str(i)]=prepare_lane_fixture(self.map,location,step['direction'])
+                    lane_fixture=prepare_lane_fixture(self.map,location,step['direction'])
+                    later=[task.activate_m for task in self.catalog.tasks
+                           if task.activate_m>anchor]
+                    corridor_end=min(
+                        self.route[-1]['distance_m'],anchor+350.0,
+                        profile.get('end_route_s_m',self.route[-1]['distance_m']),
+                        min(later) if later else self.route[-1]['distance_m'],
+                    )
+                    from .lane_continuity import trace_lane_change_keys
+                    lane_fixture.update(trace_lane_change_keys(
+                        self.map,self.route,anchor,corridor_end,step['direction'],
+                        self.location_factory,lane_fixture))
+                    fixture['steps'][str(i)]=lane_fixture
                 elif step['kind'] in {'yield_pedestrian','wait_clear'}:
                     from .event_fixture import crosswalk_fixture, route_crossing_fixture
                     target_roles=set(step.get('target_roles',[step.get('target_role')]))

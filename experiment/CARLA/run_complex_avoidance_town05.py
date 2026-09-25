@@ -1475,7 +1475,9 @@ def main() -> int:
             from benchmark.episode import attach_episode
             benchmark_assessment = attach_episode('scene_2',route,world,ego,output_dir/'benchmark',args.config,
                 initial_route_s_m=start_progress_m,task_selector=args.benchmark_task,
-                run_metadata=dict(traffic_seed=int(config['traffic']['seed']),vla_enabled=bool(vla_enabled),
+                run_metadata=dict(traffic_seed=int(config['traffic']['seed']),
+                                  traffic_replenishment_settings=dict(traffic.replenishment_settings),
+                                  vla_enabled=bool(vla_enabled),
                                   policy_source=('EXTERNAL' if args.external_ego_control else
                                                  'VLA_MODEL' if vla_enabled else 'NON_VLA_CONTROL'),
                                   external_ego_control=bool(args.external_ego_control),
@@ -1493,6 +1495,7 @@ def main() -> int:
                 safety.simulation_time_s = simulation_time_s
 
             progress_m = tracker.update(ego.get_location())
+            traffic.maintain(ego, progress_m)
             for command in ready_commands_in_order(
                 runtime_commands,
                 announced,
@@ -1769,6 +1772,9 @@ def main() -> int:
                 "restores_previous_instruction_state": False,
             },
             "traffic_vehicles_spawned": len(traffic.vehicles),
+            "traffic_replenishment_settings": dict(traffic.replenishment_settings),
+            "traffic_replenishment_count": len(traffic.replenishment_events),
+            "traffic_replenishment_events": list(traffic.replenishment_events),
             "ambient_walkers_spawned": len(traffic.walkers),
             "traffic_hybrid_physics": {
                 "enabled": bool(args.traffic_hybrid_physics),

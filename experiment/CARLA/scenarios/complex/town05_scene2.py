@@ -385,17 +385,133 @@ class TownTrafficFlow:
         self.vehicles: list[Any] = []
         self.walkers: list[Any] = []
         self.walker_controllers: list[Any] = []
+        self.route_distances = cumulative_route_distances(route)
+        self.reserved_locations: list[Any] = []
+        self._maintenance_ticks = 0
+        self._replenished = 0
+        self.replenishment_events: list[dict[str, Any]] = []
+        self.replenishment_settings = {
+            "check_ticks": int(self.config.get("replenish_check_ticks", 20)),
+            "minimum_front_vehicles": int(self.config.get("minimum_front_vehicles", 4)),
+            "lookahead_m": float(self.config.get("replenish_lookahead_m", 240.0)),
+        }
 
     def spawn(
         self,
         reserved_locations: Iterable[Any],
         ego_location: Any,
     ) -> None:
+        self.reserved_locations = list(reserved_locations)
         self._spawn_vehicles(
-            list(reserved_locations),
+            self.reserved_locations,
             ego_location,
         )
         self._spawn_walkers()
+
+    def maintain(self, ego: Any, progress_m: float) -> None:
+        """Replenish only beyond the camera range, without moving task actors."""
+        import carla
+
+        self._maintenance_ticks += 1
+        if self._maintenance_ticks % self.replenishment_settings["check_ticks"]:
+            return
+        origin = ego.get_location()
+        forward = ego.get_transform().get_forward_vector()
+        visible = 0
+        for actor in self.vehicles:
+            if not actor.is_alive:
+                continue
+            location = actor.get_location()
+            dx, dy = location.x - origin.x, location.y - origin.y
+            along = dx * forward.x + dy * forward.y
+            across = abs(dx * forward.y - dy * forward.x)
+            if 0 < along < 120 and across < along * 1.43:
+                visible += 1
+        if visible >= self.replenishment_settings["minimum_front_vehicles"]:
+            return
+
+        interval = self.replenishment_settings["lookahead_m"]
+        start = float(progress_m) + interval
+        if start >= self.route_distances[-1] - 30:
+            return
+        source = None
+        for actor in self.vehicles:
+            if not actor.is_alive or distance_2d(actor.get_location(), origin) < 350:
+                continue
+            location = actor.get_location()
+            nearest = min(
+                range(0, len(self.route), 20),
+                key=lambda index: distance_2d(
+                    self.route[index][0].transform.location, location
+                ),
+            )
+            if self.route_distances[nearest] < progress_m - 300:
+                source = actor
+                break
+        if source is None and len(self.vehicles) >= int(self.config["vehicles"]):
+            return
+
+        import bisect
+
+        index = bisect.bisect_left(self.route_distances, start)
+        for offset in (0, 10, 20, 30, 40):
+            candidate_index = min(index + offset, len(self.route) - 1)
+            base = self.route[candidate_index][0]
+            if base.is_junction:
+                continue
+            lanes = [base]
+            for side in ("get_left_lane", "get_right_lane"):
+                neighbor = getattr(base, side)()
+                if (neighbor is not None and neighbor.road_id == base.road_id
+                        and neighbor.lane_id * base.lane_id > 0
+                        and "Driving" in str(neighbor.lane_type)):
+                    lanes.append(neighbor)
+            self.rng.shuffle(lanes)
+            for lane in lanes:
+                location = lane.transform.location
+                if (distance_2d(location, origin) < 180
+                        or any(distance_2d(location, reserved) < 18
+                               for reserved in self.reserved_locations)
+                        or any(actor.is_alive and distance_2d(location, actor.get_location()) < 22
+                               for actor in self.vehicles)):
+                    continue
+                blueprint = self.rng.choice(
+                    _safe_car_blueprints(self.world.get_blueprint_library())
+                )
+                _set_random_blueprint_attributes(
+                    blueprint, self.rng,
+                    "scene2_replenished_{0:04d}".format(self._replenished),
+                )
+                transform = carla.Transform(
+                    carla.Location(x=location.x, y=location.y, z=location.z + 0.45),
+                    lane.transform.rotation,
+                )
+                replacement = self.world.try_spawn_actor(blueprint, transform)
+                if replacement is None:
+                    continue
+                replacement.set_autopilot(True, self.traffic_manager.get_port())
+                self.traffic_manager.distance_to_leading_vehicle(replacement, 5.0)
+                self.traffic_manager.vehicle_percentage_speed_difference(
+                    replacement, self.rng.uniform(-3.0, 14.0)
+                )
+                self.traffic_manager.auto_lane_change(replacement, False)
+                self.traffic_manager.update_vehicle_lights(replacement, True)
+                self.registry.add(replacement)
+                self.vehicles.append(replacement)
+                self._replenished += 1
+                self.replenishment_events.append({
+                    "ego_progress_m": round(float(progress_m), 1),
+                    "spawn_distance_from_ego_m": round(distance_2d(location, origin), 1),
+                    "front_vehicles_before": visible,
+                    "new_actor_id": replacement.id,
+                    "retired_actor_id": source.id if source is not None else None,
+                })
+                if source is not None:
+                    source.set_autopilot(False, self.traffic_manager.get_port())
+                    source.destroy()
+                    self.vehicles.remove(source)
+                    self.registry.actors.remove(source)
+                return
 
     def _ordered_spawn_points(
         self,

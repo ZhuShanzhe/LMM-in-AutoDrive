@@ -962,10 +962,13 @@ def main():
         if args.benchmark_assessment:
             from benchmark.episode import attach_episode
             benchmark_assessment = attach_episode('scene_1',scenario.route_manager.route,world,ego,
-                Path(output_dir)/'benchmark',scenario_config_path,task_selector=args.benchmark_task,
+                Path(output_dir)/'benchmark',args.scenario_config or scenario_config_path,
+                initial_route_s_m=float(scenario.route_manager.progress_m),
+                task_selector=args.benchmark_task,
                 run_metadata=dict(decision_source=args.decision_source,
                                   policy_source='VLA_MODEL' if args.decision_source=='vla_scene_bridge' else 'NON_VLA_CONTROL',
                                   target_speed_kmh=args.target_speed_kmh,
+                                  resume_route_progress_m=args.resume_route_progress_m,
                                   sensor_recording=bool(args.vla_record_sensors),
                                   standard_multimodal_recording=bool(args.record_multimodal)))
         previous_location = start_location

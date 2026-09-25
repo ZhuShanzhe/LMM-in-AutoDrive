@@ -2,7 +2,46 @@
 import math
 
 from .catalog import ConfigError
-from .truth_capture import lane_key, angle_delta
+from .truth_capture import lane_key, angle_delta, prepare_lane_fixture
+
+
+def trace_lane_change_keys(world_map, route, start_m, end_m, direction,
+                           location_factory, entry_fixture):
+    """Bind road-spanning lane IDs to one route-verified lane-change pair."""
+    if not start_m < end_m <= route[-1]['distance_m']:
+        raise ConfigError('lane-change corridor outside recorded route')
+    entries = [entry_fixture['entry_lane_key']]
+    targets = [entry_fixture['target_lane_key']]
+    checked = 0
+    for point in route:
+        distance = point['distance_m']
+        if not start_m <= distance <= end_m:
+            continue
+        location = location_factory(**{key:point[key] for key in ('x','y','z')})
+        waypoint = world_map.get_waypoint(location)
+        if waypoint is None:
+            raise ConfigError('lane-change route waypoint missing')
+        if lane_key(waypoint) != (f"{point['road_id']}:{point['section_id']}:"
+                                  f"{point['lane_id']}"):
+            # Town junction connectors can occupy exactly the same coordinates.
+            # They are not legal lane-change sites, so do not bind either lane
+            # from a nearest-waypoint tie at such a point.
+            if waypoint.is_junction:
+                continue
+            raise ConfigError('lane-change route/map mismatch')
+        if waypoint.is_junction:
+            continue
+        checked += 1
+        try:
+            pair = prepare_lane_fixture(world_map, location, direction)
+        except ConfigError:
+            continue
+        for key, values in (('entry_lane_key', entries), ('target_lane_key', targets)):
+            if pair[key] not in values:
+                values.append(pair[key])
+    if not checked or set(entries) & set(targets):
+        raise ConfigError('invalid lane-change corridor')
+    return dict(entry_lane_keys=entries, target_lane_keys=targets)
 
 
 def build_lane_corridor(world_map,route,start_m,location_factory,end_m=None):
