@@ -8,6 +8,7 @@ import json
 import math
 from pathlib import Path
 
+from benchmark.catalog import load_catalog
 from evaluation.model_rig_replay import ModelRigReplayDataset
 from evaluation.sensor_replay import DatasetValidationError, _load_jsonl
 
@@ -34,7 +35,33 @@ def _selected_indices(available: int, count: int) -> list[int]:
     return [index * (available - 1) // (count - 1) for index in range(count)]
 
 
-def audit_scene(scene: str, run_root: Path, count: int) -> dict:
+def _task_coverage_indices(scene: str, frames: list, truth: dict, source_sha256: str) -> dict[str, int]:
+    catalog = load_catalog(scene)
+    if catalog.source_sha256 != source_sha256:
+        raise DatasetValidationError(f"{scene}: assessment uses a different scene configuration")
+    chosen = {}
+    progress = []
+    for frame in frames:
+        value = truth[frame.simulation_frame].get("route_s_m")
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+            raise DatasetValidationError(f"{scene}: missing or invalid route progress in independent truth")
+        progress.append(float(value))
+    for index, task in enumerate(catalog.tasks):
+        end = task.end_m
+        if end is None:
+            end = (catalog.tasks[index + 1].activate_m
+                   if index + 1 < len(catalog.tasks) else catalog.route_length_m)
+        candidates = [position for position, value in enumerate(progress)
+                      if task.activate_m <= value < end]
+        if not candidates:
+            raise DatasetValidationError(
+                f"{scene}: no recorded model decision in task interval {task.task_id}"
+            )
+        chosen[task.task_id] = candidates[len(candidates) // 2]
+    return chosen
+
+
+def audit_scene(scene: str, run_root: Path, count: int, *, require_task_coverage: bool = True) -> dict:
     root = run_root.expanduser().resolve()
     assessment = root / "benchmark"
     try:
@@ -86,7 +113,18 @@ def audit_scene(scene: str, run_root: Path, count: int) -> dict:
             raise DatasetValidationError(
                 f"{scene}: missing or mistimed independent truth for decision frame {frame.simulation_frame}"
             )
-    selected = [frames[index] for index in _selected_indices(len(frames), count)]
+    mandatory = (_task_coverage_indices(scene, frames, truth, metadata["source_sha256"])
+                 if require_task_coverage else {})
+    selected_indices = set(mandatory.values())
+    if len(selected_indices) > count:
+        raise DatasetValidationError(f"{scene}: frame quota cannot cover all task intervals")
+    remaining = [index for index in range(len(frames)) if index not in selected_indices]
+    needed = count - len(selected_indices)
+    if needed:
+        selected_indices.update(
+            remaining[index] for index in _selected_indices(len(remaining), needed)
+        )
+    selected = [frames[index] for index in sorted(selected_indices)]
     input_manifest = inputs.integrity_manifest()
     input_hashes = {row["simulation_frame"]: row["input_sha256"] for row in input_manifest["frames"]}
     return {
@@ -98,6 +136,11 @@ def audit_scene(scene: str, run_root: Path, count: int) -> dict:
         "assessment_source_sha256": metadata.get("source_sha256"),
         "assessment_status": outcome.get("status"),
         "truth_file_sha256": _file_hash(truth_path),
+        "task_coverage": {
+            "status": "ALL_TASK_INTERVALS_SAMPLED" if require_task_coverage else "NOT_CHECKED",
+            "task_ids": list(mandatory),
+            "scope": "at least one decision frame in each task distance interval; not task success",
+        },
         "selected": [
             {
                 "simulation_frame": frame.simulation_frame,
@@ -113,18 +156,20 @@ def audit_scene(scene: str, run_root: Path, count: int) -> dict:
     }
 
 
-def audit_captures(roots: dict[str, Path], frame_count: int = 1000) -> dict:
+def audit_captures(roots: dict[str, Path], frame_count: int = 1000,
+                   *, require_task_coverage: bool = True) -> dict:
     if set(roots) != set(SCENES) or type(frame_count) is not int or frame_count < len(SCENES):
         raise ValueError("provide all three scenes and at least three frames")
     base, remainder = divmod(frame_count, len(SCENES))
     scenes = [
-        audit_scene(scene, Path(roots[scene]), base + (index < remainder))
+        audit_scene(scene, Path(roots[scene]), base + (index < remainder),
+                    require_task_coverage=require_task_coverage)
         for index, scene in enumerate(SCENES)
     ]
     return {
         "schema_version": "challenge_same_source_selection/1.0",
         "frame_count": frame_count,
-        "selection": "evenly spaced evaluation frames; replay full source sequence for stateful models",
+        "selection": "task-interval frames plus evenly spaced evaluation frames; replay full source sequence for stateful models",
         "truth_in_policy_inputs": False,
         "closed_loop_success": None,
         "scenes": scenes,

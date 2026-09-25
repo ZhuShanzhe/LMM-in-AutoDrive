@@ -4,7 +4,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from evaluation.challenge_capture_audit import audit_captures, validate_replay_selection
+from benchmark.catalog import load_catalog
+from evaluation.challenge_capture_audit import (
+    _task_coverage_indices, audit_captures, validate_replay_selection,
+)
 from evaluation.model_rig_capture import ModelRigCapture
 from evaluation.model_rig_replay import ModelRigReplayDataset
 from evaluation.replay_benchmark import run
@@ -62,7 +65,7 @@ def make_run(root, scene, *, truth_frame=11, truth_time=.55, missing_sensor=None
 def test_three_scene_selection_keeps_truth_separate(tmp_path):
     roots = {scene: make_run(tmp_path / scene, scene)
              for scene in ("scene_1", "scene_2", "scene_3")}
-    report = audit_captures(roots, 3)
+    report = audit_captures(roots, 3, require_task_coverage=False)
     assert report["frame_count"] == 3
     assert report["truth_in_policy_inputs"] is False
     assert [row["scene_id"] for row in report["scenes"]] == list(roots)
@@ -85,14 +88,14 @@ def test_audit_rejects_unmatched_evidence(tmp_path, fault):
         path = roots["scene_2"] / "benchmark" / "manifest.json"
         path.write_text(json.dumps({"scene_id": "scene_2"}), encoding="utf-8")
     with pytest.raises(DatasetValidationError):
-        audit_captures(roots, 3)
+        audit_captures(roots, 3, require_task_coverage=False)
 
 
 def test_audit_requires_real_recorded_frames(tmp_path):
     roots = {scene: make_run(tmp_path / scene, scene)
              for scene in ("scene_1", "scene_2", "scene_3")}
     with pytest.raises(DatasetValidationError, match="need"):
-        audit_captures(roots, 1000)
+        audit_captures(roots, 1000, require_task_coverage=False)
 
 
 @pytest.mark.parametrize("missing_sensor", ("left", "lidar"))
@@ -101,14 +104,15 @@ def test_audit_rejects_incomplete_model_modalities(tmp_path, missing_sensor):
              missing_sensor=missing_sensor if scene == "scene_2" else None)
              for scene in ("scene_1", "scene_2", "scene_3")}
     with pytest.raises(DatasetValidationError, match="incomplete four-view"):
-        audit_captures(roots, 3)
+        audit_captures(roots, 3, require_task_coverage=False)
 
 
 def test_selection_replays_all_decisions_before_scoring_sparse_frames(tmp_path):
     roots = {scene: make_run(tmp_path / scene, scene, decisions=3)
              for scene in ("scene_1", "scene_2", "scene_3")}
     path = tmp_path / "selection.json"
-    path.write_text(json.dumps(audit_captures(roots, 3)), encoding="utf-8")
+    path.write_text(json.dumps(audit_captures(roots, 3,
+                         require_task_coverage=False)), encoding="utf-8")
     dataset = ModelRigReplayDataset(roots["scene_1"] / "model_inputs")
 
     class StatefulAdapter:
@@ -140,3 +144,15 @@ def test_selection_replays_all_decisions_before_scoring_sparse_frames(tmp_path):
     path.write_text(json.dumps(changed), encoding="utf-8")
     with pytest.raises(DatasetValidationError, match="different model-input"):
         validate_replay_selection(path, "scene_1", dataset, dataset.integrity_manifest())
+
+
+@pytest.mark.parametrize("scene", ("scene_1", "scene_2", "scene_3"))
+def test_task_interval_selection_requires_real_route_coverage(scene):
+    catalog = load_catalog(scene)
+    frames = [SimpleNamespace(simulation_frame=index) for index in range(len(catalog.tasks))]
+    truth = {index: {"route_s_m": task.activate_m + 1}
+             for index, task in enumerate(catalog.tasks)}
+    chosen = _task_coverage_indices(scene, frames, truth, catalog.source_sha256)
+    assert set(chosen) == {task.task_id for task in catalog.tasks}
+    with pytest.raises(DatasetValidationError, match=catalog.tasks[-1].task_id):
+        _task_coverage_indices(scene, frames[:-1], truth, catalog.source_sha256)
