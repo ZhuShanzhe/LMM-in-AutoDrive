@@ -1,0 +1,24 @@
+{
+  "schema_version": "challenge_asset_sources/1.0",
+  "manifest_version": "signal-generalization-v2-phase-recovery-v1",
+  "sources": [
+    {
+      "local_prefix": "challenge/",
+      "remote_prefix": "challenge/",
+      "repo_id": "twlk666/lmm-autodrive-challenge-assets",
+      "revision": "0f570798313a3e3ed7d5c867a60413c8a0bbf48b"
+    },
+    {
+      "local_prefix": "lightweight_vla_adapter/",
+      "remote_prefix": "lightweight_vla_adapter/",
+      "repo_id": "twlk666/lmm-autodrive-challenge-assets",
+      "revision": "0f570798313a3e3ed7d5c867a60413c8a0bbf48b"
+    },
+    {
+      "local_prefix": "modernbert-drive-command-compositional/",
+      "remote_prefix": "",
+      "repo_id": "UNIC0RN-Zhu/modernbert-drive-command-base",
+      "revision": "a32da623a40923cb90b689c49c7b989c29e30fc1"
+    }
+  ]
+}

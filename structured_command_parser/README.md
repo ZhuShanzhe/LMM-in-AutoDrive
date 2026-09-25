@@ -4,6 +4,8 @@
 
 本分支保留该模块可复用的运行接口、配置和回归代码。当前联合基准以根目录 README 和轻量 VLA 模块 README 为准；下文历史性能不是新版挑战模型成绩。
 
+2026-09-25 已核验 [模型下载源及冻结版本](../models/README.md)。CPU 实际权重检查确认 `Maintain 40 km/h.` 输出 `target_speed_mps: 11.111`，`before the red truck` 保留目标引用、BEFORE 条件和停止完成条件，否定左转后继续直行输出 PROCEED/STRAIGHT。中文或空文本不能绕过英文入口校验。上述是三个接口样例，不是准确率评测；检查入口见 [CPU 部署说明](../lightweight_vla_adapter/deployment/README.md)。
+
 ## 当前基线
 
 - Backbone：`ModernBERT-base`

@@ -1,5 +1,7 @@
 # 挑战赛道文档
 
+- [0925 语言与 VLA 无卡准备及验证](OWNED_CPU_PREPARATION_20260925.md)
+
 - [0925 提交前五人分工](../program/task_0925.md)
 - [0925 成员分支合并与核验](CHALLENGE_MERGE_20260925.md)
 

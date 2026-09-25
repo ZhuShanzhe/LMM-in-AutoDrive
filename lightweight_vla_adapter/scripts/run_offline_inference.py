@@ -14,7 +14,6 @@ if str(REPO_ROOT) not in sys.path:
 
 from lightweight_vla_adapter.src.contracts import SensorTensorBatch
 from lightweight_vla_adapter.src.decision_adapter import LightweightDecisionAdapter
-from lightweight_vla_adapter.src.pipeline import LightweightVLAPipeline
 
 
 def parse_args() -> argparse.Namespace:
@@ -75,6 +74,8 @@ def build_model(config: dict) -> LightweightDecisionAdapter:
 
 
 def main() -> None:
+    from lightweight_vla_adapter.src.pipeline import LightweightVLAPipeline
+
     args = parse_args()
     with Path(args.config).open("r", encoding="utf-8") as handle:
         config = json.load(handle)

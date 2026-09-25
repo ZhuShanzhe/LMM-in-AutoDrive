@@ -6,8 +6,15 @@ from .src.decision_adapter import (
     LightweightDecisionAdapter,
     decode_proposal,
 )
-from .src.pipeline import LightweightVLAPipeline
-from .src.safety_bridge import advance_vla_control_plan, gate_vla_proposal
+def __getattr__(name):
+    # Model-only checks must not import the external control integration.
+    if name == "LightweightVLAPipeline":
+        from .src.pipeline import LightweightVLAPipeline
+        return LightweightVLAPipeline
+    if name in {"advance_vla_control_plan", "gate_vla_proposal"}:
+        from .src import safety_bridge
+        return getattr(safety_bridge, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
     "ACTION_LABELS",
