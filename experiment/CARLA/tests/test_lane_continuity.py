@@ -125,7 +125,8 @@ def test_lane_change_target_identity_continues_after_junction():
                     transform=NS(rotation=NS(yaw=0)))
         entry = NS(road_id=road, section_id=0, lane_id=6,
                    lane_type='Driving', is_junction=road == 99,
-                   lane_change='Left', transform=NS(rotation=NS(yaw=0)),
+                   lane_change='Left',
+                   transform=NS(location=Location(point['x']), rotation=NS(yaw=0)),
                    get_left_lane=lambda target=target: target)
         entries.append(entry)
     world_map = NS(get_waypoint=lambda location: entries[int(location.x/5)])
@@ -156,3 +157,23 @@ def test_lane_change_skips_overlapping_junction_connector():
     keys = trace_lane_change_keys(world_map, route, 0, 15, 'LEFT', Location, fixture)
     assert keys['entry_lane_keys'] == ['1:0:-1', '2:0:-1']
     assert keys['target_lane_keys'] == ['1:0:-2', '2:0:-2']
+
+
+def test_lane_change_uses_connected_successor_at_road_boundary():
+    route, wps, world_map = setup()
+    for wp in wps:
+        wp.is_junction = False
+        wp.lane_change = 'Left'
+        wp.get_left_lane = lambda wp=wp: NS(
+            road_id=wp.road_id, section_id=0, lane_id=-2,
+            lane_type='Driving', is_junction=False,
+            transform=NS(rotation=NS(yaw=0)))
+    wrong = NS(road_id=1, section_id=0, lane_id=-1, is_junction=False)
+    world_map.get_waypoint = lambda loc: wrong if loc.x == 10 else wps[int(loc.x/5)]
+    fixture = dict(entry_lane_key='1:0:-1', target_lane_key='1:0:-2')
+
+    keys = trace_lane_change_keys(world_map, route, 0, 15, 'LEFT', Location, fixture)
+    assert keys['entry_lane_keys'] == ['1:0:-1', '2:0:-1']
+    wps[1].next = lambda distance: []
+    with pytest.raises(ConfigError, match='route/map mismatch'):
+        trace_lane_change_keys(world_map, route, 0, 15, 'LEFT', Location, fixture)

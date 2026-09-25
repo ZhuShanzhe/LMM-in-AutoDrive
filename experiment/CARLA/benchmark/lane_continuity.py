@@ -13,6 +13,8 @@ def trace_lane_change_keys(world_map, route, start_m, end_m, direction,
     entries = [entry_fixture['entry_lane_key']]
     targets = [entry_fixture['target_lane_key']]
     checked = 0
+    verified_waypoint = None
+    verified_distance = None
     for point in route:
         distance = point['distance_m']
         if not start_m <= distance <= end_m:
@@ -21,19 +23,35 @@ def trace_lane_change_keys(world_map, route, start_m, end_m, direction,
         waypoint = world_map.get_waypoint(location)
         if waypoint is None:
             raise ConfigError('lane-change route waypoint missing')
-        if lane_key(waypoint) != (f"{point['road_id']}:{point['section_id']}:"
-                                  f"{point['lane_id']}"):
+        expected = f"{point['road_id']}:{point['section_id']}:{point['lane_id']}"
+        if lane_key(waypoint) != expected:
             # Town junction connectors can occupy exactly the same coordinates.
             # They are not legal lane-change sites, so do not bind either lane
             # from a nearest-waypoint tie at such a point.
             if waypoint.is_junction:
                 continue
-            raise ConfigError('lane-change route/map mismatch')
+            delta = distance - verified_distance if verified_distance is not None else 0
+            successor = getattr(verified_waypoint, 'next', None)
+            if not callable(successor) or not 0 < delta <= 15:
+                raise ConfigError('lane-change route/map mismatch')
+            candidates = []
+            for adjustment in (0, .25, .5, -.25, -.5):
+                options = successor(max(.05, delta + adjustment))
+                if len(options) > 1:
+                    raise ConfigError('lane-change route/map mismatch')
+                candidates.extend(options)
+            matching = [item for item in candidates if lane_key(item) == expected
+                        and item.transform.location.distance(location) <= .75]
+            if not matching:
+                raise ConfigError('lane-change route/map mismatch')
+            waypoint = min(matching, key=lambda item: item.transform.location.distance(location))
+        verified_waypoint = waypoint
+        verified_distance = distance
         if waypoint.is_junction:
             continue
         checked += 1
         try:
-            pair = prepare_lane_fixture(world_map, location, direction)
+            pair = prepare_lane_fixture(world_map, location, direction, entry_waypoint=waypoint)
         except ConfigError:
             continue
         for key, values in (('entry_lane_key', entries), ('target_lane_key', targets)):
