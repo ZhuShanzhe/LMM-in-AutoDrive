@@ -1,0 +1,15 @@
+sample_rate: 16000
+log_file: "logs/augmentation.log"
+noise_types: ["white", "pink", "brown"]
+snr_db_list: [20.0, 10.0, 5.0]
+speed_rates: [1.0, 0.9, 1.1]
+volume_db_range: 3.0
+real_noise_dir: ""
+
+input_manifest: "data/wav_files/standard/mapping.json"
+output_dir: "data/optimization/augmented"
+manifest_path: "data/optimization/train_manifest.jsonl"
+clean_manifest_path: "data/optimization/clean_manifest.jsonl"
+eval_manifest_path: "data/optimization/eval_manifest.jsonl"
+eval_ratio: 0.1
+seed: 42

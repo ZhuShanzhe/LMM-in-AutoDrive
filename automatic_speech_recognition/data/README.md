@@ -3,16 +3,8 @@
 本目录在 `main` 中只保留说明文件。以下内容由数据准备、语音生成和评测脚本在本地数据盘生成，不提交 Git：
 
 ```text
-commands.json
-translated_commands.json
+commands/
 wav_files/
-wav_files_noise/
-wav_files_accent/
-logging/
-test_results/
-test_results_noise/
-test_result_denoising/
-test_result_accent/
 ```
 
 推荐外部路径：

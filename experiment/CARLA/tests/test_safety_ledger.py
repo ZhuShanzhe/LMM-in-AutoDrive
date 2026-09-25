@@ -38,7 +38,7 @@ def test_legal_lane_marking_is_not_violation_and_scope_is_explicit():
 
 def test_runtime_rejects_unimplemented_task_before_connecting():
     from benchmark.runtime import run_speed_fixture
-    with pytest.raises(ConfigError,match='single speed, lane-change or turn'):
+    with pytest.raises(ConfigError,match='no_isolated_adapter_for_step_sequence'):
         run_speed_fixture('scene_1','c15_keep_to_goal','missing','missing','missing')
 
 

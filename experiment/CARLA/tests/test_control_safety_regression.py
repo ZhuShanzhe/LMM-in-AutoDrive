@@ -22,6 +22,7 @@ class FakeWaypoint:
     lane_id = 1
     lane_type = carla.LaneType.Driving
     road_id = 1
+    is_junction = False
 
     def __init__(self, value, next_waypoint=None, lane_id=1, road_id=1):
         self.transform = value

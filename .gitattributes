@@ -1,0 +1,3 @@
+# Assessment profiles bind these files by byte hash on Linux and Windows.
+experiment/CARLA/configs/*.json text eol=lf
+experiment/CARLA/configs/benchmark/*.json text eol=lf

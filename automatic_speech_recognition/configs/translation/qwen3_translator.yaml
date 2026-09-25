@@ -1,0 +1,19 @@
+model_id_or_path: "models/Qwen3-1.7B" 
+device_map: null 
+num_gpus: 1 
+dtype: "bfloat16" 
+attn_implementation: "" 
+
+source_lang: "Chinese"
+target_lang: "English"
+
+generation_max_length: 512
+enable_thinking: false  
+do_sample: false 
+temperature: null                         # used only when do_sample is true
+top_p: null                               # used only when do_sample is true
+
+output_dir: "outputs"                 
+raise_on_error: false      
+
+gen_kwargs: {}

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace as NS
 
-from .catalog import ConfigError, load_catalog
+from .catalog import ConfigError, load_catalog, source_fingerprint
 from .monitor import TaskMonitor
 from .safety_events import SafetyLedger
 from .task_oracle import load_profile
@@ -95,7 +95,7 @@ class EpisodeAssessment:
         self.catalog=load_catalog(scene)
         from .selection import assessment_selection
         self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
-        if hashlib.sha256(Path(source_config).read_bytes()).hexdigest()!=self.catalog.source_sha256:
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
             raise ConfigError('assessment source configuration differs from registered catalog')
         if world_map.name.split('/')[-1]!=self.catalog.map_name:
             raise ConfigError('assessment map mismatch')

@@ -1,0 +1,19 @@
+frontend:
+  enabled: true
+  method: "wiener"
+  vad: true
+  highpass_filter: true
+  highpass_cutoff: 80.0
+  preemphasis: true
+  rms_norm: true
+  target_db: -20.0
+
+dialect:
+  enabled: true
+  dialect: "sichuan"        # see resources/dialect/*.json
+  lexicon_dir: null         # null -> <project_root>/resources/dialect
+  custom_map: {}
+  use_shared_aliases: true
+  enable_pinyin: true
+  fuzzy_threshold: 0.85
+  hotwords: ["左转", "右转", "掉头", "制动", "加速", "减速", "靠边停车", "保持距离"]

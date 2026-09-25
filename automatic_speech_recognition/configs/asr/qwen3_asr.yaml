@@ -1,0 +1,11 @@
+model_id_or_path: "models/Qwen3-ASR-1.7B"
+device: null
+num_gpus: 1                          # number of GPUs to use; 1 degenerates to cuda:0
+dtype: "bfloat16"
+attn_implementation: null
+max_inference_batch_size: 32
+max_new_tokens: 256
+language: null                       # null -> auto; e.g. "Chinese"
+target_sample_rate: 16000
+output_dir: "outputs"
+raise_on_error: false

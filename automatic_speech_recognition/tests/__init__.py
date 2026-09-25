@@ -1,1 +1,1 @@
-"""Test Code for ASR Pipeline."""
+"""ASR test package: runnable scripts plus shared helpers under utils/."""

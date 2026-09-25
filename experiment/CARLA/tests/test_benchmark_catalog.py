@@ -1,4 +1,5 @@
 import json
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -24,6 +25,18 @@ def test_existing_configs(scene, count, length):
     assert len(catalog.source_sha256) == 64
     assert validate_catalog(catalog)['config_valid']
     assert not validate_catalog(catalog)['benchmark_ready']
+
+
+@pytest.mark.parametrize('scene', ('scene_1', 'scene_2', 'scene_3'))
+def test_catalog_source_hash_is_line_ending_independent(tmp_path, scene):
+    filename = SCENES[scene][0]
+    source = (CONFIG_ROOT / filename).read_bytes().replace(b'\r\n', b'\n')
+    (tmp_path / filename).write_bytes(source.replace(b'\n', b'\r\n'))
+    expected = hashlib.sha256(source).hexdigest()
+    assert load_catalog(scene, tmp_path).source_sha256 == expected
+    assert load_catalog(scene).source_sha256 == expected
+    (tmp_path / filename).write_bytes(source + b' ')
+    assert load_catalog(scene, tmp_path).source_sha256 != expected
 
 
 def test_activation_order_preserves_source_and_text():
