@@ -394,6 +394,9 @@ class TownTrafficFlow:
         self.replenishment_settings = {
             "check_ticks": int(self.config.get("replenish_check_ticks", 20)),
             "minimum_front_vehicles": int(self.config.get("minimum_front_vehicles", 4)),
+            "minimum_same_direction_vehicles": int(
+                self.config.get("minimum_same_direction_vehicles", 2)
+            ),
             "lookahead_m": float(self.config.get("replenish_lookahead_m", 240.0)),
             "maximum_extra_actors": int(self.config.get("maximum_extra_actors", 12)),
         }
@@ -409,8 +412,9 @@ class TownTrafficFlow:
             self.reserved_locations,
             ego_location,
         )
-        for offset_m, lane_choice in ((100.0, 0), (165.0, 1),
-                                      (230.0, 0), (300.0, 1)):
+        for offset_m, lane_choice in ((100.0, 0), (145.0, 0),
+                                      (165.0, 1), (230.0, 0),
+                                      (275.0, 0), (300.0, 1)):
             if self._spawn_route_vehicle(
                 ego_location, ego_progress_m + offset_m,
                 minimum_ego_distance_m=70.0, lane_choice=lane_choice,
@@ -461,6 +465,10 @@ class TownTrafficFlow:
                 if actor is None:
                     continue
                 actor.set_autopilot(True, self.traffic_manager.get_port())
+                if lane is base:
+                    path = self._route_path(candidate_index)
+                    if path:
+                        self.traffic_manager.set_path(actor, path)
                 self.traffic_manager.distance_to_leading_vehicle(actor, 5.0)
                 self.traffic_manager.vehicle_percentage_speed_difference(
                     actor, self.rng.uniform(-3.0, 14.0)
@@ -472,24 +480,54 @@ class TownTrafficFlow:
                 return actor, location
         return None
 
-    def maintain(self, ego: Any, progress_m: float) -> None:
-        """Replenish only beyond the camera range, without moving task actors."""
-        self._maintenance_ticks += 1
-        if self._maintenance_ticks % self.replenishment_settings["check_ticks"]:
-            return
+    def _route_path(self, start_index: int) -> list[Any]:
+        import bisect
+
+        start_m = self.route_distances[start_index]
+        end_m = min(start_m + 600.0, self.route_distances[-1])
+        indices = {
+            bisect.bisect_left(self.route_distances, distance_m)
+            for distance_m in range(int(start_m) + 25, int(end_m) + 1, 20)
+        }
+        return [self.route[index][0].transform.location for index in sorted(indices)
+                if start_index < index < len(self.route)]
+
+    @staticmethod
+    def _nearby_traffic_counts(ego: Any, vehicles: Sequence[Any]) -> tuple[int, int, int]:
         origin = ego.get_location()
         forward = ego.get_transform().get_forward_vector()
-        visible = 0
-        for actor in self.vehicles:
+        front = same_visible = same_nearby = 0
+        for actor in vehicles:
             if not actor.is_alive:
                 continue
             location = actor.get_location()
             dx, dy = location.x - origin.x, location.y - origin.y
             along = dx * forward.x + dy * forward.y
             across = abs(dx * forward.y - dy * forward.x)
-            if 0 < along < 120 and across < along * 1.43:
-                visible += 1
-        if visible >= self.replenishment_settings["minimum_front_vehicles"]:
+            if not 0 < along < 350 or across >= along * 1.43:
+                continue
+            other_forward = actor.get_transform().get_forward_vector()
+            aligned = (other_forward.x * forward.x + other_forward.y * forward.y) > 0.5
+            if aligned:
+                same_nearby += 1
+            if along < 120:
+                front += 1
+                same_visible += int(aligned)
+        return front, same_visible, same_nearby
+
+    def maintain(self, ego: Any, progress_m: float) -> None:
+        """Replenish only beyond the camera range, without moving task actors."""
+        self._maintenance_ticks += 1
+        if self._maintenance_ticks % self.replenishment_settings["check_ticks"]:
+            return
+        origin = ego.get_location()
+        visible, same_visible, same_nearby = self._nearby_traffic_counts(
+            ego, self.vehicles
+        )
+        if (visible >= self.replenishment_settings["minimum_front_vehicles"]
+                and same_visible >= self.replenishment_settings["minimum_same_direction_vehicles"]):
+            return
+        if same_nearby >= self.replenishment_settings["minimum_same_direction_vehicles"]:
             return
 
         interval = self.replenishment_settings["lookahead_m"]
@@ -526,6 +564,8 @@ class TownTrafficFlow:
             "ego_progress_m": round(float(progress_m), 1),
             "spawn_distance_from_ego_m": round(distance_2d(location, origin), 1),
             "front_vehicles_before": visible,
+            "same_direction_visible_before": same_visible,
+            "same_direction_nearby_before": same_nearby,
             "new_actor_id": replacement.id,
             "retired_actor_id": source.id if source is not None else None,
         })

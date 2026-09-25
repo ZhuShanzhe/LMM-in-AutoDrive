@@ -189,7 +189,8 @@ class EpisodeAssessment:
         live_actors=list(self.actor_provider()) if self.actor_provider is not None else []
         if self.actor_provider is not None:
             vehicle_ids=[a.id for a in live_actors if getattr(a,'type_id','').startswith('vehicle.')]
-            observation=observe_traffic(snapshot,self.binding.actor_id,vehicle_ids,self.map)
+            observation=observe_traffic(snapshot,self.binding.actor_id,vehicle_ids,self.map,
+                                        route_projector=self.projector,route_hint_m=self.hint)
             observation['population']='all_world_vehicles_including_task_actors'
             row['traffic_observation']=observation
             self.traffic_density.update(observation)

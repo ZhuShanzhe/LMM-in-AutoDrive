@@ -15,13 +15,16 @@ def test_replenishment_replaces_only_far_behind_ambient_actor(monkeypatch):
     route = [(waypoint, None) for waypoint in waypoints]
     deleted = []
     source = NS(id=1, is_alive=True, get_location=lambda: NS(x=-500.0, y=0.0),
+                get_transform=lambda: NS(get_forward_vector=lambda: NS(x=1.0, y=0.0)),
                 set_autopilot=lambda *args: None, destroy=lambda: deleted.append(1))
     replacement = NS(id=2, is_alive=True, set_autopilot=lambda *args: None)
     spawned = []
     world = NS(get_blueprint_library=lambda: None,
                try_spawn_actor=lambda blueprint, transform:
                    spawned.append(transform.location) or replacement)
-    tm = NS(get_port=lambda: 8000, distance_to_leading_vehicle=lambda *args: None,
+    paths = []
+    tm = NS(get_port=lambda: 8000, set_path=lambda actor, path: paths.append(path),
+            distance_to_leading_vehicle=lambda *args: None,
             vehicle_percentage_speed_difference=lambda *args: None,
             auto_lane_change=lambda *args: None,
             update_vehicle_lights=lambda *args: None)
@@ -47,3 +50,20 @@ def test_replenishment_replaces_only_far_behind_ambient_actor(monkeypatch):
     assert registry.actors == [replacement]
     assert flow.replenishment_events[0]['spawn_distance_from_ego_m'] >= 240
     assert flow.replenishment_events[0]['retired_actor_id'] == 1
+    assert paths and paths[0][0].x > spawned[0].x
+
+
+def test_opposite_direction_traffic_does_not_satisfy_same_direction_gate():
+    def vehicle(x, direction):
+        return NS(is_alive=True, get_location=lambda: NS(x=x, y=0.0),
+                  get_transform=lambda: NS(get_forward_vector=lambda: NS(
+                      x=direction, y=0.0)))
+
+    ego = vehicle(0.0, 1.0)
+    front, same_visible, same_nearby = scene.TownTrafficFlow._nearby_traffic_counts(
+        ego, [vehicle(40.0, -1.0), vehicle(60.0, -1.0),
+              vehicle(80.0, -1.0), vehicle(100.0, -1.0),
+              vehicle(180.0, 1.0)]
+    )
+
+    assert (front, same_visible, same_nearby) == (4, 0, 1)

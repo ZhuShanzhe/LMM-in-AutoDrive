@@ -98,7 +98,8 @@ def markdown(report):
             lines.append(f"- {segment['from_m']}-{segment['until_m']} m: "
                 f"front vehicles mean={segment['mean'].get('front_cone',0):.2f}; "
                 f"below 3={rate(segment['below_three_front_actor_fraction'])}; "
-                f"empty ego lane={rate(segment['empty_ego_lane_fraction'])}")
+                f"empty route lane={rate(segment.get('empty_route_lane_fraction'))}; "
+                f"empty exact-key ego lane={rate(segment['empty_ego_lane_fraction'])}")
         for task in run.get('unresolved_tasks', []):
             lines.append(f"- {cell(task['task_id'])}: {cell(task['status'])}; instruction "
                          f"{cell(task['instruction_status'])}; {cell(task['reason'])}")
