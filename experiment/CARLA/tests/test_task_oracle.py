@@ -81,7 +81,7 @@ def test_speed_corridor_still_enforces_geometric_bounds():
         assert oracle.update(row)['status']=='RUNNING'
 
 
-@pytest.mark.parametrize('second_progress,expected',[(4,'SUCCESS'),(6,'SCENE_INVALID')])
+@pytest.mark.parametrize('second_progress,expected',[(4,'SUCCESS'),(6,'TIMEOUT')])
 def test_unfinished_speed_task_cannot_cross_unverified_corridor(second_progress,expected):
     oracle=TaskOracle(spec(SPEED))
     for t,progress in [(0,0),(1,second_progress)]:
@@ -91,6 +91,13 @@ def test_unfinished_speed_task_cannot_cross_unverified_corridor(second_progress,
                                     'stop_reason':'ambiguous forward topology'}
         result=oracle.update(row)
     assert result['status']==expected
+
+
+def test_speed_corridor_missing_at_task_entry_is_scene_invalid():
+    oracle=TaskOracle(spec(SPEED))
+    row=observation(0,route_s_m=6)
+    row['fixture']['steps']['0']={'lane_corridor':[dict(start_m=0,end_m=5,lane_keys=['a'])]}
+    assert oracle.update(row)['status']=='SCENE_INVALID'
 
 
 @pytest.mark.parametrize('field,value',[('lateral_error_m',.6),('heading_error_deg',8)])
