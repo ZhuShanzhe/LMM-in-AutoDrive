@@ -576,11 +576,13 @@ def audit_command_route_alignment(
         encountered = [
             maneuver["route_option"] for maneuver in maneuvers
         ]
-        cursor = iter(encountered)
-        matched = all(
-            any(actual == expected for actual in cursor)
-            for expected in required
-        )
+        matched = not required or bool(encountered) and encountered[0] == required[0]
+        if matched and required:
+            cursor = iter(encountered[1:])
+            matched = all(
+                any(actual == expected for actual in cursor)
+                for expected in required[1:]
+            )
         records.append(
             {
                 "command_id": str(command["id"]),
@@ -1251,6 +1253,7 @@ def main() -> int:
             config["special_events"],
             int(config["traffic"]["seed"]),
             episode_index=args.variant_index,
+            ego=ego,
         )
         events.spawn()
         print(
@@ -1277,7 +1280,7 @@ def main() -> int:
             route,
             config["traffic"],
         )
-        traffic.spawn(events.reserved_locations, ego.get_location())
+        traffic.spawn(events.reserved_locations, ego.get_location(), start_progress_m)
         safety = SafetyMonitor(world, ego, registry)
         safety.start()
         if args.record_ground_truth:
@@ -1772,6 +1775,7 @@ def main() -> int:
                 "restores_previous_instruction_state": False,
             },
             "traffic_vehicles_spawned": len(traffic.vehicles),
+            "traffic_initial_route_actors_spawned": traffic._initial_route_spawned,
             "traffic_replenishment_settings": dict(traffic.replenishment_settings),
             "traffic_replenishment_count": len(traffic.replenishment_events),
             "traffic_replenishment_events": list(traffic.replenishment_events),

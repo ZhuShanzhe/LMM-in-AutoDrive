@@ -70,18 +70,33 @@ def trace_lane_corridor(world_map,route,start_m,location_factory,end_m=None):
         location=location_factory(**{k:point[k] for k in ('x','y','z')})
         nearest=world_map.get_waypoint(location)
         wp=nearest
+        expected=f"{point['road_id']}:{point['section_id']}:{point['lane_id']}"
         if waypoints:
             distance=point['distance_m']-points[offset-1]['distance_m']
             if not math.isfinite(distance) or not 0<distance<=10:
                 raise ConfigError('lane corridor samples too sparse or unordered')
             successors=waypoints[-1].next(distance)
-            if len(successors)!=1:
+            if len(successors)>1:
                 stop_reason='lane corridor has ambiguous forward topology'
                 break
-            wp=successors[0]
+            candidates=list(successors)
+            # GRP and CARLA waypoint sampling can straddle a road boundary by
+            # a few decimeters. Search only immediate topological successors.
+            if not any(lane_key(item)==expected and item.transform.location.distance(location)<=.75
+                       for item in candidates):
+                for adjustment in (.25,.5,.75,-.25,-.5):
+                    candidates.extend(waypoints[-1].next(max(.05,distance+adjustment)))
+            matching=[item for item in candidates if lane_key(item)==expected
+                      and item.transform.location.distance(location)<=.75]
+            if matching:
+                wp=min(matching,key=lambda item:item.transform.location.distance(location))
+            elif len(successors)==1:
+                wp=successors[0]
+            else:
+                stop_reason='lane corridor has ambiguous forward topology'
+                break
         if wp is None or str(wp.lane_type)!='Driving':
             raise ConfigError('lane corridor has no driving waypoint')
-        expected=f"{point['road_id']}:{point['section_id']}:{point['lane_id']}"
         if lane_key(wp)!=expected or wp.transform.location.distance(location)>.75:
             stop_reason='lane corridor route/map mismatch'
             break

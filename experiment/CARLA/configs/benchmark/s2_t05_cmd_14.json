@@ -1,12 +1,12 @@
 {
   "schema_version":"task_oracle/1.0", "scene_id":"scene_2",
-  "source_sha256":"1df9acb75460498b9630a87f3a9ec1a1935fbd1a03d270bcc1ccfac1254043ae",
+  "source_sha256":"d16d101fb2ecdee43f911df2626b57b9293d3af93d0e003b5a8ce6b59b35b31c",
   "task_id":"s2_t05_cmd_14", "activate_m":6100, "end_route_s_m":7000,
   "timeout_s":180, "max_frame_gap_s":0.15, "violation_budget":0,
   "coverage":{"status":"PARTIAL","missing":["crosswalk_all_actor_clearance","traffic_signal_compliance","continuous_post_junction_lane_requirement"]},
   "steps":[
     {"kind":"speed","target_kmh":30,"tolerance_kmh":2,"hold_s":1},
-    {"kind":"straight_junction","max_heading_change_deg":20,"max_lateral_error_m":0.5,"hold_s":1},
+    {"kind":"turn","direction":"RIGHT","min_heading_change_deg":45,"max_lateral_error_m":0.5,"hold_s":1},
     {"kind":"lane_hold","hold_s":2,"max_lateral_error_m":0.35,"max_heading_error_deg":5}
   ]
 }

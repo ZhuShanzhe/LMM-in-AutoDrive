@@ -389,29 +389,91 @@ class TownTrafficFlow:
         self.reserved_locations: list[Any] = []
         self._maintenance_ticks = 0
         self._replenished = 0
+        self._initial_route_spawned = 0
         self.replenishment_events: list[dict[str, Any]] = []
         self.replenishment_settings = {
             "check_ticks": int(self.config.get("replenish_check_ticks", 20)),
             "minimum_front_vehicles": int(self.config.get("minimum_front_vehicles", 4)),
             "lookahead_m": float(self.config.get("replenish_lookahead_m", 240.0)),
+            "maximum_extra_actors": int(self.config.get("maximum_extra_actors", 12)),
         }
 
     def spawn(
         self,
         reserved_locations: Iterable[Any],
         ego_location: Any,
+        ego_progress_m: float = 0.0,
     ) -> None:
         self.reserved_locations = list(reserved_locations)
         self._spawn_vehicles(
             self.reserved_locations,
             ego_location,
         )
+        for offset_m, lane_choice in ((100.0, 0), (165.0, 1),
+                                      (230.0, 0), (300.0, 1)):
+            if self._spawn_route_vehicle(
+                ego_location, ego_progress_m + offset_m,
+                minimum_ego_distance_m=70.0, lane_choice=lane_choice,
+            ) is not None:
+                self._initial_route_spawned += 1
         self._spawn_walkers()
+
+    def _spawn_route_vehicle(self, ego_location: Any, route_s_m: float,
+                             *, minimum_ego_distance_m: float,
+                             lane_choice: int) -> tuple[Any, Any] | None:
+        import bisect
+        import carla
+
+        index = bisect.bisect_left(self.route_distances, route_s_m)
+        for offset in (0, 10, 20, 30, 40):
+            candidate_index = min(index + offset, len(self.route) - 1)
+            base = self.route[candidate_index][0]
+            if base.is_junction:
+                continue
+            lanes = [base]
+            for side in ("get_left_lane", "get_right_lane"):
+                neighbor = getattr(base, side)()
+                if (neighbor is not None and neighbor.road_id == base.road_id
+                        and neighbor.lane_id * base.lane_id > 0
+                        and "Driving" in str(neighbor.lane_type)):
+                    lanes.append(neighbor)
+            for lane in lanes[lane_choice:] + lanes[:lane_choice]:
+                location = lane.transform.location
+                if (distance_2d(location, ego_location) < minimum_ego_distance_m
+                        or any(distance_2d(location, reserved) < 18
+                               for reserved in self.reserved_locations)
+                        or any(actor.is_alive and distance_2d(location, actor.get_location()) < 22
+                               for actor in self.vehicles)):
+                    continue
+                blueprint = self.rng.choice(
+                    _safe_car_blueprints(self.world.get_blueprint_library())
+                )
+                _set_random_blueprint_attributes(
+                    blueprint, self.rng,
+                    "scene2_route_flow_{0:04d}".format(
+                        self._initial_route_spawned + self._replenished),
+                )
+                transform = carla.Transform(
+                    carla.Location(x=location.x, y=location.y, z=location.z + 0.45),
+                    lane.transform.rotation,
+                )
+                actor = self.world.try_spawn_actor(blueprint, transform)
+                if actor is None:
+                    continue
+                actor.set_autopilot(True, self.traffic_manager.get_port())
+                self.traffic_manager.distance_to_leading_vehicle(actor, 5.0)
+                self.traffic_manager.vehicle_percentage_speed_difference(
+                    actor, self.rng.uniform(-3.0, 14.0)
+                )
+                self.traffic_manager.auto_lane_change(actor, False)
+                self.traffic_manager.update_vehicle_lights(actor, True)
+                self.registry.add(actor)
+                self.vehicles.append(actor)
+                return actor, location
+        return None
 
     def maintain(self, ego: Any, progress_m: float) -> None:
         """Replenish only beyond the camera range, without moving task actors."""
-        import carla
-
         self._maintenance_ticks += 1
         if self._maintenance_ticks % self.replenishment_settings["check_ticks"]:
             return
@@ -448,70 +510,30 @@ class TownTrafficFlow:
             if self.route_distances[nearest] < progress_m - 300:
                 source = actor
                 break
-        if source is None and len(self.vehicles) >= int(self.config["vehicles"]):
+        if (source is None and len(self.vehicles) >=
+                int(self.config["vehicles"]) +
+                self.replenishment_settings["maximum_extra_actors"]):
             return
-
-        import bisect
-
-        index = bisect.bisect_left(self.route_distances, start)
-        for offset in (0, 10, 20, 30, 40):
-            candidate_index = min(index + offset, len(self.route) - 1)
-            base = self.route[candidate_index][0]
-            if base.is_junction:
-                continue
-            lanes = [base]
-            for side in ("get_left_lane", "get_right_lane"):
-                neighbor = getattr(base, side)()
-                if (neighbor is not None and neighbor.road_id == base.road_id
-                        and neighbor.lane_id * base.lane_id > 0
-                        and "Driving" in str(neighbor.lane_type)):
-                    lanes.append(neighbor)
-            self.rng.shuffle(lanes)
-            for lane in lanes:
-                location = lane.transform.location
-                if (distance_2d(location, origin) < 180
-                        or any(distance_2d(location, reserved) < 18
-                               for reserved in self.reserved_locations)
-                        or any(actor.is_alive and distance_2d(location, actor.get_location()) < 22
-                               for actor in self.vehicles)):
-                    continue
-                blueprint = self.rng.choice(
-                    _safe_car_blueprints(self.world.get_blueprint_library())
-                )
-                _set_random_blueprint_attributes(
-                    blueprint, self.rng,
-                    "scene2_replenished_{0:04d}".format(self._replenished),
-                )
-                transform = carla.Transform(
-                    carla.Location(x=location.x, y=location.y, z=location.z + 0.45),
-                    lane.transform.rotation,
-                )
-                replacement = self.world.try_spawn_actor(blueprint, transform)
-                if replacement is None:
-                    continue
-                replacement.set_autopilot(True, self.traffic_manager.get_port())
-                self.traffic_manager.distance_to_leading_vehicle(replacement, 5.0)
-                self.traffic_manager.vehicle_percentage_speed_difference(
-                    replacement, self.rng.uniform(-3.0, 14.0)
-                )
-                self.traffic_manager.auto_lane_change(replacement, False)
-                self.traffic_manager.update_vehicle_lights(replacement, True)
-                self.registry.add(replacement)
-                self.vehicles.append(replacement)
-                self._replenished += 1
-                self.replenishment_events.append({
-                    "ego_progress_m": round(float(progress_m), 1),
-                    "spawn_distance_from_ego_m": round(distance_2d(location, origin), 1),
-                    "front_vehicles_before": visible,
-                    "new_actor_id": replacement.id,
-                    "retired_actor_id": source.id if source is not None else None,
-                })
-                if source is not None:
-                    source.set_autopilot(False, self.traffic_manager.get_port())
-                    source.destroy()
-                    self.vehicles.remove(source)
-                    self.registry.actors.remove(source)
-                return
+        result = self._spawn_route_vehicle(
+            origin, start, minimum_ego_distance_m=180.0,
+            lane_choice=self._replenished % 3,
+        )
+        if result is None:
+            return
+        replacement, location = result
+        self._replenished += 1
+        self.replenishment_events.append({
+            "ego_progress_m": round(float(progress_m), 1),
+            "spawn_distance_from_ego_m": round(distance_2d(location, origin), 1),
+            "front_vehicles_before": visible,
+            "new_actor_id": replacement.id,
+            "retired_actor_id": source.id if source is not None else None,
+        })
+        if source is not None:
+            source.set_autopilot(False, self.traffic_manager.get_port())
+            source.destroy()
+            self.vehicles.remove(source)
+            self.registry.actors.remove(source)
 
     def _ordered_spawn_points(
         self,
@@ -1057,8 +1079,10 @@ class DeterministicSceneEvents:
         seed: int,
         episode_index: int = 0,
         preserve_roles: Sequence[str] = (),
+        ego: Any | None = None,
     ) -> None:
         self.world = world
+        self.ego = ego
         self.traffic_manager = traffic_manager
         self.registry = registry
         self.route = route
@@ -1088,6 +1112,7 @@ class DeterministicSceneEvents:
                     raise ValueError('route slow vehicle event end must follow its parked position')
         self.cyclist: Any | None = None
         self.cyclist_transform: Any | None = None
+        self._cyclist_placed = False
         self.bus: Any | None = None
         self.bus_transform: Any | None = None
         self.bus_active_ticks = 0
@@ -1907,32 +1932,65 @@ class DeterministicSceneEvents:
             ),
             cyclist_waypoint,
             "scene2_slow_cyclist",
+            hidden_staging=True,
         )
-        self.cyclist_transform = self._vehicle_spawn_transforms[
-            "scene2_slow_cyclist"
-        ]
         self.cyclist.set_autopilot(False,self.traffic_manager.get_port())
-        self.cyclist.apply_control(carla.VehicleControl(brake=1.0,hand_brake=True))
         self.spawn_diagnostics["scene2_slow_cyclist"].update(
             {
-                "activation_source": "physical_parked_cyclist_release",
-                "activation_location": {
-                    "x": round(
-                        float(self.cyclist_transform.location.x), 3
-                    ),
-                    "y": round(
-                        float(self.cyclist_transform.location.y), 3
-                    ),
-                    "z": round(
-                        float(self.cyclist_transform.location.z), 3
-                    ),
-                },
+                "activation_source": "offscreen_prestage_then_parked_release",
             }
         )
         self._spawned = True
 
+    def _prestage_cyclist(self, event: Mapping[str, Any], progress_m: float) -> None:
+        """Place the parked cyclist only after the earlier route overlap is passed."""
+        if self._cyclist_placed or self.cyclist is None:
+            return
+        if progress_m < float(event["activate_progress_m"]) - 450.0:
+            return
+        import carla
+
+        if self.ego is None:
+            raise RuntimeError("cyclist prestaging requires the ego actor")
+        origin = self.ego.get_location()
+        for offset_m in (0.0, 12.0, -12.0, 24.0, -24.0):
+            waypoint = self._waypoint(float(event["anchor_progress_m"]) + offset_m)
+            location = waypoint.transform.location
+            if distance_2d(origin, location) < 200.0:
+                continue
+            if any(
+                actor.id != self.cyclist.id and actor.type_id.startswith("vehicle.")
+                and distance_2d(actor.get_location(), location) < 9.0
+                for actor in self.world.get_actors().filter("vehicle.*")
+            ):
+                continue
+            transform = carla.Transform(
+                carla.Location(x=location.x, y=location.y, z=location.z + 0.45),
+                waypoint.transform.rotation,
+            )
+            self.cyclist.set_transform(transform)
+            self.cyclist.set_simulate_physics(True)
+            self.cyclist.apply_control(carla.VehicleControl(brake=1.0, hand_brake=True))
+            self.cyclist_transform = transform
+            self._cyclist_placed = True
+            self.reserved_locations.append(transform.location)
+            self.spawn_diagnostics["scene2_slow_cyclist"].update({
+                "prestage_progress_m": round(progress_m, 3),
+                "prestage_distance_from_ego_m": round(distance_2d(origin, location), 3),
+                "activation_location": {
+                    "x": round(location.x, 3), "y": round(location.y, 3),
+                    "z": round(transform.location.z, 3),
+                },
+            })
+            return
+        if progress_m >= float(event["activate_progress_m"]) - 180.0:
+            raise RuntimeError("cyclist could not be staged before entering ego view")
+
     def update(self, progress_m: float) -> list[dict[str, Any]]:
         changes = []
+        cyclist_event = next((event for event in self.events if event["kind"] == "cyclist"), None)
+        if cyclist_event is not None:
+            self._prestage_cyclist(cyclist_event, progress_m)
         for event in self.events:
             event_id = str(event["id"])
             state = self.states[event_id]
@@ -1967,7 +2025,7 @@ class DeterministicSceneEvents:
                             walker.start()
                 elif event["kind"] == "cyclist":
                     import carla
-                    if self.cyclist is None or not self.cyclist.is_alive:
+                    if self.cyclist is None or not self.cyclist.is_alive or not self._cyclist_placed:
                         raise RuntimeError('staged cyclist disappeared before activation')
                     if (
                         self.cyclist is not None

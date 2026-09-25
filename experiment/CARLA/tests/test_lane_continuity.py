@@ -48,6 +48,15 @@ def test_unique_successor_resolves_spatially_overlapping_connector():
     assert all('99:0:-3' not in s['lane_keys'] for s in corridor)
 
 
+def test_road_boundary_accepts_nearby_connected_successor():
+    route,wps,world_map=setup()
+    wrong=NS(road_id=1,section_id=0,lane_id=-1,lane_type='Driving',
+             transform=NS(location=Location(9.7),rotation=NS(yaw=0)))
+    wps[1].next=lambda distance:[wrong] if distance<=5 else [wps[2]]
+    corridor=build_lane_corridor(world_map,route,0,Location)
+    assert corridor[-1]['end_m']==15
+
+
 def test_ambiguous_initial_anchor_is_not_overridden_by_route_label():
     route,wps,world_map=setup()
     wps[0].road_id=99

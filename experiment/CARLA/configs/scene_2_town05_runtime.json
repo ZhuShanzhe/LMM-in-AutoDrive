@@ -39,7 +39,7 @@
     "global_speed_difference_pct": 5.0,
     "route_spawn_radius_m": 45.0,
     "ego_spawn_exclusion_m": 35.0,
-    "startup_corridor_length_m": 450.0,
+    "startup_corridor_length_m": 150.0,
     "startup_corridor_radius_m": 12.0,
     "ambient_auto_lane_change": false,
     "random_lane_change_percentage": 3.0,
@@ -298,19 +298,19 @@
     {
       "id": "s2_t05_cmd_01",
       "announce_at_m": 0.0,
-      "text": "保持当前车道，减速至45公里每小时，通过前方路口后继续直行。",
-      "spoken_text": "保持当前车道，减速至45公里每小时，通过前方路口后继续直行。",
+      "text": "保持当前车道，减速至45公里每小时，在前方路口右转后继续行驶。",
+      "spoken_text": "保持当前车道，减速至45公里每小时，在前方路口右转后继续行驶。",
       "category": "NAVIGATION",
       "urgency": "NORMAL",
       "steps": [
         "KEEP_LANE",
         "SET_SPEED:12.50mps",
-        "PROCEED:STRAIGHT_THROUGH_JUNCTION"
+        "TURN:RIGHT"
       ]
     },
     {
       "id": "s2_t05_cmd_02",
-      "announce_at_m": 350.0,
+      "announce_at_m": 370.0,
       "text": "确认前方道路安全，保持右侧车道，并恢复到50公里每小时继续行驶。",
       "spoken_text": "确认前方道路安全，保持右侧车道，并恢复到50公里每小时继续行驶。",
       "category": "NAVIGATION",
@@ -495,14 +495,14 @@
       "id": "s2_t05_cmd_14",
       "announce_at_m": 6100.0,
       "route_alignment_horizon_m": 400.0,
-      "text": "减速至30公里每小时，确认横道及路口安全后直行通过并保持当前车道。",
-      "spoken_text": "减速至30公里每小时，确认横道及路口安全后直行通过并保持当前车道。",
+      "text": "减速至30公里每小时，确认横道及路口安全后右转并保持当前车道。",
+      "spoken_text": "减速至30公里每小时，确认横道及路口安全后右转并保持当前车道。",
       "category": "COMPLEX_OBSTACLE_AVOIDANCE",
       "urgency": "URGENT",
       "steps": [
         "SET_SPEED:8.33mps",
         "CHECK:CROSSWALK_CLEAR",
-        "PROCEED:STRAIGHT_THROUGH_JUNCTION",
+        "TURN:RIGHT",
         "KEEP_LANE"
       ]
     },
