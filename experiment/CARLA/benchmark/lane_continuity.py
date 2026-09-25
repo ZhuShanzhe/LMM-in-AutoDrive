@@ -73,7 +73,7 @@ def trace_lane_corridor(world_map,route,start_m,location_factory,end_m=None):
         expected=f"{point['road_id']}:{point['section_id']}:{point['lane_id']}"
         if waypoints:
             distance=point['distance_m']-points[offset-1]['distance_m']
-            if not math.isfinite(distance) or not 0<distance<=10:
+            if not math.isfinite(distance) or not 0<distance<=15:
                 raise ConfigError('lane corridor samples too sparse or unordered')
             successors=waypoints[-1].next(distance)
             if len(successors)>1:

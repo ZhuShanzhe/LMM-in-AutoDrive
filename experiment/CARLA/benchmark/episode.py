@@ -90,6 +90,20 @@ def unpack_snapshot(row, location_factory=NS):
     return NS(frame=row['frame'],timestamp=NS(elapsed_seconds=row['sim_time_s']),find=actors.get)
 
 
+def required_task_roles(profile):
+    roles={step['target_role'] for step in profile['steps'] if 'target_role' in step}
+    roles.update(role for step in profile['steps'] for role in step.get('target_roles',[]))
+    return roles
+
+
+def defer_dynamic_role_entry(profile,row,first_seen_s):
+    roles=required_task_roles(profile)
+    if not roles or all(row.get('roles',{}).get(role,{}).get('status')=='BOUND' for role in roles):
+        return False
+    return (row['sim_time_s']-first_seen_s<.25
+            and row['route_s_m']-profile['activate_m']<5.0)
+
+
 class EpisodeAssessment:
     def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
         self.catalog=load_catalog(scene)
@@ -221,8 +235,7 @@ class EpisodeAssessment:
                     source='independent_task_oracle',source_sha256=self.catalog.source_sha256,
                     completion_frame=completion['frame'])
             roles={}
-            required_roles = {step['target_role'] for step in profile['steps'] if 'target_role' in step}
-            required_roles.update(role for step in profile['steps'] for role in step.get('target_roles', []))
+            required_roles = required_task_roles(profile)
             for role in sorted(required_roles):
                 state=(role_states or {}).get(role,{})
                 if state.get('status')!='BOUND':
@@ -361,6 +374,7 @@ class EpisodeAssessment:
             raise ConfigError('assessment sensor cleanup failed: '+'; '.join(cleanup_errors))
         self.ledger.seal_after_quiet()
         try:
+            entry_first_seen={}
             with (self.output/'episode_truth.jsonl').open(encoding='utf-8') as stream:
                 for line in stream:
                     row=json.loads(line)
@@ -369,6 +383,9 @@ class EpisodeAssessment:
                         if identity in self.unavailable or row['route_s_m']<profile['activate_m']:
                             continue
                         if identity not in self.monitors:
+                            first_seen=entry_first_seen.setdefault(identity,row['sim_time_s'])
+                            if defer_dynamic_role_entry(profile,row,first_seen):
+                                continue
                             self._prepare(identity,profile,snapshot,row['route_s_m'],row.get('roles'))
                         if identity in self.monitors:
                             needed=self.monitors[identity].collector.bindings.keys()-{'ego'}

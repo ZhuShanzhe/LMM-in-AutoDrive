@@ -29,6 +29,22 @@ def test_lane_continuity_allows_connected_road_id_change():
     assert result[-1]['end_m']==15
 
 
+def test_verified_twelve_meter_sample_gap_is_accepted():
+    route=[dict(x=x,y=0,z=0,distance_m=x,road_id=1,section_id=0,lane_id=-1)
+           for x in (0,12,24)]
+    waypoints=[NS(road_id=1,section_id=0,lane_id=-1,lane_type='Driving',
+                  transform=NS(location=Location(x),rotation=NS(yaw=0)))
+               for x in (0,12,24)]
+    for index,waypoint in enumerate(waypoints):
+        waypoint.next=lambda distance,index=index:waypoints[index+1:index+2]
+    world_map=NS(get_waypoint=lambda location:waypoints[int(location.x/12)])
+
+    assert build_lane_corridor(world_map,route,0,Location)[-1]['end_m']==24
+    route[2]['distance_m']=30
+    with pytest.raises(ConfigError,match='samples too sparse'):
+        build_lane_corridor(world_map,route,0,Location)
+
+
 def test_bounded_corridor_does_not_validate_later_unrelated_turn():
     route,wps,world_map=setup()
     wps[2].next=lambda distance:[]

@@ -5,7 +5,8 @@ from types import SimpleNamespace as NS
 import pytest
 
 from benchmark.catalog import CONFIG_ROOT, ConfigError
-from benchmark.episode import EpisodeAssessment, pack_actor, unpack_snapshot, finish_episode
+from benchmark.episode import (EpisodeAssessment, pack_actor, unpack_snapshot,
+                               finish_episode, defer_dynamic_role_entry)
 from benchmark.truth_capture import ActorBinding
 
 
@@ -38,6 +39,17 @@ def test_snapshot_journal_reconstructs_kinematics():
     assert restored.find(1).get_transform().location.x==5
     assert restored.find(1).get_velocity().x==12.5
     assert restored.find(2) is None
+
+
+def test_dynamic_role_entry_grace_is_bounded():
+    profile=dict(activate_m=1250,steps=[dict(kind='yield_cut_in',target_role='lead')])
+    row=dict(sim_time_s=10.0,route_s_m=1250.0,roles={'lead':dict(status='NOT_SPAWNED')})
+    assert defer_dynamic_role_entry(profile,row,10.0)
+    row.update(sim_time_s=10.1,route_s_m=1250.8,
+               roles={'lead':dict(status='BOUND')})
+    assert not defer_dynamic_role_entry(profile,row,10.0)
+    row.update(sim_time_s=10.3,roles={'lead':dict(status='NOT_SPAWNED')})
+    assert not defer_dynamic_role_entry(profile,row,10.0)
 
 
 def test_manifest_records_route_and_bound_profile_identities(tmp_path):

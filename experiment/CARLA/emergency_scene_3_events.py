@@ -124,6 +124,7 @@ class EmergencySceneActorRuntime:
         self._actor_sink = actor_sink
         self._lights_enabled = lights_enabled
         self._cut_in_actor: Any | None = None
+        self._cut_in_spawn_s_m: float | None = None
         self._cut_in_event: dict[str, Any] | None = None
         self._cut_in_phase = "NOT_SPAWNED"
         self._warning_sign: Any | None = None
@@ -622,6 +623,7 @@ class EmergencySceneActorRuntime:
             pass
         self._cut_in_actor = None
         self._cut_in_event = None
+        self._cut_in_spawn_s_m = None
         return retired
 
     def _update_background_traffic(self, ego_route_s_m: float) -> None:
@@ -1769,22 +1771,47 @@ class EmergencySceneActorRuntime:
                 f"late: gap={initial_gap_m:.1f} m"
             )
 
-        waypoint = self._map.get_waypoint_xodr(
-            1,
-            int(actor_config["spawn_lane_id"]),
-            spawn_s_m,
-        )
-        if waypoint is None:
-            raise RuntimeError(
-                "cut-in spawn waypoint is missing"
+        actor = None
+        actual_s_m = None
+        for offset_m in (0.0, 5.0, 10.0, -5.0, -10.0):
+            candidate_s_m = spawn_s_m + offset_m
+            waypoint = self._map.get_waypoint_xodr(
+                1, int(actor_config["spawn_lane_id"]), candidate_s_m
             )
+            if waypoint is None:
+                continue
+            location = waypoint.transform.location
+            if self._ego_actor is not None:
+                origin = self._ego_actor.get_location()
+                if math.hypot(location.x - origin.x, location.y - origin.y) < 120.0:
+                    continue
+            blueprint = first_available_blueprint(
+                self._world.get_blueprint_library(), CUT_IN_BLUEPRINT_IDS
+            )
+            if blueprint.has_attribute("role_name"):
+                blueprint.set_attribute("role_name", actor_config["role_name"])
+            if blueprint.has_attribute("color"):
+                blueprint.set_attribute("color", "180,25,25")
+            transform = waypoint.transform
+            transform.location.z += 0.5
+            actor = self._world.try_spawn_actor(blueprint, transform)
+            if actor is not None:
+                actual_s_m = candidate_s_m
+                break
+        if actor is None or actual_s_m is None:
+            raise RuntimeError("failed to stage cut-in vehicle outside ego view")
 
         self._cut_in_event = event
+        self._cut_in_actor = actor
+        self._cut_in_spawn_s_m = actual_s_m
         self._cut_in_phase = "ARMED"
+        self._set_vehicle_lights(actor, traffic_manager_controlled=False)
+        actor.apply_control(self._carla.VehicleControl(brake=1.0, hand_brake=True))
+        self._actor_sink.append(actor)
         print(
             "CUT-IN ARMED | "
             f"lane={actor_config['spawn_lane_id']} "
-            f"s={spawn_s_m:.1f} m | "
+            f"s={actual_s_m:.1f} m | "
             f"initial_gap={initial_gap_m:.1f} m"
         )
 
@@ -1799,77 +1826,19 @@ class EmergencySceneActorRuntime:
             )
 
         actor_config = self._cut_in_event["actor"]
-        configured_s_m = float(
-            actor_config["spawn_s_m"]
-        )
         minimum_gap_m = float(
             self._cut_in_event["safety"][
                 "minimum_initial_gap_m"
             ]
         )
-        actor = None
-        actual_s_m: float | None = None
-
-        # Small deterministic offsets avoid a transient overlap with a
-        # background vehicle while preserving the configured cut-in gap.
-        for offset_m in (
-            0.0,
-            5.0,
-            10.0,
-            -5.0,
-            -10.0,
-        ):
-            candidate_s_m = (
-                configured_s_m + offset_m
-            )
-            candidate_gap_m = (
-                candidate_s_m - ego_route_s_m
-            )
-            if candidate_gap_m < minimum_gap_m:
-                continue
-
-            waypoint = self._map.get_waypoint_xodr(
-                1,
-                int(actor_config["spawn_lane_id"]),
-                candidate_s_m,
-            )
-            if waypoint is None:
-                continue
-
-            transform = waypoint.transform
-            transform.location.z += 0.5
-            blueprint = first_available_blueprint(
-                self._world.get_blueprint_library(),
-                CUT_IN_BLUEPRINT_IDS,
-            )
-            if blueprint.has_attribute(
-                "role_name"
-            ):
-                blueprint.set_attribute(
-                    "role_name",
-                    actor_config["role_name"],
-                )
-            if blueprint.has_attribute("color"):
-                blueprint.set_attribute(
-                    "color",
-                    "180,25,25",
-                )
-
-            actor = self._world.try_spawn_actor(
-                blueprint,
-                transform,
-            )
-            if actor is not None:
-                actual_s_m = candidate_s_m
-                break
-
-        if actor is None or actual_s_m is None:
-            raise RuntimeError(
-                "failed to spawn the cut-in vehicle "
-                "at the trigger distance"
-            )
+        actor = self._cut_in_actor
+        actual_s_m = self._cut_in_spawn_s_m
+        if actor is None or not actor.is_alive or actual_s_m is None:
+            raise RuntimeError("staged cut-in vehicle disappeared before trigger")
 
         gap_m = actual_s_m - ego_route_s_m
+        if gap_m < minimum_gap_m:
+            raise RuntimeError("cut-in trigger violates minimum initial gap")
         self._set_vehicle_lights(
             actor,
             traffic_manager_controlled=True,
@@ -1911,11 +1880,9 @@ class EmergencySceneActorRuntime:
             actor,
             True,
         )
-        self._actor_sink.append(actor)
-        self._cut_in_actor = actor
         self._cut_in_phase = "CUTTING_IN"
         print(
-            "CUT-IN SPAWNED AND TRIGGERED | "
+            "CUT-IN RELEASED AND TRIGGERED | "
             f"lane={actor_config['spawn_lane_id']} "
             f"s={actual_s_m:.1f} m | "
             f"gap={gap_m:.1f} m | "
@@ -1934,11 +1901,9 @@ class EmergencySceneActorRuntime:
             return
 
         if self._cut_in_phase == "ARMED":
-            spawn_s_m = float(
-                self._cut_in_event["actor"][
-                    "spawn_s_m"
-                ]
-            )
+            spawn_s_m = self._cut_in_spawn_s_m
+            if spawn_s_m is None:
+                raise RuntimeError("cut-in spawn distance missing after staging")
             gap_m = spawn_s_m - ego_route_s_m
             minimum_gap_m = float(
                 self._cut_in_event["safety"][

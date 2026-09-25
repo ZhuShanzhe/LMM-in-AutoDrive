@@ -2874,7 +2874,12 @@ def main(
             multimodal_capture.start()
         if args.benchmark_assessment:
             from benchmark.episode import attach_episode
-            benchmark_assessment = attach_episode('scene_3',ego_plan,world,ego,
+            from benchmark.turn_fixture import waypoint_route
+            assessment_route = waypoint_route(
+                [waypoint for waypoint, _ in ego_plan],
+                route_context.distances_m,
+            )
+            benchmark_assessment = attach_episode('scene_3',assessment_route,world,ego,
                 output_dir/'benchmark',runtime_config_path,task_selector=args.benchmark_task,
                 run_metadata=dict(traffic_seed=args.seed,controller=args.ego_controller,
                                   policy_source='VLA_MODEL' if args.ego_controller=='vla-route-pid' else 'NON_VLA_CONTROL',

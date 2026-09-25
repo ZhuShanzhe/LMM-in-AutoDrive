@@ -1150,7 +1150,7 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
             0,
         )
 
-    def test_cut_in_actor_spawns_only_at_trigger(self):
+    def test_cut_in_actor_is_staged_before_trigger(self):
         config = runner.load_runtime_config(
             CONFIG_PATH
         )
@@ -1213,8 +1213,9 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
             simulation_frame=1,
             elapsed_s=1.0,
         )
-        world.try_spawn_actor.assert_not_called()
-        self.assertEqual(actor_sink, [])
+        world.try_spawn_actor.assert_called_once()
+        actor.set_autopilot.assert_not_called()
+        self.assertEqual(actor_sink, [actor])
 
         runtime.update(
             route_s_m=event["distance_m"],

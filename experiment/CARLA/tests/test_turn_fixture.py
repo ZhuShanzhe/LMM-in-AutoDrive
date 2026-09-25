@@ -1,13 +1,26 @@
 import pytest
+from types import SimpleNamespace as NS
 
 from benchmark.catalog import ConfigError
-from benchmark.turn_fixture import turn_evidence, bind_route_turn
+from benchmark.turn_fixture import turn_evidence, bind_route_turn, waypoint_route
 
 
 def route():
     return [dict(x=x,y=y,z=0,distance_m=s,yaw=yaw,road_id=road,section_id=0,lane_id=-1,is_junction=j)
             for x,y,s,yaw,road,j in [(0,0,0,0,1,False),(5,0,5,-20,10,True),
                                    (8,-4,10,-60,10,True),(8,-9,15,-90,2,False)]]
+
+
+def test_waypoint_route_preserves_canonical_distances_after_deduplication():
+    def waypoint(x):
+        return NS(transform=NS(location=NS(x=x,y=0,z=0),rotation=NS(yaw=0)),
+                  road_id=1,section_id=0,lane_id=-1,is_junction=False)
+
+    waypoints=[waypoint(0),waypoint(0),waypoint(10)]
+    result=waypoint_route(waypoints,[0,2,12])
+    assert [point['distance_m'] for point in result]==[0,12]
+    with pytest.raises(ConfigError,match='must align'):
+        waypoint_route(waypoints,[0,2])
 
 
 def test_left_turn_requires_junction_and_distinct_roads():
