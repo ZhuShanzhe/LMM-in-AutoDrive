@@ -41,8 +41,14 @@ def audit_scene(scene: str, run_root: Path, count: int) -> dict:
         outcome = json.loads((assessment / "run_outcome.json").read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         raise DatasetValidationError(f"{scene}: missing or invalid closed assessment") from error
-    if metadata.get("scene_id") != scene:
+    if not isinstance(metadata, dict) or metadata.get("scene_id") != scene:
         raise DatasetValidationError(f"{scene}: assessment scene identity mismatch")
+    if not isinstance(metadata.get("source_sha256"), str) or len(metadata["source_sha256"]) != 64:
+        raise DatasetValidationError(f"{scene}: assessment source fingerprint missing")
+    if not isinstance(outcome, dict) or outcome.get("status") not in {
+        "RECORDED_CHECKS_PASSED", "CHECK_FAILED", "INCOMPLETE_EVIDENCE", "ASSESSMENT_ERROR",
+    }:
+        raise DatasetValidationError(f"{scene}: assessment outcome missing or invalid")
 
     truth_path = assessment / "episode_truth.jsonl"
     truth = {}

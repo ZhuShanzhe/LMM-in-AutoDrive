@@ -28,7 +28,7 @@ def make_run(root, scene, *, truth_frame=11, truth_time=.55):
     assessment = root / "benchmark"
     assessment.mkdir()
     (assessment / "manifest.json").write_text(json.dumps({"scene_id": scene,
-        "source_sha256": "source"}), encoding="utf-8")
+        "source_sha256": "a" * 64}), encoding="utf-8")
     (assessment / "run_outcome.json").write_text(json.dumps({"status": "RECORDED_CHECKS_PASSED"}),
         encoding="utf-8")
     (assessment / "episode_truth.jsonl").write_text(json.dumps({"frame": truth_frame,
@@ -49,7 +49,7 @@ def test_three_scene_selection_keeps_truth_separate(tmp_path):
         assert len(row["selected"][0]["truth_sha256"]) == 64
 
 
-@pytest.mark.parametrize("fault", ("missing", "mistimed", "wrong_scene"))
+@pytest.mark.parametrize("fault", ("missing", "mistimed", "wrong_scene", "unbound"))
 def test_audit_rejects_unmatched_evidence(tmp_path, fault):
     roots = {scene: make_run(tmp_path / scene, scene,
              truth_frame=12 if fault == "missing" and scene == "scene_2" else 11,
@@ -58,6 +58,9 @@ def test_audit_rejects_unmatched_evidence(tmp_path, fault):
     if fault == "wrong_scene":
         path = roots["scene_2"] / "benchmark" / "manifest.json"
         path.write_text(json.dumps({"scene_id": "scene_1"}), encoding="utf-8")
+    if fault == "unbound":
+        path = roots["scene_2"] / "benchmark" / "manifest.json"
+        path.write_text(json.dumps({"scene_id": "scene_2"}), encoding="utf-8")
     with pytest.raises(DatasetValidationError):
         audit_captures(roots, 3)
 
