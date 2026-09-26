@@ -9,15 +9,20 @@ persisted state plus one controller-compatible ControlDecision.
 from __future__ import annotations
 
 import copy
+import math
 from typing import Any, Mapping
 
 from scene_understanding.src.control_decision import (
     build_control_decision,
     validate_control_decision,
 )
+from scene_understanding.src.speed_target import (
+    is_speed_step,
+    resolve_step_speed_target,
+)
 
 
-CONTROL_PLAN_STATE_SCHEMA_VERSION = "1.0.0"
+CONTROL_PLAN_STATE_SCHEMA_VERSION = "1.1.0"
 STEP_FEEDBACK_SCHEMA_VERSION = "1.0.0"
 PLAN_STATUSES = {
     "ACTIVE",
@@ -144,7 +149,7 @@ def validate_control_plan_state(data: Any) -> list[str]:
     if extra:
         errors.append("root: unexpected fields: " + ", ".join(extra))
     if data.get("schema_version") != CONTROL_PLAN_STATE_SCHEMA_VERSION:
-        errors.append("schema_version: expected '1.0.0'")
+        errors.append("schema_version: expected '1.1.0'")
     if not isinstance(data.get("request_id"), str) or not data["request_id"]:
         errors.append("request_id: expected a non-empty string")
     revision = data.get("revision")
@@ -177,7 +182,8 @@ def validate_control_plan_state(data: Any) -> list[str]:
             continue
         item_expected = {
             "step_id", "action", "status", "activation_frame_id",
-            "terminal_frame_id", "reason_codes",
+            "terminal_frame_id", "reason_codes", "speed_reference_kmh",
+            "resolved_target_speed_kmh",
         }
         if set(item) != item_expected:
             errors.append(f"{path}: fields do not match the state contract")
@@ -199,6 +205,32 @@ def validate_control_plan_state(data: Any) -> list[str]:
             value = item.get(key)
             if value is not None and (not isinstance(value, str) or not value):
                 errors.append(f"{path}.{key}: expected null or a non-empty string")
+        speed_values = (
+            item.get("speed_reference_kmh"),
+            item.get("resolved_target_speed_kmh"),
+        )
+        for key, value in zip(
+            ("speed_reference_kmh", "resolved_target_speed_kmh"),
+            speed_values,
+        ):
+            if value is not None and (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+                or not 0.0 <= float(value) <= 100.0
+            ):
+                errors.append(
+                    f"{path}.{key}: expected null or a finite speed from 0 to 100"
+                )
+        if (speed_values[0] is None) != (speed_values[1] is None):
+            errors.append(f"{path}: speed reference and target must be paired")
+        if (
+            str(item.get("action", "")).upper()
+            in {"SET_SPEED", "ADJUST_SPEED"}
+            and item.get("activation_frame_id") is not None
+            and speed_values[0] is None
+        ):
+            errors.append(f"{path}: active speed step requires a resolved target")
         item_reasons = item.get("reason_codes")
         if not isinstance(item_reasons, list) or any(
             not isinstance(reason, str) or not reason for reason in item_reasons
@@ -223,8 +255,25 @@ def validate_control_plan_state(data: Any) -> list[str]:
     return errors
 
 
+def _latch_step_speed(
+    state_item: dict[str, Any],
+    step: Mapping[str, Any],
+    reference_speed_kmh: float,
+) -> None:
+    if not is_speed_step(step):
+        return
+    _, target_speed_kmh = resolve_step_speed_target(
+        step,
+        reference_speed_kmh,
+    )
+    state_item["speed_reference_kmh"] = round(float(reference_speed_kmh), 6)
+    state_item["resolved_target_speed_kmh"] = target_speed_kmh
+
+
 def _initial_state(
-    driving_intent: Mapping[str, Any], frame_id: str
+    driving_intent: Mapping[str, Any],
+    frame_id: str,
+    current_speed_kmh: float,
 ) -> dict[str, Any]:
     steps = _intent_steps(driving_intent)
     request_id = driving_intent.get("request_id")
@@ -240,9 +289,13 @@ def _initial_state(
             "activation_frame_id": frame_id if active and index == 0 else None,
             "terminal_frame_id": None,
             "reason_codes": [],
+            "speed_reference_kmh": None,
+            "resolved_target_speed_kmh": None,
         }
         for index, step in enumerate(steps)
     ]
+    if active:
+        _latch_step_speed(step_states[0], steps[0], current_speed_kmh)
     return {
         "schema_version": CONTROL_PLAN_STATE_SCHEMA_VERSION,
         "request_id": request_id,
@@ -286,6 +339,7 @@ def _set_terminal(
 def _activate(
     state: dict[str, Any], index: int, frame_id: str,
     driving_intent: Mapping[str, Any],
+    current_speed_kmh: float,
 ) -> bool:
     steps = _intent_steps(driving_intent)
     if index >= len(steps):
@@ -312,6 +366,7 @@ def _activate(
     item["status"] = "ACTIVE"
     item["activation_frame_id"] = frame_id
     item["reason_codes"] = []
+    _latch_step_speed(item, steps[index], current_speed_kmh)
     state["plan_status"] = "ACTIVE"
     state["active_step_index"] = index
     state["active_step_id"] = item["step_id"]
@@ -322,6 +377,7 @@ def _activate(
 def _apply_feedback(
     state: dict[str, Any], feedback: Mapping[str, Any], frame_id: str,
     driving_intent: Mapping[str, Any],
+    current_speed_kmh: float,
 ) -> None:
     errors = validate_step_feedback(feedback)
     if errors:
@@ -343,7 +399,13 @@ def _apply_feedback(
         return
     if outcome == "COMPLETED":
         _set_terminal(state, index, "COMPLETED", feedback["frame_id"], reasons)
-        _activate(state, index + 1, frame_id, driving_intent)
+        _activate(
+            state,
+            index + 1,
+            frame_id,
+            driving_intent,
+            current_speed_kmh,
+        )
         return
 
     terminal_status = "FAILED" if outcome == "FAILED" else "CANCELLED"
@@ -407,10 +469,25 @@ def advance_control_plan(
     frame_id = world_state.get("frame_id")
     if not isinstance(frame_id, str) or not frame_id:
         raise ValueError("WorldState frame_id must be a non-empty string")
+    speed_mps = world_state.get("ego", {}).get("speed_mps")
+    if (
+        isinstance(speed_mps, bool)
+        or not isinstance(speed_mps, (int, float))
+        or not math.isfinite(float(speed_mps))
+        or float(speed_mps) < 0.0
+    ):
+        raise ValueError(
+            "WorldState ego.speed_mps must be a finite non-negative number"
+        )
+    current_speed_kmh = round(min(float(speed_mps) * 3.6, 100.0), 6)
     if prior_state is None:
         if feedback is not None:
             raise ValueError("StepFeedback requires a prior ControlPlanState")
-        state = _initial_state(driving_intent, frame_id)
+        state = _initial_state(
+            driving_intent,
+            frame_id,
+            current_speed_kmh,
+        )
     else:
         _check_state_matches_intent(prior_state, driving_intent)
         state = copy.deepcopy(prior_state)
@@ -418,7 +495,13 @@ def advance_control_plan(
         state["last_frame_id"] = frame_id
         state["last_feedback_outcome"] = "CONTINUE"
         if feedback is not None:
-            _apply_feedback(state, feedback, frame_id, driving_intent)
+            _apply_feedback(
+                state,
+                feedback,
+                frame_id,
+                driving_intent,
+                current_speed_kmh,
+            )
 
     # Build a template with complete parser/risk provenance.  For terminal
     # states the last plan step supplies source metadata only.
@@ -429,12 +512,25 @@ def advance_control_plan(
             item for item in state["step_states"] if item["status"] != "PENDING"
         ]
         template_step_id = (terminal[-1] if terminal else state["step_states"][0])["step_id"]
+    template_step_state = next(
+        (
+            item
+            for item in state["step_states"]
+            if item["step_id"] == template_step_id
+        ),
+        None,
+    )
     decision = build_control_decision(
         driving_intent,
         world_state,
         semantic_alignment,
         risk_assessment,
         source_step_id=template_step_id,
+        resolved_target_speed_kmh=(
+            template_step_state.get("resolved_target_speed_kmh")
+            if template_step_state is not None
+            else None
+        ),
     )
 
     if state["plan_status"] == "SAFE_FALLBACK":
@@ -450,10 +546,14 @@ def advance_control_plan(
             blocked_reason_codes=[],
         )
     elif state["plan_status"] in {"FAILED", "CANCELLED", "BLOCKED"}:
+        terminal_emergency = (
+            decision.get("action") == "emergency_brake"
+            or risk_assessment.get("recommended_action") == "emergency_brake"
+        )
         decision = _replace_decision(
             decision,
             status="SAFE_FALLBACK" if state["plan_status"] != "BLOCKED" else "BLOCKED",
-            action="stop",
+            action="emergency_brake" if terminal_emergency else "stop",
             reason=f"plan_{state['plan_status'].lower()}",
             target_speed_kmh=0.0,
             blocked_reason_codes=state["reason_codes"] or [
@@ -488,7 +588,11 @@ def advance_control_plan(
                 decision = _replace_decision(
                     decision,
                     status="BLOCKED",
-                    action="stop",
+                    action=(
+                        "emergency_brake"
+                        if decision.get("action") == "emergency_brake"
+                        else "stop"
+                    ),
                     reason="plan_blocked_safe_stop",
                     target_speed_kmh=0.0,
                     blocked_reason_codes=reasons or ["plan_blocked"],
@@ -496,7 +600,13 @@ def advance_control_plan(
                 break
 
             _set_terminal(state, index, "SKIPPED", frame_id, reasons)
-            if not _activate(state, index + 1, frame_id, driving_intent):
+            if not _activate(
+                state,
+                index + 1,
+                frame_id,
+                driving_intent,
+                current_speed_kmh,
+            ):
                 if state["plan_status"] == "COMPLETED":
                     current_speed_kmh = round(
                         float(world_state["ego"]["speed_mps"]) * 3.6, 6
@@ -525,6 +635,9 @@ def advance_control_plan(
                 semantic_alignment,
                 risk_assessment,
                 source_step_id=state["active_step_id"],
+                resolved_target_speed_kmh=state["step_states"][
+                    state["active_step_index"]
+                ].get("resolved_target_speed_kmh"),
             )
 
     state_errors = validate_control_plan_state(state)

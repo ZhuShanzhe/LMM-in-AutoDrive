@@ -77,6 +77,17 @@ class ProtocolDrivingIntentTest(unittest.TestCase):
         self.assertAlmostEqual(intent["target_speed_kmh"], 60.0012)
         self.assertEqual(intent["request_id"], "test-001")
 
+    def test_relative_speed_uses_one_absolute_flattened_target(self):
+        intent = normalize_intent(
+            driving_intent(
+                "ADJUST_SPEED",
+                {"change": "DECREASE", "speed_delta_mps": 2.0},
+            ),
+            default_speed_kmh=36.0,
+        )
+        self.assertEqual(intent["action"], "decelerate")
+        self.assertEqual(intent["target_speed_kmh"], 28.8)
+
     def test_change_lane_direction_maps_to_flat_action(self):
         intent = normalize_intent(
             driving_intent("CHANGE_LANE", {"direction": "LEFT"})

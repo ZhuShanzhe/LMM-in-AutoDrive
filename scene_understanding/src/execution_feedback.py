@@ -24,6 +24,21 @@ def _active_step(
     return matches[0] if len(matches) == 1 else None
 
 
+def _resolved_target_speed_mps(
+    plan_state: Mapping[str, Any],
+    step_id: str,
+) -> float | None:
+    matches = [
+        item
+        for item in plan_state.get("step_states", [])
+        if isinstance(item, Mapping) and item.get("step_id") == step_id
+    ]
+    if len(matches) != 1:
+        return None
+    target_kmh = _number(matches[0].get("resolved_target_speed_kmh"))
+    return None if target_kmh is None else target_kmh / 3.6
+
+
 def _new_tracker(
     request_id: str,
     step_id: str,
@@ -341,9 +356,25 @@ def evaluate_execution_feedback(
 
     if completion_type == "TARGET_SPEED_REACHED":
         target_speed = _number(parameters.get("target_speed_mps"))
-        if speed_mps is not None and target_speed is not None and abs(speed_mps - target_speed) <= speed_tolerance_mps:
+        if target_speed is None:
+            target_speed = _resolved_target_speed_mps(plan_state, step_id)
+        stable = (
+            speed_mps is not None
+            and target_speed is not None
+            and abs(speed_mps - target_speed) <= speed_tolerance_mps
+        )
+        current_tracker["stable_frames"] = (
+            int(current_tracker.get("stable_frames", 0)) + 1
+            if stable
+            else 0
+        )
+        if current_tracker["stable_frames"] >= required_stable_frames:
             return current_tracker, _feedback(
-                request_id, frame_id, step_id, "COMPLETED", ["target_speed_reached"]
+                request_id,
+                frame_id,
+                step_id,
+                "COMPLETED",
+                ["target_speed_reached", "target_speed_stable"],
             )
     elif completion_type == "ACTION_REACHED":
         # Atomic observation/route-following steps have no separate metric

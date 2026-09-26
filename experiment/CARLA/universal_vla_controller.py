@@ -755,9 +755,9 @@ class UniversalVLAController:
             parser=self.parser,
         )
         self.command_queue = None
-        dispatch_mode = config.get('command_dispatch_mode', 'route_latest')
-        if dispatch_mode not in ('route_latest', 'completion_serial'):
-            raise ValueError('unknown command dispatch mode')
+        from control.command_dispatch import resolve_command_dispatch_mode
+        dispatch_mode = resolve_command_dispatch_mode(
+            self.commands, config.get('command_dispatch_mode'))
         if dispatch_mode == 'completion_serial':
             from control.command_dispatch import CompletionCommandQueue
             self.command_queue = CompletionCommandQueue(
@@ -955,6 +955,11 @@ class UniversalVLAController:
             parsed=self.fsm.parsed_step(step,parsed.source_text)
             command=dict(command,id=plan_document['request_id']+':'+plan_step_id)
         else:self.driving_plan=None
+        parsed=self.fsm.resolve_relative_speed(
+            command,
+            parsed,
+            ego_speed_kmh=3.6*_speed_mps(self.ego),
+        )
         parsed,lane_corridor_points=self._lane_command_observation(command,parsed)
         intent_key = parsed.parsed_intent
         if parsed.requested_lane_direction is not None:
@@ -1450,6 +1455,8 @@ class UniversalVLAController:
             "parsed_intent": parsed.parsed_intent,
             "requested_lane_direction": parsed.requested_lane_direction,
             "target_speed_envelope_kmh": parsed.target_speed_kmh,
+            "relative_speed_reference_kmh": parsed.speed_reference_kmh,
+            "relative_speed_change": parsed.speed_change,
             "semantic_text": self.fsm.semantic_text(parsed),
             "input_mode": (
                 "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment"

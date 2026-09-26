@@ -272,6 +272,37 @@ class GenericControllerTests(unittest.TestCase):
         self.assertEqual(changed["target_lane"], "left")
         self.assertEqual(changed["target_speed_kmh"], 15.0)
 
+    def test_lane_change_timeout_never_overrides_confirmed_high_risk(self):
+        supervisor = GenericTemporalRiskSupervisor(
+            TemporalRiskSupervisorConfig(lane_change_wait_timeout_s=2.0)
+        )
+        stopped = {
+            "action": "emergency_brake",
+            "target_speed_kmh": 0.0,
+            "target_lane": None,
+            "emergency": True,
+            "reason": "confirmed_collision_risk",
+            "blocked_reason_codes": ["confirmed_collision_risk"],
+        }
+        decision, override = supervisor.apply(
+            stopped,
+            stopped,
+            {
+                "risk_level": "high",
+                "probabilities": {"high": 0.95},
+                "risk_score": 0.95,
+            },
+            parsed_intent="CHANGE_LANE_LEFT",
+            requested_lane_direction="left",
+            target_lane_risk={"risk_level": "high"},
+            stationary_elapsed_s=10.0,
+            resume_active=False,
+            resume_speed_kmh=20.0,
+        )
+        self.assertIsNone(override)
+        self.assertEqual(decision["action"], "emergency_brake")
+        self.assertEqual(decision["target_speed_kmh"], 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()

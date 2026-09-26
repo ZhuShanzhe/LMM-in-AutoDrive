@@ -18,7 +18,7 @@
     "reason_codes"
   ],
   "properties": {
-    "schema_version": {"const": "1.0.0"},
+    "schema_version": {"const": "1.1.0"},
     "request_id": {"type": "string", "minLength": 1},
     "revision": {"type": "integer", "minimum": 0},
     "plan_status": {
@@ -58,7 +58,9 @@
         "status",
         "activation_frame_id",
         "terminal_frame_id",
-        "reason_codes"
+        "reason_codes",
+        "speed_reference_kmh",
+        "resolved_target_speed_kmh"
       ],
       "properties": {
         "step_id": {"type": "string", "minLength": 1},
@@ -77,6 +79,16 @@
         },
         "activation_frame_id": {"type": ["string", "null"], "minLength": 1},
         "terminal_frame_id": {"type": ["string", "null"], "minLength": 1},
+        "speed_reference_kmh": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "resolved_target_speed_kmh": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100
+        },
         "reason_codes": {"$ref": "#/$defs/stringArray"}
       }
     }

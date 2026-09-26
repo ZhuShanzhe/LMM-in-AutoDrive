@@ -28,7 +28,8 @@ def test_graph_advances_only_after_actual_speed_completion():
         active=runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=speed)
         decision=runtime.advance(w,r)
         if i==0:assert active['step_id']=='step_1'
-        if i==1:assert active['step_id']=='step_2'
+        if i==1:assert active['step_id']=='step_1'
+        if i==6:assert active['step_id']=='step_2'
     assert runtime.state['step_states'][0]['status']=='COMPLETED'
     assert decision['source_step_id']=='step_2' and decision['action']=='stop'
 

@@ -4,6 +4,7 @@
 
 - [0925 提交前五人分工](../program/task_0925.md)
 - [0925 成员分支合并与核验](CHALLENGE_MERGE_20260925.md)
+- [0926 王皓然决策执行链路交接](WANG_HAORAN_EXECUTION_HANDOFF_20260926.md)
 
 - [当前架构、范围与结果](../README.md)
 - [分支协作与回归](../CHALLENGE_DEVELOPMENT.md)

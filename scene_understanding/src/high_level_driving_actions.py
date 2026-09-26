@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 from typing import Any, Mapping
 
+from scene_understanding.src.speed_target import resolve_step_speed_target
+
 
 CONTROL_ACTIONS = {
     "keep_lane",
@@ -39,6 +41,8 @@ def fallback_action(on_blocked: Any) -> tuple[str, float | None, str]:
 def map_step_action(
     step: Mapping[str, Any],
     current_speed_kmh: float,
+    *,
+    resolved_target_speed_kmh: float | None = None,
 ) -> tuple[str, float, str | None, dict[str, float] | None]:
     """Map every DrivingIntent 1.2 action to the stable CARLA control protocol."""
 
@@ -72,23 +76,12 @@ def map_step_action(
     target_lane: str | None = None
     target_location: dict[str, float] | None = None
 
-    if parser_action == "SET_SPEED":
-        value = parameters.get("target_speed_mps")
-        if not _is_number(value) or float(value) < 0:
-            raise ValueError("SET_SPEED requires finite non-negative target_speed_mps")
-        action = "keep_lane"
-        target_speed_kmh = round(min(float(value) * 3.6, 100.0), 6)
-    elif parser_action == "ADJUST_SPEED":
-        change = str(parameters.get("change", "HOLD")).strip().upper()
-        if change == "INCREASE":
-            action = "accelerate"
-            target_speed_kmh = min(float(current_speed_kmh) + 5.0, 100.0)
-        elif change == "DECREASE":
-            action = "decelerate"
-            target_speed_kmh = max(float(current_speed_kmh) - 5.0, 0.0)
-        elif change == "HOLD":
-            action = "keep_lane"
-            target_speed_kmh = float(current_speed_kmh)
+    if parser_action in {"SET_SPEED", "ADJUST_SPEED"}:
+        action, target_speed_kmh = resolve_step_speed_target(
+            step,
+            current_speed_kmh,
+            resolved_target_speed_kmh=resolved_target_speed_kmh,
+        )
     elif parser_action in {"CHANGE_LANE", "MERGE"}:
         direction = str(parameters.get("direction", "")).strip().upper()
         if direction in {"LEFT", "RIGHT"}:

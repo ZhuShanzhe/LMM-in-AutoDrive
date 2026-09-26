@@ -1,10 +1,22 @@
 import pytest
-from control.command_dispatch import CompletionCommandQueue
+from control.command_dispatch import CompletionCommandQueue, resolve_command_dispatch_mode
 
 
 def command(identity, trigger):
     return dict(id=identity,activate_at_m=trigger,
                 driving_intent=dict(request_id=identity,intent=dict(steps=[dict(action='KEEP_LANE')])) )
+
+
+def test_dispatch_mode_auto_enables_completion_for_structured_commands():
+    assert resolve_command_dispatch_mode([command('a', 0), command('b', 10)]) == 'completion_serial'
+
+
+def test_dispatch_mode_auto_preserves_route_latest_for_unstructured_commands():
+    assert resolve_command_dispatch_mode([dict(text='keep going')]) == 'route_latest'
+
+
+def test_dispatch_mode_explicit_override_is_respected():
+    assert resolve_command_dispatch_mode([command('a', 0)], 'route_latest') == 'route_latest'
 
 
 def test_later_route_trigger_cannot_overwrite_running_plan():

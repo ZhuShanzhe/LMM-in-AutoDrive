@@ -3,6 +3,25 @@ from copy import deepcopy
 import math
 
 
+def resolve_command_dispatch_mode(commands, configured_mode=None):
+    """Choose completion gating only when every command carries a usable plan."""
+
+    if configured_mode is not None:
+        if configured_mode not in ('route_latest', 'completion_serial'):
+            raise ValueError('unknown command dispatch mode')
+        return configured_mode
+    commands = list(commands)
+    if commands and all(
+        isinstance(command.get('driving_intent'), dict)
+        and isinstance(command['driving_intent'].get('request_id'), str)
+        and bool(command['driving_intent']['request_id'])
+        and bool(command['driving_intent'].get('intent', {}).get('steps'))
+        for command in commands
+    ):
+        return 'completion_serial'
+    return 'route_latest'
+
+
 class CompletionCommandQueue:
     def __init__(self, commands, timeout_s=120):
         if not math.isfinite(timeout_s) or timeout_s <= 0:

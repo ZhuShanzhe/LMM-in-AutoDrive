@@ -8,6 +8,10 @@
 - `step_feedback.json`：当前活动步骤的显式执行结果；
 - `control_decision.json`：发送给 CARLA 控制器的单个扁平化动作。
 
+状态协议 `1.1.0` 在每个步骤中记录 `speed_reference_kmh` 和
+`resolved_target_speed_kmh`。相对调速在步骤首次激活时，用当帧实测车速只计算一次
+绝对目标；`WAITING`、风险阻断和后续恢复继续使用同一目标，不按帧重复累加。
+
 稳定的数据契约位于：
 
 - `scene_understanding/schemas/control_plan_state.schema.json`；

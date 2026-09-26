@@ -6,6 +6,8 @@ module normalizes it before it reaches the CARLA-specific controller.
 
 import json
 
+from scene_understanding.src.speed_target import resolve_step_speed_target
+
 
 SUPPORTED_ACTIONS = {
     "keep_lane",
@@ -108,16 +110,11 @@ def _flatten_driving_intent(driving_intent, default_speed_kmh):
         parameters.get("target_speed_mps"),
         default_speed_kmh,
     )
-    if parser_action == "SET_SPEED":
-        action = "keep_lane"
-    elif parser_action == "ADJUST_SPEED":
-        change = str(parameters.get("change", "HOLD")).strip().upper()
-        if change == "INCREASE":
-            action = "accelerate"
-        elif change == "DECREASE":
-            action = "decelerate"
-        else:
-            action = "keep_lane"
+    if parser_action in {"SET_SPEED", "ADJUST_SPEED"}:
+        action, target_speed_kmh = resolve_step_speed_target(
+            step,
+            default_speed_kmh,
+        )
     elif parser_action == "CHANGE_LANE":
         direction = str(parameters.get("direction", "")).strip().upper()
         if direction == "LEFT":

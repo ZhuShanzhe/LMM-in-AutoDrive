@@ -495,6 +495,7 @@ class GenericTemporalRiskSupervisor:
         if (
             parsed_intent in LANE_CHANGE_INTENTS
             and stationary_elapsed_s >= self.config.lane_change_wait_timeout_s
+            and risk_level == "low"
             and str(decision.get("action"))
             in {"decelerate", "lane_change_left", "lane_change_right"}
         ):
@@ -705,7 +706,7 @@ class GenericTemporalRiskSupervisor:
             lane_risk_level = str(
                 (target_lane_risk or risk).get("risk_level", "high")
             ).lower()
-            if lane_risk_level != "high":
+            if lane_risk_level == "low":
                 lane_history = self._lane_risk_history[requested_lane_direction]
                 lane_clear = self.clearance_evidence(list(lane_history))
                 if (

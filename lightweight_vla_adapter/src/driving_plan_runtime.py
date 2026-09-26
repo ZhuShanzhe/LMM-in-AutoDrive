@@ -52,6 +52,11 @@ class DrivingPlanRuntime:
             target=parameters.get('target_speed_mps')
             if target is None and parameters.get('target_speed_kmh') is not None:
                 target=parameters['target_speed_kmh']/3.6
+            if target is None and self.state is not None:
+                step_state=next((item for item in self.state.get('step_states',[])
+                    if item.get('step_id')==step['step_id']),{})
+                resolved=step_state.get('resolved_target_speed_kmh')
+                if resolved is not None:target=float(resolved)/3.6
             satisfied=target is not None and abs(speed_mps-float(target))<=1./3.6
         elif kind=='LANE_CHANGE_COMPLETED':
             evidence=execution_state or {}
@@ -60,7 +65,10 @@ class DrivingPlanRuntime:
         if satisfied:
             if self.settled_since is None:self.settled_since=timestamp_s
         else:self.settled_since=None
-        required_hold=0. if kind=='TARGET_SPEED_REACHED' else .5
+        # A single matching sample is not physical completion.  The same
+        # half-second hold is required after relative-target resolution so
+        # braking/acceleration overshoot cannot advance the next plan step.
+        required_hold=.5
         if self.settled_since is not None and timestamp_s-self.settled_since>=required_hold:
             self.feedback=dict(schema_version='1.0.0',request_id=document['request_id'],
                 frame_id=frame_id,step_id=step['step_id'],outcome='COMPLETED',
