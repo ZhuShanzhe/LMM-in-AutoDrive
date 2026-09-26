@@ -13,10 +13,15 @@ import math
 import copy
 import hashlib
 from collections import OrderedDict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, replace
 from typing import Any, Mapping, Sequence
 
 import torch
+
+from scene_understanding.src.speed_target import (
+    DEFAULT_RELATIVE_SPEED_DELTA_KMH,
+    resolve_step_speed_target,
+)
 
 
 PARSED_INTENTS = (
@@ -61,6 +66,9 @@ class ParsedInstruction:
     confidence: float = 1.0
     source_text: str = ""
     semantic_goal: tuple[str, ...] = ()
+    speed_change: str | None = None
+    speed_delta_kmh: float | None = None
+    speed_reference_kmh: float | None = None
 
 
 def _intent_from_goals(goals: Sequence[str]) -> tuple[str | None, str | None, float | None]:
@@ -105,11 +113,13 @@ class GenericInstructionFSM:
         self.cache_capacity = int(cache_capacity)
         self._token_cache: OrderedDict = OrderedDict()
         self._parse_cache: OrderedDict = OrderedDict()
+        self._speed_target_cache: OrderedDict = OrderedDict()
 
     def clear_caches(self) -> None:
         """Invalidate language caches after replacing parser weights/config."""
         self._token_cache.clear()
         self._parse_cache.clear()
+        self._speed_target_cache.clear()
 
     def _cache_put(self, cache: OrderedDict, key: Any, value: Any) -> None:
         cache[key] = value
@@ -229,6 +239,7 @@ class GenericInstructionFSM:
         action = str(structured.get("action", "")).upper()
         mapping = {
             "SET_SPEED": "SET_SPEED",
+            "ADJUST_SPEED": "SET_SPEED",
             "KEEP_LANE": "KEEP_LANE",
             "DECELERATE": "DECELERATE",
             "STOP": "STOP",
@@ -239,6 +250,13 @@ class GenericInstructionFSM:
         intent = mapping.get(action)
         if intent is None:
             return parsed
+        change = str(structured.get("change", "")).strip().upper()
+        if action == "ADJUST_SPEED":
+            intent = {
+                "INCREASE": "SET_SPEED",
+                "DECREASE": "DECELERATE",
+                "HOLD": "KEEP_LANE",
+            }.get(change, intent)
         direction = str(structured.get("direction", "")).upper()
         if intent == "CHANGE_LANE_LEFT":
             intent = (
@@ -251,8 +269,23 @@ class GenericInstructionFSM:
         speed = structured.get("target_speed_kmh")
         try:
             speed = float(speed) if speed is not None else parsed.target_speed_kmh
+            if speed is not None and (not math.isfinite(speed) or speed < 0.0):
+                return parsed
         except (TypeError, ValueError):
             speed = parsed.target_speed_kmh
+        delta_kmh = structured.get("speed_delta_kmh")
+        if delta_kmh is None and structured.get("speed_delta_mps") is not None:
+            try:
+                delta_kmh = float(structured["speed_delta_mps"]) * 3.6
+            except (TypeError, ValueError):
+                return parsed
+        if delta_kmh is not None:
+            try:
+                delta_kmh = float(delta_kmh)
+            except (TypeError, ValueError):
+                return parsed
+            if not math.isfinite(delta_kmh) or delta_kmh <= 0.0:
+                return parsed
         return ParsedInstruction(
             parsed_intent=intent,
             requested_lane_direction=(
@@ -264,6 +297,8 @@ class GenericInstructionFSM:
             confidence=parsed.confidence,
             source_text=parsed.source_text,
             semantic_goal=parsed.semantic_goal,
+            speed_change=change if action == "ADJUST_SPEED" else None,
+            speed_delta_kmh=delta_kmh,
         )
 
     def _parse_text_rules(
@@ -314,11 +349,15 @@ class GenericInstructionFSM:
             )
         if "减速" in lowered or "降低" in lowered or "慢" in lowered:
             return ParsedInstruction(
-                parsed_intent="DECELERATE", target_speed_kmh=speed
+                parsed_intent="DECELERATE",
+                target_speed_kmh=speed,
+                speed_change="DECREASE",
             )
         if "提速" in lowered or "加速" in lowered or "恢复车速" in lowered:
             return ParsedInstruction(
-                parsed_intent="SET_SPEED", target_speed_kmh=speed
+                parsed_intent="SET_SPEED",
+                target_speed_kmh=speed,
+                speed_change="INCREASE",
             )
         if "恢复" in lowered or "结束" in lowered:
             return ParsedInstruction(
@@ -372,6 +411,65 @@ class GenericInstructionFSM:
         parsed=self._merge_parser_result(ParsedInstruction(),dict(status='VALID',confidence=1.,intent=dict(steps=[step])))
         parsed.source_text=source_text
         return parsed
+
+    def resolve_relative_speed(
+        self,
+        command: Mapping[str, Any],
+        parsed: ParsedInstruction,
+        *,
+        ego_speed_kmh: float,
+    ) -> ParsedInstruction:
+        """Latch one absolute target for a qualitative speed instruction."""
+
+        if parsed.target_speed_kmh is not None:
+            return parsed
+        change = parsed.speed_change
+        if change is None:
+            change = {
+                "SET_SPEED": "INCREASE",
+                "DECELERATE": "DECREASE",
+            }.get(parsed.parsed_intent)
+        if change not in {"INCREASE", "DECREASE", "HOLD"}:
+            return parsed
+        speed = float(ego_speed_kmh)
+        if not math.isfinite(speed) or speed < 0.0:
+            raise ValueError("ego_speed_kmh must be finite and non-negative")
+        delta = (
+            float(parsed.speed_delta_kmh)
+            if parsed.speed_delta_kmh is not None
+            else DEFAULT_RELATIVE_SPEED_DELTA_KMH
+        )
+        if not math.isfinite(delta) or delta <= 0.0:
+            raise ValueError("relative speed delta must be finite and positive")
+        identity = str(
+            command.get("id")
+            or command.get("request_id")
+            or parsed.source_text
+            or "anonymous_instruction"
+        )
+        key = (identity, parsed.parsed_intent, change, round(delta, 6))
+        cached = self._speed_target_cache.get(key)
+        if cached is None:
+            _, target = resolve_step_speed_target(
+                {
+                    "action": "ADJUST_SPEED",
+                    "parameters": {
+                        "change": change,
+                        "speed_delta_kmh": delta,
+                    },
+                },
+                speed,
+            )
+            cached = (round(speed, 6), round(target, 6))
+            self._cache_put(self._speed_target_cache, key, cached)
+        else:
+            self._speed_target_cache.move_to_end(key)
+        return replace(
+            parsed,
+            target_speed_kmh=cached[1],
+            speed_change=change,
+            speed_reference_kmh=cached[0],
+        )
 
     @staticmethod
     def _extract_speed(text: str) -> float | None:
@@ -434,20 +532,34 @@ class GenericInstructionFSM:
                 "TURN": "TURN_LEFT",
             }
             merged = mapping.get(action)
-            if action == "ADJUST_SPEED" and str(parameters.get("change","")).upper() == "DECREASE":
-                merged="DECELERATE"
+            change = str(parameters.get("change", "")).strip().upper()
+            if action == "ADJUST_SPEED":
+                merged = {
+                    "INCREASE": "SET_SPEED",
+                    "DECREASE": "DECELERATE",
+                    "HOLD": "KEEP_LANE",
+                }.get(change, merged)
             direction=str(parameters.get("direction","")).upper()
             if action in {"CHANGE_LANE","TURN"}:
                 if direction not in {"LEFT","RIGHT"}:
                     return parsed
                 merged=("CHANGE_LANE_" if action=="CHANGE_LANE" else "TURN_")+direction
             target_speed=parsed.target_speed_kmh
+            delta_kmh=None
             try:
                 if parameters.get("target_speed_mps") is not None:
                     target_speed=float(parameters["target_speed_mps"])*3.6
                 elif parameters.get("target_speed_kmh") is not None:
                     target_speed=float(parameters["target_speed_kmh"])
                 if target_speed is not None and (not math.isfinite(target_speed) or target_speed<0):
+                    return parsed
+                if parameters.get("speed_delta_mps") is not None:
+                    delta_kmh=float(parameters["speed_delta_mps"])*3.6
+                elif parameters.get("speed_delta_kmh") is not None:
+                    delta_kmh=float(parameters["speed_delta_kmh"])
+                if delta_kmh is not None and (
+                    not math.isfinite(delta_kmh) or delta_kmh <= 0.0
+                ):
                     return parsed
             except (TypeError,ValueError):
                 return parsed
@@ -460,6 +572,8 @@ class GenericInstructionFSM:
                     ),
                     target_speed_kmh=target_speed,
                     confidence=float(parse_result.get("confidence", 0.0) or 0.0),
+                    speed_change=change if action == "ADJUST_SPEED" else None,
+                    speed_delta_kmh=delta_kmh,
                 )
         return parsed
 

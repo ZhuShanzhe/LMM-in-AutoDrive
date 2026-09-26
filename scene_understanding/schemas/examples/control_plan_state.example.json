@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "request_id": "complex-0001",
   "revision": 1,
   "plan_status": "ACTIVE",
@@ -12,6 +12,8 @@
       "status": "COMPLETED",
       "activation_frame_id": "carla_00944802",
       "terminal_frame_id": "carla_00944910",
+      "speed_reference_kmh": 36.0,
+      "resolved_target_speed_kmh": 31.0,
       "reason_codes": ["pedestrian_clear"]
     },
     {
@@ -20,6 +22,8 @@
       "status": "ACTIVE",
       "activation_frame_id": "carla_00944911",
       "terminal_frame_id": null,
+      "speed_reference_kmh": null,
+      "resolved_target_speed_kmh": null,
       "reason_codes": []
     },
     {
@@ -28,6 +32,8 @@
       "status": "PENDING",
       "activation_frame_id": null,
       "terminal_frame_id": null,
+      "speed_reference_kmh": null,
+      "resolved_target_speed_kmh": null,
       "reason_codes": []
     }
   ],

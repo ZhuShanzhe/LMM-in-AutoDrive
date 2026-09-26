@@ -77,3 +77,23 @@ def test_missing_direction_does_not_silently_turn_left():
 def test_model_invalid_speed_is_not_consumed():
     fsm=GenericInstructionFSM(parser=Service('SET_SPEED',dict(target_speed_mps=float('nan'))))
     assert fsm.parse(dict(text='Use that speed.')).target_speed_kmh is None
+
+
+def test_relative_adjust_speed_target_is_latched_by_command_identity():
+    fsm=GenericInstructionFSM(
+        parser=Service(
+            'ADJUST_SPEED',
+            dict(change='DECREASE',speed_delta_mps=2.),
+        )
+    )
+    command=dict(id='slow-once',text='Ease off by two metres per second.')
+    parsed=fsm.parse(command)
+    first=fsm.resolve_relative_speed(command,parsed,ego_speed_kmh=36.)
+    later=fsm.resolve_relative_speed(command,parsed,ego_speed_kmh=28.8)
+    assert first.target_speed_kmh==28.8
+    assert later.target_speed_kmh==28.8
+    assert later.speed_reference_kmh==36.
+
+    another={**command,'id':'slow-again'}
+    repeated=fsm.resolve_relative_speed(another,parsed,ego_speed_kmh=28.8)
+    assert repeated.target_speed_kmh==21.6

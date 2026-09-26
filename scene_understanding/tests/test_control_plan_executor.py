@@ -163,6 +163,34 @@ class ControlPlanExecutorTests(unittest.TestCase):
         self.assertEqual(decision["reason"], "plan_completed")
         self.assertEqual(validate_control_plan_state(state), [])
 
+    def test_relative_speed_target_is_latched_once_for_active_step(self):
+        intent = driving_intent(
+            "ADJUST_SPEED",
+            {"change": "DECREASE", "speed_delta_mps": 2.0},
+            on_blocked="WAIT_FOR_SAFE",
+        )
+        state, decision = self.run_plan(intent)
+        self.assertEqual(state["schema_version"], "1.1.0")
+        self.assertEqual(
+            state["step_states"][0]["speed_reference_kmh"],
+            36.0,
+        )
+        self.assertEqual(
+            state["step_states"][0]["resolved_target_speed_kmh"],
+            28.8,
+        )
+        self.assertEqual(decision["target_speed_kmh"], 28.8)
+
+        # The measured speed changed, but the same instruction keeps the
+        # activation-time setpoint instead of subtracting another 7.2 km/h.
+        self.world["ego"]["speed_mps"] = 8.0
+        state, decision = self.run_plan(intent, state=state)
+        self.assertEqual(
+            state["step_states"][0]["resolved_target_speed_kmh"],
+            28.8,
+        )
+        self.assertEqual(decision["target_speed_kmh"], 28.8)
+
     def test_waiting_step_recovers_when_alignment_becomes_available(self):
         intent = driving_intent(
             "ADJUST_SPEED",
@@ -180,6 +208,38 @@ class ControlPlanExecutorTests(unittest.TestCase):
         state, decision = self.run_plan(intent, state=state, alignment=available)
         self.assertEqual(state["step_states"][0]["status"], "ACTIVE")
         self.assertEqual(decision["decision_status"], "READY")
+
+    def test_unsafe_lane_change_waits_without_completion_then_recovers(self):
+        intent = driving_intent(
+            "CHANGE_LANE",
+            {"direction": "LEFT"},
+            on_blocked="WAIT_FOR_SAFE",
+        )
+        self.risk["lane_change"]["left"]["is_safe"] = False
+        self.risk["lane_change"]["left"]["reason_codes"] = [
+            "target_lane_rear_ttc_too_low"
+        ]
+
+        state, decision = self.run_plan(intent)
+
+        self.assertEqual(state["plan_status"], "ACTIVE")
+        self.assertEqual(state["active_step_id"], "step_1")
+        self.assertEqual(state["step_states"][0]["status"], "WAITING")
+        self.assertEqual(decision["decision_status"], "BLOCKED")
+        self.assertEqual(decision["action"], "decelerate")
+        self.assertIsNone(decision["target_lane"])
+
+        # Safety becoming available resumes the same step.  No completion
+        # feedback was fabricated while the vehicle waited.
+        self.risk["lane_change"]["left"]["is_safe"] = True
+        self.risk["lane_change"]["left"]["reason_codes"] = []
+        state, decision = self.run_plan(intent, state=state)
+
+        self.assertEqual(state["plan_status"], "ACTIVE")
+        self.assertEqual(state["active_step_id"], "step_1")
+        self.assertEqual(state["step_states"][0]["status"], "ACTIVE")
+        self.assertEqual(decision["action"], "lane_change_left")
+        self.assertEqual(decision["target_lane"], "left")
 
     def test_safe_stop_policy_terminates_blocked_plan(self):
         intent = driving_intent(
@@ -229,6 +289,19 @@ class ControlPlanExecutorTests(unittest.TestCase):
         self.assertEqual(state["plan_status"], "FAILED")
         self.assertEqual(decision["action"], "stop")
         self.assertEqual(decision["decision_status"], "SAFE_FALLBACK")
+
+    def test_plan_fallback_does_not_downgrade_emergency_brake(self):
+        intent = driving_intent("STOP")
+        self.risk["risk_level"] = "high"
+        self.risk["reason_codes"] = ["collision_imminent"]
+        self.risk["recommended_action"] = "emergency_brake"
+
+        state, decision = self.run_plan(intent)
+
+        self.assertEqual(state["plan_status"], "BLOCKED")
+        self.assertEqual(decision["decision_status"], "BLOCKED")
+        self.assertEqual(decision["action"], "emergency_brake")
+        self.assertTrue(decision["emergency"])
 
     def test_feedback_must_match_active_step(self):
         intent = three_step_intent()

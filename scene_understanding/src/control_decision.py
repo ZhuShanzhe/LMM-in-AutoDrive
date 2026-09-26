@@ -14,6 +14,8 @@ from __future__ import annotations
 import math
 from typing import Any, Mapping
 
+from scene_understanding.src.speed_target import resolve_step_speed_target
+
 
 CONTROL_DECISION_SCHEMA_VERSION = "1.0.0"
 DECISION_STATUSES = {"READY", "BLOCKED", "SAFE_FALLBACK"}
@@ -171,7 +173,9 @@ def _fallback_action(on_blocked: Any) -> tuple[str, float | None, str]:
 
 
 def _map_step_action(
-    step: Mapping[str, Any], current_speed_kmh: float
+    step: Mapping[str, Any],
+    current_speed_kmh: float,
+    resolved_target_speed_kmh: float | None = None,
 ) -> tuple[str, float, str | None, dict[str, float] | None]:
     parser_action = str(step.get("action", "")).strip().upper()
     parameters = step.get("parameters") or {}
@@ -183,23 +187,12 @@ def _map_step_action(
     target_lane: str | None = None
     target_location: dict[str, float] | None = None
 
-    if parser_action == "SET_SPEED":
-        value = parameters.get("target_speed_mps")
-        if not _is_number(value) or float(value) < 0:
-            raise ValueError("SET_SPEED requires finite non-negative target_speed_mps")
-        action = "keep_lane"
-        target_speed_kmh = round(min(float(value) * 3.6, 100.0), 6)
-    elif parser_action == "ADJUST_SPEED":
-        change = str(parameters.get("change", "HOLD")).strip().upper()
-        if change == "INCREASE":
-            action = "accelerate"
-            target_speed_kmh = min(current_speed_kmh + 5.0, 100.0)
-        elif change == "DECREASE":
-            action = "decelerate"
-            target_speed_kmh = max(current_speed_kmh - 5.0, 0.0)
-        elif change == "HOLD":
-            action = "keep_lane"
-            target_speed_kmh = current_speed_kmh
+    if parser_action in {"SET_SPEED", "ADJUST_SPEED"}:
+        action, target_speed_kmh = resolve_step_speed_target(
+            step,
+            current_speed_kmh,
+            resolved_target_speed_kmh=resolved_target_speed_kmh,
+        )
     elif parser_action == "CHANGE_LANE":
         direction = str(parameters.get("direction", "")).strip().upper()
         if direction in {"LEFT", "RIGHT"}:
@@ -311,12 +304,15 @@ def build_control_decision(
     risk_assessment: dict[str, Any],
     *,
     source_step_id: str | None = None,
+    resolved_target_speed_kmh: float | None = None,
 ) -> dict[str, Any]:
     """Return one validated flat action after deterministic safety gating.
 
     By default the first step is selected for backward compatibility.  A
     stateful plan executor may pass ``source_step_id`` to evaluate a later
-    step without mutating the DrivingIntent document.
+    step without mutating the DrivingIntent document.  It also passes the
+    activation-time ``resolved_target_speed_kmh`` for relative speed steps;
+    direct stateless callers resolve against only their current input frame.
     """
 
     _validate_inputs(driving_intent, world_state, semantic_alignment, risk_assessment)
@@ -356,7 +352,9 @@ def build_control_decision(
         raise ValueError("DrivingIntent first step step_id must be a non-empty string")
     alignment = _alignment_for_step(semantic_alignment, step_id)
     action, target_speed, target_lane, target_location = _map_step_action(
-        step, current_speed
+        step,
+        current_speed,
+        resolved_target_speed_kmh=resolved_target_speed_kmh,
     )
     parser_action = str(step.get("action", "")).strip().upper()
     matched_entity = alignment.get("matched_entity")
@@ -364,14 +362,41 @@ def build_control_decision(
         matched_entity.get("entity_id") if isinstance(matched_entity, dict) else None
     )
 
-    # Explicit stop commands are never weakened by lower-priority rules.
-    if action in {"stop", "emergency_brake"}:
+    # A physical emergency has priority over an ordinary requested stop.  An
+    # explicit emergency command remains immediate even when risk is low.
+    recommended = risk_assessment["recommended_action"]
+    if action == "emergency_brake" or recommended == "emergency_brake":
+        return _decision(
+            driving_intent=driving_intent,
+            world_state=world_state,
+            step=step,
+            status=("READY" if action == "emergency_brake" else "BLOCKED"),
+            action="emergency_brake",
+            target_speed_kmh=0.0,
+            target_lane=None,
+            target_location=None,
+            reason=(
+                f"driving_intent_{parser_action.lower()}"
+                if action == "emergency_brake"
+                else "risk_requires_emergency_brake"
+            ),
+            matched_entity_id=matched_entity_id,
+            risk_assessment=risk_assessment,
+            blocked_reason_codes=(
+                []
+                if action == "emergency_brake"
+                else ["risk_requires_emergency_brake"]
+            ),
+        )
+
+    # Explicit non-emergency stops are never weakened by lower-priority rules.
+    if action == "stop":
         return _decision(
             driving_intent=driving_intent,
             world_state=world_state,
             step=step,
             status="READY",
-            action=action,
+            action="stop",
             target_speed_kmh=0.0,
             target_lane=None,
             target_location=None,
@@ -380,23 +405,6 @@ def build_control_decision(
             risk_assessment=risk_assessment,
             blocked_reason_codes=[],
         )
-
-    recommended = risk_assessment["recommended_action"]
-    if recommended == "emergency_brake":
-        return _decision(
-            driving_intent=driving_intent,
-            world_state=world_state,
-            step=step,
-            status="BLOCKED",
-            action="emergency_brake",
-            target_speed_kmh=0.0,
-            target_lane=None,
-            target_location=None,
-            reason="risk_requires_emergency_brake",
-            matched_entity_id=matched_entity_id,
-            risk_assessment=risk_assessment,
-            blocked_reason_codes=["risk_requires_emergency_brake"],
-        )
     if recommended == "decelerate" and action not in {"decelerate", "stop"}:
         return _decision(
             driving_intent=driving_intent,
@@ -404,7 +412,7 @@ def build_control_decision(
             step=step,
             status="BLOCKED",
             action="decelerate",
-            target_speed_kmh=current_speed,
+            target_speed_kmh=min(current_speed, 15.0),
             target_lane=None,
             target_location=None,
             reason="risk_requires_deceleration",
@@ -424,7 +432,11 @@ def build_control_decision(
             step=step,
             status="BLOCKED",
             action=fallback,
-            target_speed_kmh=current_speed if fallback_speed is None else fallback_speed,
+            target_speed_kmh=(
+                min(current_speed, 15.0)
+                if fallback == "decelerate" and fallback_speed is None
+                else current_speed if fallback_speed is None else fallback_speed
+            ),
             target_lane=None,
             target_location=None,
             reason=f"{reason_code}_{policy_reason}",
@@ -448,7 +460,9 @@ def build_control_decision(
                 status="BLOCKED",
                 action=fallback,
                 target_speed_kmh=(
-                    current_speed if fallback_speed is None else fallback_speed
+                    min(current_speed, 15.0)
+                    if fallback == "decelerate" and fallback_speed is None
+                    else current_speed if fallback_speed is None else fallback_speed
                 ),
                 target_lane=None,
                 target_location=None,

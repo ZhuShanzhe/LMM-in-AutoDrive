@@ -2,8 +2,12 @@
 
 UniversalVLAController的运行配置支持command_dispatch_mode：
 
-- route_latest：既有行为，按路线位置选择最新指令，保持默认以便回退。
+- route_latest：既有行为，按路线位置选择最新指令。
 - completion_serial：按原始顺序派发结构化指令；当前执行计划COMPLETED后才派发下一条。
+
+未显式配置时，控制器按命令契约自动选择：全部命令都携带有效 DrivingIntent 时使用
+completion_serial，否则使用 route_latest。当前场景 2 的 VLA 调度会自动使用
+completion_serial；未结构化的场景 1、3 保持 route_latest。显式配置仍优先于自动选择。
 
 completion_serial要求每条指令携带非空driving_intent，且request_id唯一。
 command_timeout_s设置单条指令从实际派发开始的超时，默认120秒。
@@ -22,7 +26,7 @@ ACTIVE_COMMAND_WINDOW_EXPIRED并停止调度。到期或超时优先于同次收
 benchmark侧验收仍独立计算。announce日志仍表示到达播报条件，不代表已派发执行，
 后续分析应以command_dispatch为准；录音播放尚需与派发事件统一。
 
-此模式仅代码及离线单元验证，未默认启用、未进行真实模型/仿真验证。
+此模式仅完成代码及离线单元验证，尚未进行真实模型/仿真验证。
 它不解决任务地点本身过近，也不自动补充缺少的结束窗口。延迟指令到达过晚时，
 仍需重新设计路线间距或显式窗口，不能靠队列保证路口仍在前方。
 当前不将场景真值事件完成状态传给模型决定计划完成；前序条件仍由模型执行器负责。

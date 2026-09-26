@@ -121,6 +121,20 @@ class StepCompletionEvaluator:
             reason = "action_minimum_hold_reached"
         elif completion == "TARGET_SPEED_REACHED":
             target_mps = step.get("parameters", {}).get("target_speed_mps")
+            if target_mps is None:
+                active_state = next(
+                    (
+                        item
+                        for item in plan_state.get("step_states", [])
+                        if item.get("step_id") == step_id
+                    ),
+                    {},
+                )
+                resolved_kmh = active_state.get("resolved_target_speed_kmh")
+                if resolved_kmh is not None:
+                    target_mps = float(resolved_kmh) / 3.6
+            if target_mps is None:
+                return None
             target_kmh = float(target_mps) * 3.6
             speed_kmh = float(world_state["ego"]["speed_mps"]) * 3.6
             initial_speed_kmh = float(observation.initial_speed_kmh)

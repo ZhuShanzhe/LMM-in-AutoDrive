@@ -133,7 +133,7 @@ class SceneBridgeDecisionPolicy:
             # the controller's geometric completion check as the authority so
             # a boundary crossing cannot terminate the merge prematurely.
             feedback = self._completion_feedback(world_state, intent, step, controller)
-        elif feedback is None:
+        elif feedback is None and completion_type != "TARGET_SPEED_REACHED":
             feedback = self._completion_feedback(world_state, intent, step, controller)
         if feedback is not None:
             self._pending_feedback = feedback
@@ -334,8 +334,9 @@ class SceneBridgeDecisionPolicy:
         if completion_type == "VEHICLE_STOPPED":
             completed, reason = speed_kmh <= 0.5, "vehicle_stopped"
         elif completion_type == "TARGET_SPEED_REACHED":
-            completed = abs(speed_kmh - float(intent["target_speed_kmh"])) <= 2.0
-            reason = "target_speed_reached"
+            # evaluate_execution_feedback owns the consecutive-frame hold and
+            # reads the absolute target latched in ControlPlanState.
+            return None
         elif completion_type == "LANE_CHANGE_COMPLETED" and controller is not None:
             state_getter = getattr(controller, "get_execution_state", None)
             execution_state = state_getter() if callable(state_getter) else {}
