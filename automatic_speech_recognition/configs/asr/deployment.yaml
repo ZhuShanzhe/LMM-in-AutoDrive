@@ -1,17 +1,27 @@
 backend: "onnx"                 # pytorch | onnx | j6p
 model_id_or_path: "models/Qwen3-ASR-1.7B"
-onnx_path: "outputs/compression/quantized/asr_encoder.onnx"
+onnx_path: "outputs/compression/onnx/asr_encoder.onnx"   # float32 ONNX for PTQ; hb_compile quantizes it itself
+hbm_path: "outputs/deployment/j6p/asr_encoder.hbm"       # compiled model consumed by backend=j6p
 device: null               
 num_gpus: 1                     # number of GPUs to use; 1 degenerates to cuda:0
 dtype: "bfloat16"
 
 j6p:
-  march: "bayes"                # set to the march reported by the J6P toolchain
+  march: "nash-p"
   compile_mode: "latency"
-  input_type_rt: "nv12"
-  input_layout_rt: "NHWC"
+  input_type_train: "featuremap"
+  input_type_rt: "featuremap"   # mel features are not images
+  norm_type: "no_preprocess"
   calibration_type: "default"
+  output_model_file_prefix: "asr_encoder"
   output_dir: "outputs/deployment/j6p"
+  calibration_manifest: "data/wav_files/standard/mapping.json"
+  calibration_num_samples: 100
+  calibration_seed: 42
+  timeout_seconds: 3600
+  verify:                        # optional float-vs-hbm encoder alignment guard
+    cosine_threshold: 0.99
+    max_samples: 8
 
 probe:
   warmup: 3

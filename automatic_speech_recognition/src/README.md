@@ -41,6 +41,10 @@ src/
 | `asr_dtype` | `str` | `bfloat16` | ASR 精度 |
 | `asr_attn_implementation` | `Optional[str]` | `None` | 注意力实现（如 `flash_attention_2`） |
 | `language` | `Optional[str]` | `None` | ASR 语言；`None` 自动检测 |
+| `asr_backend` | `str` | `pytorch` | ASR 后端：`pytorch` / `onnx` / `j6p` |
+| `asr_onnx_path` | `Optional[str]` | `None` | ONNX 音频编码器路径（`onnx` 后端用；相对仓库根解析） |
+| `asr_hbm_path` | `Optional[str]` | `None` | `hb_compile` 编译的 `.hbm`（`j6p` 后端用；相对仓库根解析） |
+| `asr_hbm_mel_frames` | `int` | `3000` | `.hbm` 编码器期望的 mel 帧数，需与导出/编译一致 |
 | `enable_optimization` | `bool` | `False` | 是否启用降噪 + 方言归一 |
 | `optimization_config` | `Union[str, dict]` | `None` | 优化配置（yaml 路径或 dict） |
 | `enable_translation` | `bool` | `False` | 是否中译英 |
@@ -62,6 +66,7 @@ src/
 | `process_dir(input_dir, output_json=None, output_language=None, **kwargs)` | 处理目录内音频 |
 
 + 单次调用可覆盖开关：`output_language`、`use_frontend`、`use_dialect`、`translate`、`save_enhanced`、`output_json`（相对路径按仓库根解析）。
++ 部署后端由 `asr_backend` 决定：`pytorch`（默认）/ `onnx` / `j6p`；后两者把音频编码器替换为导出的 ONNX 或 `hb_compile` 编译的 `.hbm`，解码与优化钩子保持不变。也可在 `configs/asr/pipeline.yaml` 的 `asr` 段配置 `backend` / `onnx_path` / `hbm_path` / `hbm_mel_frames`。
 
 ## 4. 返回字段
 

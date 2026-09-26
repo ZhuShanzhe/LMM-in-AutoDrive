@@ -52,8 +52,9 @@ def build_lexicon(
     if use_shared_aliases:
         merged.update(load_shared_aliases(directory))
     if dialect:
-        if dialect.lower() not in available_dialects(directory):
-            logger.warning("unknown dialect '%s'; using shared aliases only.", dialect)
+        known = available_dialects(directory)
+        if dialect.lower() not in known:
+            logger.warning("unknown dialect '%s'; using shared aliases only. searched_dir=%s available=%s", dialect, _resolve_dir(directory), known)
         else:
             merged.update(load_lexicon(dialect.lower(), directory))
     if extra:

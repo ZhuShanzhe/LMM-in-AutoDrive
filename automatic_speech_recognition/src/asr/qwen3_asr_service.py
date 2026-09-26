@@ -32,6 +32,7 @@ class Qwen3ASRService:
         guard: Optional[Any] = None,
         output_dir: str = "outputs",
         raise_on_error: bool = False,
+        fallback_on_failure: bool = True,
     ) -> None:
         self.model_id_or_path = model_id_or_path
         self.num_gpus = resolve_num_gpus(num_gpus)
@@ -48,6 +49,7 @@ class Qwen3ASRService:
         self.guard = guard
         self.output_dir = output_dir
         self.raise_on_error = raise_on_error
+        self.fallback_on_failure = fallback_on_failure
         self.model = self._load_model()
 
     @classmethod
@@ -62,7 +64,7 @@ class Qwen3ASRService:
         params = {
             "model_id_or_path", "device", "num_gpus", "rank", "dtype", "attn_implementation",
             "max_inference_batch_size", "max_new_tokens", "language",
-            "target_sample_rate", "output_dir", "raise_on_error",
+            "target_sample_rate", "output_dir", "raise_on_error", "fallback_on_failure",
         }
         known = {k: v for k, v in cfg.items() if k in params}
         unknown = [k for k in cfg if k not in params]
@@ -106,24 +108,17 @@ class Qwen3ASRService:
             return {"text": first.text, "language": getattr(first, "language", None)}
         return {"text": first.get("text", ""), "language": first.get("language", None)}
 
-    def transcribe_file(
-        self, 
+    def _transcribe_once(
+        self,
         audio_path: str,
-        output_json: Optional[str] = None,
-        language: Optional[str] = None,
-        use_frontend: Optional[bool] = None,
-        use_dialect: Optional[bool] = None,
+        language: Optional[str],
+        do_dialect: bool,
+        use_frontend: bool,
         save_enhanced: Optional[str] = None
-    ) -> Dict[str, Any]:
-        do_frontend = (self.frontend is not None) if use_frontend is None else use_frontend
-        do_dialect = (self.dialect_normalizer is not None) if use_dialect is None else use_dialect
-
-        start = time.perf_counter()
+    ) -> Tuple[Dict[str, Any], str, bool]:
         tmp_path: Optional[str] = None
         try:
-            if not os.path.exists(audio_path):
-                raise FileNotFoundError("audio file not found: " + audio_path)
-            if do_frontend and self.frontend is not None:
+            if use_frontend and self.frontend is not None:
                 audio = load_audio(audio_path, self.target_sample_rate)
                 audio = self.frontend(audio, self.target_sample_rate)
                 if save_enhanced:
@@ -132,20 +127,85 @@ class Qwen3ASRService:
                     tmp_path = tmp.name
                 save_audio(audio, self.target_sample_rate, tmp_path)
                 audio_input: Union[str, Tuple[np.ndarray, int]] = tmp_path
+                applied = True
             else:
                 audio_input = audio_path
-
+                applied = False
             raw = self._forward(audio_input, language)
             text = normalize_text(raw["text"])
             if do_dialect and self.dialect_normalizer is not None:
                 text = self.dialect_normalizer(text)
-        except Exception as exc:
-            logger.error("transcription failed for %s: %s", audio_path, exc)
-            if self.raise_on_error: raise
-            raw, text, do_frontend, do_dialect = {"language": None}, "", False, False
+            return raw, text, applied
         finally:
             if tmp_path and os.path.exists(tmp_path):
                 os.unlink(tmp_path)
+
+    def transcribe_file(
+        self, 
+        audio_path: str,
+        output_json: Optional[str] = None,
+        language: Optional[str] = None,
+        use_frontend: Optional[bool] = None,
+        use_dialect: Optional[bool] = None,
+        save_enhanced: Optional[str] = None,
+        fallback_on_failure: Optional[bool] = None
+    ) -> Dict[str, Any]:
+        do_frontend = (self.frontend is not None) if use_frontend is None else use_frontend
+        do_dialect = (self.dialect_normalizer is not None) if use_dialect is None else use_dialect
+
+        do_fallback = self.fallback_on_failure if fallback_on_failure is None else fallback_on_failure
+
+        start = time.perf_counter()
+        raw: Dict[str, Any] = {"language": None}
+        text = ""
+        frontend_applied = False
+        fallback = False
+        error: Optional[str] = None
+
+        if not os.path.exists(audio_path):
+            message = "audio file not found: " + audio_path
+            if self.raise_on_error:
+                raise FileNotFoundError(message)
+            logger.error(message)
+            error = message
+
+        if not error and do_frontend and self.frontend is not None:
+            try:
+                raw, text, frontend_applied = self._transcribe_once(audio_path, language, do_dialect, True, save_enhanced)
+            except Exception as exc:  # noqa: BLE001
+                if self.raise_on_error:
+                    raise
+                logger.error("optimized transcription failed for %s: %s", audio_path, exc)
+                error = "frontend: " + str(exc)
+                frontend_applied = False
+                fallback = do_fallback
+            else:
+                if not text and do_fallback:
+                    logger.warning(
+                        "optimized transcription is empty for %s; retrying without optimization",
+                        audio_path,
+                    )
+                    fallback = True
+
+            if fallback:
+                try:
+                    raw, text, frontend_applied = self._transcribe_once(audio_path, language, do_dialect, False)
+                    error = None
+                except Exception as exc:  # noqa: BLE001
+                    if self.raise_on_error:
+                        raise
+                    logger.error("transcription failed for %s: %s", audio_path, exc)
+                    raw, text, frontend_applied = {"language": None}, "", False
+                    error = str(exc)
+        elif not error:
+            try:
+                raw, text, frontend_applied = self._transcribe_once(audio_path, language, do_dialect, False)
+            except Exception as exc:  # noqa: BLE001
+                if self.raise_on_error:
+                    raise
+                logger.error("transcription failed for %s: %s", audio_path, exc)
+                raw, text, frontend_applied = {"language": None}, "", False
+                error = str(exc)
 
         record = {
             "audio_file": to_rel_path(audio_path),
@@ -153,9 +213,12 @@ class Qwen3ASRService:
             "language": raw.get("language") or language or self.language,
             "success": bool(text),
             "processing_time_seconds": round(time.perf_counter() - start, 4),
-            "frontend_applied": bool(do_frontend),
-            "dialect_normalized": bool(do_dialect),
+            "frontend_applied": frontend_applied,
+            "dialect_normalized": bool(do_dialect and self.dialect_normalizer is not None),
+            "optimization_fallback": fallback,
         }
+        if error:
+            record["error"] = error
         if self.guard is not None:
             verdict = self.guard.check(text, record["language"])
             record["guard_safe"] = verdict["safe"]

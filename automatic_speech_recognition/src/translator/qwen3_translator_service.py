@@ -81,7 +81,7 @@ class Qwen3TranslatorService:
                 "float16": torch.float16,
                 "bfloat16": torch.bfloat16,
             }.get(dtype, "auto")
-            kwargs: Dict[str, Any] = {"torch_dtype": torch_dtype, "trust_remote_code": True}
+            kwargs: Dict[str, Any] = {"dtype": torch_dtype, "trust_remote_code": True}
             if device_map:
                 kwargs["device_map"] = device_map
             if attn_implementation:

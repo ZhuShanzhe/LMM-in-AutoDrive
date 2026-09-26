@@ -4,12 +4,12 @@ frontend:
   vad: true
   highpass_filter: true
   highpass_cutoff: 80.0
-  preemphasis: true
+  preemphasis: false
   rms_norm: true
   target_db: -20.0
 
 dialect:
-  enabled: true
+  enabled: false
   dialect: "sichuan"        # see resources/dialect/*.json
   lexicon_dir: null         # null -> <project_root>/resources/dialect
   custom_map: {}

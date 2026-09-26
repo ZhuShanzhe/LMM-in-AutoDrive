@@ -31,7 +31,7 @@ def _resolve_providers(ort, requested=None) -> List[str]:
     )
     return ["CPUExecutionProvider"]
 
-def _make_onnx_audio_tower(session, input_names, mel_frames, target_dtype=None):
+def _make_onnx_audio_tower(session, input_names, mel_frames, target_dtype=None, run_fn=None):
     import torch
 
     input_name = list(input_names)[0]
@@ -48,6 +48,7 @@ def _make_onnx_audio_tower(session, input_names, mel_frames, target_dtype=None):
             self.input_name = input_name
             self.mel_frames = mel_frames
             self.target_dtype = target_dtype
+            self.run_fn = run_fn
 
         def forward(self, input_features, feature_lens=None, aftercnn_lens=None, *args, **kwargs):
             if input_features.dim() == 3:
@@ -71,7 +72,11 @@ def _make_onnx_audio_tower(session, input_names, mel_frames, target_dtype=None):
                     frames, self.mel_frames,
                 )
                 feats = feats[..., : self.mel_frames]
-            outputs = self.session.run(None, {self.input_name: feats.contiguous().numpy()})
+            array = feats.contiguous().numpy()
+            if self.run_fn is not None:
+                outputs = [self.run_fn(array)]
+            else:
+                outputs = self.session.run(None, {self.input_name: array})
             dtype = self.target_dtype or input_features.dtype
             tensor = torch.from_numpy(outputs[0]).to(device=input_features.device, dtype=dtype)
             return _EncoderOutput((tensor,))
@@ -92,20 +97,28 @@ class ASRRuntime:
         frontend=None, 
         dialect_normalizer=None,
         target_sample_rate: int = 16000, 
+        raise_on_error: bool = False,
+        hbm_path: Optional[str] = None,
+        hbm_mel_frames: int = 3000,
+        service=None,
         **backend_kwargs
     ) -> None:
         if backend not in BACKENDS:
             raise ValueError(f"unsupported backend: {backend}; expected {BACKENDS}")
         self.backend = backend
+        self.raise_on_error = raise_on_error
         self.language = language
         self.target_sample_rate = target_sample_rate
         self.frontend = frontend
         self.dialect_normalizer = dialect_normalizer
         self.backend_kwargs = backend_kwargs
-        self._service = None
+        self._service = service
         self._sess = None
         self._onnx_attached = False
+        self._hbm_attached = False
         self._onnx_path = onnx_path
+        self._hbm_path = hbm_path
+        self._hbm_mel_frames = int(hbm_mel_frames)
         self._model_id = model_id_or_path
         self.num_gpus = resolve_num_gpus(num_gpus)
         self.rank = rank
@@ -178,32 +191,80 @@ class ASRRuntime:
             "onnx_encoder": self._onnx_path,
         }
 
+    def _attach_hbm_encoder(self) -> None:
+        from ..utils import module_tree_hint, resolve_submodule
+        from .board_runtime import HbmSession
+
+        session = HbmSession(self._hbm_path)
+        mel_frames = session.mel_frames or self._hbm_mel_frames
+        model = self._get_service().model
+        found = resolve_submodule(model)
+        if found is None:
+            raise RuntimeError("could not locate the audio encoder; " + module_tree_hint(model))
+        owner, attr_name, dotted = found
+        encoder = getattr(owner, attr_name)
+        try:
+            target_dtype = next(encoder.parameters()).dtype
+        except (StopIteration, AttributeError):
+            target_dtype = None
+        tower = _make_onnx_audio_tower(None, [session.input_name], mel_frames, target_dtype, run_fn=session.run)
+        setattr(owner, attr_name, tower)
+        logger.info("hbm encoder attached at %s (mel_frames=%d, hbm=%s)", dotted, mel_frames, self._hbm_path)
+
     def _transcribe_j6p(self, audio_path: str) -> Dict[str, Any]:
-        raise RuntimeError("j6p backend requires the board runtime (hbdk/hrt) and a compiled .bin; run this on the J6P target with the official runtime installed.")
+        if not self._hbm_path:
+            raise RuntimeError("the j6p backend needs hbm_path pointing to a compiled .hbm; build it with scripts/run_j6p_deploy.sh")
+        if not self._hbm_attached:
+            self._attach_hbm_encoder()
+            self._hbm_attached = True
+        rec = self._get_service().transcribe_file(audio_path)
+        return {
+            "text": rec.get("text", ""), 
+            "language": rec.get("language"),
+            "hbm_model": self._hbm_path,
+        }
+
+    def transcribe_file(self, audio_path: str, **kwargs) -> Dict[str, Any]:
+        if self.backend == "onnx" and not self._onnx_attached:
+            self._attach_onnx_encoder()
+            self._onnx_attached = True
+        elif self.backend == "j6p" and not self._hbm_attached:
+            if not self._hbm_path:
+                raise RuntimeError("the j6p backend needs hbm_path pointing to a compiled .hbm; build it with scripts/run_j6p_deploy.sh")
+            self._attach_hbm_encoder()
+            self._hbm_attached = True
+        return self._get_service().transcribe_file(audio_path, **kwargs)
 
     def transcribe(self, audio_path: str) -> Dict[str, Any]:
         start = time.perf_counter()
-        if self.backend == "pytorch":
-            rec = self._get_service().transcribe_file(audio_path)
+        error = None
+        try:
+            if self.backend == "pytorch":
+                rec = self._get_service().transcribe_file(audio_path)
+            elif self.backend == "onnx":
+                rec = self._transcribe_onnx(audio_path)
+            else:
+                rec = self._transcribe_j6p(audio_path)
             text = rec.get("text", "")
             lang = rec.get("language")
-        elif self.backend == "onnx":
-            rec = self._transcribe_onnx(audio_path)
-            text = rec.get("text", "")
-            lang = rec.get("language")
-        else:
-            rec = self._transcribe_j6p(audio_path)
-            text, lang = rec.get("text", ""), rec.get("language")
+        except Exception as exc:
+            if self.raise_on_error:
+                raise
+            logger.error("transcription failed on backend %s for %s: %s", self.backend, audio_path, exc)
+            rec, text, lang, error = {}, "", None, str(exc)
         elapsed = round(time.perf_counter() - start, 4)
-        return {
+        record = {
             "audio_file": audio_path, 
             "text": text, 
             "language": lang,
             "backend": self.backend, 
             "latency_seconds": elapsed,
             "success": bool(text), 
-            **{k: v for k, v in rec.items() if k.startswith("onnx_")}
         }
+        if error:
+            record["error"] = error
+        record.update({k: v for k, v in rec.items() if k.startswith(("onnx_", "hbm_"))})
+        return record
 
     def transcribe_batch(self, audio_paths: List[str]) -> List[Dict[str, Any]]:
         return [self.transcribe(p) for p in audio_paths]

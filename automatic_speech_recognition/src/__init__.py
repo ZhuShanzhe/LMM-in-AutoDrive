@@ -5,12 +5,13 @@ Submodules are resolved lazily so that lightweight helpers such as
 """
 from typing import Any
 
-__all__ = ["Qwen3TTSService", "Qwen3TranslatorService", "Qwen3ASRService"]
+__all__ = ["Qwen3TTSService", "Qwen3TranslatorService", "Qwen3ASRService", "ASRPipeline"]
 
 _LAZY = {
     "Qwen3TTSService": ("src.tts", "Qwen3TTSService"),
     "Qwen3TranslatorService": ("src.translator", "Qwen3TranslatorService"),
     "Qwen3ASRService": ("src.asr", "Qwen3ASRService"),
+    "ASRPipeline": ("src.pipeline", "ASRPipeline"),
 }
 
 def __getattr__(name: str) -> Any:
