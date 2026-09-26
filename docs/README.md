@@ -1,5 +1,7 @@
 # 挑战赛道文档
 
+- [当前挑战专用 x86 启动与指标测试门槛](CHALLENGE_X86_TESTING.md)
+
 - [黄皓星适配器 Conv-BN 融合对比及验证范围](ADAPTER_CONVBN_COMPARISON.md)
 
 - [0925 语言与 VLA 无卡准备及验证](OWNED_CPU_PREPARATION_20260925.md)

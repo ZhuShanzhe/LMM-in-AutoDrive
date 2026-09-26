@@ -1,5 +1,11 @@
 # CARLA 自动驾驶场景仿真平台
 
+## 挑战赛道统一入口
+
+当前分支测试统一按 [x86 测试说明](../../docs/CHALLENGE_X86_TESTING.md) 执行。`tools/run_challenge_x86.py` 生成逐场景新版配置并启用模型传感器记录和独立任务评测；`scripts/run_universal_vla.sh` 已改为挑战专用包装，不兼容原基础提交配置。三个正式运行器保留场景构建职责，隔离任务中的 Traffic Manager 基线不能替代模型测试。
+
+当前合并版尚未完成三场景物理闭环验证；以下历史环境与场景记录不作为本轮验收结论。
+
 ## 背景车流持续维护
 
 `FixedRouteTraffic` 新增可选的 `route_density` 模式：按测试路线前方的距离和同向车道检查缺口，
