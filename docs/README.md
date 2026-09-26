@@ -1,5 +1,7 @@
 # 挑战赛道文档
 
+- [黄皓星适配器 Conv-BN 融合对比及验证范围](ADAPTER_CONVBN_COMPARISON.md)
+
 - [0925 语言与 VLA 无卡准备及验证](OWNED_CPU_PREPARATION_20260925.md)
 
 - [0925 提交前五人分工](../program/task_0925.md)
