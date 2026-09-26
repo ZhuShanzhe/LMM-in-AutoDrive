@@ -236,7 +236,27 @@ pip install -c /tmp/oe-constraints.txt numba scipy scikit-image pywavelets lazy-
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 ```
 ```shell
-hb_compile --model outputs/compression/onnx/asr_encoder.onnx --march nash-p
+# 本项目采用 hb_compile 的配置文件形式：脚本先生成 hb_compile.yaml，再执行 hb_compile -c
+hb_compile --help        # 确认工具链可用；编译见下方 run_j6p_deploy.sh
+```
+
++ J6P 平台测试：
+```shell
+bash scripts/run_j6p_deploy.sh
+```
+
+### 6.3 模型验证
++ 在 J6P 目标机上（已装好`hbm_runtime` 或`hrt_model_exec` ）：
+```shell
+# 1) 让 ASR 走后端 j6p
+#    编辑 configs/asr/pipeline.yaml: asr.backend: "j6p"
+#    确认 asr.hbm_path 指向 outputs/deployment/j6p/asr_encoder.hbm
+
+# 2) 端到端跑一条音频（识别 -> 翻译）
+python -c "from src.pipeline import ASRPipeline; p=ASRPipeline.from_yaml('configs/asr/pipeline.yaml'); r=p.process('data/wav_files/standard/std_00001.wav'); print(r['text'], '|', r['translation'], '|', r['asr_success'], r['translation_success'], r.get('error'))"
+
+# 3) 确认 .hbm 本身可被板端加载
+hrt_model_exec model_info --model_file=outputs/deployment/j6p/asr_encoder.hbm
 ```
 
 ## 7. 模块文档

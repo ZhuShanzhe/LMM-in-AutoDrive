@@ -1,5 +1,7 @@
 # 挑战赛道文档
 
+- [LCJ 语音更新整合与验证范围](LCJ_INTEGRATION_20260926.md)
+
 - [当前挑战专用 x86 启动与指标测试门槛](CHALLENGE_X86_TESTING.md)
 
 - [黄皓星适配器 Conv-BN 融合对比及验证范围](ADAPTER_CONVBN_COMPARISON.md)

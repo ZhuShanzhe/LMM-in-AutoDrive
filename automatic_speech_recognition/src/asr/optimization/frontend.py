@@ -66,10 +66,11 @@ def wiener_filter(audio: np.ndarray, sr: int, n_fft: int = 512, hop_length: int 
     mag, phase = np.abs(stft), np.angle(stft)
     noise_pow = _noise_power(mag)
     power = mag ** 2
-    snr_post = power / (noise_pow + 1e-12)
-    # Decision-directed a-priori SNR smoothing.
-    gain = snr_post / (1.0 + snr_post)
-    gain = smooth * gain + (1.0 - smooth) * snr_post / (1.0 + snr_post)
+    gamma = power / (noise_pow + 1e-12)
+    xi = np.maximum(gamma - 1.0, 0.0)
+    for t in range(1, xi.shape[1]):
+        xi[:, t] = smooth * xi[:, t - 1] + (1.0 - smooth) * xi[:, t]
+    gain = xi / (1.0 + xi)
     out = librosa.istft((mag * np.clip(gain, 0.0, 1.0)) * np.exp(1j * phase), hop_length=hop_length)
     return out.astype(np.float32)
 
@@ -89,10 +90,15 @@ def deepfilternet_denoise(audio: np.ndarray, sr: int) -> np.ndarray:
         logger.warning("DeepFilterNet unavailable (%s); using Wiener filter.", exc)
         return wiener_filter(audio, sr)
 
-def rms_normalize(audio: np.ndarray, target_db: float = -20.0) -> np.ndarray:
-    rms = float(np.sqrt(np.mean(audio ** 2)) + 1e-12)
+def rms_normalize(audio: np.ndarray, target_db: float = -20.0, max_gain: float = 8.0) -> np.ndarray:
+    if audio.size == 0:
+        return audio.astype(np.float32)
+    rms = float(np.sqrt(np.mean(audio ** 2)))
+    if rms < 1e-6:
+        return audio.astype(np.float32)
     target = 10 ** (target_db / 20.0)
-    return (audio * (target / rms)).astype(np.float32)
+    gain = min(target / rms, max_gain)
+    return (audio * gain).astype(np.float32)
 
 def peak_limit(audio: np.ndarray, peak: float = 0.95) -> np.ndarray:
     m = float(np.max(np.abs(audio))) if audio.size else 0.0
@@ -109,7 +115,7 @@ class AudioFrontend:
         vad: bool = True,
         highpass_filter: bool = True, 
         highpass_cutoff: float = 80.0,
-        preemphasis: bool = True, 
+        preemphasis: bool = False,
         rms_norm: bool = True,
         target_db: float = -20.0
     ):

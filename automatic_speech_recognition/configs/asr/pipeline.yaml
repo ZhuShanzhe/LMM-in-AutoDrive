@@ -5,10 +5,15 @@ asr:
   dtype: "bfloat16"
   attn_implementation: null            # "flash_attention_2" if installed
   language: null                       # null -> auto; e.g. "Chinese"
+  backend: "pytorch"                   # pytorch | onnx | j6p (j6p runs the compiled .hbm)
+  onnx_path: "outputs/compression/onnx/asr_encoder.onnx"
+  hbm_path: "outputs/deployment/j6p/asr_encoder.hbm"
+  hbm_mel_frames: 3000
 
 optimization:
   enabled: true
   config: "configs/asr/optimization.yaml"
+  fallback_on_failure: true      # if optimization fails or returns empty, retry with the raw audio
 
 translation:
   enabled: true

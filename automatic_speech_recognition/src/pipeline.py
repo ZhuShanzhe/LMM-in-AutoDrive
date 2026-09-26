@@ -39,9 +39,15 @@ class ASRPipeline:
         asr_dtype: str = "bfloat16",
         asr_attn_implementation: Optional[str] = None,
         language: Optional[str] = None,
+        # --- deployment backend (pytorch | onnx | j6p) ---
+        asr_backend: str = "pytorch",
+        asr_onnx_path: Optional[str] = None,
+        asr_hbm_path: Optional[str] = None,
+        asr_hbm_mel_frames: int = 3000,
         # --- optimization ---
         enable_optimization: bool = False,
         optimization_config: Optional[Union[str, Dict[str, Any]]] = None,
+        optimization_fallback: bool = True,
         # --- translation ---
         enable_translation: bool = False,
         translator_model_path: str = "models/Qwen3-1.7B",
@@ -59,6 +65,7 @@ class ASRPipeline:
         self.raise_on_error = raise_on_error
         self.enable_optimization = enable_optimization
         self.enable_translation = enable_translation
+        self.optimization_fallback = optimization_fallback
 
         frontend: Optional[Callable] = None
         dialect_normalizer: Optional[Callable] = None
@@ -86,7 +93,18 @@ class ASRPipeline:
             guard=guard,
             output_dir=output_dir,
             raise_on_error=raise_on_error,
+            fallback_on_failure=optimization_fallback,
         )
+        if asr_backend != "pytorch":
+            from .asr.deployment import ASRRuntime
+
+            self.asr = ASRRuntime(
+                backend=asr_backend,
+                service=self.asr,
+                onnx_path=self._resolve_path(asr_onnx_path),
+                hbm_path=self._resolve_path(asr_hbm_path),
+                hbm_mel_frames=int(asr_hbm_mel_frames),
+            )
 
         self.translator = None
         self._translator_args = dict(
@@ -123,6 +141,7 @@ class ASRPipeline:
         output_language: Optional[str] = None,
         use_frontend: Optional[bool] = None,
         use_dialect: Optional[bool] = None,
+        optimization_fallback: Optional[bool] = None,
         save_enhanced: Optional[str] = None,
         translate: Optional[bool] = None,
     ) -> Dict[str, Any]:
@@ -133,6 +152,7 @@ class ASRPipeline:
             output_json: optional path to write the JSON result.
             output_language: override default; "chinese" / "english" / "both".
             use_frontend / use_dialect: override optimization switches per call.
+            optimization_fallback: retry with the raw audio when optimization fails or is empty.
             save_enhanced: optional path to save the denoised audio.
             translate: override the translation switch per call.
 
@@ -140,21 +160,39 @@ class ASRPipeline:
             dict with keys: audio_file, text (Chinese), translation, output_text,
             language, timing and applied-flag fields.
         """
-        asr_rec = self.asr.transcribe_file(
-            audio,
-            output_json=None,
-            use_frontend=use_frontend,
-            use_dialect=use_dialect,
-            save_enhanced=save_enhanced,
-        )
+        error = None
+        try:
+            asr_rec = self.asr.transcribe_file(
+                audio,
+                output_json=None,
+                use_frontend=use_frontend,
+                use_dialect=use_dialect,
+                save_enhanced=save_enhanced,
+                fallback_on_failure=optimization_fallback,
+            )
+        except Exception as exc:
+            if self.raise_on_error:
+                raise
+            logger.error("pipeline ASR step failed for %s: %s", audio, exc)
+            asr_rec = {"text": "", "success": False}
+            error = "asr: " + str(exc)
         chinese = asr_rec.get("text", "")
 
         want_translation = self.enable_translation if translate is None else translate
+        lang = self._normalize_language(output_language or self.output_language)
+        if lang in ("english", "both") and not want_translation:
+            logger.warning("output_language=%s needs translation but it is disabled; the Chinese text is returned instead", lang,)
+
         english = ""
         if want_translation and chinese:
-            english = self._ensure_translator().translate_zh_to_en(chinese)
+            try:
+                english = self._ensure_translator().translate_zh_to_en(chinese)
+            except Exception as exc:
+                if self.raise_on_error:
+                    raise
+                logger.error("pipeline translation step failed for %s: %s", audio, exc)
+                error = (error + "; " if error else "") + "translation: " + str(exc)
 
-        lang = self._normalize_language(output_language or self.output_language)
         output_text = self._select_output(chinese, english, lang)
 
         record: Dict[str, Any] = {
@@ -165,11 +203,16 @@ class ASRPipeline:
             "output_language": lang,
             "language": asr_rec.get("language"),
             "success": bool(output_text),
+            "asr_success": bool(chinese),
+            "translation_success": bool(english),
             "frontend_applied": asr_rec.get("frontend_applied", False),
             "dialect_normalized": asr_rec.get("dialect_normalized", False),
+            "optimization_fallback": asr_rec.get("optimization_fallback", False),
             "translation_applied": bool(want_translation and english),
             "processing_time_seconds": asr_rec.get("processing_time_seconds"),
         }
+        if error:
+            record["error"] = error
         for key in ("guard_safe", "guard_reasons", "slots"):
             if key in asr_rec:
                 record[key] = asr_rec[key]
@@ -217,8 +260,13 @@ class ASRPipeline:
             asr_dtype=asr_cfg.get("dtype", "bfloat16"),
             asr_attn_implementation=asr_cfg.get("attn_implementation"),
             language=asr_cfg.get("language"),
+            asr_backend=asr_cfg.get("backend", "pytorch"),
+            asr_onnx_path=asr_cfg.get("onnx_path"),
+            asr_hbm_path=asr_cfg.get("hbm_path"),
+            asr_hbm_mel_frames=int(asr_cfg.get("hbm_mel_frames", 3000)),
             enable_optimization=bool(opt_cfg.get("enabled", False)),
             optimization_config=opt_cfg.get("config", "configs/asr/optimization.yaml"),
+            optimization_fallback=bool(opt_cfg.get("fallback_on_failure", True)),
             enable_translation=bool(trans_cfg.get("enabled", False)),
             translator_model_path=trans_cfg.get("model_id_or_path", "models/Qwen3-1.7B"),
             translator_device=trans_cfg.get("device_map"),
@@ -239,6 +287,12 @@ class ASRPipeline:
         if chinese and english:
             return f"{chinese}\t{english}"
         return chinese or english
+
+    @staticmethod
+    def _resolve_path(path: Optional[str]) -> Optional[str]:
+        if not path:
+            return path
+        return path if os.path.isabs(path) else os.path.join(str(ROOT), path)
 
     @staticmethod
     def _resolve_output(path: str) -> str:

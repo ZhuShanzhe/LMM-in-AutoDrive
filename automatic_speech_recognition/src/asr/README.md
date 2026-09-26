@@ -173,7 +173,7 @@ print(res["text"], "| safe:", res["guard_safe"], "| reasons:", res["guard_reason
 ## 7. 轻量化与部署（compression/、deployment/）
 
 + `compression/export_onnx.py`：导出 ONNX（含 opset 与体积报告）；`compression/quantize.py`：构建**与评测集不重叠**的校准集、PTQ INT8（dynamic/static）、量化前后 CER 回归（`budget=0.03`）。
-+ `deployment/hb_convert.py`：生成 `hb_mapper` 配置并调用地平线工具链（无工具链时明确报错）；`deployment/runtime.py`：`ASRRuntime` 统一后端（`pytorch` / `onnx` / `j6p`）；`deployment/resource_probe.py`：`ResourceProbe` 采集时延分位、显存/内存、功耗。
++ `deployment/hb_convert.py`：生成 `hb_compile` 配置（`march=nash-p`、`featuremap` / `no_preprocess`）并调用 `hb_compile -c`（无工具链时明确报错）；`deployment/board_runtime.py`：`HbmSession` 加载 `.hbm`（板端 `hbm_runtime` 或 `hrt_model_exec`）；`deployment/runtime.py`：`ASRRuntime` 统一后端（`pytorch` / `onnx` / `j6p`）；`deployment/resource_probe.py`：`ResourceProbe` 采集时延分位、显存/内存、功耗。
 + 说明：**x86 仿真结果不等同于 J6P 板端性能**，功耗与利用率仅在板端测量有效。
 
 + 链路：
@@ -185,9 +185,9 @@ PyTorch 模型
    │  quantize.py           ← （INT8 量化，减小体积/加速）
    ▼
 量化 ONNX
-   │  deployment/hb_convert.py  ← （地平线工具链）
+   │  deployment/hb_convert.py  ← （hb_compile -c，地平线工具链）
    ▼
-J6P 可执行的 .bin
+J6P 可执行的 .hbm
 ```
 
 + 安装依赖库：
@@ -197,8 +197,11 @@ pip install onnx onnxruntime-gpu
 
 + 运行示例：
 ```bash
-bash scripts/run_asr_optimization.sh
+bash scripts/run_asr_optimization.sh   # 评测 + 导出/量化
+bash scripts/run_j6p_deploy.sh         # 编译 .hbm（可加 --verify / --board user@host）
 ```
+
++ 板端推理：在 `configs/asr/pipeline.yaml` 的 `asr` 段设 `backend: "j6p"` 并指向 `hbm_path`，`ASRPipeline` 即用 `.hbm` 编码器完成识别与翻译。
 
 ## 8. 配置文件
 

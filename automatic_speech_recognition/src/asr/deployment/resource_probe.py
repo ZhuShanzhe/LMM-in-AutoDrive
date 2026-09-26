@@ -46,6 +46,12 @@ def j6p_power_w() -> Optional[float]:
         logger.warning("J6P power probe failed.")
     return None
 
+def auto_power_probe() -> Optional[float]:
+    value = gpu_power_w()
+    if value is not None:
+        return value
+    return j6p_power_w()
+
 class ResourceProbe:
     def __init__(
         self, 
@@ -55,7 +61,7 @@ class ResourceProbe:
     ) -> None:
         self.warmup = warmup
         self.repeats = repeats
-        self.power_probe = power_probe or j6p_power_w
+        self.power_probe = power_probe or auto_power_probe
 
     def run(self, fn: Callable[[], Any]) -> Dict[str, Any]:
         for _ in range(self.warmup):
