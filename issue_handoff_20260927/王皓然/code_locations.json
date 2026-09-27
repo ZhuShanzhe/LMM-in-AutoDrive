@@ -1,0 +1,298 @@
+[
+  {
+    "path": "lightweight_vla_adapter/src/driving_plan_runtime.py",
+    "sha256": "826c7458f805287d10cfb55c3e4a82c8d4072385724bb6fc281dae992fc598b6",
+    "symbols": [
+      {
+        "symbol": "DrivingPlanRuntime",
+        "line": 10,
+        "end_line": 255
+      },
+      {
+        "symbol": "__init__",
+        "line": 11,
+        "end_line": 32
+      },
+      {
+        "symbol": "enforce_execution",
+        "line": 34,
+        "end_line": 46
+      },
+      {
+        "symbol": "prepare",
+        "line": 48,
+        "end_line": 143
+      },
+      {
+        "symbol": "advance",
+        "line": 145,
+        "end_line": 228
+      },
+      {
+        "symbol": "_observe_condition_completion",
+        "line": 230,
+        "end_line": 255
+      }
+    ]
+  },
+  {
+    "path": "experiment/CARLA/control/command_dispatch.py",
+    "sha256": "acc40dbd05f8c425db21f9607a11cdc4cf66ad661175467b7350e674c416c3db",
+    "symbols": [
+      {
+        "symbol": "resolve_command_dispatch_mode",
+        "line": 6,
+        "end_line": 22
+      },
+      {
+        "symbol": "CompletionCommandQueue",
+        "line": 25,
+        "end_line": 133
+      },
+      {
+        "symbol": "__init__",
+        "line": 26,
+        "end_line": 60
+      },
+      {
+        "symbol": "select",
+        "line": 62,
+        "end_line": 125
+      },
+      {
+        "symbol": "status",
+        "line": 127,
+        "end_line": 133
+      }
+    ]
+  },
+  {
+    "path": "experiment/CARLA/control/generic_route_pid.py",
+    "sha256": "d7b3e25a13255dd4c653a31d37b453849a32e03b3a2718813fa9c5de8dd6ef43",
+    "symbols": [
+      {
+        "symbol": "GenericRoutePID",
+        "line": 21,
+        "end_line": 645
+      },
+      {
+        "symbol": "__init__",
+        "line": 24,
+        "end_line": 58
+      },
+      {
+        "symbol": "set_cruise_target_kmh",
+        "line": 60,
+        "end_line": 73
+      },
+      {
+        "symbol": "set_high_level_decision",
+        "line": 75,
+        "end_line": 119
+      },
+      {
+        "symbol": "progress_m",
+        "line": 121,
+        "end_line": 130
+      },
+      {
+        "symbol": "radar_corridor_polyline",
+        "line": 132,
+        "end_line": 191
+      },
+      {
+        "symbol": "_update_progress",
+        "line": 193,
+        "end_line": 203
+      },
+      {
+        "symbol": "_current_logical_lane",
+        "line": 205,
+        "end_line": 216
+      },
+      {
+        "symbol": "_plan_logical_lane",
+        "line": 218,
+        "end_line": 234
+      },
+      {
+        "symbol": "_target_logical_lane",
+        "line": 236,
+        "end_line": 271
+      },
+      {
+        "symbol": "_waypoint_target",
+        "line": 273,
+        "end_line": 342
+      },
+      {
+        "symbol": "_route_target",
+        "line": 344,
+        "end_line": 375
+      },
+      {
+        "symbol": "_ahead_heading_change_deg",
+        "line": 377,
+        "end_line": 412
+      },
+      {
+        "symbol": "_current_speed_kmh",
+        "line": 414,
+        "end_line": 420
+      },
+      {
+        "symbol": "_junction_or_road_transition_ahead",
+        "line": 422,
+        "end_line": 476
+      },
+      {
+        "symbol": "_lane_transition_ahead",
+        "line": 478,
+        "end_line": 497
+      },
+      {
+        "symbol": "autonomous_lane_change_legal",
+        "line": 499,
+        "end_line": 536
+      },
+      {
+        "symbol": "_lane_change_legal",
+        "line": 538,
+        "end_line": 566
+      },
+      {
+        "symbol": "run_step",
+        "line": 568,
+        "end_line": 634
+      },
+      {
+        "symbol": "execution_state",
+        "line": 636,
+        "end_line": 645
+      },
+      {
+        "symbol": "_yaw",
+        "line": 386,
+        "end_line": 397
+      }
+    ]
+  },
+  {
+    "path": "experiment/CARLA/control/execution_wait.py",
+    "sha256": "f01bd8289ec6e540d905ac8a2febe7899574fb07d3445894ee7b6cb78ddb190b",
+    "symbols": [
+      {
+        "symbol": "traffic_wait_feedback",
+        "line": 5,
+        "end_line": 13
+      },
+      {
+        "symbol": "matching_execution_wait",
+        "line": 16,
+        "end_line": 22
+      }
+    ]
+  },
+  {
+    "path": "scene_understanding/src/control_plan_executor.py",
+    "sha256": "9673aeeed7329b3adb8413f57e2b64b252da40546c72b5cff87419adef53ec11",
+    "symbols": [
+      {
+        "symbol": "_string_list",
+        "line": 48,
+        "end_line": 55
+      },
+      {
+        "symbol": "_intent_steps",
+        "line": 58,
+        "end_line": 87
+      },
+      {
+        "symbol": "validate_step_feedback",
+        "line": 90,
+        "end_line": 124
+      },
+      {
+        "symbol": "validate_control_plan_state",
+        "line": 127,
+        "end_line": 255
+      },
+      {
+        "symbol": "_latch_step_speed",
+        "line": 258,
+        "end_line": 270
+      },
+      {
+        "symbol": "_initial_state",
+        "line": 273,
+        "end_line": 310
+      },
+      {
+        "symbol": "_check_state_matches_intent",
+        "line": 313,
+        "end_line": 326
+      },
+      {
+        "symbol": "_set_terminal",
+        "line": 329,
+        "end_line": 336
+      },
+      {
+        "symbol": "_activate",
+        "line": 339,
+        "end_line": 374
+      },
+      {
+        "symbol": "_apply_feedback",
+        "line": 377,
+        "end_line": 416
+      },
+      {
+        "symbol": "_blocked_policy",
+        "line": 419,
+        "end_line": 425
+      },
+      {
+        "symbol": "_replace_decision",
+        "line": 428,
+        "end_line": 448
+      },
+      {
+        "symbol": "_active_step",
+        "line": 451,
+        "end_line": 455
+      },
+      {
+        "symbol": "advance_control_plan",
+        "line": 458,
+        "end_line": 655
+      }
+    ]
+  },
+  {
+    "path": "experiment/CARLA/scene2_runtime_interface.py",
+    "sha256": "ab6b7379b6170e55f642f0ead83aa03c187c57737041ea66e0e1d4d3d452a3ed",
+    "symbols": [
+      {
+        "symbol": "_scene2_step_contract",
+        "line": 27,
+        "end_line": 75
+      },
+      {
+        "symbol": "build_scheduled_driving_intent",
+        "line": 78,
+        "end_line": 132
+      },
+      {
+        "symbol": "build_multimodal_frame_bundle",
+        "line": 135,
+        "end_line": 180
+      },
+      {
+        "symbol": "validate_control_decision",
+        "line": 183,
+        "end_line": 231
+      }
+    ]
+  }
+]

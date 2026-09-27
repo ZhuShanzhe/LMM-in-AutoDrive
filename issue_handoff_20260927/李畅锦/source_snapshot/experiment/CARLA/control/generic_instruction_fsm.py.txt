@@ -1,0 +1,739 @@
+    1 """Generic text-instruction finite state machine.
+    2
+    3 The FSM converts a scheduled natural-language driving instruction into a
+    4 small, scene-agnostic semantic intent.  It deliberately never branches on
+    5 command ids, event ids or scene ids: the same rules apply to every scene and
+    6 every scheduled text command.
+    7 """
+    8
+    9 from __future__ import annotations
+   10
+   11 import re
+   12 import math
+   13 import copy
+   14 import hashlib
+   15 from collections import OrderedDict
+   16 from dataclasses import dataclass, replace
+   17 from typing import Any, Mapping, Sequence
+   18
+   19 import torch
+   20
+   21 from scene_understanding.src.speed_target import (
+   22     DEFAULT_RELATIVE_SPEED_DELTA_KMH,
+   23     resolve_step_speed_target,
+   24 )
+   25
+   26
+   27 PARSED_INTENTS = (
+   28     "KEEP_LANE",
+   29     "SET_SPEED",
+   30     "DECELERATE",
+   31     "EMERGENCY_BRAKE",
+   32     "YIELD",
+   33     "CHANGE_LANE_LEFT",
+   34     "CHANGE_LANE_RIGHT",
+   35     "STOP",
+   36     "RESUME",
+   37     "TURN_LEFT",
+   38     "TURN_RIGHT",
+   39 )
+   40
+   41 INTENT_TO_ACTION = {
+   42     "KEEP_LANE": "keep_lane",
+   43     "SET_SPEED": "accelerate",
+   44     "DECELERATE": "decelerate",
+   45     "EMERGENCY_BRAKE": "emergency_brake",
+   46     "YIELD": "decelerate",
+   47     "CHANGE_LANE_LEFT": "lane_change_left",
+   48     "CHANGE_LANE_RIGHT": "lane_change_right",
+   49     "STOP": "stop",
+   50     "RESUME": "keep_lane",
+   51     "TURN_LEFT": "turn_left",
+   52     "TURN_RIGHT": "turn_right",
+   53 }
+   54
+   55 _SPEED_PATTERN = re.compile(
+   56     r"(\d+(?:\.\d+)?)\s*(?:km/?h|kmh|kph|kilomet(?:er|re)s?\s+per\s+hour|公里每小时|公里/小时|迈)",
+   57     re.IGNORECASE,
+   58 )
+   59
+   60
+   61 @dataclass
+   62 class ParsedInstruction:
+   63     parsed_intent: str = "KEEP_LANE"
+   64     requested_lane_direction: str | None = None
+   65     target_speed_kmh: float | None = None
+   66     confidence: float = 1.0
+   67     source_text: str = ""
+   68     semantic_goal: tuple[str, ...] = ()
+   69     speed_change: str | None = None
+   70     speed_delta_kmh: float | None = None
+   71     speed_reference_kmh: float | None = None
+   72
+   73
+   74 def _intent_from_goals(goals: Sequence[str]) -> tuple[str | None, str | None, float | None]:
+   75     lowered = [str(goal).lower() for goal in goals]
+   76     if "lane_change_left" in lowered:
+   77         return "CHANGE_LANE_LEFT", "left", None
+   78     if "lane_change_right" in lowered:
+   79         return "CHANGE_LANE_RIGHT", "right", None
+   80     if "turn_left" in lowered:
+   81         return "TURN_LEFT", None, None
+   82     if "turn_right" in lowered:
+   83         return "TURN_RIGHT", None, None
+   84     if "emergency_brake" in lowered or "emergency" in lowered:
+   85         return "EMERGENCY_BRAKE", None, None
+   86     if "stop" in lowered or "stop_if_needed" in lowered:
+   87         return "YIELD", None, None
+   88     if "yield" in lowered:
+   89         return "YIELD", None, None
+   90     if "decelerate" in lowered:
+   91         return "DECELERATE", None, None
+   92     if "resume" in lowered or "resume_speed" in lowered:
+   93         return "RESUME", None, None
+   94     if "accelerate" in lowered or "set_speed" in lowered:
+   95         return "SET_SPEED", None, None
+   96     return None, None, None
+   97
+   98
+   99 class GenericInstructionFSM:
+  100     """Parse scheduled text commands into generic semantic intents."""
+  101
+  102     def __init__(
+  103         self,
+  104         default_speed_kmh: float = 40.0,
+  105         parser: Any | None = None,
+  106         *,
+  107         cache_capacity: int = 128,
+  108     ) -> None:
+  109         self.default_speed_kmh = float(default_speed_kmh)
+  110         self.parser = parser
+  111         if cache_capacity < 1:
+  112             raise ValueError("cache_capacity must be positive")
+  113         self.cache_capacity = int(cache_capacity)
+  114         self._token_cache: OrderedDict = OrderedDict()
+  115         self._parse_cache: OrderedDict = OrderedDict()
+  116         self._speed_target_cache: OrderedDict = OrderedDict()
+  117
+  118     def clear_caches(self) -> None:
+  119         """Invalidate language caches after replacing parser weights/config."""
+  120         self._token_cache.clear()
+  121         self._parse_cache.clear()
+  122         self._speed_target_cache.clear()
+  123
+  124     def _cache_put(self, cache: OrderedDict, key: Any, value: Any) -> None:
+  125         cache[key] = value
+  126         cache.move_to_end(key)
+  127         while len(cache) > self.cache_capacity:
+  128             cache.popitem(last=False)
+  129
+  130     def active_command(
+  131         self,
+  132         commands: Sequence[Mapping[str, Any]],
+  133         progress_m: float,
+  134     ) -> dict[str, Any]:
+  135         """Return the newest route-triggered command whose window is active."""
+  136
+  137         active: dict[str, Any] = {
+  138             "text": "Continue driving safely in the current lane.",
+  139         }
+  140         for command in sorted(
+  141             commands,
+  142             key=self._command_trigger_m,
+  143         ):
+  144             trigger_m = self._command_trigger_m(command)
+  145             if progress_m + 1e-6 < trigger_m:
+  146                 break
+  147             end_progress_m = self._command_end_m(command)
+  148             if end_progress_m is not None and progress_m >= end_progress_m - 1e-6:
+  149                 continue
+  150             active = dict(command)
+  151         return active
+  152
+  153     @staticmethod
+  154     def _command_trigger_m(command: Mapping[str, Any]) -> float:
+  155         for key in ("trigger_progress_m", "activate_at_m", "announce_at_m"):
+  156             value = command.get(key)
+  157             if value is not None:
+  158                 return float(value)
+  159         return 0.0
+  160
+  161     @staticmethod
+  162     def _command_end_m(command: Mapping[str, Any]) -> float | None:
+  163         for key in ("end_progress_m", "deactivate_at_m"):
+  164             value = command.get(key)
+  165             if value is not None:
+  166                 return float(value)
+  167         return None
+  168
+  169     def parse(
+  170         self,
+  171         command: Mapping[str, Any],
+  172         *,
+  173         use_parser_model: bool = True,
+  174     ) -> ParsedInstruction:
+  175         """Map one text command to a generic parsed intent."""
+  176
+  177         source_text = str(
+  178             command.get("text")
+  179             or command.get("source_text")
+  180             or command.get("voice_text")
+  181             or command.get("normalized_text")
+  182             or command.get("parser_text_en")
+  183             or ""
+  184         )
+  185         semantic_goal = tuple(
+  186             str(item)
+  187             for item in command.get("semantic_goal", [])
+  188             if isinstance(item, str)
+  189         )
+  190         goal_intent, goal_direction, goal_speed = _intent_from_goals(
+  191             semantic_goal
+  192         )
+  193         if goal_intent in {"CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}:
+  194             # Explicit semantic goals take priority over keyword guessing:
+  195             # the text may be phrased colloquially (e.g. "并道至左侧车道")
+  196             # without the generic lane-change keywords.
+  197             return ParsedInstruction(
+  198                 parsed_intent=goal_intent,
+  199                 requested_lane_direction=goal_direction,
+  200                 target_speed_kmh=(
+  201                     goal_speed
+  202                     if goal_speed is not None
+  203                     else self._extract_speed(source_text)
+  204                 ),
+  205                 source_text=source_text,
+  206                 semantic_goal=semantic_goal,
+  207             )
+  208         parsed = self._parse_text_rules(
+  209             source_text,
+  210             semantic_goal=semantic_goal,
+  211         )
+  212         structured = command.get("structured_command")
+  213         if (
+  214             isinstance(structured, dict)
+  215             and parsed.parsed_intent == "KEEP_LANE"
+  216         ):
+  217             parsed = self._merge_structured_command(parsed, structured)
+  218         if (
+  219             parsed.parsed_intent == "KEEP_LANE"
+  220             and use_parser_model
+  221             and self.parser is not None
+  222             and source_text
+  223             and (command.get("id") is not None or (
+  224                 not re.search(r"[\u4e00-\u9fff]",source_text) and not self._neutral_cruise(source_text)))
+  225         ):
+  226             # IDs are transport metadata, not a requirement for user commands.
+  227             # Keep the known neutral cruise fallback deterministic.
+  228             model_parsed = self._parser_result(source_text, command)
+  229             parsed = self._merge_parser_result(parsed, model_parsed)
+  230         parsed.source_text = source_text
+  231         parsed.semantic_goal = semantic_goal
+  232         return parsed
+  233
+  234     @staticmethod
+  235     def _merge_structured_command(
+  236         parsed: ParsedInstruction,
+  237         structured: Mapping[str, Any],
+  238     ) -> ParsedInstruction:
+  239         action = str(structured.get("action", "")).upper()
+  240         mapping = {
+  241             "SET_SPEED": "SET_SPEED",
+  242             "ADJUST_SPEED": "SET_SPEED",
+  243             "KEEP_LANE": "KEEP_LANE",
+  244             "DECELERATE": "DECELERATE",
+  245             "STOP": "STOP",
+  246             "EMERGENCY_BRAKE": "EMERGENCY_BRAKE",
+  247             "CHANGE_LANE": "CHANGE_LANE_LEFT",
+  248             "TURN": "TURN_LEFT",
+  249         }
+  250         intent = mapping.get(action)
+  251         if intent is None:
+  252             return parsed
+  253         change = str(structured.get("change", "")).strip().upper()
+  254         if action == "ADJUST_SPEED":
+  255             intent = {
+  256                 "INCREASE": "SET_SPEED",
+  257                 "DECREASE": "DECELERATE",
+  258                 "HOLD": "KEEP_LANE",
+  259             }.get(change, intent)
+  260         direction = str(structured.get("direction", "")).upper()
+  261         if intent == "CHANGE_LANE_LEFT":
+  262             intent = (
+  263                 "CHANGE_LANE_RIGHT"
+  264                 if direction == "RIGHT"
+  265                 else "CHANGE_LANE_LEFT"
+  266             )
+  267         elif intent == "TURN_LEFT":
+  268             intent = "TURN_RIGHT" if direction == "RIGHT" else "TURN_LEFT"
+  269         speed = structured.get("target_speed_kmh")
+  270         try:
+  271             speed = float(speed) if speed is not None else parsed.target_speed_kmh
+  272             if speed is not None and (not math.isfinite(speed) or speed < 0.0):
+  273                 return parsed
+  274         except (TypeError, ValueError):
+  275             speed = parsed.target_speed_kmh
+  276         delta_kmh = structured.get("speed_delta_kmh")
+  277         if delta_kmh is None and structured.get("speed_delta_mps") is not None:
+  278             try:
+  279                 delta_kmh = float(structured["speed_delta_mps"]) * 3.6
+  280             except (TypeError, ValueError):
+  281                 return parsed
+  282         if delta_kmh is not None:
+  283             try:
+  284                 delta_kmh = float(delta_kmh)
+  285             except (TypeError, ValueError):
+  286                 return parsed
+  287             if not math.isfinite(delta_kmh) or delta_kmh <= 0.0:
+  288                 return parsed
+  289         return ParsedInstruction(
+  290             parsed_intent=intent,
+  291             requested_lane_direction=(
+  292                 "left" if intent == "CHANGE_LANE_LEFT"
+  293                 else "right" if intent == "CHANGE_LANE_RIGHT"
+  294                 else None
+  295             ),
+  296             target_speed_kmh=speed,
+  297             confidence=parsed.confidence,
+  298             source_text=parsed.source_text,
+  299             semantic_goal=parsed.semantic_goal,
+  300             speed_change=change if action == "ADJUST_SPEED" else None,
+  301             speed_delta_kmh=delta_kmh,
+  302         )
+  303
+  304     def _parse_text_rules(
+  305         self,
+  306         text: str,
+  307         *,
+  308         semantic_goal: Sequence[str] = (),
+  309     ) -> ParsedInstruction:
+  310         lowered = text.lower()
+  311         speed = self._extract_speed(text)
+  312
+  313         if re.fullmatch(r"\s*(?:please\s+)?(?:emergency\s+brake|brake\s+in\s+an\s+emergency)(?:\s+now)?[.!]?\s*", lowered):
+  314             return ParsedInstruction(parsed_intent="EMERGENCY_BRAKE",target_speed_kmh=0.)
+  315         if re.fullmatch(r"\s*(?:please\s+)?(?:stop(?:\s+(?:the\s+)?(?:vehicle|car))?|come\s+to\s+a\s+stop)(?:\s+(?:now|safely))?[.!]?\s*", lowered):
+  316             return ParsedInstruction(parsed_intent="STOP",target_speed_kmh=0.)
+  317
+  318         if "变道" in lowered or "避让" in lowered or "换道" in lowered:
+  319             if "左" in lowered:
+  320                 return ParsedInstruction(
+  321                     parsed_intent="CHANGE_LANE_LEFT",
+  322                     requested_lane_direction="left",
+  323                     target_speed_kmh=speed,
+  324                 )
+  325             if "右" in lowered:
+  326                 return ParsedInstruction(
+  327                     parsed_intent="CHANGE_LANE_RIGHT",
+  328                     requested_lane_direction="right",
+  329                     target_speed_kmh=speed,
+  330                 )
+  331             intent, direction, goal_speed = _intent_from_goals(semantic_goal)
+  332             if intent in {"CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}:
+  333                 return ParsedInstruction(
+  334                     parsed_intent=intent,
+  335                     requested_lane_direction=direction,
+  336                     target_speed_kmh=goal_speed if goal_speed is not None else speed,
+  337                 )
+  338         if "紧急" in lowered and ("刹" in lowered or "停车" in lowered):
+  339             return ParsedInstruction(
+  340                 parsed_intent="EMERGENCY_BRAKE", target_speed_kmh=0.0
+  341             )
+  342         if "让行" in lowered or "横穿" in lowered or "避让行人" in lowered:
+  343             return ParsedInstruction(
+  344                 parsed_intent="YIELD", target_speed_kmh=speed or 10.0
+  345             )
+  346         if "加塞" in lowered or "急刹" in lowered:
+  347             return ParsedInstruction(
+  348                 parsed_intent="DECELERATE", target_speed_kmh=speed or 18.0
+  349             )
+  350         if "减速" in lowered or "降低" in lowered or "慢" in lowered:
+  351             return ParsedInstruction(
+  352                 parsed_intent="DECELERATE",
+  353                 target_speed_kmh=speed,
+  354                 speed_change="DECREASE",
+  355             )
+  356         if "提速" in lowered or "加速" in lowered or "恢复车速" in lowered:
+  357             return ParsedInstruction(
+  358                 parsed_intent="SET_SPEED",
+  359                 target_speed_kmh=speed,
+  360                 speed_change="INCREASE",
+  361             )
+  362         if "恢复" in lowered or "结束" in lowered:
+  363             return ParsedInstruction(
+  364                 parsed_intent="RESUME", target_speed_kmh=speed
+  365             )
+  366         if "停车" in lowered or "停止" in lowered or "停住" in lowered:
+  367             return ParsedInstruction(parsed_intent="STOP", target_speed_kmh=0.0)
+  368         if "右转" in lowered or "向右转" in lowered:
+  369             return ParsedInstruction(
+  370                 parsed_intent="TURN_RIGHT", target_speed_kmh=speed or 15.0
+  371             )
+  372         if "左转" in lowered or "向左转" in lowered:
+  373             return ParsedInstruction(
+  374                 parsed_intent="TURN_LEFT", target_speed_kmh=speed or 15.0
+  375             )
+  376         if "保持" in lowered or "继续" in lowered or "巡航" in lowered:
+  377             return ParsedInstruction(
+  378                 parsed_intent="KEEP_LANE", target_speed_kmh=speed
+  379             )
+  380
+  381         intent, direction, goal_speed = _intent_from_goals(semantic_goal)
+  382         if intent is not None:
+  383             return ParsedInstruction(
+  384                 parsed_intent=intent,
+  385                 requested_lane_direction=direction,
+  386                 target_speed_kmh=goal_speed if goal_speed is not None else speed,
+  387             )
+  388         return ParsedInstruction(parsed_intent="KEEP_LANE", target_speed_kmh=speed)
+  389
+  390     @staticmethod
+  391     def _neutral_cruise(text: str) -> bool:
+  392         return bool(re.fullmatch(
+  393             r"\s*(?:keep|continue(?:\s+driving)?)(?:\s+safely)?\s+(?:(?:in\s+)?the\s+)?(?:current\s+)?lane"
+  394             r"(?:\s+at\s+\d+(?:\.\d+)?\s*(?:km/?h|kph|kilomet(?:er|re)s?\s+per\s+hour))?[.!]?\s*",
+  395             text,re.IGNORECASE))
+  396
+  397     def driving_intent(self,command):
+  398         """Retain a supplied plan or a multi-step result already parsed this frame."""
+  399         if isinstance(command.get('driving_intent'),Mapping):
+  400             return copy.deepcopy(command['driving_intent'])
+  401         text=str(command.get('text') or command.get('source_text') or '')
+  402         cached=self._parse_cache.get((str(command.get('id') or ''),text)) or {}
+  403         intent=cached.get('intent') or {}
+  404         if len(intent.get('steps') or [])<2:return None
+  405         result=copy.deepcopy(cached);result.pop('intent',None)
+  406         return dict(schema_version='1.2.0',request_id=str(command.get('id') or 'plan-'+hashlib.sha256(text.encode()).hexdigest()[:16]),
+  407             input=dict(modality='TEXT',language='en-US',raw_text=text,normalized_text=text),
+  408             intent=copy.deepcopy(intent),parse_result=result)
+  409
+  410     def parsed_step(self,step,source_text):
+  411         parsed=self._merge_parser_result(ParsedInstruction(),dict(status='VALID',confidence=1.,intent=dict(steps=[step])))
+  412         parsed.source_text=source_text
+  413         return parsed
+  414
+  415     def resolve_relative_speed(
+  416         self,
+  417         command: Mapping[str, Any],
+  418         parsed: ParsedInstruction,
+  419         *,
+  420         ego_speed_kmh: float,
+  421     ) -> ParsedInstruction:
+  422         """Latch one absolute target for a qualitative speed instruction."""
+  423
+  424         if parsed.target_speed_kmh is not None:
+  425             return parsed
+  426         change = parsed.speed_change
+  427         if change is None:
+  428             change = {
+  429                 "SET_SPEED": "INCREASE",
+  430                 "DECELERATE": "DECREASE",
+  431             }.get(parsed.parsed_intent)
+  432         if change not in {"INCREASE", "DECREASE", "HOLD"}:
+  433             return parsed
+  434         speed = float(ego_speed_kmh)
+  435         if not math.isfinite(speed) or speed < 0.0:
+  436             raise ValueError("ego_speed_kmh must be finite and non-negative")
+  437         delta = (
+  438             float(parsed.speed_delta_kmh)
+  439             if parsed.speed_delta_kmh is not None
+  440             else DEFAULT_RELATIVE_SPEED_DELTA_KMH
+  441         )
+  442         if not math.isfinite(delta) or delta <= 0.0:
+  443             raise ValueError("relative speed delta must be finite and positive")
+  444         identity = str(
+  445             command.get("id")
+  446             or command.get("request_id")
+  447             or parsed.source_text
+  448             or "anonymous_instruction"
+  449         )
+  450         key = (identity, parsed.parsed_intent, change, round(delta, 6))
+  451         cached = self._speed_target_cache.get(key)
+  452         if cached is None:
+  453             _, target = resolve_step_speed_target(
+  454                 {
+  455                     "action": "ADJUST_SPEED",
+  456                     "parameters": {
+  457                         "change": change,
+  458                         "speed_delta_kmh": delta,
+  459                     },
+  460                 },
+  461                 speed,
+  462             )
+  463             cached = (round(speed, 6), round(target, 6))
+  464             self._cache_put(self._speed_target_cache, key, cached)
+  465         else:
+  466             self._speed_target_cache.move_to_end(key)
+  467         return replace(
+  468             parsed,
+  469             target_speed_kmh=cached[1],
+  470             speed_change=change,
+  471             speed_reference_kmh=cached[0],
+  472         )
+  473
+  474     @staticmethod
+  475     def _extract_speed(text: str) -> float | None:
+  476         match = _SPEED_PATTERN.search(text)
+  477         if match is None:
+  478             return None
+  479         try:
+  480             return max(0.0, min(float(match.group(1)), 100.0))
+  481         except ValueError:
+  482             return None
+  483
+  484     def _parser_result(
+  485         self,
+  486         source_text: str,
+  487         command: Mapping[str, Any],
+  488     ) -> dict[str, Any]:
+  489         key = (str(command.get("id") or ""), source_text)
+  490         if key in self._parse_cache:
+  491             self._parse_cache.move_to_end(key)
+  492             return self._parse_cache[key]
+  493         try:
+  494             result = self.parser.parse_text(
+  495                 source_text,
+  496                 request_id=f"fsm-{command.get('id') or source_text}",
+  497                 modality="TEXT",
+  498                 source_text=source_text,
+  499                 source_language="zh-CN" if re.search(r"[\u4e00-\u9fff]",source_text) else "en-US",
+  500             )
+  501         except Exception:
+  502             # Transient inference failure must not poison subsequent retries.
+  503             return {}
+  504         parse_result = dict(result.get("parse_result") or {})
+  505         # DrivingIntent keeps intent beside parse_result, not inside it.
+  506         if isinstance(result.get("intent"),Mapping):
+  507             parse_result["intent"] = result["intent"]
+  508         self._cache_put(self._parse_cache, key, parse_result)
+  509         return parse_result
+  510
+  511     @staticmethod
+  512     def _merge_parser_result(
+  513         parsed: ParsedInstruction,
+  514         parse_result: Mapping[str, Any],
+  515     ) -> ParsedInstruction:
+  516         if str(parse_result.get("status", "")) != "VALID":
+  517             return parsed
+  518         intent = parsed.parsed_intent
+  519         steps = (parse_result.get("intent") or {}).get("steps") or []
+  520         if steps:
+  521             step=steps[0]
+  522             action = str(step.get("action", "")).upper()
+  523             parameters=step.get("parameters") or {}
+  524             mapping = {
+  525                 "KEEP_LANE": "KEEP_LANE",
+  526                 "SET_SPEED": "SET_SPEED",
+  527                 "ADJUST_SPEED": "SET_SPEED",
+  528                 "CHANGE_LANE": "CHANGE_LANE_LEFT",
+  529                 "STOP": "STOP",
+  530                 "EMERGENCY_BRAKE": "EMERGENCY_BRAKE",
+  531                 "PARK": "YIELD",
+  532                 "TURN": "TURN_LEFT",
+  533             }
+  534             merged = mapping.get(action)
+  535             change = str(parameters.get("change", "")).strip().upper()
+  536             if action == "ADJUST_SPEED":
+  537                 merged = {
+  538                     "INCREASE": "SET_SPEED",
+  539                     "DECREASE": "DECELERATE",
+  540                     "HOLD": "KEEP_LANE",
+  541                 }.get(change, merged)
+  542             direction=str(parameters.get("direction","")).upper()
+  543             if action in {"CHANGE_LANE","TURN"}:
+  544                 if direction not in {"LEFT","RIGHT"}:
+  545                     return parsed
+  546                 merged=("CHANGE_LANE_" if action=="CHANGE_LANE" else "TURN_")+direction
+  547             target_speed=parsed.target_speed_kmh
+  548             delta_kmh=None
+  549             try:
+  550                 if parameters.get("target_speed_mps") is not None:
+  551                     target_speed=float(parameters["target_speed_mps"])*3.6
+  552                 elif parameters.get("target_speed_kmh") is not None:
+  553                     target_speed=float(parameters["target_speed_kmh"])
+  554                 if target_speed is not None and (not math.isfinite(target_speed) or target_speed<0):
+  555                     return parsed
+  556                 if parameters.get("speed_delta_mps") is not None:
+  557                     delta_kmh=float(parameters["speed_delta_mps"])*3.6
+  558                 elif parameters.get("speed_delta_kmh") is not None:
+  559                     delta_kmh=float(parameters["speed_delta_kmh"])
+  560                 if delta_kmh is not None and (
+  561                     not math.isfinite(delta_kmh) or delta_kmh <= 0.0
+  562                 ):
+  563                     return parsed
+  564             except (TypeError,ValueError):
+  565                 return parsed
+  566             if merged in {"STOP","EMERGENCY_BRAKE"}:target_speed=0.
+  567             if merged is not None and intent == "KEEP_LANE":
+  568                 parsed = ParsedInstruction(
+  569                     parsed_intent=merged,
+  570                     requested_lane_direction=(
+  571                         direction.lower() if action=="CHANGE_LANE" else None
+  572                     ),
+  573                     target_speed_kmh=target_speed,
+  574                     confidence=float(parse_result.get("confidence", 0.0) or 0.0),
+  575                     speed_change=change if action == "ADJUST_SPEED" else None,
+  576                     speed_delta_kmh=delta_kmh,
+  577                 )
+  578         return parsed
+  579
+  580     def semantic_text(self, parsed: ParsedInstruction) -> str:
+  581         """Deterministic English text fed to the text encoder."""
+  582
+  583         speed = parsed.target_speed_kmh
+  584         if speed is None:
+  585             speed = self.default_speed_kmh
+  586         speed = max(0.0, min(float(speed), 100.0))
+  587         templates = {
+  588             "KEEP_LANE": "Keep the current lane at {speed:.1f} kilometers per hour.",
+  589             "SET_SPEED": "Accelerate smoothly to {speed:.1f} kilometers per hour when safe.",
+  590             "DECELERATE": "Slow down smoothly to {speed:.1f} kilometers per hour.",
+  591             "EMERGENCY_BRAKE": "Brake immediately.",
+  592             "YIELD": "Slow down and yield to the hazard ahead.",
+  593             "CHANGE_LANE_LEFT": "Change to the left lane when it is safe.",
+  594             "CHANGE_LANE_RIGHT": "Change to the right lane when it is safe.",
+  595             "STOP": "Stop the vehicle at a safe position.",
+  596             "RESUME": "Resume normal driving when safe.",
+  597             "TURN_LEFT": "Turn left safely at the next junction.",
+  598             "TURN_RIGHT": "Turn right safely at the next junction.",
+  599         }
+  600         if parsed.parsed_intent in {"EMERGENCY_BRAKE", "STOP"}:
+  601             return templates[parsed.parsed_intent]
+  602         return templates[parsed.parsed_intent].format(speed=speed)
+  603
+  604     def encode_tokens(
+  605         self,
+  606         parsed: ParsedInstruction,
+  607         *,
+  608         cache_key: str | None = None,
+  609     ) -> tuple[torch.Tensor, torch.Tensor]:
+  610         """Encode the semantic text into ModernBERT hidden features."""
+  611
+  612         if self.parser is None:
+  613             raise RuntimeError("text encoder is unavailable")
+  614         text = self.semantic_text(parsed)
+  615         key = (cache_key, text)
+  616         cached = self._token_cache.get(key)
+  617         if cached is not None:
+  618             self._token_cache.move_to_end(key)
+  619             return cached
+  620         parser = self.parser.parser
+  621         parser.load()
+  622         encoded = parser.tokenizer(
+  623             text,
+  624             return_tensors="pt",
+  625             truncation=True,
+  626             max_length=parser.max_length,
+  627         )
+  628         encoded = {
+  629             name: tensor.to(parser.device) for name, tensor in encoded.items()
+  630         }
+  631         with torch.inference_mode():
+  632             tokens = parser.model.backbone(**encoded).last_hidden_state
+  633         result = (
+  634             tokens.detach().float().cpu(),
+  635             encoded["attention_mask"].detach().bool().cpu(),
+  636         )
+  637         self._cache_put(self._token_cache, key, result)
+  638         return result
+  639
+  640     def canonical_decision(
+  641         self,
+  642         parsed: ParsedInstruction,
+  643         *,
+  644         frame_id: str,
+  645         request_id: str,
+  646         risk: Mapping[str, Any],
+  647         ego_speed_kmh: float,
+  648     ) -> dict[str, Any]:
+  649         """Build the deterministic text-envelope decision for the safety gate."""
+  650
+  651         action = INTENT_TO_ACTION[parsed.parsed_intent]
+  652         target_speed = parsed.target_speed_kmh
+  653         if target_speed is None:
+  654             target_speed = self.default_speed_kmh
+  655         target_speed = max(0.0, min(float(target_speed), 100.0))
+  656
+  657         if parsed.parsed_intent == "DECELERATE":
+  658             ceiling = (
+  659                 target_speed
+  660                 if parsed.target_speed_kmh is not None
+  661                 else min(self.default_speed_kmh, max(10.0, ego_speed_kmh))
+  662             )
+  663             target_speed = max(0.0, ceiling)
+  664         elif parsed.parsed_intent == "YIELD":
+  665             target_speed = min(target_speed, 10.0)
+  666         elif parsed.parsed_intent in {"STOP", "EMERGENCY_BRAKE"}:
+  667             target_speed = 0.0
+  668         elif parsed.parsed_intent in {
+  669             "CHANGE_LANE_LEFT",
+  670             "CHANGE_LANE_RIGHT",
+  671             "TURN_LEFT",
+  672             "TURN_RIGHT",
+  673         }:
+  674             target_speed = min(target_speed, 20.0)
+  675         elif parsed.parsed_intent == "RESUME":
+  676             target_speed = min(
+  677                 target_speed, self.default_speed_kmh
+  678             )
+  679
+  680         recommended = str(risk.get("recommended_action") or "")
+  681         if recommended == "emergency_brake":
+  682             action = "emergency_brake"
+  683             target_speed = 0.0
+  684         elif recommended == "decelerate" and action in {
+  685             "accelerate",
+  686             "keep_lane",
+  687             "lane_change_left",
+  688             "lane_change_right",
+  689             "turn_left",
+  690             "turn_right",
+  691         }:
+  692             action = "decelerate"
+  693             target_speed = min(target_speed, 15.0)
+  694         if action in {"lane_change_left", "lane_change_right"}:
+  695             direction = action.removeprefix("lane_change_")
+  696             if (
+  697                 risk.get("lane_change", {})
+  698                 .get(direction, {})
+  699                 .get("is_safe")
+  700                 is not True
+  701             ):
+  702                 action = "decelerate"
+  703                 target_speed = min(target_speed, 15.0)
+  704         source_action = {
+  705             "keep_lane": "KEEP_LANE",
+  706             "accelerate": "ADJUST_SPEED",
+  707             "decelerate": "ADJUST_SPEED",
+  708             "stop": "STOP",
+  709             "emergency_brake": "EMERGENCY_BRAKE",
+  710             "lane_change_left": "CHANGE_LANE",
+  711             "lane_change_right": "CHANGE_LANE",
+  712             "turn_left": "TURN",
+  713             "turn_right": "TURN",
+  714         }[INTENT_TO_ACTION[parsed.parsed_intent]]
+  715         return {
+  716             "schema_version": "1.0.0",
+  717             "request_id": request_id,
+  718             "frame_id": frame_id,
+  719             "decision_status": "READY",
+  720             "action": action,
+  721             "target_speed_kmh": round(target_speed, 6),
+  722             "target_lane": (
+  723                 action.removeprefix("lane_change_")
+  724                 if action.startswith("lane_change_")
+  725                 else None
+  726             ),
+  727             "target_location": None,
+  728             "emergency": action == "emergency_brake",
+  729             "reason": "generic_text_envelope",
+  730             "parse_status": "VALID",
+  731             "parse_confidence": round(float(parsed.confidence), 6),
+  732             "source_step_id": "step_1",
+  733             "source_step_action": source_action,
+  734             "source_step_count": 1,
+  735             "matched_entity_id": None,
+  736             "risk_level": str(risk.get("risk_level", "low")),
+  737             "risk_reason_codes": list(risk.get("reason_codes", [])),
+  738             "blocked_reason_codes": [],
+  739         }

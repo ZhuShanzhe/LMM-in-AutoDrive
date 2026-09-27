@@ -1,0 +1,655 @@
+    1 """Stateful execution of multi-step DrivingIntent plans across JSON frames.
+    2
+    3 The executor advances only on explicit step feedback.  Scene disappearance is
+    4 never treated as proof of completion.  Each call evaluates the active step
+    5 against the current semantic alignment and risk assessment, then emits a
+    6 persisted state plus one controller-compatible ControlDecision.
+    7 """
+    8
+    9 from __future__ import annotations
+   10
+   11 import copy
+   12 import math
+   13 from typing import Any, Mapping
+   14
+   15 from scene_understanding.src.control_decision import (
+   16     build_control_decision,
+   17     validate_control_decision,
+   18 )
+   19 from scene_understanding.src.speed_target import (
+   20     is_speed_step,
+   21     resolve_step_speed_target,
+   22 )
+   23
+   24
+   25 CONTROL_PLAN_STATE_SCHEMA_VERSION = "1.1.0"
+   26 STEP_FEEDBACK_SCHEMA_VERSION = "1.0.0"
+   27 PLAN_STATUSES = {
+   28     "ACTIVE",
+   29     "COMPLETED",
+   30     "BLOCKED",
+   31     "FAILED",
+   32     "CANCELLED",
+   33     "SAFE_FALLBACK",
+   34 }
+   35 STEP_STATUSES = {
+   36     "PENDING",
+   37     "ACTIVE",
+   38     "WAITING",
+   39     "COMPLETED",
+   40     "SKIPPED",
+   41     "BLOCKED",
+   42     "FAILED",
+   43     "CANCELLED",
+   44 }
+   45 FEEDBACK_OUTCOMES = {"CONTINUE", "COMPLETED", "FAILED", "CANCELLED"}
+   46
+   47
+   48 def _string_list(value: Any, path: str) -> list[str]:
+   49     if not isinstance(value, list) or any(
+   50         not isinstance(item, str) or not item for item in value
+   51     ):
+   52         raise ValueError(f"{path} must be an array of non-empty strings")
+   53     if len(set(value)) != len(value):
+   54         raise ValueError(f"{path} values must be unique")
+   55     return list(value)
+   56
+   57
+   58 def _intent_steps(driving_intent: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+   59     intent = driving_intent.get("intent")
+   60     if not isinstance(intent, dict) or not isinstance(intent.get("steps"), list):
+   61         raise ValueError("DrivingIntent intent.steps must be an array")
+   62     steps = intent["steps"]
+   63     step_ids: list[str] = []
+   64     for index, step in enumerate(steps):
+   65         if not isinstance(step, dict):
+   66             raise ValueError(f"DrivingIntent intent.steps[{index}] must be an object")
+   67         step_id = step.get("step_id")
+   68         action = step.get("action")
+   69         if not isinstance(step_id, str) or not step_id:
+   70             raise ValueError(f"DrivingIntent intent.steps[{index}].step_id is invalid")
+   71         if step_id in step_ids:
+   72             raise ValueError(f"DrivingIntent contains duplicate step_id {step_id!r}")
+   73         if not isinstance(action, str) or not action:
+   74             raise ValueError(f"DrivingIntent step {step_id!r} action is invalid")
+   75         dependencies = step.get("depends_on", [])
+   76         if not isinstance(dependencies, list) or any(
+   77             not isinstance(item, str) or not item for item in dependencies
+   78         ):
+   79             raise ValueError(f"DrivingIntent step {step_id!r} depends_on is invalid")
+   80         unknown = [item for item in dependencies if item not in step_ids]
+   81         if unknown:
+   82             raise ValueError(
+   83                 f"DrivingIntent step {step_id!r} depends on a missing or later step: "
+   84                 + ", ".join(unknown)
+   85             )
+   86         step_ids.append(step_id)
+   87     return steps
+   88
+   89
+   90 def validate_step_feedback(data: Any) -> list[str]:
+   91     """Return structural errors for one external step-result event."""
+   92
+   93     if not isinstance(data, dict):
+   94         return ["root: expected an object"]
+   95     expected = {
+   96         "schema_version",
+   97         "request_id",
+   98         "frame_id",
+   99         "step_id",
+  100         "outcome",
+  101         "reason_codes",
+  102     }
+  103     errors: list[str] = []
+  104     missing = sorted(expected - data.keys())
+  105     extra = sorted(data.keys() - expected)
+  106     if missing:
+  107         errors.append("root: missing fields: " + ", ".join(missing))
+  108     if extra:
+  109         errors.append("root: unexpected fields: " + ", ".join(extra))
+  110     if data.get("schema_version") != STEP_FEEDBACK_SCHEMA_VERSION:
+  111         errors.append("schema_version: expected '1.0.0'")
+  112     for key in ("request_id", "frame_id", "step_id"):
+  113         if not isinstance(data.get(key), str) or not data[key]:
+  114             errors.append(f"{key}: expected a non-empty string")
+  115     if data.get("outcome") not in FEEDBACK_OUTCOMES:
+  116         errors.append("outcome: invalid value")
+  117     reasons = data.get("reason_codes")
+  118     if not isinstance(reasons, list) or any(
+  119         not isinstance(item, str) or not item for item in reasons
+  120     ):
+  121         errors.append("reason_codes: expected an array of non-empty strings")
+  122     elif len(set(reasons)) != len(reasons):
+  123         errors.append("reason_codes: values must be unique")
+  124     return errors
+  125
+  126
+  127 def validate_control_plan_state(data: Any) -> list[str]:
+  128     """Return structural and active-step consistency errors."""
+  129
+  130     if not isinstance(data, dict):
+  131         return ["root: expected an object"]
+  132     expected = {
+  133         "schema_version",
+  134         "request_id",
+  135         "revision",
+  136         "plan_status",
+  137         "active_step_index",
+  138         "active_step_id",
+  139         "step_states",
+  140         "last_frame_id",
+  141         "last_feedback_outcome",
+  142         "reason_codes",
+  143     }
+  144     errors: list[str] = []
+  145     missing = sorted(expected - data.keys())
+  146     extra = sorted(data.keys() - expected)
+  147     if missing:
+  148         errors.append("root: missing fields: " + ", ".join(missing))
+  149     if extra:
+  150         errors.append("root: unexpected fields: " + ", ".join(extra))
+  151     if data.get("schema_version") != CONTROL_PLAN_STATE_SCHEMA_VERSION:
+  152         errors.append("schema_version: expected '1.1.0'")
+  153     if not isinstance(data.get("request_id"), str) or not data["request_id"]:
+  154         errors.append("request_id: expected a non-empty string")
+  155     revision = data.get("revision")
+  156     if isinstance(revision, bool) or not isinstance(revision, int) or revision < 0:
+  157         errors.append("revision: expected a non-negative integer")
+  158     if data.get("plan_status") not in PLAN_STATUSES:
+  159         errors.append("plan_status: invalid value")
+  160     if not isinstance(data.get("last_frame_id"), str) or not data["last_frame_id"]:
+  161         errors.append("last_frame_id: expected a non-empty string")
+  162     if data.get("last_feedback_outcome") not in FEEDBACK_OUTCOMES | {"INITIALIZED"}:
+  163         errors.append("last_feedback_outcome: invalid value")
+  164     reasons = data.get("reason_codes")
+  165     if not isinstance(reasons, list) or any(
+  166         not isinstance(item, str) or not item for item in reasons
+  167     ):
+  168         errors.append("reason_codes: expected an array of non-empty strings")
+  169     elif len(set(reasons)) != len(reasons):
+  170         errors.append("reason_codes: values must be unique")
+  171
+  172     step_states = data.get("step_states")
+  173     if not isinstance(step_states, list):
+  174         errors.append("step_states: expected an array")
+  175         return errors
+  176     ids: set[str] = set()
+  177     active_indices: list[int] = []
+  178     for index, item in enumerate(step_states):
+  179         path = f"step_states[{index}]"
+  180         if not isinstance(item, dict):
+  181             errors.append(f"{path}: expected an object")
+  182             continue
+  183         item_expected = {
+  184             "step_id", "action", "status", "activation_frame_id",
+  185             "terminal_frame_id", "reason_codes", "speed_reference_kmh",
+  186             "resolved_target_speed_kmh",
+  187         }
+  188         if set(item) != item_expected:
+  189             errors.append(f"{path}: fields do not match the state contract")
+  190         step_id = item.get("step_id")
+  191         if not isinstance(step_id, str) or not step_id:
+  192             errors.append(f"{path}.step_id: expected a non-empty string")
+  193         elif step_id in ids:
+  194             errors.append(f"{path}.step_id: duplicate value {step_id!r}")
+  195         else:
+  196             ids.add(step_id)
+  197         if not isinstance(item.get("action"), str) or not item["action"]:
+  198             errors.append(f"{path}.action: expected a non-empty string")
+  199         status = item.get("status")
+  200         if status not in STEP_STATUSES:
+  201             errors.append(f"{path}.status: invalid value")
+  202         if status in {"ACTIVE", "WAITING"}:
+  203             active_indices.append(index)
+  204         for key in ("activation_frame_id", "terminal_frame_id"):
+  205             value = item.get(key)
+  206             if value is not None and (not isinstance(value, str) or not value):
+  207                 errors.append(f"{path}.{key}: expected null or a non-empty string")
+  208         speed_values = (
+  209             item.get("speed_reference_kmh"),
+  210             item.get("resolved_target_speed_kmh"),
+  211         )
+  212         for key, value in zip(
+  213             ("speed_reference_kmh", "resolved_target_speed_kmh"),
+  214             speed_values,
+  215         ):
+  216             if value is not None and (
+  217                 isinstance(value, bool)
+  218                 or not isinstance(value, (int, float))
+  219                 or not math.isfinite(float(value))
+  220                 or not 0.0 <= float(value) <= 100.0
+  221             ):
+  222                 errors.append(
+  223                     f"{path}.{key}: expected null or a finite speed from 0 to 100"
+  224                 )
+  225         if (speed_values[0] is None) != (speed_values[1] is None):
+  226             errors.append(f"{path}: speed reference and target must be paired")
+  227         if (
+  228             str(item.get("action", "")).upper()
+  229             in {"SET_SPEED", "ADJUST_SPEED"}
+  230             and item.get("activation_frame_id") is not None
+  231             and speed_values[0] is None
+  232         ):
+  233             errors.append(f"{path}: active speed step requires a resolved target")
+  234         item_reasons = item.get("reason_codes")
+  235         if not isinstance(item_reasons, list) or any(
+  236             not isinstance(reason, str) or not reason for reason in item_reasons
+  237         ):
+  238             errors.append(f"{path}.reason_codes: invalid value")
+  239
+  240     active_index = data.get("active_step_index")
+  241     active_id = data.get("active_step_id")
+  242     if data.get("plan_status") == "ACTIVE":
+  243         if len(active_indices) != 1:
+  244             errors.append("step_states: ACTIVE plan requires exactly one active/waiting step")
+  245         if isinstance(active_index, bool) or not isinstance(active_index, int):
+  246             errors.append("active_step_index: ACTIVE plan requires an integer")
+  247         elif not 0 <= active_index < len(step_states):
+  248             errors.append("active_step_index: out of range")
+  249         elif step_states[active_index].get("step_id") != active_id:
+  250             errors.append("active_step_id: does not match active_step_index")
+  251         if active_indices and active_index != active_indices[0]:
+  252             errors.append("active_step_index: does not identify active/waiting step")
+  253     elif active_index is not None or active_id is not None:
+  254         errors.append("active step fields must be null for a terminal plan")
+  255     return errors
+  256
+  257
+  258 def _latch_step_speed(
+  259     state_item: dict[str, Any],
+  260     step: Mapping[str, Any],
+  261     reference_speed_kmh: float,
+  262 ) -> None:
+  263     if not is_speed_step(step):
+  264         return
+  265     _, target_speed_kmh = resolve_step_speed_target(
+  266         step,
+  267         reference_speed_kmh,
+  268     )
+  269     state_item["speed_reference_kmh"] = round(float(reference_speed_kmh), 6)
+  270     state_item["resolved_target_speed_kmh"] = target_speed_kmh
+  271
+  272
+  273 def _initial_state(
+  274     driving_intent: Mapping[str, Any],
+  275     frame_id: str,
+  276     current_speed_kmh: float,
+  277 ) -> dict[str, Any]:
+  278     steps = _intent_steps(driving_intent)
+  279     request_id = driving_intent.get("request_id")
+  280     if not isinstance(request_id, str) or not request_id:
+  281         raise ValueError("DrivingIntent request_id must be a non-empty string")
+  282     parse_status = driving_intent.get("parse_result", {}).get("status")
+  283     active = bool(steps) and parse_status == "VALID"
+  284     step_states = [
+  285         {
+  286             "step_id": step["step_id"],
+  287             "action": step["action"],
+  288             "status": "ACTIVE" if active and index == 0 else "PENDING",
+  289             "activation_frame_id": frame_id if active and index == 0 else None,
+  290             "terminal_frame_id": None,
+  291             "reason_codes": [],
+  292             "speed_reference_kmh": None,
+  293             "resolved_target_speed_kmh": None,
+  294         }
+  295         for index, step in enumerate(steps)
+  296     ]
+  297     if active:
+  298         _latch_step_speed(step_states[0], steps[0], current_speed_kmh)
+  299     return {
+  300         "schema_version": CONTROL_PLAN_STATE_SCHEMA_VERSION,
+  301         "request_id": request_id,
+  302         "revision": 0,
+  303         "plan_status": "ACTIVE" if active else "SAFE_FALLBACK",
+  304         "active_step_index": 0 if active else None,
+  305         "active_step_id": steps[0]["step_id"] if active else None,
+  306         "step_states": step_states,
+  307         "last_frame_id": frame_id,
+  308         "last_feedback_outcome": "INITIALIZED",
+  309         "reason_codes": [] if active else [f"parse_status_{str(parse_status).lower()}"],
+  310     }
+  311
+  312
+  313 def _check_state_matches_intent(
+  314     state: Mapping[str, Any], driving_intent: Mapping[str, Any]
+  315 ) -> None:
+  316     errors = validate_control_plan_state(state)
+  317     if errors:
+  318         raise ValueError("invalid ControlPlanState: " + "; ".join(errors))
+  319     if state["request_id"] != driving_intent.get("request_id"):
+  320         raise ValueError("request_id mismatch between ControlPlanState and DrivingIntent")
+  321     expected = [
+  322         (step["step_id"], step["action"]) for step in _intent_steps(driving_intent)
+  323     ]
+  324     actual = [(item["step_id"], item["action"]) for item in state["step_states"]]
+  325     if actual != expected:
+  326         raise ValueError("ControlPlanState steps do not match DrivingIntent steps")
+  327
+  328
+  329 def _set_terminal(
+  330     state: dict[str, Any], index: int, status: str, frame_id: str,
+  331     reason_codes: list[str],
+  332 ) -> None:
+  333     item = state["step_states"][index]
+  334     item["status"] = status
+  335     item["terminal_frame_id"] = frame_id
+  336     item["reason_codes"] = list(dict.fromkeys(reason_codes))
+  337
+  338
+  339 def _activate(
+  340     state: dict[str, Any], index: int, frame_id: str,
+  341     driving_intent: Mapping[str, Any],
+  342     current_speed_kmh: float,
+  343 ) -> bool:
+  344     steps = _intent_steps(driving_intent)
+  345     if index >= len(steps):
+  346         state["plan_status"] = "COMPLETED"
+  347         state["active_step_index"] = None
+  348         state["active_step_id"] = None
+  349         state["reason_codes"] = ["all_steps_completed"]
+  350         return False
+  351     settled = {
+  352         item["step_id"]
+  353         for item in state["step_states"]
+  354         if item["status"] in {"COMPLETED", "SKIPPED"}
+  355     }
+  356     missing = [item for item in steps[index].get("depends_on", []) if item not in settled]
+  357     if missing:
+  358         reasons = [f"dependency_not_completed:{item}" for item in missing]
+  359         _set_terminal(state, index, "BLOCKED", frame_id, reasons)
+  360         state["plan_status"] = "BLOCKED"
+  361         state["active_step_index"] = None
+  362         state["active_step_id"] = None
+  363         state["reason_codes"] = reasons
+  364         return False
+  365     item = state["step_states"][index]
+  366     item["status"] = "ACTIVE"
+  367     item["activation_frame_id"] = frame_id
+  368     item["reason_codes"] = []
+  369     _latch_step_speed(item, steps[index], current_speed_kmh)
+  370     state["plan_status"] = "ACTIVE"
+  371     state["active_step_index"] = index
+  372     state["active_step_id"] = item["step_id"]
+  373     state["reason_codes"] = []
+  374     return True
+  375
+  376
+  377 def _apply_feedback(
+  378     state: dict[str, Any], feedback: Mapping[str, Any], frame_id: str,
+  379     driving_intent: Mapping[str, Any],
+  380     current_speed_kmh: float,
+  381 ) -> None:
+  382     errors = validate_step_feedback(feedback)
+  383     if errors:
+  384         raise ValueError("invalid StepFeedback: " + "; ".join(errors))
+  385     if state["plan_status"] != "ACTIVE":
+  386         raise ValueError("StepFeedback cannot be applied to a terminal plan")
+  387     if feedback["request_id"] != state["request_id"]:
+  388         raise ValueError("request_id mismatch between StepFeedback and ControlPlanState")
+  389     if feedback["step_id"] != state["active_step_id"]:
+  390         raise ValueError("StepFeedback step_id does not match the active step")
+  391
+  392     index = state["active_step_index"]
+  393     outcome = feedback["outcome"]
+  394     reasons = list(feedback["reason_codes"])
+  395     state["last_feedback_outcome"] = outcome
+  396     if outcome == "CONTINUE":
+  397         state["step_states"][index]["status"] = "ACTIVE"
+  398         state["step_states"][index]["reason_codes"] = reasons
+  399         return
+  400     if outcome == "COMPLETED":
+  401         _set_terminal(state, index, "COMPLETED", feedback["frame_id"], reasons)
+  402         _activate(
+  403             state,
+  404             index + 1,
+  405             frame_id,
+  406             driving_intent,
+  407             current_speed_kmh,
+  408         )
+  409         return
+  410
+  411     terminal_status = "FAILED" if outcome == "FAILED" else "CANCELLED"
+  412     _set_terminal(state, index, terminal_status, feedback["frame_id"], reasons)
+  413     state["plan_status"] = terminal_status
+  414     state["active_step_index"] = None
+  415     state["active_step_id"] = None
+  416     state["reason_codes"] = reasons or [f"step_{outcome.lower()}"]
+  417
+  418
+  419 def _blocked_policy(step: Mapping[str, Any]) -> str:
+  420     value = str(step.get("on_blocked") or "SAFE_STOP").strip().upper()
+  421     if value in {"WAIT_FOR_SAFE", "WAIT", "SLOW_DOWN"}:
+  422         return "WAIT"
+  423     if value in {"SKIP", "SKIP_STEP", "CONTINUE"}:
+  424         return "SKIP"
+  425     return "STOP"
+  426
+  427
+  428 def _replace_decision(
+  429     decision: Mapping[str, Any], *, status: str, action: str, reason: str,
+  430     target_speed_kmh: float, blocked_reason_codes: list[str],
+  431 ) -> dict[str, Any]:
+  432     result = copy.deepcopy(dict(decision))
+  433     result.update(
+  434         {
+  435             "decision_status": status,
+  436             "action": action,
+  437             "target_speed_kmh": target_speed_kmh,
+  438             "target_lane": None,
+  439             "target_location": None,
+  440             "emergency": action == "emergency_brake",
+  441             "reason": reason,
+  442             "blocked_reason_codes": list(dict.fromkeys(blocked_reason_codes)),
+  443         }
+  444     )
+  445     errors = validate_control_decision(result)
+  446     if errors:
+  447         raise ValueError("invalid terminal ControlDecision: " + "; ".join(errors))
+  448     return result
+  449
+  450
+  451 def _active_step(
+  452     state: Mapping[str, Any], driving_intent: Mapping[str, Any]
+  453 ) -> Mapping[str, Any]:
+  454     index = state["active_step_index"]
+  455     return _intent_steps(driving_intent)[index]
+  456
+  457
+  458 def advance_control_plan(
+  459     driving_intent: dict[str, Any],
+  460     world_state: dict[str, Any],
+  461     semantic_alignment: dict[str, Any],
+  462     risk_assessment: dict[str, Any],
+  463     *,
+  464     prior_state: dict[str, Any] | None = None,
+  465     feedback: dict[str, Any] | None = None,
+  466     transient_risk_wait: bool = False,
+  467 ) -> tuple[dict[str, Any], dict[str, Any]]:
+  468     """Advance a plan by at most one feedback transition and emit an action."""
+  469
+  470     frame_id = world_state.get("frame_id")
+  471     if not isinstance(frame_id, str) or not frame_id:
+  472         raise ValueError("WorldState frame_id must be a non-empty string")
+  473     speed_mps = world_state.get("ego", {}).get("speed_mps")
+  474     if (
+  475         isinstance(speed_mps, bool)
+  476         or not isinstance(speed_mps, (int, float))
+  477         or not math.isfinite(float(speed_mps))
+  478         or float(speed_mps) < 0.0
+  479     ):
+  480         raise ValueError(
+  481             "WorldState ego.speed_mps must be a finite non-negative number"
+  482         )
+  483     current_speed_kmh = round(min(float(speed_mps) * 3.6, 100.0), 6)
+  484     if prior_state is None:
+  485         if feedback is not None:
+  486             raise ValueError("StepFeedback requires a prior ControlPlanState")
+  487         state = _initial_state(
+  488             driving_intent,
+  489             frame_id,
+  490             current_speed_kmh,
+  491         )
+  492     else:
+  493         _check_state_matches_intent(prior_state, driving_intent)
+  494         state = copy.deepcopy(prior_state)
+  495         state["revision"] += 1
+  496         state["last_frame_id"] = frame_id
+  497         state["last_feedback_outcome"] = "CONTINUE"
+  498         if feedback is not None:
+  499             _apply_feedback(
+  500                 state,
+  501                 feedback,
+  502                 frame_id,
+  503                 driving_intent,
+  504                 current_speed_kmh,
+  505             )
+  506
+  507     # Build a template with complete parser/risk provenance.  For terminal
+  508     # states the last plan step supplies source metadata only.
+  509     steps = _intent_steps(driving_intent)
+  510     template_step_id = state.get("active_step_id")
+  511     if template_step_id is None and steps:
+  512         terminal = [
+  513             item for item in state["step_states"] if item["status"] != "PENDING"
+  514         ]
+  515         template_step_id = (terminal[-1] if terminal else state["step_states"][0])["step_id"]
+  516     template_step_state = next(
+  517         (
+  518             item
+  519             for item in state["step_states"]
+  520             if item["step_id"] == template_step_id
+  521         ),
+  522         None,
+  523     )
+  524     decision = build_control_decision(
+  525         driving_intent,
+  526         world_state,
+  527         semantic_alignment,
+  528         risk_assessment,
+  529         source_step_id=template_step_id,
+  530         resolved_target_speed_kmh=(
+  531             template_step_state.get("resolved_target_speed_kmh")
+  532             if template_step_state is not None
+  533             else None
+  534         ),
+  535     )
+  536
+  537     if state["plan_status"] == "SAFE_FALLBACK":
+  538         state["reason_codes"] = list(decision["blocked_reason_codes"])
+  539     elif state["plan_status"] == "COMPLETED":
+  540         current_speed_kmh = round(float(world_state["ego"]["speed_mps"]) * 3.6, 6)
+  541         decision = _replace_decision(
+  542             decision,
+  543             status="READY",
+  544             action="keep_lane",
+  545             reason="plan_completed",
+  546             target_speed_kmh=current_speed_kmh,
+  547             blocked_reason_codes=[],
+  548         )
+  549     elif state["plan_status"] in {"FAILED", "CANCELLED", "BLOCKED"}:
+  550         terminal_emergency = (
+  551             decision.get("action") == "emergency_brake"
+  552             or risk_assessment.get("recommended_action") == "emergency_brake"
+  553         )
+  554         decision = _replace_decision(
+  555             decision,
+  556             status="SAFE_FALLBACK" if state["plan_status"] != "BLOCKED" else "BLOCKED",
+  557             action="emergency_brake" if terminal_emergency else "stop",
+  558             reason=f"plan_{state['plan_status'].lower()}",
+  559             target_speed_kmh=0.0,
+  560             blocked_reason_codes=state["reason_codes"] or [
+  561                 f"plan_{state['plan_status'].lower()}"
+  562             ],
+  563         )
+  564     else:
+  565         # A SKIP policy may immediately expose another blocked step, so the
+  566         # loop is bounded by the finite number of intent steps.
+  567         for _ in range(len(steps) + 1):
+  568             if decision["decision_status"] != "BLOCKED":
+  569                 active = state["step_states"][state["active_step_index"]]
+  570                 active["status"] = "ACTIVE"
+  571                 active["reason_codes"] = []
+  572                 state["reason_codes"] = []
+  573                 break
+  574             index = state["active_step_index"]
+  575             step = _active_step(state, driving_intent)
+  576             reasons = list(decision["blocked_reason_codes"])
+  577             policy = _blocked_policy(step)
+  578             if (transient_risk_wait and policy == "STOP" and reasons
+  579                     and set(reasons) <= {"risk_requires_emergency_brake", "risk_requires_deceleration"}):
+  580                 # A physical risk pause is not task failure. Keep the same step
+  581                 # and latched speed; the online caller must gate safe recovery.
+  582                 policy = "WAIT"
+  583             if policy == "WAIT":
+  584                 state["step_states"][index]["status"] = "WAITING"
+  585                 state["step_states"][index]["reason_codes"] = reasons
+  586                 state["reason_codes"] = reasons
+  587                 break
+  588             if policy == "STOP":
+  589                 _set_terminal(state, index, "BLOCKED", frame_id, reasons)
+  590                 state["plan_status"] = "BLOCKED"
+  591                 state["active_step_index"] = None
+  592                 state["active_step_id"] = None
+  593                 state["reason_codes"] = reasons
+  594                 decision = _replace_decision(
+  595                     decision,
+  596                     status="BLOCKED",
+  597                     action=(
+  598                         "emergency_brake"
+  599                         if decision.get("action") == "emergency_brake"
+  600                         else "stop"
+  601                     ),
+  602                     reason="plan_blocked_safe_stop",
+  603                     target_speed_kmh=0.0,
+  604                     blocked_reason_codes=reasons or ["plan_blocked"],
+  605                 )
+  606                 break
+  607
+  608             _set_terminal(state, index, "SKIPPED", frame_id, reasons)
+  609             if not _activate(
+  610                 state,
+  611                 index + 1,
+  612                 frame_id,
+  613                 driving_intent,
+  614                 current_speed_kmh,
+  615             ):
+  616                 if state["plan_status"] == "COMPLETED":
+  617                     current_speed_kmh = round(
+  618                         float(world_state["ego"]["speed_mps"]) * 3.6, 6
+  619                     )
+  620                     decision = _replace_decision(
+  621                         decision,
+  622                         status="READY",
+  623                         action="keep_lane",
+  624                         reason="plan_completed_after_skips",
+  625                         target_speed_kmh=current_speed_kmh,
+  626                         blocked_reason_codes=[],
+  627                     )
+  628                 else:
+  629                     decision = _replace_decision(
+  630                         decision,
+  631                         status="BLOCKED",
+  632                         action="stop",
+  633                         reason="plan_dependency_blocked",
+  634                         target_speed_kmh=0.0,
+  635                         blocked_reason_codes=state["reason_codes"],
+  636                     )
+  637                 break
+  638             decision = build_control_decision(
+  639                 driving_intent,
+  640                 world_state,
+  641                 semantic_alignment,
+  642                 risk_assessment,
+  643                 source_step_id=state["active_step_id"],
+  644                 resolved_target_speed_kmh=state["step_states"][
+  645                     state["active_step_index"]
+  646                 ].get("resolved_target_speed_kmh"),
+  647             )
+  648
+  649     state_errors = validate_control_plan_state(state)
+  650     if state_errors:
+  651         raise ValueError("invalid ControlPlanState: " + "; ".join(state_errors))
+  652     decision_errors = validate_control_decision(decision)
+  653     if decision_errors:
+  654         raise ValueError("invalid ControlDecision: " + "; ".join(decision_errors))
+  655     return state, decision

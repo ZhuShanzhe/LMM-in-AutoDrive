@@ -17,6 +17,42 @@ def mapped_stop_distance(entries,waypoint,front_position):
     return min(ahead) if ahead else max(distances)
 
 
+def connected_stop_distance(entries, waypoint, front_position, max_distance=70.):
+    """Associate a stop line across road boundaries using directed lane topology."""
+    if waypoint is None or not entries:
+        return None
+    from collections import deque
+    origin = waypoint.transform.location
+    direction = waypoint.transform.get_forward_vector()
+    front_offset = sum((front_position[i] - getattr(origin, axis)) * getattr(direction, axis)
+                       for i, axis in enumerate(('x', 'y', 'z')))
+    pending = deque([(waypoint, 0.)])
+    visited = set()
+    matches = []
+    while pending and len(visited) < 2048:
+        current, distance = pending.popleft()
+        key = (current.road_id, current.section_id, current.lane_id)
+        marker = (*key, round(current.s, 1))
+        if marker in visited or distance > max_distance:
+            continue
+        visited.add(marker)
+        position = current.transform.location
+        forward = current.transform.get_forward_vector()
+        for item in entries:
+            if key != (item['road_id'], item['section_id'], item['lane_id']):
+                continue
+            delta = [item['position'][i] - getattr(position, axis)
+                     for i, axis in enumerate(('x', 'y', 'z'))]
+            alignment = sum(item['forward'][i] * getattr(forward, axis)
+                            for i, axis in enumerate(('x', 'y', 'z')))
+            residual = sum(delta[i] * item['forward'][i] for i in range(3))
+            if alignment > .7 and sum(value * value for value in delta) <= 9. and residual >= -1.:
+                matches.append(distance + residual - front_offset)
+        for successor in current.next(2.):
+            pending.append((successor, distance + 2.))
+    return min(matches) if matches else None
+
+
 def classify_signal_crop(rgb):
     import cv2
     if rgb.size==0:return 'UNKNOWN',0.
@@ -30,6 +66,27 @@ def classify_signal_crop(rgb):
     total=sum(counts.values())
     confidence=count/max(1,total)
     return (state,float(confidence)) if count>=3 and confidence>=.75 else ('UNKNOWN',0.)
+
+
+class PassedStopLineMemory:
+    """A passed approach must not become a new zero-distance light in a junction."""
+    def __init__(self):
+        self.lines={}
+
+    def record(self,signal_id,entries,front):
+        if entries:
+            self.lines[str(signal_id)]=min(entries,key=lambda item:sum(
+                (item['position'][i]-front[i])**2 for i in range(3)))
+
+    def contains(self,signal_id,front):
+        key=str(signal_id);item=self.lines.get(key)
+        if item is None:return False
+        delta=[item['position'][i]-front[i] for i in range(3)]
+        remaining=sum(delta[i]*item['forward'][i] for i in range(3))
+        if remaining>=-1. or sum(value*value for value in delta)>100.**2:
+            self.lines.pop(key,None)
+            return False
+        return True
 
 
 def observe_tracked_lamp(rgb,tracked,*,signal_id,x,y,depth,timestamp_s):
@@ -66,6 +123,7 @@ class MapSignalObserver:
         self.tracked_signal=None
         self.last_debug_bucket=None
         self.active_landmark=None
+        self.passed_stop_lines=PassedStopLineMemory()
         self.stop_lines=None
         self.static_heads={}
         self.state_classifier=None
@@ -110,7 +168,9 @@ class MapSignalObserver:
         waypoint=self.world_map.get_waypoint(ego.get_location())
         landmarks=waypoint.get_landmarks_of_type(60.,'1000001',False) if waypoint else []
         applicable=[]
+        if not hasattr(self,'passed_stop_lines'):self.passed_stop_lines=PassedStopLineMemory()
         for landmark in landmarks:
+            if self.passed_stop_lines.contains(landmark.id,front):continue
             effective=landmark.waypoint
             if effective is None:continue
             validities=landmark.get_lane_validities()
@@ -119,16 +179,24 @@ class MapSignalObserver:
             if landmark.distance>=0.:applicable.append(landmark)
         prior=getattr(self,'active_landmark',None)
         if prior is not None and self.stop_lines is not None:
-            entries=[item for item in self.stop_lines.get(str(prior.id),[]) if
-                (item['road_id'],item['section_id'],item['lane_id'])==
-                (prior.waypoint.road_id,prior.waypoint.section_id,prior.waypoint.lane_id)]
+            entries=self.stop_lines.get(str(prior.id),[])
             on_approach=any(
                 abs((front[0]-item['position'][0])*item['forward'][1]-(front[1]-item['position'][1])*item['forward'][0])<2.5
                 and forward.x*item['forward'][0]+forward.y*item['forward'][1]>.7 for item in entries)
-            remaining=mapped_stop_distance(entries,prior.waypoint,front)
-            if on_approach and remaining is not None and remaining>=-1.:
+            remaining=mapped_stop_distance(entries,waypoint,front) if waypoint is not None else None
+            if remaining is None and prior.waypoint is not None:
+                remaining=mapped_stop_distance(entries,prior.waypoint,front)
+            connected=None
+            if remaining is None:
+                connected=connected_stop_distance(entries,waypoint,front)
+                remaining=connected
+            if (on_approach or connected is not None) and remaining is not None and remaining>=-1.:
                 applicable=[prior]
-            else:self.active_landmark=None
+            else:
+                if remaining is not None and remaining < -1.:
+                    self.passed_stop_lines.record(prior.id,entries,front)
+                    applicable=[item for item in applicable if str(item.id)!=str(prior.id)]
+                self.active_landmark=None
         if not applicable:
             result=dict(applicable=False,state='UNKNOWN',timestamp_s=timestamp_s,source='rgb_static_opendrive')
             self.last_observation=result
@@ -140,10 +208,13 @@ class MapSignalObserver:
             mapped=mapped_stop_distance(self.stop_lines.get(str(landmark.id),[]),waypoint,front)
             if mapped is None and landmark.waypoint is not None:
                 mapped=mapped_stop_distance(self.stop_lines.get(str(landmark.id),[]),landmark.waypoint,front)
+            if mapped is None:
+                mapped=connected_stop_distance(self.stop_lines.get(str(landmark.id),[]),waypoint,front)
             stop_distance=mapped if mapped is not None else 0.
             stop_source='static_hdmap_stop_line' if mapped is not None else 'stop_line_association_missing'
             if mapped is not None and mapped>=-1.:self.active_landmark=landmark
             if mapped is not None and mapped < -1.:
+                self.passed_stop_lines.record(landmark.id,self.stop_lines.get(str(landmark.id),[]),front)
                 self.last_observation=dict(applicable=False,state='UNKNOWN',timestamp_s=timestamp_s,source='passed_mapped_stop_line')
                 return dict(self.last_observation)
         if hasattr(rgb,'detach'):rgb=rgb.detach().cpu().numpy()

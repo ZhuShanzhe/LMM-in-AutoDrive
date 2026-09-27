@@ -1,0 +1,433 @@
+{
+  "schema_version": "scene_3_emergency_summary/v1",
+  "scene_id": "scene_3_emergency_6km",
+  "map": {
+    "name": "Town05_Opt",
+    "asset_path": "/Game/Carla/Maps/Town05_Opt",
+    "official_carla_asset": true
+  },
+  "route": {
+    "target_length_m": 6000.0,
+    "generated_length_m": 6000.404,
+    "finish_progress_m": 6000.0,
+    "last_progress_m": 346.546
+  },
+  "route_completed": false,
+  "event_states": {
+    "PENDING": 7,
+    "ACTIVE": 0,
+    "RESOLVED": 0
+  },
+  "safety": {
+    "collision_count": 0,
+    "collision_frames": [],
+    "collision_events": [],
+    "lane_invasion_event_count": 4,
+    "lane_invasion_frames": [
+      8973,
+      9011,
+      9018,
+      9050
+    ],
+    "lane_invasion_events": [
+      {
+        "frame": 8973,
+        "markings": [
+          "Broken"
+        ],
+        "restricted": false
+      },
+      {
+        "frame": 9011,
+        "markings": [
+          "Broken"
+        ],
+        "restricted": false
+      },
+      {
+        "frame": 9018,
+        "markings": [
+          "Broken"
+        ],
+        "restricted": false
+      },
+      {
+        "frame": 9050,
+        "markings": [
+          "Broken"
+        ],
+        "restricted": false
+      }
+    ],
+    "restricted_lane_invasion_event_count": 0,
+    "restricted_lane_invasion_frames": [],
+    "invalid_lane_samples": 0
+  },
+  "rgb_frame_counts": {
+    "front_rgb": 60,
+    "left_rgb": 60,
+    "right_rgb": 60,
+    "rear_rgb": 60
+  },
+  "direct_video": null,
+  "ground_truth": null,
+  "vla_control": {
+    "controller": "universal-vla-controller",
+    "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+    "model_output_used": true,
+    "training_teacher_force_control": false,
+    "decision_count": 1199,
+    "model_accepted_count": 1178,
+    "safety_gate_or_canonical_count": 21,
+    "fallback_count": 1,
+    "sensor_warmup_safe_hold_count": 0,
+    "liveness_override_counts": {
+      "temporal_risk_confirmation": 1
+    },
+    "proposal_action_counts": {
+      "accelerate": 315,
+      "stop": 11,
+      "keep_lane": 863,
+      "decelerate": 10
+    },
+    "final_action_counts": {
+      "accelerate": 315,
+      "stop": 11,
+      "decelerate": 13,
+      "keep_lane": 842,
+      "emergency_brake": 18
+    },
+    "full_decision_latency_ms": {
+      "mean": 30.927,
+      "median": 30.467,
+      "p95": 41.155,
+      "max": 254.128
+    },
+    "sensor_to_decision_response_ms": {
+      "mean": 37.197,
+      "median": 36.04,
+      "p95": 53.564,
+      "max": 254.798,
+      "within_120_ms_rate": 0.997498
+    },
+    "sensor_batch_schema_version": "unified_sensor_batch/1.0",
+    "supervisor": {
+      "global_visual_risk_history": [
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low"
+      ],
+      "left_lane_visual_risk_history": [],
+      "right_lane_visual_risk_history": [],
+      "stopped_since_frame": null,
+      "resume_active_intent": null,
+      "crawl_pending": false,
+      "high_confirm_count": 3,
+      "override_counts": {
+        "temporal_risk_confirmation": 1
+      },
+      "radar_caution_crawl_active": false,
+      "decision_history": [
+        {
+          "frame": 10047,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.490487,
+          "override": null
+        },
+        {
+          "frame": 10048,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.498949,
+          "override": null
+        },
+        {
+          "frame": 10049,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.507411,
+          "override": null
+        },
+        {
+          "frame": 10050,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.515874,
+          "override": null
+        },
+        {
+          "frame": 10051,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.524336,
+          "override": null
+        },
+        {
+          "frame": 10052,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.532798,
+          "override": null
+        },
+        {
+          "frame": 10053,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.54126,
+          "override": null
+        },
+        {
+          "frame": 10054,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.549722,
+          "override": null
+        },
+        {
+          "frame": 10055,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.558184,
+          "override": null
+        },
+        {
+          "frame": 10056,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.558184,
+          "override": null
+        },
+        {
+          "frame": 10057,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.615535,
+          "override": null
+        },
+        {
+          "frame": 10058,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.618576,
+          "override": null
+        },
+        {
+          "frame": 10059,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.621618,
+          "override": null
+        },
+        {
+          "frame": 10060,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.624659,
+          "override": null
+        },
+        {
+          "frame": 10061,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.627701,
+          "override": null
+        },
+        {
+          "frame": 10062,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.630742,
+          "override": null
+        },
+        {
+          "frame": 10063,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.633784,
+          "override": null
+        },
+        {
+          "frame": 10064,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.636825,
+          "override": null
+        },
+        {
+          "frame": 10065,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.639867,
+          "override": null
+        },
+        {
+          "frame": 10066,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.639867,
+          "override": null
+        },
+        {
+          "frame": 10067,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.619108,
+          "override": null
+        },
+        {
+          "frame": 10068,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.619361,
+          "override": null
+        },
+        {
+          "frame": 10069,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.619613,
+          "override": null
+        },
+        {
+          "frame": 10070,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.619865,
+          "override": null
+        },
+        {
+          "frame": 10071,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.620117,
+          "override": null
+        },
+        {
+          "frame": 10072,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.620369,
+          "override": null
+        },
+        {
+          "frame": 10073,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.620622,
+          "override": null
+        },
+        {
+          "frame": 10074,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.620874,
+          "override": null
+        },
+        {
+          "frame": 10075,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.621126,
+          "override": null
+        },
+        {
+          "frame": 10076,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.621126,
+          "override": null
+        },
+        {
+          "frame": 10077,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.579776,
+          "override": null
+        },
+        {
+          "frame": 10078,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.57711,
+          "override": null
+        },
+        {
+          "frame": 10079,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.574444,
+          "override": null
+        },
+        {
+          "frame": 10080,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.571777,
+          "override": null
+        },
+        {
+          "frame": 10081,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.569111,
+          "override": null
+        },
+        {
+          "frame": 10082,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.566445,
+          "override": null
+        },
+        {
+          "frame": 10083,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.563779,
+          "override": null
+        },
+        {
+          "frame": 10084,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.561113,
+          "override": null
+        },
+        {
+          "frame": 10085,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.558447,
+          "override": null
+        },
+        {
+          "frame": 10086,
+          "risk_level": "low",
+          "action": "keep_lane",
+          "target_speed_kmh": 29.558447,
+          "override": null
+        }
+      ],
+      "moving_since_frame": 9140
+    }
+  },
+  "complete_scene_success": false
+}

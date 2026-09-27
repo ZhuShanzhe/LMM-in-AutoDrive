@@ -463,6 +463,7 @@ def advance_control_plan(
     *,
     prior_state: dict[str, Any] | None = None,
     feedback: dict[str, Any] | None = None,
+    transient_risk_wait: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Advance a plan by at most one feedback transition and emit an action."""
 
@@ -574,6 +575,11 @@ def advance_control_plan(
             step = _active_step(state, driving_intent)
             reasons = list(decision["blocked_reason_codes"])
             policy = _blocked_policy(step)
+            if (transient_risk_wait and policy == "STOP" and reasons
+                    and set(reasons) <= {"risk_requires_emergency_brake", "risk_requires_deceleration"}):
+                # A physical risk pause is not task failure. Keep the same step
+                # and latched speed; the online caller must gate safe recovery.
+                policy = "WAIT"
             if policy == "WAIT":
                 state["step_states"][index]["status"] = "WAITING"
                 state["step_states"][index]["reason_codes"] = reasons

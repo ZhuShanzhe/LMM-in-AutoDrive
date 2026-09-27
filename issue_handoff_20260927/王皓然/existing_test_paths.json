@@ -1,0 +1,6 @@
+[
+  "lightweight_vla_adapter/tests/test_driving_plan_runtime.py",
+  "experiment/CARLA/tests/test_cruise_speed_contract.py",
+  "experiment/CARLA/tests/test_dispatch_wait_budget.py",
+  "experiment/CARLA/tests/test_return_original_lane.py"
+]

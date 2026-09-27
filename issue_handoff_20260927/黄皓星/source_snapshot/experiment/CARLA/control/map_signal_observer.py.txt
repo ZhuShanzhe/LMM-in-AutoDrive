@@ -1,0 +1,283 @@
+    1 """Prototype RGB traffic-light observer with static OpenDRIVE association.
+    2
+    3 Only map landmarks, camera pixels and ego pose are consumed. Dynamic CARLA
+    4 traffic-light actor states are forbidden in this module.
+    5 """
+    6
+    7 import math
+    8 import numpy as np
+    9
+   10
+   11 def mapped_stop_distance(entries,waypoint,front_position):
+   12     candidates=[item for item in entries if (item['road_id'],item['section_id'],item['lane_id'])==
+   13         (waypoint.road_id,waypoint.section_id,waypoint.lane_id)]
+   14     if not candidates:return None
+   15     distances=[sum((item['position'][i]-front_position[i])*item['forward'][i] for i in range(3)) for item in candidates]
+   16     ahead=[distance for distance in distances if distance>=-1.]
+   17     return min(ahead) if ahead else max(distances)
+   18
+   19
+   20 def connected_stop_distance(entries, waypoint, front_position, max_distance=70.):
+   21     """Associate a stop line across road boundaries using directed lane topology."""
+   22     if waypoint is None or not entries:
+   23         return None
+   24     from collections import deque
+   25     origin = waypoint.transform.location
+   26     direction = waypoint.transform.get_forward_vector()
+   27     front_offset = sum((front_position[i] - getattr(origin, axis)) * getattr(direction, axis)
+   28                        for i, axis in enumerate(('x', 'y', 'z')))
+   29     pending = deque([(waypoint, 0.)])
+   30     visited = set()
+   31     matches = []
+   32     while pending and len(visited) < 2048:
+   33         current, distance = pending.popleft()
+   34         key = (current.road_id, current.section_id, current.lane_id)
+   35         marker = (*key, round(current.s, 1))
+   36         if marker in visited or distance > max_distance:
+   37             continue
+   38         visited.add(marker)
+   39         position = current.transform.location
+   40         forward = current.transform.get_forward_vector()
+   41         for item in entries:
+   42             if key != (item['road_id'], item['section_id'], item['lane_id']):
+   43                 continue
+   44             delta = [item['position'][i] - getattr(position, axis)
+   45                      for i, axis in enumerate(('x', 'y', 'z'))]
+   46             alignment = sum(item['forward'][i] * getattr(forward, axis)
+   47                             for i, axis in enumerate(('x', 'y', 'z')))
+   48             residual = sum(delta[i] * item['forward'][i] for i in range(3))
+   49             if alignment > .7 and sum(value * value for value in delta) <= 9. and residual >= -1.:
+   50                 matches.append(distance + residual - front_offset)
+   51         for successor in current.next(2.):
+   52             pending.append((successor, distance + 2.))
+   53     return min(matches) if matches else None
+   54
+   55
+   56 def classify_signal_crop(rgb):
+   57     import cv2
+   58     if rgb.size==0:return 'UNKNOWN',0.
+   59     hsv=cv2.cvtColor(rgb.astype(np.uint8),cv2.COLOR_RGB2HSV)
+   60     h,s,v=(hsv[:,:,i] for i in range(3))
+   61     bright=(s>90)&(v>150)
+   62     counts=dict(RED=int((bright&((h<12)|(h>168))).sum()),
+   63         YELLOW=int((bright&(h>=15)&(h<=40)).sum()),
+   64         GREEN=int((bright&(h>=42)&(h<=95)).sum()))
+   65     state=max(counts,key=counts.get);count=counts[state]
+   66     total=sum(counts.values())
+   67     confidence=count/max(1,total)
+   68     return (state,float(confidence)) if count>=3 and confidence>=.75 else ('UNKNOWN',0.)
+   69
+   70
+   71 class PassedStopLineMemory:
+   72     """A passed approach must not become a new zero-distance light in a junction."""
+   73     def __init__(self):
+   74         self.lines={}
+   75
+   76     def record(self,signal_id,entries,front):
+   77         if entries:
+   78             self.lines[str(signal_id)]=min(entries,key=lambda item:sum(
+   79                 (item['position'][i]-front[i])**2 for i in range(3)))
+   80
+   81     def contains(self,signal_id,front):
+   82         key=str(signal_id);item=self.lines.get(key)
+   83         if item is None:return False
+   84         delta=[item['position'][i]-front[i] for i in range(3)]
+   85         remaining=sum(delta[i]*item['forward'][i] for i in range(3))
+   86         if remaining>=-1. or sum(value*value for value in delta)>100.**2:
+   87             self.lines.pop(key,None)
+   88             return False
+   89         return True
+   90
+   91
+   92 def observe_tracked_lamp(rgb,tracked,*,signal_id,x,y,depth,timestamp_s):
+   93     if tracked['signal_id']!=signal_id or not 0.<=timestamp_s-tracked['timestamp_s']<=30. or depth<=.1:return None
+   94     ratio=tracked['depth']/depth;old=tracked['bbox']
+   95     x1,x2=[x+(value-tracked['x'])*ratio for value in (old[0],old[2])]
+   96     y1,y2=[y+(value-tracked['y'])*ratio for value in (old[1],old[3])]
+   97     height,width=rgb.shape[:2]
+   98     xa=max(0,min(width,int(x1)));xb=max(0,min(width,int(x2)+1))
+   99     ya=max(0,min(height,int(y1)));yb=max(0,min(height,int(y2)+1))
+  100     if xb<=xa or yb<=ya:return None
+  101     state,confidence=classify_signal_crop(rgb[ya:yb,xa:xb])
+  102     if state=='GREEN' and (tracked.get('state')!='GREEN' or timestamp_s-tracked['timestamp_s']>.5):
+  103         state,confidence='UNKNOWN',0.
+  104     return dict(bbox=[x1,y1,x2,y2],state=state,color_confidence=confidence,
+  105         source='projected_detected_lamp_current_rgb',position_age_s=timestamp_s-tracked['timestamp_s'])
+  106
+  107
+  108 class MapSignalObserver:
+  109     def __init__(self,world_map,camera_sensor,weights,device='cuda:0',debug_directory=None,static_map_path=None,state_checkpoint=None):
+  110         if static_map_path is None:raise ValueError('A verified static stop-line map is required for traffic control')
+  111         self.world_map=world_map
+  112         self.camera=camera_sensor
+  113         self.device=device
+  114         self.detector=None;self.classes=[]
+  115         if state_checkpoint is None:
+  116             from ultralytics import YOLO
+  117             self.detector=YOLO(str(weights))
+  118             self.classes=[i for i,name in self.detector.names.items() if name.replace('_',' ')=='traffic light']
+  119             if not self.classes:raise ValueError('Detector has no traffic-light class')
+  120         self.last_observation=None
+  121         self.last_frame=None
+  122         self.debug_directory=debug_directory
+  123         self.tracked_signal=None
+  124         self.last_debug_bucket=None
+  125         self.active_landmark=None
+  126         self.passed_stop_lines=PassedStopLineMemory()
+  127         self.stop_lines=None
+  128         self.static_heads={}
+  129         self.state_classifier=None
+  130         if static_map_path is not None:
+  131             import json,hashlib
+  132             from pathlib import Path
+  133             document=json.loads(Path(static_map_path).read_text())
+  134             if document['opendrive_sha256']!=hashlib.sha256(world_map.to_opendrive().encode()).hexdigest():
+  135                 raise ValueError('Static traffic-control map does not match the loaded OpenDRIVE map')
+  136             self.stop_lines=document['signals']
+  137             self.static_heads=document.get('heads',{})
+  138         if state_checkpoint is not None:
+  139             from control.signal_lamp_state import LampStateClassifier
+  140             if not self.static_heads:
+  141                 raise ValueError('Lamp-state model requires a static map with lamp-head geometry')
+  142             self.state_classifier=LampStateClassifier(state_checkpoint,device)
+  143
+  144     def _observe_static_heads(self,signal_id,rgb,inverse_camera):
+  145         from control.signal_lamp_state import project_head,head_crop
+  146         height,width=rgb.shape[:2]
+  147         projected=[];crops=[]
+  148         for index,vertices in enumerate(self.static_heads.get(signal_id,[])):
+  149             box=project_head(vertices,inverse_camera,width,height,float(self.camera.attributes['fov']))
+  150             if box is None:continue
+  151             crop=head_crop(rgb,box)
+  152             if crop is None:continue
+  153             projected.append(dict(head_index=index,bbox=box));crops.append(crop)
+  154         observations=[dict(**location,**state) for location,state in zip(projected,self.state_classifier.predict(crops))]
+  155         valid=[item for item in observations if item['state']!='UNKNOWN']
+  156         if not valid or len({item['state'] for item in valid})!=1:
+  157             return 'UNKNOWN',0.,observations
+  158         # Multiple heads may be occluded, but any conflicting visible head rejects release.
+  159         state=valid[0]['state'];confidence=min(item['color_confidence'] for item in valid)
+  160         return state,confidence,observations
+  161
+  162     def observe(self,ego,rgb,*,frame,timestamp_s,camera_inverse=None):
+  163         if frame==self.last_frame and self.last_observation is not None:
+  164             return dict(self.last_observation)
+  165         self.last_frame=frame
+  166         transform=ego.get_transform();loc=transform.location;forward=transform.get_forward_vector()
+  167         front=[getattr(loc,axis)+getattr(forward,axis)*ego.bounding_box.extent.x for axis in ('x','y','z')]
+  168         waypoint=self.world_map.get_waypoint(ego.get_location())
+  169         landmarks=waypoint.get_landmarks_of_type(60.,'1000001',False) if waypoint else []
+  170         applicable=[]
+  171         if not hasattr(self,'passed_stop_lines'):self.passed_stop_lines=PassedStopLineMemory()
+  172         for landmark in landmarks:
+  173             if self.passed_stop_lines.contains(landmark.id,front):continue
+  174             effective=landmark.waypoint
+  175             if effective is None:continue
+  176             validities=landmark.get_lane_validities()
+  177             spans=[(int(v[0]),int(v[1])) if isinstance(v,(tuple,list)) else (int(v.from_lane),int(v.to_lane)) for v in validities]
+  178             if spans and not any(min(a,b)<=effective.lane_id<=max(a,b) for a,b in spans):continue
+  179             if landmark.distance>=0.:applicable.append(landmark)
+  180         prior=getattr(self,'active_landmark',None)
+  181         if prior is not None and self.stop_lines is not None:
+  182             entries=self.stop_lines.get(str(prior.id),[])
+  183             on_approach=any(
+  184                 abs((front[0]-item['position'][0])*item['forward'][1]-(front[1]-item['position'][1])*item['forward'][0])<2.5
+  185                 and forward.x*item['forward'][0]+forward.y*item['forward'][1]>.7 for item in entries)
+  186             remaining=mapped_stop_distance(entries,waypoint,front) if waypoint is not None else None
+  187             if remaining is None and prior.waypoint is not None:
+  188                 remaining=mapped_stop_distance(entries,prior.waypoint,front)
+  189             connected=None
+  190             if remaining is None:
+  191                 connected=connected_stop_distance(entries,waypoint,front)
+  192                 remaining=connected
+  193             if (on_approach or connected is not None) and remaining is not None and remaining>=-1.:
+  194                 applicable=[prior]
+  195             else:
+  196                 if remaining is not None and remaining < -1.:
+  197                     self.passed_stop_lines.record(prior.id,entries,front)
+  198                     applicable=[item for item in applicable if str(item.id)!=str(prior.id)]
+  199                 self.active_landmark=None
+  200         if not applicable:
+  201             result=dict(applicable=False,state='UNKNOWN',timestamp_s=timestamp_s,source='rgb_static_opendrive')
+  202             self.last_observation=result
+  203             return result
+  204         landmark=min(applicable,key=lambda item:item.distance)
+  205         stop_distance=float(landmark.distance)-float(ego.bounding_box.extent.x)
+  206         stop_source='unverified_signal_reference_point'
+  207         if self.stop_lines is not None:
+  208             mapped=mapped_stop_distance(self.stop_lines.get(str(landmark.id),[]),waypoint,front)
+  209             if mapped is None and landmark.waypoint is not None:
+  210                 mapped=mapped_stop_distance(self.stop_lines.get(str(landmark.id),[]),landmark.waypoint,front)
+  211             if mapped is None:
+  212                 mapped=connected_stop_distance(self.stop_lines.get(str(landmark.id),[]),waypoint,front)
+  213             stop_distance=mapped if mapped is not None else 0.
+  214             stop_source='static_hdmap_stop_line' if mapped is not None else 'stop_line_association_missing'
+  215             if mapped is not None and mapped>=-1.:self.active_landmark=landmark
+  216             if mapped is not None and mapped < -1.:
+  217                 self.passed_stop_lines.record(landmark.id,self.stop_lines.get(str(landmark.id),[]),front)
+  218                 self.last_observation=dict(applicable=False,state='UNKNOWN',timestamp_s=timestamp_s,source='passed_mapped_stop_line')
+  219                 return dict(self.last_observation)
+  220         if hasattr(rgb,'detach'):rgb=rgb.detach().cpu().numpy()
+  221         if rgb.ndim==3 and rgb.shape[0]==3:rgb=rgb.transpose(1,2,0)
+  222         if rgb.max()<=1.:rgb=rgb*255.
+  223         rgb=np.ascontiguousarray(rgb.astype(np.uint8))
+  224         height,width=rgb.shape[:2]
+  225         pose_verified=camera_inverse is not None
+  226         inv=np.asarray(camera_inverse if pose_verified else self.camera.get_transform().get_inverse_matrix())
+  227         pose_verified=pose_verified and inv.shape==(4,4) and np.isfinite(inv).all()
+  228         if inv.shape!=(4,4) or not np.isfinite(inv).all():inv=np.eye(4)
+  229         loc=landmark.transform.location
+  230         point=inv@np.asarray([loc.x,loc.y,loc.z,1.])
+  231         focal=width/(2.*math.tan(math.radians(float(self.camera.attributes['fov']))/2.))
+  232         expected_x=width/2.+focal*point[1]/point[0] if point[0]>.1 else None
+  233         expected_y=height/2.-focal*point[2]/point[0] if point[0]>.1 else None
+  234         state='UNKNOWN';confidence=0.;boxes=[]
+  235         roi_bounds=None
+  236         if getattr(self,'state_classifier',None) is not None:
+  237             if pose_verified:state,confidence,boxes=self._observe_static_heads(str(landmark.id),rgb,inv)
+  238         elif expected_x is not None and -width*.2<=expected_x<=width*1.2:
+  239             # OpenDRIVE landmarks locate a signal assembly, not each small lamp.
+  240             radius=max(24.,focal*6./point[0])
+  241             xa=max(0,int(expected_x-radius));xb=min(width,int(expected_x+radius)+1)
+  242             ya=max(0,int(expected_y-focal*14./point[0]));yb=min(height,int(expected_y+focal*4./point[0])+1)
+  243             if xb<=xa or yb<=ya:
+  244                 self.last_observation=dict(applicable=True,signal_id=str(landmark.id),state='UNKNOWN',confidence=0.,
+  245                     stop_distance_m=stop_distance,timestamp_s=timestamp_s,
+  246                     source='rgb_static_opendrive_out_of_view',truth_state_access=False)
+  247                 return dict(self.last_observation)
+  248             roi_bounds=[xa,ya,xb,yb]
+  249             output=self.detector.predict(source=np.ascontiguousarray(rgb[ya:yb,xa:xb,::-1]),imgsz=640,
+  250                 conf=.15,classes=self.classes,device=self.device,verbose=False)[0]
+  251             for box in output.boxes:
+  252                 x1,y1,x2,y2=box.xyxy[0].detach().cpu().tolist()
+  253                 x1+=xa;x2+=xa;y1+=ya;y2+=ya
+  254                 crop=rgb[max(0,int(y1)):min(height,int(y2)+1),max(0,int(x1)):min(width,int(x2)+1)]
+  255                 color,score=classify_signal_crop(crop)
+  256                 boxes.append(dict(bbox=[x1,y1,x2,y2],state=color,color_confidence=score,detector_confidence=float(box.conf[0])))
+  257             valid=[b for b in boxes if b['state']!='UNKNOWN']
+  258             if valid and len({b['state'] for b in valid})==1:
+  259                 best=max(valid,key=lambda b:b['color_confidence']);state=best['state'];confidence=best['color_confidence']
+  260                 self.tracked_signal=dict(signal_id=str(landmark.id),state=state,bbox=best['bbox'],x=expected_x,y=expected_y,
+  261                     depth=float(point[0]),timestamp_s=timestamp_s)
+  262             elif not boxes and self.tracked_signal is not None:
+  263                 tracked=observe_tracked_lamp(rgb,self.tracked_signal,signal_id=str(landmark.id),
+  264                     x=expected_x,y=expected_y,depth=float(point[0]),timestamp_s=timestamp_s)
+  265                 if tracked is not None:
+  266                     state=tracked['state'];confidence=tracked['color_confidence'];boxes.append(tracked)
+  267         if stop_source=='stop_line_association_missing':state,confidence='UNKNOWN',0.
+  268         result=dict(applicable=True,signal_id=str(landmark.id),state=state,confidence=confidence,
+  269             stop_distance_m=stop_distance,stop_line_source=stop_source,timestamp_s=timestamp_s,
+  270             source='rgb_lamp_net_static_head' if getattr(self,'state_classifier',None) is not None else 'rgb_detector_color_static_opendrive',truth_state_access=False,
+  271             camera_pose_source='image_exposure' if pose_verified else 'unverified_current_pose',
+  272             expected_pixel_x=expected_x,expected_pixel_y=expected_y,roi_bounds=roi_bounds,
+  273             landmark_depth_m=float(point[0]),detections=boxes)
+  274         self.last_observation=result
+  275         if self.debug_directory and frame//10!=self.last_debug_bucket:
+  276             self.last_debug_bucket=frame//10
+  277             from pathlib import Path
+  278             import json
+  279             from PIL import Image
+  280             root=Path(self.debug_directory);root.mkdir(parents=True,exist_ok=True)
+  281             Image.fromarray(rgb).save(root/f'{frame}.png')
+  282             (root/f'{frame}.json').write_text(json.dumps(result,indent=2))
+  283         return result

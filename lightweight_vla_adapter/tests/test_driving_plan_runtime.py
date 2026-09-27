@@ -1,4 +1,5 @@
 from copy import deepcopy
+import pytest
 from lightweight_vla_adapter.src.driving_plan_runtime import DrivingPlanRuntime
 
 
@@ -21,6 +22,37 @@ def documents():
     return d,w,r
 
 
+@pytest.mark.parametrize('fault',[None,'stale','wrong_step','off_lane','stopped','gap','unhandled_condition'])
+def test_keep_lane_requires_fresh_centered_moving_execution(fault):
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    d['intent']['steps'][0].update(action='KEEP_LANE',parameters={},completion={'type':'ACTION_REACHED'})
+    if fault=='unhandled_condition':d['intent']['steps'][0]['parameters']={'until':'bus_stop'}
+    for i in range(12):
+        frame=f'f{i}';w['frame_id']=r['frame_id']=frame
+        evidence=dict(source_step_id='step_1',observation_frame_id=frame,
+            pid=dict(current_lane_id=-2,in_junction=False,lateral_error_m=.1,heading_error_deg=1.))
+        if fault=='stale':evidence['observation_frame_id']='old'
+        if fault=='wrong_step':evidence['source_step_id']='other'
+        if fault=='off_lane':evidence['pid']['lateral_error_m']=1.
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*(.5 if fault=='gap' else .1),
+            speed_mps=0. if fault=='stopped' else 2.,execution_state=evidence)
+        runtime.advance(w,r)
+    assert (runtime.state['step_states'][0]['status']=='COMPLETED') == (fault is None)
+
+
+@pytest.mark.parametrize('exit_yaw,entered,expected',[(2.,True,True),(90.,True,False),(0.,False,False)])
+def test_proceed_requires_observed_straight_junction_exit(exit_yaw,entered,expected):
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    d['intent']['steps'][0].update(action='PROCEED',parameters={'condition':'STRAIGHT_THROUGH_JUNCTION'},completion={'type':'ACTION_REACHED'})
+    for i in range(14):
+        frame=f'f{i}';w['frame_id']=r['frame_id']=frame
+        evidence=dict(source_step_id='step_1',observation_frame_id=frame,ego_heading_deg=0. if i<4 else exit_yaw,
+            pid=dict(current_lane_id=-2,in_junction=entered and i<4,lateral_error_m=.1,heading_error_deg=1.))
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=2.,execution_state=evidence)
+        runtime.advance(w,r)
+    assert (runtime.state['step_states'][0]['status']=='COMPLETED') == expected
+
+
 def test_graph_advances_only_after_actual_speed_completion():
     d,w,r=documents();runtime=DrivingPlanRuntime()
     for i,speed in enumerate([1.,4.,4.,4.,4.,4.,4.,4.]):
@@ -32,6 +64,41 @@ def test_graph_advances_only_after_actual_speed_completion():
         if i==6:assert active['step_id']=='step_2'
     assert runtime.state['step_states'][0]['status']=='COMPLETED'
     assert decision['source_step_id']=='step_2' and decision['action']=='stop'
+
+
+@pytest.mark.parametrize('direction,yaw,expected',[
+    ('RIGHT',90.,True),('LEFT',-90.,True),('RIGHT',-90.,False),
+    ('LEFT',90.,False),('RIGHT',0.,False)])
+def test_turn_completion_requires_observed_matching_direction(direction,yaw,expected):
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    d['intent']['steps'][0].update(action='TURN',parameters={'direction':direction,'target_location':{'x':10.,'y':10.}},
+                                 completion={'type':'JUNCTION_EXITED'})
+    for i in range(14):
+        frame=f'f{i}';w['frame_id']=r['frame_id']=frame
+        evidence=dict(source_step_id='step_1',observation_frame_id=frame,
+            ego_heading_deg=0. if i<4 else yaw,
+            pid=dict(in_junction=i<4,current_lane_id=-2,lateral_error_m=.1,heading_error_deg=1.))
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=2.,execution_state=evidence)
+        runtime.advance(w,r)
+    assert (runtime.state['step_states'][0]['status']=='COMPLETED') == expected
+
+
+@pytest.mark.parametrize('condition,fault,expected',[
+    ('PATH_CLEAR',None,True),('LEFT_LANE_SAFE',None,True),('RIGHT_LANE_SAFE',None,True),
+    ('PATH_CLEAR','gap',False),('PATH_CLEAR','risk',False),
+    ('LEFT_LANE_SAFE','unsafe_lane',False),('PEDESTRIAN_CLEAR',None,False)])
+def test_check_completion_uses_fresh_sustained_explicit_evidence(condition,fault,expected):
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    d['intent']['steps'][0].update(action='CHECK',parameters={'condition':condition},
+                                 completion={'type':'ACTION_REACHED'})
+    for i in range(14):
+        frame=f'f{i}';w['frame_id']=frame;r['frame_id']='old' if fault=='stale' else frame
+        r['risk_level']='high' if fault=='risk' else 'low'
+        r['recommended_action']='emergency_brake' if fault=='risk' else 'maintain_speed'
+        r['lane_change']={side:dict(is_safe=fault!='unsafe_lane',reason_codes=[]) for side in ('left','right')}
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*(.5 if fault=='gap' else .1),speed_mps=0.)
+        runtime.advance(w,r)
+    assert (runtime.state['step_states'][0]['status']=='COMPLETED') == expected
 
 
 def test_unobserved_condition_cannot_be_flattened_into_immediate_action():
@@ -67,3 +134,44 @@ def test_path_clear_uses_current_risk_evidence_and_recovers():
         runtime.prepare(d,frame_id=w['frame_id'],timestamp_s=i*.1,speed_mps=0.)
         runtime.advance(w,r)
         assert runtime.state['step_states'][0]['status']==('WAITING' if i==0 else 'ACTIVE')
+
+
+def test_transient_emergency_waits_then_recovers_same_step_and_speed():
+    d,w,r=documents()
+    d['intent']['steps'][0]['on_blocked']='SAFE_STOP'
+    runtime=DrivingPlanRuntime()
+    targets=[]
+    for i in range(10):
+        w['frame_id']=r['frame_id']=f'risk-{i}'
+        r['risk_level']='high' if i==1 else 'low'
+        r['recommended_action']='emergency_brake' if i==1 else 'maintain_speed'
+        runtime.prepare(d,frame_id=w['frame_id'],timestamp_s=i*.1,speed_mps=0.)
+        decision=runtime.advance(w,r)
+        targets.append(runtime.state['step_states'][0]['resolved_target_speed_kmh'])
+        assert runtime.state['active_step_id']=='step_1'
+        assert runtime.state['plan_status']=='ACTIVE'
+        if i==1:
+            assert decision['action']=='emergency_brake'
+            enforced,_=runtime.enforce_execution(dict(action='accelerate',emergency=False),decision)
+            assert enforced['action']=='emergency_brake' and enforced['emergency']
+        if 1<=i<7:
+            assert runtime.state['step_states'][0]['status']=='WAITING'
+            assert decision['decision_status']=='BLOCKED'
+        if i>=8:
+            assert decision['decision_status']=='READY'
+    assert len(set(targets))==1
+
+
+def test_risk_recovery_never_bypasses_missing_trigger_or_advances_step():
+    d,w,r=documents()
+    d['intent']['steps'][0]['trigger']={'type':'TARGET_VISIBLE','target_ref':'bus'}
+    runtime=DrivingPlanRuntime()
+    for i in range(20):
+        w['frame_id']=r['frame_id']=f'condition-{i}'
+        r['risk_level']='high' if i==0 else 'low'
+        r['recommended_action']='emergency_brake' if i==0 else 'maintain_speed'
+        runtime.prepare(d,frame_id=w['frame_id'],timestamp_s=i*.1,speed_mps=4.)
+        decision=runtime.advance(w,r)
+        assert decision['decision_status']=='BLOCKED'
+        assert runtime.state['active_step_id']=='step_1'
+        if i==0:assert decision['action']=='emergency_brake'

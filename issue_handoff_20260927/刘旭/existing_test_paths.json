@@ -1,0 +1,6 @@
+[
+  "experiment/CARLA/tests/test_lane_continuity.py",
+  "experiment/CARLA/tests/test_task_oracle.py",
+  "experiment/CARLA/tests/test_scene2_first_task_contract.py",
+  "experiment/CARLA/tests/test_task_geometry_binding.py"
+]

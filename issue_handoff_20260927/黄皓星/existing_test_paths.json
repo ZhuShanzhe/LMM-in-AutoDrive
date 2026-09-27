@@ -1,0 +1,5 @@
+[
+  "experiment/CARLA/tests/test_radar_ground_filter.py",
+  "experiment/CARLA/tests/test_map_signal_observer.py",
+  "experiment/CARLA/tests/test_model_rig_replay.py"
+]

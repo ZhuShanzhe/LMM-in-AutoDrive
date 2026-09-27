@@ -1,0 +1,22 @@
+    1 """Mandatory execution holds must not consume active instruction time."""
+    2 import math
+    3
+    4
+    5 def traffic_wait_feedback(request_id, timestamp_s, decision, traffic):
+    6     cap = traffic.get('speed_cap_kmh')
+    7     held = (traffic.get('active') is True
+    8             and traffic.get('status') == 'wait_for_observed_green'
+    9             and isinstance(cap, (int, float)) and math.isfinite(cap) and cap <= 0.
+   10             and decision.get('action') in ('stop', 'emergency_brake')
+   11             and float(decision.get('target_speed_kmh', 1.)) <= 0.)
+   12     return dict(request_id=request_id, observed_at_s=timestamp_s,
+   13                 safety_wait=held, reason='traffic_signal_hold' if held else None)
+   14
+   15
+   16 def matching_execution_wait(feedback, request_id, observed_at_s):
+   17     if not feedback or feedback.get('request_id') != request_id:
+   18         return False
+   19     stamp = feedback.get('observed_at_s')
+   20     return (isinstance(stamp, (int, float)) and math.isfinite(stamp)
+   21             and abs(stamp - observed_at_s) <= 1e-6
+   22             and feedback.get('safety_wait') is True)

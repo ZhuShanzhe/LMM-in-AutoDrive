@@ -1,0 +1,281 @@
+{
+  "scene_id": "scene_2",
+  "source_sha256": "90205e049b1b2e924b998852e88e3f42a13f44f012cb1a99eeb0ece554c2195b",
+  "geometry_binding": null,
+  "route_sha256": "de5f46a08ba8e8fde2feffc1e016dc4169927f1a5a3827b2c7ff01e3c9434a3d",
+  "run_metadata": {
+    "runner": {
+      "traffic_seed": 20260730,
+      "vla_enabled": true,
+      "external_ego_control": true,
+      "sensor_recording": false
+    },
+    "world_settings": {
+      "synchronous_mode": true,
+      "fixed_delta_seconds": 0.05,
+      "substepping": true,
+      "max_substep_delta_time": 0.01,
+      "max_substeps": 10,
+      "no_rendering_mode": false
+    }
+  },
+  "assessment_profile_sha256": {
+    "s2_t05_cmd_01": "4838f014d9118fd76b8af6e489be1e1ac27a4e2ed79497166068faa785ed8b12",
+    "s2_t05_cmd_02": "b00f8f47a7516d8b0b457c6e82772823ae77ff143251e1776e12529bd2ecd248",
+    "s2_t05_cmd_03": "f8942dd294dbb40731e139e5076162bf6b277d54e66f02ad72a2b8614d944aaa",
+    "s2_t05_cmd_04": "0411c710be0d84a643a17004edaea58cf5ea3293076876969b2e9d248405bb14",
+    "s2_t05_cmd_05": "1f28a61b9e41705a15b3c0c58e9047f3bbece81effad9fc6c7da33930218e92b",
+    "s2_t05_cmd_06": "bbe876e7bd9e3faec360473c4741cb0b963ab21e0505a61df5ae03e8eec63ad9",
+    "s2_t05_cmd_07": "148ca500d9c50b70f3c1a06025b9039efe1f4b6bf864cc48fd1349b9dd08baf9",
+    "s2_t05_cmd_08": "21a4e1cb8f5ee75231f5c3e3f89df10ac1ecc2c42dabe2de2535c2b6cb76e2bb",
+    "s2_t05_cmd_09": "bf3f21a4512d92fe6ea7e458d528be97573e6c1ebc9ed9cb595d55306a5c1689",
+    "s2_t05_cmd_10": "21764977136895b8e06e99367a241a30cad2acba6c9cf75be3dd885757ff5b83",
+    "s2_t05_cmd_11": "4bddd885725e14d14327ee534c7ea24f15856d0a57a2d14c20b7513644f4bbc2",
+    "s2_t05_cmd_12": "92b6082d8f2046dbd6413a10cba6c3b232b9bef2ca3e49ffc71d727b4934509d",
+    "s2_t05_cmd_13": "2d30293faf4ec33fcb3be6beb33e1cdc40738c5b22334925302363d2755745b5",
+    "s2_t05_cmd_14": "4adaca2027fc6cd5fe86c4eb9699e54c9c9f0db4c528469ebee45058e4c4cad1",
+    "s2_t05_cmd_15": "df7b389be8391c66b08f23b712dbf655edcdaea23c7aec2a313e0ab0e9c3648f"
+  },
+  "reproducibility_scope": "recorded inputs and settings; not deterministic trajectory certification",
+  "task_selector": "all",
+  "selected_task_ids": [
+    "s2_t05_cmd_01",
+    "s2_t05_cmd_02",
+    "s2_t05_cmd_03",
+    "s2_t05_cmd_04",
+    "s2_t05_cmd_05",
+    "s2_t05_cmd_06",
+    "s2_t05_cmd_07",
+    "s2_t05_cmd_08",
+    "s2_t05_cmd_09",
+    "s2_t05_cmd_10",
+    "s2_t05_cmd_11",
+    "s2_t05_cmd_12",
+    "s2_t05_cmd_13",
+    "s2_t05_cmd_14",
+    "s2_t05_cmd_15"
+  ],
+  "evidence_task_ids": [
+    "s2_t05_cmd_01",
+    "s2_t05_cmd_02",
+    "s2_t05_cmd_03",
+    "s2_t05_cmd_04",
+    "s2_t05_cmd_05",
+    "s2_t05_cmd_06",
+    "s2_t05_cmd_07",
+    "s2_t05_cmd_08",
+    "s2_t05_cmd_09",
+    "s2_t05_cmd_10",
+    "s2_t05_cmd_11",
+    "s2_t05_cmd_12",
+    "s2_t05_cmd_13",
+    "s2_t05_cmd_14",
+    "s2_t05_cmd_15"
+  ],
+  "map_name": "Carla/Maps/Town05_Opt",
+  "map_geometry_sha256": "7edc53b0be840e177598da7a4ed9571146d7b2595ce280d154c90f92e8a48851",
+  "ego_binding": {
+    "actor_id": 138,
+    "half_length_m": 1.852684736251831,
+    "half_width_m": 0.8943392634391785,
+    "initial_route_s_m": 0.0,
+    "offset_x_m": -2.1550803808167984e-07,
+    "offset_y_m": 0.00033205136423930526,
+    "box_yaw_deg": 0.0
+  },
+  "mode": "formal_runner_observer",
+  "policy_inputs": false,
+  "required_roles": {
+    "scene2_crosswalk_pedestrian": "walker.pedestrian.",
+    "scene2_compound_slow_vehicle": "vehicle.",
+    "scene2_bus_passenger_1": "walker.pedestrian.",
+    "scene2_bus_passenger_3": "walker.pedestrian.",
+    "scene2_bus_passenger_2": "walker.pedestrian.",
+    "scene2_slow_cyclist": "vehicle."
+  },
+  "safety_scope": [
+    "collision",
+    "solid_lane_marking"
+  ],
+  "captured_frames": 1800,
+  "final_route_s_m": 362.28674838561426,
+  "tasks": {
+    "s2_t05_cmd_01": {
+      "task_id": "s2_t05_cmd_01",
+      "status": "SCENE_INVALID",
+      "completed_steps": 0,
+      "reason": "invalid_observation: speed lane corridor does not cover current progress",
+      "instruction_status": "SCENE_INVALID",
+      "coverage": {
+        "status": "NOT_REVIEWED",
+        "missing": [
+          "semantic_coverage_review"
+        ]
+      }
+    },
+    "s2_t05_cmd_02": {
+      "task_id": "s2_t05_cmd_02",
+      "status": "SCENE_INVALID",
+      "completed_steps": 0,
+      "reason": "invalid_observation: lane ordinal unavailable in current map observation",
+      "instruction_status": "SCENE_INVALID",
+      "coverage": {
+        "status": "PARTIAL",
+        "missing": [
+          "all_background_actor_path_clearance",
+          "continuous_right_lane_requirement"
+        ]
+      }
+    },
+    "s2_t05_cmd_03": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_04": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_05": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_06": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_07": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_08": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_09": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_10": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_11": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_12": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_13": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_14": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "s2_t05_cmd_15": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    }
+  },
+  "prerequisite_tasks": {},
+  "success_count": 0,
+  "total_tasks": 15,
+  "recorded_criteria_pass_rate": 0.0,
+  "verified_instruction_success_count": 0,
+  "verified_completion_rate_lower_bound": 0.0,
+  "success_count_scope": "registered_criteria_not_full_instruction_semantics",
+  "assessed_tasks": 2,
+  "benchmark_ready": false,
+  "traffic_density": {
+    "status": "RECORDED",
+    "overall": {
+      "frames": 1800,
+      "minimum": {
+        "front_cone": 0,
+        "same_direction": 0,
+        "opposite_direction": 0,
+        "cross_direction": 0,
+        "ego_lane": 0
+      },
+      "maximum": {
+        "front_cone": 10,
+        "same_direction": 8,
+        "opposite_direction": 4,
+        "cross_direction": 6,
+        "ego_lane": 0
+      },
+      "mean": {
+        "front_cone": 3.2888888888888888,
+        "same_direction": 1.4222222222222223,
+        "opposite_direction": 0.8077777777777778,
+        "cross_direction": 1.058888888888889,
+        "ego_lane": 0.0
+      },
+      "below_three_front_actor_fraction": 0.58,
+      "empty_ego_lane_fraction": 1.0,
+      "scope": "sampled geometry only; not visual traffic acceptance"
+    },
+    "route_segments": [
+      {
+        "from_m": 0,
+        "until_m": 500,
+        "frames": 1800,
+        "minimum": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "maximum": {
+          "front_cone": 10,
+          "same_direction": 8,
+          "opposite_direction": 4,
+          "cross_direction": 6,
+          "ego_lane": 0
+        },
+        "mean": {
+          "front_cone": 3.2888888888888888,
+          "same_direction": 1.4222222222222223,
+          "opposite_direction": 0.8077777777777778,
+          "cross_direction": 1.058888888888889,
+          "ego_lane": 0.0
+        },
+        "below_three_front_actor_fraction": 0.58,
+        "empty_ego_lane_fraction": 1.0,
+        "scope": "sampled geometry only; not visual traffic acceptance"
+      }
+    ],
+    "population": "all_world_vehicles_including_task_actors",
+    "sampling": "each observed frame; frame weighted, not distance weighted"
+  },
+  "role_capture_errors": {},
+  "episode_safety": {
+    "status": "NO_RECORDED_VIOLATION",
+    "coverage": [
+      "collision",
+      "solid_lane_marking"
+    ],
+    "limitations": [
+      "no_transport_ack",
+      "red_light_and_other_violations_not_measured"
+    ]
+  },
+  "safety": {
+    "events": [],
+    "late_events": [],
+    "sealed": true,
+    "coverage": [
+      "collision",
+      "solid_lane_marking"
+    ],
+    "limitations": [
+      "no_transport_ack",
+      "red_light_and_other_violations_not_measured"
+    ]
+  },
+  "scope": "partial_formal_runner_assessment_not_full_acceptance"
+}

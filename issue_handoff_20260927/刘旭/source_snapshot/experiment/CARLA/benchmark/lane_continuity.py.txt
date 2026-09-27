@@ -1,0 +1,62 @@
+    1 """Truth-side lane-following corridor, independent of policy completion claims."""
+    2 import math
+    3
+    4 from .catalog import ConfigError
+    5 from .truth_capture import lane_key, angle_delta
+    6
+    7
+    8 def build_lane_corridor(world_map,route,start_m,location_factory,end_m=None):
+    9     result=trace_lane_corridor(world_map,route,start_m,location_factory,end_m)
+   10     if result['stop_reason']:
+   11         raise ConfigError(result['stop_reason'])
+   12     return result['lane_corridor']
+   13
+   14
+   15 def trace_lane_corridor(world_map,route,start_m,location_factory,end_m=None):
+   16     """Return only the proven prefix; the caller must reject observations beyond it."""
+   17     end_m=route[-1]['distance_m'] if end_m is None and route else end_m
+   18     if end_m is None or not math.isfinite(end_m) or end_m<=start_m:
+   19         raise ConfigError('lane corridor end must follow start')
+   20     index=max((i for i,p in enumerate(route) if p['distance_m']<=start_m),default=-1)
+   21     if index<0 or index>=len(route)-1:
+   22         raise ConfigError('lane corridor start outside route')
+   23     end_index=next((i for i in range(index+1,len(route)) if route[i]['distance_m']>=end_m),None)
+   24     if end_index is None:
+   25         raise ConfigError('lane corridor end outside route')
+   26     points=route[index:end_index+1]
+   27     waypoints=[]
+   28     segments=[]
+   29     stop_reason=None
+   30     for offset,point in enumerate(points):
+   31         location=location_factory(**{k:point[k] for k in ('x','y','z')})
+   32         nearest=world_map.get_waypoint(location)
+   33         wp=nearest
+   34         if waypoints:
+   35             distance=point['distance_m']-points[offset-1]['distance_m']
+   36             if not math.isfinite(distance) or not 0<distance<=10:
+   37                 raise ConfigError('lane corridor samples too sparse or unordered')
+   38             successors=waypoints[-1].next(distance)
+   39             if len(successors)!=1:
+   40                 stop_reason='lane corridor has ambiguous forward topology'
+   41                 break
+   42             wp=successors[0]
+   43         if wp is None or str(wp.lane_type)!='Driving':
+   44             raise ConfigError('lane corridor has no driving waypoint')
+   45         expected=f"{point['road_id']}:{point['section_id']}:{point['lane_id']}"
+   46         if lane_key(wp)!=expected or wp.transform.location.distance(location)>.75:
+   47             stop_reason='lane corridor route/map mismatch'
+   48             break
+   49         reference_yaw=point.get('yaw')
+   50         if reference_yaw is None and nearest is not None and lane_key(nearest)==expected:
+   51             reference_yaw=nearest.transform.rotation.yaw
+   52         if reference_yaw is not None and abs(angle_delta(wp.transform.rotation.yaw,reference_yaw))>10:
+   53             stop_reason='lane corridor heading mismatch'
+   54             break
+   55         if waypoints:
+   56             segments.append(dict(start_m=points[offset-1]['distance_m'],end_m=point['distance_m'],
+   57                                  lane_keys=list(dict.fromkeys([lane_key(waypoints[-1]),lane_key(wp)]))))
+   58         waypoints.append(wp)
+   59     if not segments:
+   60         raise ConfigError(stop_reason or 'lane corridor has no verified segment')
+   61     return dict(lane_corridor=segments,requested_end_m=end_m,
+   62                 verified_end_m=segments[-1]['end_m'],stop_reason=stop_reason)

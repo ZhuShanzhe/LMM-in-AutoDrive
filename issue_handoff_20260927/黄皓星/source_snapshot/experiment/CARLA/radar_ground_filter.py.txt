@@ -1,0 +1,81 @@
+    1 """Conservative local surface rejection from synchronized physical sensors."""
+    2
+    3 from copy import deepcopy
+    4 import math
+    5 import numpy as np
+    6 from scipy.spatial import cKDTree
+    7
+    8
+    9 def filter_ground(observation, lidar_world, sensor_matrix):
+   10     result = deepcopy(observation)
+   11     points = result.pop('_ground_candidates', [])
+   12     result.pop('_sensor_matrix', None)
+   13     result.pop('_filtered', None)
+   14     diagnostics = dict(status='unavailable', rejected=0, examined=0, retained_reasons={})
+   15     result['ground_filter'] = diagnostics
+   16     if lidar_world is None or sensor_matrix is None:
+   17         return result
+   18     cloud = np.asarray(lidar_world, dtype=float)
+   19     matrix = np.asarray(sensor_matrix, dtype=float)
+   20     cloud = cloud[np.isfinite(cloud).all(axis=1)]
+   21     if len(cloud) < 8 or matrix.shape != (4, 4) or not np.isfinite(matrix).all():
+   22         return result
+   23     tree = cKDTree(cloud[:, :2])
+   24     diagnostics['status'] = 'same_frame_local_plane'
+   25
+   26     def retain(reason):
+   27         counts=diagnostics['retained_reasons'];counts[reason]=counts.get(reason,0)+1
+   28         return False
+   29
+   30     def is_ground(item):
+   31         diagnostics['examined'] += 1
+   32         az, alt = np.deg2rad([item['azimuth_deg'], item['altitude_deg']])
+   33         ray = np.array([math.cos(alt)*math.cos(az), math.cos(alt)*math.sin(az), math.sin(alt)])
+   34         point = matrix[:3, :3] @ (ray*item['distance_m']) + matrix[:3, 3]
+   35         near = cloud[tree.query_ball_point(point[:2], 2.5)]
+   36         if len(near) < 8:
+   37             return retain('insufficient_support')
+   38         xy = near[:, :2]-point[:2]
+   39         # Require spatial support on both sides, not extrapolation from a wall.
+   40         if not ((xy.min(axis=0) < -.25).all() and (xy.max(axis=0) > .25).all()):
+   41             return retain('extrapolation')
+   42         a = np.column_stack([xy, np.ones(len(near))])
+   43         fit, _, rank, singular = np.linalg.lstsq(a, near[:, 2], rcond=None)
+   44         residual = a@fit-near[:, 2]
+   45         if (rank < 3 or singular[-1] <= 0 or singular[0]/singular[-1] > 100
+   46                 or np.linalg.norm(fit[:2]) > .25 or np.sqrt(np.mean(residual**2)) > .015
+   47                 or np.max(np.abs(residual)) > .04):
+   48             return retain('nonplanar_or_ill_conditioned')
+   49         # A roof/top surface must not become a ground hypothesis. Mixed
+   50         # ground/object neighborhoods fail the residual test above.
+   51         origin_surface = fit[2] + fit[:2] @ (matrix[:2, 3]-point[:2])
+   52         # Test the plane at the sensor origin, not the elevated distant
+   53         # return: a valid uphill road can rise above the sensor's own height.
+   54         if not .5 <= matrix[2, 3]-origin_surface <= 2.5:
+   55             return retain('surface_above_ground_band')
+   56         if abs(point[2]-fit[2]) > .02:return retain('above_surface')
+   57         return True
+   58
+   59     kept = []
+   60     for item in points:
+   61         if is_ground(item):
+   62             diagnostics['rejected'] += 1
+   63         else:
+   64             kept.append(item)
+   65     result['tracking_points'] = [{k: p[k] for k in ('distance_m', 'relative_velocity_mps', 'azimuth_deg', 'altitude_deg')} for p in kept]
+   66     obstacles = [p for p in kept if abs(p['azimuth_deg']) <= 8]
+   67     bins = {}
+   68     for p in obstacles:
+   69         key = round(p['azimuth_deg'])
+   70         if key not in bins or p['distance_m'] < bins[key]['distance_m']:
+   71             bins[key] = p
+   72     result['azimuth_obstacle_bins'] = [bins[k] for k in sorted(bins)]
+   73     closing = [p for p in obstacles if p['closing_speed_mps'] > .5]
+   74     nearest = min(obstacles, key=lambda p:p['distance_m'], default={})
+   75     approaching = min(closing, key=lambda p:p['distance_m'], default={})
+   76     result.update(obstacle_candidate_count=len(obstacles), closing_candidate_count=len(closing),
+   77         nearest_distance_m=nearest.get('distance_m'), nearest_relative_velocity_mps=nearest.get('relative_velocity_mps'),
+   78         nearest_azimuth_deg=nearest.get('azimuth_deg'), nearest_relative_height_m=nearest.get('relative_height_m'),
+   79         nearest_altitude_deg=nearest.get('altitude_deg'), nearest_closing_distance_m=approaching.get('distance_m'),
+   80         nearest_closing_velocity_mps=approaching.get('closing_speed_mps'))
+   81     return result

@@ -1,0 +1,90 @@
+{
+  "PEDESTRIAN_CLEAR": {
+    "plan": {
+      "schema_version": "1.1.0",
+      "request_id": "vla-test-0001",
+      "revision": 14,
+      "plan_status": "ACTIVE",
+      "active_step_index": 0,
+      "active_step_id": "step_1",
+      "step_states": [
+        {
+          "step_id": "step_1",
+          "action": "WAIT",
+          "status": "ACTIVE",
+          "activation_frame_id": "probe_0",
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        }
+      ],
+      "last_frame_id": "probe_14",
+      "last_feedback_outcome": "CONTINUE",
+      "reason_codes": []
+    },
+    "scope": "low risk alone; no actor-clear evidence injected"
+  },
+  "PASSENGERS_CLEAR": {
+    "plan": {
+      "schema_version": "1.1.0",
+      "request_id": "vla-test-0001",
+      "revision": 14,
+      "plan_status": "ACTIVE",
+      "active_step_index": 0,
+      "active_step_id": "step_1",
+      "step_states": [
+        {
+          "step_id": "step_1",
+          "action": "WAIT",
+          "status": "ACTIVE",
+          "activation_frame_id": "probe_0",
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        }
+      ],
+      "last_frame_id": "probe_14",
+      "last_feedback_outcome": "CONTINUE",
+      "reason_codes": []
+    },
+    "scope": "low risk alone; no actor-clear evidence injected"
+  },
+  "conditions_used": {
+    "s2_t05_cmd_01": [],
+    "s2_t05_cmd_02": [
+      "CHECK:PATH_CLEAR"
+    ],
+    "s2_t05_cmd_03": [],
+    "s2_t05_cmd_04": [
+      "WAIT:PEDESTRIAN_CLEAR"
+    ],
+    "s2_t05_cmd_05": [
+      "WAIT:PASSENGERS_CLEAR"
+    ],
+    "s2_t05_cmd_06": [
+      "WAIT:PASSENGERS_CLEAR",
+      "CHECK:PATH_CLEAR"
+    ],
+    "s2_t05_cmd_07": [],
+    "s2_t05_cmd_08": [
+      "CONFIRM:CYCLIST_PASSED"
+    ],
+    "s2_t05_cmd_09": [],
+    "s2_t05_cmd_10": [
+      "CHECK:PATH_CLEAR"
+    ],
+    "s2_t05_cmd_11": [],
+    "s2_t05_cmd_12": [
+      "CHECK:LEFT_LANE_SAFE"
+    ],
+    "s2_t05_cmd_13": [],
+    "s2_t05_cmd_14": [
+      "CHECK:CROSSWALK_CLEAR"
+    ],
+    "s2_t05_cmd_15": [
+      "CHECK:PATH_CLEAR"
+    ]
+  }
+}

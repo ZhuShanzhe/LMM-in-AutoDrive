@@ -1,0 +1,349 @@
+{
+  "scene_id": "scene_1",
+  "source_sha256": "befa5b6bf189acaabfb96567913a3cc15cfb6eaf576b7fd1b6ff7da3988975af",
+  "geometry_binding": {
+    "source_sha256": "46384ea50c9028a69cb94a862b41c436155d94a1a06918aae85dcf6380b4b96c",
+    "map_sha256": "4dddd1560ab7812b0e89cd4a523d8b6f2b93947eafb496d9eeb83cc772116c85",
+    "map_name": "Carla/Maps/Town04_Opt",
+    "attempts": 119,
+    "distance_anchors": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        1300.0,
+        1250.0
+      ],
+      [
+        1450.0,
+        1400.0
+      ],
+      [
+        3085.0,
+        2205.0
+      ],
+      [
+        5000.0,
+        5000.0
+      ]
+    ],
+    "scope": "map_bound_task_layout_not_original_fixed_mileage_benchmark",
+    "preflight": {
+      "selected_candidate_position": 0,
+      "selected_spawn_location": {
+        "x": -16.895,
+        "y": -212.454,
+        "z": 1.0
+      },
+      "applied_directives": [
+        {
+          "distance_m": 2205.0,
+          "action": "turn_left",
+          "id": "c07_turn_left",
+          "applied_distance_m": 2205.0,
+          "entry_road_id": 38,
+          "selected_road_id": 1601,
+          "entry_yaw_deg": 330.206
+        }
+      ],
+      "continuity_horizon_m": 5000.0,
+      "max_uncommanded_heading_delta_deg": 50.0,
+      "turn_evidence": [
+        {
+          "id": "c07_turn_left",
+          "action": "turn_left",
+          "entry_distance_m": 2205.0,
+          "entry_road_id": 38,
+          "exit_road_id": 37,
+          "heading_change_deg": -47.733,
+          "junction_observed": true
+        }
+      ],
+      "corridor_evidence": {
+        "valid": true,
+        "start_outside_junction": true,
+        "minimum_required_lanes": 3,
+        "sample_step_m": 50.0,
+        "multilane_fraction": 0.7723,
+        "minimum_multilane_route_fraction": 0.45,
+        "lane_change_windows": [
+          {
+            "command_id": "c04_change_left",
+            "start_m": 750.0,
+            "end_m": 1250.0,
+            "minimum_observed_lanes": 4,
+            "valid": true
+          },
+          {
+            "command_id": "c05_change_right",
+            "start_m": 900.0,
+            "end_m": 1400.0,
+            "minimum_observed_lanes": 4,
+            "valid": true
+          }
+        ]
+      }
+    },
+    "displacement_cost_m": 980.0,
+    "search_candidates": 1050
+  },
+  "route_sha256": "2f7650a9dd4428041e77dc08ea7c231892199163b00809b6a86dd6c32bff3bfd",
+  "run_metadata": {
+    "runner": {
+      "decision_source": "vla_scene_bridge",
+      "target_speed_kmh": 25.0,
+      "sensor_recording": false
+    },
+    "world_settings": {
+      "synchronous_mode": true,
+      "fixed_delta_seconds": 0.05,
+      "substepping": true,
+      "max_substep_delta_time": 0.01,
+      "max_substeps": 10,
+      "no_rendering_mode": false
+    }
+  },
+  "assessment_profile_sha256": {
+    "c01_depart_45": "3e56f7ff25b38b53618616b6fd21ff299846c17887cdacf42143e01ef6072bc9",
+    "c02_cruise_60": "4f5096658c9eb8b04b50e9d5d4ca0c616b79fa4ae1cc6c67fa72af66b28f15c8",
+    "c03_reduce_for_right_turn": "404f8ad7831d2579bde6f89dbc596f50bfd35537c4efeb9c26dab43253f9a7dd",
+    "c08_keep_50": "a0becf80bd22bbc87b230880720ee9efa60bff895c54932cd7145319230272c3",
+    "c04_change_left": "67ed96bf6a7ab244d7dbef349e7c00c7d107499690a9ea9cf29b0db5250fc8ca",
+    "c05_change_right": "2955f621626f5e82e0c3a3922560512fde74a79043179f869dcb903b70ccf04f",
+    "c06_hold_45": "b3f35f31a0b2d3ead0ac538afb419a41d60232a69a150a94c1ecf62b6c2d85ce",
+    "c11_accelerate_50": "391e6dcbea28a61c15e58824112a39ac707dc61c7b87f93a3ed970ab4ecf49cb",
+    "c09_reduce_for_turn": "9f6f6b88a424f3b2e77e72191c8e6ac7ebd49b3b8153f2b53c24798fe52f80b6",
+    "c07_turn_left": "39f64a9ea7d9c204c22e639216cd866eaca247a2cb1982e4a3dfaf9ae6a2ee3d",
+    "c10_keep_35": "2589a0ef1cd6c6588c85630a114065bb5081fec9f72f6d80fbcf06968dba2458",
+    "c12_keep_50": "97fb131071437efe312381e6cd7189ce4d56a80088baa8995180b1c6888cdd49",
+    "c13_reduce_45": "e267003e008f8cb4aff70198b4713f486670de8afdeb8291f2ba91881199405b",
+    "c14_reduce_40_final": "a64add399a6b3acfffe9e6a217750b563642ff10af5a8aafbf70b4d758ac9eb3",
+    "c15_keep_to_goal": "20ae316e65de505958a497ab5832b7459ed9af845a533930a694f162f10ba626"
+  },
+  "reproducibility_scope": "recorded inputs and settings; not deterministic trajectory certification",
+  "task_selector": "all",
+  "selected_task_ids": [
+    "c01_depart_45",
+    "c02_cruise_60",
+    "c03_reduce_for_right_turn",
+    "c08_keep_50",
+    "c04_change_left",
+    "c05_change_right",
+    "c06_hold_45",
+    "c11_accelerate_50",
+    "c09_reduce_for_turn",
+    "c07_turn_left",
+    "c10_keep_35",
+    "c12_keep_50",
+    "c13_reduce_45",
+    "c14_reduce_40_final",
+    "c15_keep_to_goal"
+  ],
+  "evidence_task_ids": [
+    "c01_depart_45",
+    "c02_cruise_60",
+    "c03_reduce_for_right_turn",
+    "c08_keep_50",
+    "c04_change_left",
+    "c05_change_right",
+    "c06_hold_45",
+    "c11_accelerate_50",
+    "c09_reduce_for_turn",
+    "c07_turn_left",
+    "c10_keep_35",
+    "c12_keep_50",
+    "c13_reduce_45",
+    "c14_reduce_40_final",
+    "c15_keep_to_goal"
+  ],
+  "map_name": "Carla/Maps/Town04_Opt",
+  "map_geometry_sha256": "4dddd1560ab7812b0e89cd4a523d8b6f2b93947eafb496d9eeb83cc772116c85",
+  "ego_binding": {
+    "actor_id": 393,
+    "half_length_m": 2.3958897590637207,
+    "half_width_m": 1.081725001335144,
+    "initial_route_s_m": 0,
+    "offset_x_m": 0.029218975454568863,
+    "offset_y_m": -7.390976008991856e-08,
+    "box_yaw_deg": 0.0
+  },
+  "mode": "formal_runner_observer",
+  "policy_inputs": false,
+  "required_roles": {},
+  "safety_scope": [
+    "collision",
+    "solid_lane_marking"
+  ],
+  "captured_frames": 800,
+  "final_route_s_m": 135.83917986474816,
+  "tasks": {
+    "c01_depart_45": {
+      "task_id": "c01_depart_45",
+      "status": "SCENE_INVALID",
+      "completed_steps": 0,
+      "reason": "observation_stream_ended",
+      "instruction_status": "SCENE_INVALID",
+      "coverage": {
+        "status": "NOT_REVIEWED",
+        "missing": [
+          "semantic_coverage_review"
+        ]
+      }
+    },
+    "c02_cruise_60": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c03_reduce_for_right_turn": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c08_keep_50": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c04_change_left": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c05_change_right": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c06_hold_45": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c11_accelerate_50": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c09_reduce_for_turn": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c07_turn_left": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c10_keep_35": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c12_keep_50": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c13_reduce_45": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c14_reduce_40_final": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "c15_keep_to_goal": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    }
+  },
+  "prerequisite_tasks": {},
+  "success_count": 0,
+  "total_tasks": 15,
+  "recorded_criteria_pass_rate": 0.0,
+  "verified_instruction_success_count": 0,
+  "verified_completion_rate_lower_bound": 0.0,
+  "success_count_scope": "registered_criteria_not_full_instruction_semantics",
+  "assessed_tasks": 1,
+  "benchmark_ready": false,
+  "traffic_density": {
+    "status": "RECORDED",
+    "overall": {
+      "frames": 800,
+      "minimum": {
+        "front_cone": 0,
+        "same_direction": 0,
+        "opposite_direction": 0,
+        "cross_direction": 0,
+        "ego_lane": 0
+      },
+      "maximum": {
+        "front_cone": 8,
+        "same_direction": 8,
+        "opposite_direction": 0,
+        "cross_direction": 1,
+        "ego_lane": 0
+      },
+      "mean": {
+        "front_cone": 1.37125,
+        "same_direction": 1.32,
+        "opposite_direction": 0.0,
+        "cross_direction": 0.05125,
+        "ego_lane": 0.0
+      },
+      "below_three_front_actor_fraction": 0.77625,
+      "empty_ego_lane_fraction": 1.0,
+      "scope": "sampled geometry only; not visual traffic acceptance"
+    },
+    "route_segments": [
+      {
+        "from_m": 0,
+        "until_m": 500,
+        "frames": 800,
+        "minimum": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "maximum": {
+          "front_cone": 8,
+          "same_direction": 8,
+          "opposite_direction": 0,
+          "cross_direction": 1,
+          "ego_lane": 0
+        },
+        "mean": {
+          "front_cone": 1.37125,
+          "same_direction": 1.32,
+          "opposite_direction": 0.0,
+          "cross_direction": 0.05125,
+          "ego_lane": 0.0
+        },
+        "below_three_front_actor_fraction": 0.77625,
+        "empty_ego_lane_fraction": 1.0,
+        "scope": "sampled geometry only; not visual traffic acceptance"
+      }
+    ],
+    "population": "all_world_vehicles_including_task_actors",
+    "sampling": "each observed frame; frame weighted, not distance weighted"
+  },
+  "role_capture_errors": {},
+  "episode_safety": {
+    "status": "NO_RECORDED_VIOLATION",
+    "coverage": [
+      "collision",
+      "solid_lane_marking"
+    ],
+    "limitations": [
+      "no_transport_ack",
+      "red_light_and_other_violations_not_measured"
+    ]
+  },
+  "safety": {
+    "events": [],
+    "late_events": [],
+    "sealed": true,
+    "coverage": [
+      "collision",
+      "solid_lane_marking"
+    ],
+    "limitations": [
+      "no_transport_ack",
+      "red_light_and_other_violations_not_measured"
+    ]
+  },
+  "scope": "partial_formal_runner_assessment_not_full_acceptance"
+}

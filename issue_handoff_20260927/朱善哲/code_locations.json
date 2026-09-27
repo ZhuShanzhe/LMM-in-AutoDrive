@@ -1,0 +1,270 @@
+[
+  {
+    "path": "lightweight_vla_adapter/src/pipeline.py",
+    "sha256": "ca9552b724d86f049fd8dde1fbffceb3cc7fc6eff489eaf71f0224fe704bb622",
+    "symbols": [
+      {
+        "symbol": "decode_visual_risk_assessment",
+        "line": 19,
+        "end_line": 102
+      },
+      {
+        "symbol": "LightweightVLAPipeline",
+        "line": 105,
+        "end_line": 440
+      },
+      {
+        "symbol": "__init__",
+        "line": 106,
+        "end_line": 128
+      },
+      {
+        "symbol": "_move",
+        "line": 130,
+        "end_line": 161
+      },
+      {
+        "symbol": "_model_inputs",
+        "line": 164,
+        "end_line": 176
+      },
+      {
+        "symbol": "_risk_history_tensor",
+        "line": 178,
+        "end_line": 182
+      },
+      {
+        "symbol": "predict_proposal",
+        "line": 184,
+        "end_line": 290
+      },
+      {
+        "symbol": "predict_visual_risk",
+        "line": 292,
+        "end_line": 326
+      },
+      {
+        "symbol": "last_visual_risk_assessment",
+        "line": 329,
+        "end_line": 332
+      },
+      {
+        "symbol": "last_raw_proposal",
+        "line": 335,
+        "end_line": 338
+      },
+      {
+        "symbol": "last_network_proposal",
+        "line": 341,
+        "end_line": 344
+      },
+      {
+        "symbol": "reset_temporal_state",
+        "line": 346,
+        "end_line": 348
+      },
+      {
+        "symbol": "warmup",
+        "line": 350,
+        "end_line": 359
+      },
+      {
+        "symbol": "decide",
+        "line": 361,
+        "end_line": 391
+      },
+      {
+        "symbol": "from_checkpoint",
+        "line": 394,
+        "end_line": 440
+      },
+      {
+        "symbol": "floating",
+        "line": 131,
+        "end_line": 132
+      },
+      {
+        "symbol": "images",
+        "line": 134,
+        "end_line": 136
+      }
+    ]
+  },
+  {
+    "path": "experiment/CARLA/universal_vla_controller.py",
+    "sha256": "6d829618592d80d94a0be777038e61bab505d03999dfd55ef1905771445e9ca5",
+    "symbols": [
+      {
+        "symbol": "_speed_mps",
+        "line": 52,
+        "end_line": 58
+      },
+      {
+        "symbol": "filter_forward_radar_to_route_corridor",
+        "line": 61,
+        "end_line": 191
+      },
+      {
+        "symbol": "fuse_forward_radar_risk",
+        "line": 194,
+        "end_line": 267
+      },
+      {
+        "symbol": "assess_rear_radar_collision",
+        "line": 270,
+        "end_line": 329
+      },
+      {
+        "symbol": "apply_directional_collision_response",
+        "line": 332,
+        "end_line": 438
+      },
+      {
+        "symbol": "build_sensor_policy_state",
+        "line": 441,
+        "end_line": 483
+      },
+      {
+        "symbol": "vehicle_state_tensor",
+        "line": 486,
+        "end_line": 513
+      },
+      {
+        "symbol": "resolve_sensor_tick",
+        "line": 516,
+        "end_line": 523
+      },
+      {
+        "symbol": "environment_feature_tensor",
+        "line": 526,
+        "end_line": 558
+      },
+      {
+        "symbol": "is_initial_sensor_warmup_error",
+        "line": 561,
+        "end_line": 568
+      },
+      {
+        "symbol": "UniversalVLAController",
+        "line": 571,
+        "end_line": 1738
+      },
+      {
+        "symbol": "distance_to_segment",
+        "line": 98,
+        "end_line": 116
+      },
+      {
+        "symbol": "__init__",
+        "line": 574,
+        "end_line": 805
+      },
+      {
+        "symbol": "_warmup_adapter_before_ready",
+        "line": 807,
+        "end_line": 832
+      },
+      {
+        "symbol": "_lane_command_observation",
+        "line": 834,
+        "end_line": 878
+      },
+      {
+        "symbol": "predict_target_lane_risk",
+        "line": 880,
+        "end_line": 920
+      },
+      {
+        "symbol": "_progress_m",
+        "line": 922,
+        "end_line": 923
+      },
+      {
+        "symbol": "active_command",
+        "line": 925,
+        "end_line": 930
+      },
+      {
+        "symbol": "_decide",
+        "line": 932,
+        "end_line": 1575
+      },
+      {
+        "symbol": "run_step",
+        "line": 1577,
+        "end_line": 1647
+      },
+      {
+        "symbol": "apply_control",
+        "line": 1649,
+        "end_line": 1653
+      },
+      {
+        "symbol": "overlay",
+        "line": 1655,
+        "end_line": 1656
+      },
+      {
+        "symbol": "summary",
+        "line": 1658,
+        "end_line": 1723
+      },
+      {
+        "symbol": "close",
+        "line": 1725,
+        "end_line": 1738
+      }
+    ]
+  },
+  {
+    "path": "lightweight_vla_adapter/src/decision_adapter.py",
+    "sha256": "1f4f31ccdd9f9a2241404da7b22b0a374a1398d21f9ed750ba36e660bdf4c685",
+    "symbols": [
+      {
+        "symbol": "_valid_token_count",
+        "line": 16,
+        "end_line": 18
+      },
+      {
+        "symbol": "CrossAttentionBlock",
+        "line": 21,
+        "end_line": 59
+      },
+      {
+        "symbol": "AdapterOutput",
+        "line": 63,
+        "end_line": 80
+      },
+      {
+        "symbol": "LightweightDecisionAdapter",
+        "line": 83,
+        "end_line": 455
+      },
+      {
+        "symbol": "decode_proposal",
+        "line": 458,
+        "end_line": 504
+      },
+      {
+        "symbol": "__init__",
+        "line": 22,
+        "end_line": 41
+      },
+      {
+        "symbol": "forward",
+        "line": 43,
+        "end_line": 59
+      },
+      {
+        "symbol": "__init__",
+        "line": 86,
+        "end_line": 220
+      },
+      {
+        "symbol": "forward",
+        "line": 222,
+        "end_line": 455
+      }
+    ]
+  }
+]

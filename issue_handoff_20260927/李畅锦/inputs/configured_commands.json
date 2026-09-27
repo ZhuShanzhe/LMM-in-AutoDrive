@@ -1,0 +1,234 @@
+{
+  "scope": "configured execution contract, not independent language gold labels",
+  "commands": [
+    {
+      "id": "s2_t05_cmd_01",
+      "announce_at_m": 0.0,
+      "text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+      "spoken_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+      "category": "NAVIGATION",
+      "urgency": "NORMAL",
+      "steps": [
+        "KEEP_LANE",
+        "SET_SPEED:12.50mps",
+        "TURN:RIGHT",
+        "KEEP_LANE"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_02",
+      "announce_at_m": 350.0,
+      "text": "确认前方道路安全，保持右侧车道，并恢复到50公里每小时继续行驶。",
+      "spoken_text": "确认前方道路安全，保持右侧车道，并恢复到50公里每小时继续行驶。",
+      "category": "NAVIGATION",
+      "urgency": "NORMAL",
+      "steps": [
+        "CHECK:PATH_CLEAR",
+        "KEEP_LANE:RIGHT",
+        "SET_SPEED:13.89mps",
+        "PROCEED"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_03",
+      "announce_at_m": 800.0,
+      "text": "前方有慢车且路口有横穿行人，先减速礼让行人，确认安全后向左变道超越慢车。",
+      "spoken_text": "前方有慢车且路口有横穿行人，先减速礼让行人，确认安全后向左变道超越慢车。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "URGENT",
+      "steps": [
+        "YIELD:PEDESTRIAN",
+        "ADJUST_SPEED:DECREASE",
+        "CHANGE_LANE:LEFT_WHEN_SAFE",
+        "OVERTAKE:SLOW_VEHICLE"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_04",
+      "announce_at_m": 980.0,
+      "text": "确认行人离开车道后安全返回右侧车道，并恢复到45公里每小时。",
+      "spoken_text": "确认行人离开车道后安全返回右侧车道，并恢复到45公里每小时。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": [
+        "WAIT:PEDESTRIAN_CLEAR",
+        "CHANGE_LANE:RETURN_WHEN_SAFE",
+        "SET_SPEED:12.50mps"
+      ],
+      "requires_event_states": {
+        "crosswalk_pedestrian": "RESOLVED"
+      }
+    },
+    {
+      "id": "s2_t05_cmd_05",
+      "announce_at_m": 1000.0,
+      "text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续行驶。",
+      "spoken_text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续行驶。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": [
+        "PULL_OVER:RIGHT",
+        "SET_SPEED:8.33mps",
+        "WAIT:PASSENGERS_CLEAR",
+        "PROCEED"
+      ],
+      "requires_event_states": {
+        "crosswalk_pedestrian": "RESOLVED"
+      }
+    },
+    {
+      "id": "s2_t05_cmd_06",
+      "announce_at_m": 1180.0,
+      "text": "等待乘客离开车道，确认道路安全后保持右侧车道继续行驶。",
+      "spoken_text": "等待乘客离开车道，确认道路安全后保持右侧车道继续行驶。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": [
+        "WAIT:PASSENGERS_CLEAR",
+        "CHECK:PATH_CLEAR",
+        "KEEP_LANE:RIGHT",
+        "PROCEED"
+      ],
+      "requires_event_states": {
+        "bus_stop_passengers": "RESOLVED"
+      }
+    },
+    {
+      "id": "s2_t05_cmd_07",
+      "announce_at_m": 1500.0,
+      "text": "右侧有自行车，减速并向左避让，超过后回到右侧车道。",
+      "spoken_text": "右侧有自行车，减速并向左避让，超过后回到右侧车道。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": [
+        "ADJUST_SPEED:DECREASE",
+        "CHANGE_LANE:LEFT_WHEN_SAFE",
+        "PASS_BY:CYCLIST",
+        "CHANGE_LANE:RIGHT_WHEN_SAFE"
+      ],
+      "requires_event_states": {
+        "bus_stop_passengers": "RESOLVED"
+      }
+    },
+    {
+      "id": "s2_t05_cmd_08",
+      "announce_at_m": 1775.0,
+      "text": "确认已安全超过自行车并返回右侧车道，保持安全车距继续行驶。",
+      "spoken_text": "确认已安全超过自行车并返回右侧车道，保持安全车距继续行驶。",
+      "category": "NAVIGATION",
+      "urgency": "NORMAL",
+      "steps": [
+        "CONFIRM:CYCLIST_PASSED",
+        "CHANGE_LANE:RIGHT_WHEN_SAFE",
+        "KEEP_SAFE_DISTANCE",
+        "PROCEED"
+      ],
+      "requires_event_states": {
+        "slow_cyclist": "RESOLVED"
+      }
+    },
+    {
+      "id": "s2_t05_cmd_09",
+      "announce_at_m": 1950.0,
+      "text": "前方十字路口直行，通过后安全进入左侧车道并保持40公里每小时。",
+      "spoken_text": "前方十字路口直行，通过后安全进入左侧车道并保持40公里每小时。",
+      "category": "NAVIGATION",
+      "urgency": "NORMAL",
+      "steps": [
+        "PROCEED:STRAIGHT_THROUGH_JUNCTION",
+        "CHANGE_LANE:LEFT_WHEN_SAFE",
+        "SET_SPEED:11.11mps"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_10",
+      "announce_at_m": 2500.0,
+      "text": "通过路口并完成变道后保持当前车道，确认前方安全并恢复到45公里每小时。",
+      "spoken_text": "通过路口并完成变道后保持当前车道，确认前方安全并恢复到45公里每小时。",
+      "category": "NAVIGATION",
+      "urgency": "NORMAL",
+      "steps": [
+        "COMPLETE:JUNCTION",
+        "COMPLETE:LANE_CHANGE",
+        "KEEP_LANE",
+        "CHECK:PATH_CLEAR",
+        "SET_SPEED:12.50mps"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_11",
+      "announce_at_m": 3900.0,
+      "text": "前方路口右转前减速至30公里每小时，右转后保持当前车道。",
+      "spoken_text": "前方路口右转前减速至30公里每小时，右转后保持当前车道。",
+      "category": "NAVIGATION",
+      "urgency": "NORMAL",
+      "steps": [
+        "SET_SPEED:8.33mps",
+        "TURN:RIGHT",
+        "KEEP_LANE"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_12",
+      "announce_at_m": 4450.0,
+      "text": "确认左侧安全后向左变道，保持安全车距，确认安全后返回原车道。",
+      "spoken_text": "确认左侧安全后向左变道，保持安全车距，确认安全后返回原车道。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": [
+        "CHECK:LEFT_LANE_SAFE",
+        "CHANGE_LANE:LEFT",
+        "KEEP_SAFE_DISTANCE",
+        "CHANGE_LANE:RETURN_WHEN_SAFE"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_13",
+      "announce_at_m": 5200.0,
+      "route_alignment_horizon_m": 600.0,
+      "text": "保持安全车距，前方先右转，随后直行通过路口，再次右转后恢复到45公里每小时。",
+      "spoken_text": "保持安全车距，前方先右转，随后直行通过路口，再次右转后恢复到45公里每小时。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "NORMAL",
+      "steps": [
+        "KEEP_SAFE_DISTANCE",
+        "TURN:RIGHT",
+        "PROCEED:STRAIGHT_THROUGH_JUNCTION",
+        "TURN:RIGHT",
+        "SET_SPEED:12.50mps"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_14",
+      "announce_at_m": 6100.0,
+      "route_alignment_horizon_m": 400.0,
+      "text": "减速至30公里每小时，确认横道及路口安全后直行通过并保持当前车道。",
+      "spoken_text": "减速至30公里每小时，确认横道及路口安全后直行通过并保持当前车道。",
+      "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+      "urgency": "URGENT",
+      "steps": [
+        "SET_SPEED:8.33mps",
+        "CHECK:CROSSWALK_CLEAR",
+        "PROCEED:STRAIGHT_THROUGH_JUNCTION",
+        "KEEP_LANE"
+      ]
+    },
+    {
+      "id": "s2_t05_cmd_15",
+      "announce_at_m": 7000.0,
+      "route_alignment_horizon_m": 800.0,
+      "text": "确认道路安全后直行通过前方路口，随后右转，再通过下一个右转后以45公里每小时行驶至终点。",
+      "spoken_text": "确认道路安全后直行通过前方路口，随后右转，再通过下一个右转后以45公里每小时行驶至终点。",
+      "category": "NAVIGATION",
+      "urgency": "NORMAL",
+      "steps": [
+        "CHECK:PATH_CLEAR",
+        "PROCEED:STRAIGHT_THROUGH_JUNCTION",
+        "TURN:RIGHT",
+        "TURN:RIGHT",
+        "SET_SPEED:12.50mps",
+        "PROCEED:FINISH"
+      ]
+    }
+  ]
+}

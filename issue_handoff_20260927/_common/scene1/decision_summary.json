@@ -1,0 +1,64 @@
+{
+  "counts": {
+    "valid_decisions": 267
+  },
+  "reasons": {},
+  "raw_actions": {
+    "accelerate": 249,
+    "stop": 3,
+    "decelerate": 11,
+    "keep_lane": 4
+  },
+  "active_steps": {
+    "None": 267
+  },
+  "max_observed_speed_kmh": 41.42864958887676,
+  "last_route_s_m": 135.571,
+  "last_plan": null,
+  "last_dispatch": {
+    "mode": "route_latest"
+  },
+  "last_decision": {
+    "schema_version": "1.0.0",
+    "request_id": "unified-8132",
+    "frame_id": "carla_8132",
+    "decision_status": "READY",
+    "action": "accelerate",
+    "target_speed_kmh": 10.727504,
+    "target_lane": null,
+    "target_location": null,
+    "emergency": false,
+    "reason": "vla_accepted_phase-recovery-epoch_06",
+    "parse_status": "VALID",
+    "parse_confidence": 1.0,
+    "source_step_id": "step_1",
+    "source_step_action": "ADJUST_SPEED",
+    "source_step_count": 1,
+    "matched_entity_id": null,
+    "risk_level": "low",
+    "risk_reason_codes": [],
+    "blocked_reason_codes": [],
+    "longitudinal_control_mode": "ABSOLUTE_SPEED",
+    "allow_positive_acceleration": true,
+    "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+    "target_acceleration_mps2": 3.0,
+    "sequence_valid_until_s": 56.793826568126676,
+    "control_valid_until_s": 56.793826568126676,
+    "command_id": "c01_depart_45"
+  },
+  "last_traffic": {
+    "source": "traffic_control_contract/1.0",
+    "observation": {
+      "applicable": false,
+      "state": "UNKNOWN",
+      "timestamp_s": 56.44382656812668,
+      "source": "rgb_static_opendrive",
+      "image_source": "synchronized_front_capture"
+    },
+    "active": false,
+    "changed": false,
+    "policy_safety_credit": false,
+    "status": "no_route_associated_signal"
+  },
+  "examples": {}
+}

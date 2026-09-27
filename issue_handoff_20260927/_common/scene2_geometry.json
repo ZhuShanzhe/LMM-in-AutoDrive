@@ -1,0 +1,116 @@
+{
+  "scope": "static_task_geometry_not_runtime_success",
+  "rows": [
+    {
+      "task": "s2_t05_cmd_01",
+      "status": "BOUND",
+      "start": 0.0,
+      "end": 350,
+      "evidence": {
+        "1": {
+          "direction": "RIGHT",
+          "legal": true,
+          "entry_road_key": "38",
+          "exit_road_key": "27",
+          "junction_start_m": 305.7276511548031,
+          "junction_end_m": 321.6758586388972,
+          "heading_change_deg": 89.735,
+          "legality_scope": "recorded_route_topology_not_signal_permission"
+        }
+      }
+    },
+    {
+      "task": "s2_t05_cmd_02",
+      "status": "NO_JUNCTION_REQUIREMENT"
+    },
+    {
+      "task": "s2_t05_cmd_03",
+      "status": "NO_JUNCTION_REQUIREMENT"
+    },
+    {
+      "task": "s2_t05_cmd_04",
+      "status": "NO_JUNCTION_REQUIREMENT"
+    },
+    {
+      "task": "s2_t05_cmd_05",
+      "status": "NO_JUNCTION_REQUIREMENT"
+    },
+    {
+      "task": "s2_t05_cmd_06",
+      "status": "NO_JUNCTION_REQUIREMENT"
+    },
+    {
+      "task": "s2_t05_cmd_07",
+      "status": "NO_JUNCTION_REQUIREMENT"
+    },
+    {
+      "task": "s2_t05_cmd_08",
+      "status": "NO_JUNCTION_REQUIREMENT"
+    },
+    {
+      "task": "s2_t05_cmd_09",
+      "status": "BOUND",
+      "start": 1950.0,
+      "end": 2500,
+      "evidence": {
+        "0": {
+          "direction": "STRAIGHT",
+          "legal": true,
+          "junction_id": 1574,
+          "entry_road_key": "26",
+          "exit_road_key": "25",
+          "junction_start_m": 1966.102124014112,
+          "junction_end_m": 1991.7688941141726,
+          "legality_scope": "recorded_route_topology_not_signal_permission"
+        }
+      }
+    },
+    {
+      "task": "s2_t05_cmd_10",
+      "status": "NO_JUNCTION_REQUIREMENT"
+    },
+    {
+      "task": "s2_t05_cmd_11",
+      "status": "BOUND",
+      "start": 3900.0,
+      "end": 4450,
+      "evidence": {
+        "1": {
+          "direction": "RIGHT",
+          "legal": true,
+          "entry_road_key": "38",
+          "exit_road_key": "27",
+          "junction_start_m": 3979.682691764193,
+          "junction_end_m": 3995.630899248287,
+          "heading_change_deg": 89.735,
+          "legality_scope": "recorded_route_topology_not_signal_permission"
+        }
+      }
+    },
+    {
+      "task": "s2_t05_cmd_12",
+      "status": "NO_JUNCTION_REQUIREMENT"
+    },
+    {
+      "task": "s2_t05_cmd_13",
+      "status": "MISMATCH",
+      "start": 5200.0,
+      "end": 6100,
+      "reason": "next junction does not match requested distinct-road turn"
+    },
+    {
+      "task": "s2_t05_cmd_14",
+      "status": "MISMATCH",
+      "start": 6100.0,
+      "end": 7000,
+      "reason": "next junction is not straight"
+    },
+    {
+      "task": "s2_t05_cmd_15",
+      "status": "MISMATCH",
+      "start": 7000.0,
+      "end": 8000.0,
+      "reason": "junction geometry differs from recorded route"
+    }
+  ]
+}

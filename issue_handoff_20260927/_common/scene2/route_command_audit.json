@@ -1,0 +1,690 @@
+{
+  "schema_version": "scene_2_route_command_audit/v1",
+  "commands_audited": 15,
+  "mismatch_count": 0,
+  "competition_ready": true,
+  "global_maneuvers": [
+    {
+      "route_option": "RIGHT",
+      "progress_m": 305.728
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 343.347
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 396.287
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 485.964
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 545.101
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 662.123
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 741.452
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 831.217
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 890.043
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 930.453
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 1530.382
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 1568.001
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 1620.941
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 1710.617
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 1769.754
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 1886.777
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 1966.105
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 2055.87
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 2114.696
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 2155.106
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 2755.035
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 2792.654
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 2845.594
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 2935.27
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 2994.407
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 3111.43
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 3190.758
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 3280.524
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 3339.35
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 3379.76
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 3979.688
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 4017.307
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 4070.247
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 4159.923
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 4219.06
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 4336.083
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 4415.412
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 4505.177
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 4564.003
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 4604.413
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 5204.341
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 5241.96
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 5294.9
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 5384.577
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 5443.714
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 5560.736
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 5640.065
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 5729.83
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 5788.656
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 5829.066
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 6428.994
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 6466.613
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 6519.553
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 6609.23
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 6668.367
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 6785.389
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 6864.718
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 6954.483
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 7013.309
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 7053.719
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 7653.648
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 7691.266
+    },
+    {
+      "route_option": "STRAIGHT",
+      "progress_m": 7744.206
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 7833.883
+    },
+    {
+      "route_option": "RIGHT",
+      "progress_m": 7893.02
+    }
+  ],
+  "records": [
+    {
+      "command_id": "s2_t05_cmd_01",
+      "announce_at_m": 0.0,
+      "horizon_end_m": 350.0,
+      "required_route_options": [
+        "RIGHT"
+      ],
+      "encountered_route_options": [
+        "RIGHT",
+        "STRAIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "RIGHT",
+          "progress_m": 305.728
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 343.347
+        }
+      ],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_02",
+      "announce_at_m": 350.0,
+      "horizon_end_m": 700.0,
+      "required_route_options": [],
+      "encountered_route_options": [
+        "STRAIGHT",
+        "RIGHT",
+        "RIGHT",
+        "RIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 396.287
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 485.964
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 545.101
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 662.123
+        }
+      ],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_03",
+      "announce_at_m": 800.0,
+      "horizon_end_m": 1150.0,
+      "required_route_options": [],
+      "encountered_route_options": [
+        "STRAIGHT",
+        "STRAIGHT",
+        "RIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 831.217
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 890.043
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 930.453
+        }
+      ],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_04",
+      "announce_at_m": 980.0,
+      "horizon_end_m": 1330.0,
+      "required_route_options": [],
+      "encountered_route_options": [],
+      "maneuvers": [],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_05",
+      "announce_at_m": 1000.0,
+      "horizon_end_m": 1350.0,
+      "required_route_options": [],
+      "encountered_route_options": [],
+      "maneuvers": [],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_06",
+      "announce_at_m": 1180.0,
+      "horizon_end_m": 1530.0,
+      "required_route_options": [],
+      "encountered_route_options": [],
+      "maneuvers": [],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_07",
+      "announce_at_m": 1500.0,
+      "horizon_end_m": 1850.0,
+      "required_route_options": [],
+      "encountered_route_options": [
+        "RIGHT",
+        "STRAIGHT",
+        "STRAIGHT",
+        "RIGHT",
+        "RIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "RIGHT",
+          "progress_m": 1530.382
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 1568.001
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 1620.941
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 1710.617
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 1769.754
+        }
+      ],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_08",
+      "announce_at_m": 1775.0,
+      "horizon_end_m": 2125.0,
+      "required_route_options": [],
+      "encountered_route_options": [
+        "RIGHT",
+        "STRAIGHT",
+        "STRAIGHT",
+        "STRAIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "RIGHT",
+          "progress_m": 1886.777
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 1966.105
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 2055.87
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 2114.696
+        }
+      ],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_09",
+      "announce_at_m": 1950.0,
+      "horizon_end_m": 2300.0,
+      "required_route_options": [
+        "STRAIGHT"
+      ],
+      "encountered_route_options": [
+        "STRAIGHT",
+        "STRAIGHT",
+        "STRAIGHT",
+        "RIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 1966.105
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 2055.87
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 2114.696
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 2155.106
+        }
+      ],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_10",
+      "announce_at_m": 2500.0,
+      "horizon_end_m": 2850.0,
+      "required_route_options": [],
+      "encountered_route_options": [
+        "RIGHT",
+        "STRAIGHT",
+        "STRAIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "RIGHT",
+          "progress_m": 2755.035
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 2792.654
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 2845.594
+        }
+      ],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_11",
+      "announce_at_m": 3900.0,
+      "horizon_end_m": 4250.0,
+      "required_route_options": [
+        "RIGHT"
+      ],
+      "encountered_route_options": [
+        "RIGHT",
+        "STRAIGHT",
+        "STRAIGHT",
+        "RIGHT",
+        "RIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "RIGHT",
+          "progress_m": 3979.688
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 4017.307
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 4070.247
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 4159.923
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 4219.06
+        }
+      ],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_12",
+      "announce_at_m": 4450.0,
+      "horizon_end_m": 4800.0,
+      "required_route_options": [],
+      "encountered_route_options": [
+        "STRAIGHT",
+        "STRAIGHT",
+        "RIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 4505.177
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 4564.003
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 4604.413
+        }
+      ],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_13",
+      "announce_at_m": 5200.0,
+      "horizon_end_m": 5800.0,
+      "required_route_options": [
+        "RIGHT",
+        "STRAIGHT",
+        "RIGHT"
+      ],
+      "encountered_route_options": [
+        "RIGHT",
+        "STRAIGHT",
+        "STRAIGHT",
+        "RIGHT",
+        "RIGHT",
+        "RIGHT",
+        "STRAIGHT",
+        "STRAIGHT",
+        "STRAIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "RIGHT",
+          "progress_m": 5204.341
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 5241.96
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 5294.9
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 5384.577
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 5443.714
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 5560.736
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 5640.065
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 5729.83
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 5788.656
+        }
+      ],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_14",
+      "announce_at_m": 6100.0,
+      "horizon_end_m": 6500.0,
+      "required_route_options": [
+        "STRAIGHT"
+      ],
+      "encountered_route_options": [
+        "RIGHT",
+        "STRAIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "RIGHT",
+          "progress_m": 6428.994
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 6466.613
+        }
+      ],
+      "matched": true
+    },
+    {
+      "command_id": "s2_t05_cmd_15",
+      "announce_at_m": 7000.0,
+      "horizon_end_m": 7800.0,
+      "required_route_options": [
+        "STRAIGHT",
+        "RIGHT",
+        "RIGHT"
+      ],
+      "encountered_route_options": [
+        "STRAIGHT",
+        "RIGHT",
+        "RIGHT",
+        "STRAIGHT",
+        "STRAIGHT"
+      ],
+      "maneuvers": [
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 7013.309
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 7053.719
+        },
+        {
+          "route_option": "RIGHT",
+          "progress_m": 7653.648
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 7691.266
+        },
+        {
+          "route_option": "STRAIGHT",
+          "progress_m": 7744.206
+        }
+      ],
+      "matched": true
+    }
+  ]
+}

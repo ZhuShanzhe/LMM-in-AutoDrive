@@ -1,0 +1,40 @@
+{
+  "scope": "fixed local weight files used by diagnostic configuration; not candidate training output",
+  "inactive_configuration": {
+    "path": "pretrained/yolo11s.pt",
+    "exists": false,
+    "reason": "MapSignalObserver only loads detector_weights when state_checkpoint is None; this run uses lamp_state_v2.pt"
+  },
+  "files": [
+    {
+      "path": "challenge/phase_recovery_v1.pt",
+      "bytes": 23432490,
+      "sha256": "5bd639ccb0c09326742c9d5c76a9ddaade7c983d51ce25e0f9d762d64af56fb3"
+    },
+    {
+      "path": "challenge/lamp_state_v2.pt",
+      "bytes": 229109,
+      "sha256": "d8470bf6a176037ba74e2a28f790ebb5b5ab8abe73625b37960e7f6128b4b370"
+    },
+    {
+      "path": "lightweight_vla_adapter/universal_three_scene_v6_sensor_policy/model.pt",
+      "bytes": 21165103,
+      "sha256": "06c774e3a5eead95e230b55b65a3d86c52ba93110c6046506be21dd69ecb2165"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/model.safetensors",
+      "bytes": 298041696,
+      "sha256": "55b0683be1d75355a69720bc30b900e171579f7f1fe345c710dd05e14d5d7af9"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/multitask_heads.pt",
+      "bytes": 137103,
+      "sha256": "fca6481f3afcf0cd3a9d9d99952655556c443e7ab3178706e77014c17e4cba8d"
+    },
+    {
+      "path": "modernbert-drive-command-compositional/semantic_token_head.pt",
+      "bytes": 17413,
+      "sha256": "ec7765685d5acb46e4a7a9f23837212f17092074f90fafcbc9f1a41151995f82"
+    }
+  ]
+}

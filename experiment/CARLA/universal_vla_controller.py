@@ -794,6 +794,7 @@ class UniversalVLAController:
         self._camera_wait_deque: deque[float] = deque(maxlen=64)
         from lightweight_vla_adapter.src.traffic_control_contract import TrafficControlContract
         self.traffic_contract=TrafficControlContract()
+        self._execution_wait_feedback = None
         self.signal_observer=None
         if config.get('traffic_signal_observer'):
             from control.map_signal_observer import MapSignalObserver
@@ -936,8 +937,13 @@ class UniversalVLAController:
         if self.command_queue is not None:
             feedback = None
             if self.driving_plan is not None and self.driving_plan.document is not None:
+                from control.execution_wait import matching_execution_wait
                 feedback = dict(request_id=self.driving_plan.document['request_id'],
-                                plan_status=(self.driving_plan.state or {}).get('plan_status'))
+                                plan_status=(self.driving_plan.state or {}).get('plan_status'),
+                                observed_at_s=self.driving_plan.timestamp_s,
+                                safety_wait=self.driving_plan.risk_pause or matching_execution_wait(
+                                    self._execution_wait_feedback, self.driving_plan.document['request_id'],
+                                    self.driving_plan.timestamp_s))
             command = self.command_queue.select(progress_m,
                 float(self.world.get_snapshot().timestamp.elapsed_seconds), feedback)
         parsed = self.fsm.parse(command)
@@ -947,9 +953,12 @@ class UniversalVLAController:
             from lightweight_vla_adapter.src.driving_plan_runtime import DrivingPlanRuntime
             if self.driving_plan is None:self.driving_plan=DrivingPlanRuntime()
             feedback_reader=getattr(self.route_controller,'execution_state',None)
+            observed_execution=feedback_reader() if callable(feedback_reader) else {}
+            observed_execution=dict(observed_execution,observation_frame_id=f'carla_{frame}',
+                ego_heading_deg=float(self.ego.get_transform().rotation.yaw))
             step=self.driving_plan.prepare(plan_document,frame_id=f'carla_{frame}',
                 timestamp_s=float(self.world.get_snapshot().timestamp.elapsed_seconds),
-                speed_mps=_speed_mps(self.ego),execution_state=feedback_reader() if callable(feedback_reader) else {})
+                speed_mps=_speed_mps(self.ego),execution_state=observed_execution)
             step=step or plan_document['intent']['steps'][-1]
             plan_step_id=step['step_id']
             parsed=self.fsm.parsed_step(step,parsed.source_text)
@@ -960,6 +969,10 @@ class UniversalVLAController:
             parsed,
             ego_speed_kmh=3.6*_speed_mps(self.ego),
         )
+        set_cruise=getattr(self.route_controller,'set_cruise_target_kmh',None)
+        if callable(set_cruise):
+            set_cruise(parsed.target_speed_kmh if parsed.parsed_intent in
+                       ('SET_SPEED','DECELERATE','RESUME') else None)
         parsed,lane_corridor_points=self._lane_command_observation(command,parsed)
         intent_key = parsed.parsed_intent
         if parsed.requested_lane_direction is not None:
@@ -1252,6 +1265,7 @@ class UniversalVLAController:
             ego_speed_kmh=ego_speed_kmh,
         )
         sequence = risk.get('event_memory', {}).get('longitudinal_sequence') if event_authorized else None
+        network_proposal_before_execution = dict(proposal)
         execution = getattr(self, 'sequence_execution', None)
         if sequence is not None and execution is not None:
             proposal = execution.update(proposal,sequence,timestamp_s=timestamp_s,episode_id=intent_key,
@@ -1401,6 +1415,10 @@ class UniversalVLAController:
             override=('traffic_control_constraint' if traffic_diagnostics['changed'] else directional_override or liveness_override),
         )
         self.route_controller.set_high_level_decision(final_decision)
+        from control.execution_wait import traffic_wait_feedback
+        self._execution_wait_feedback = traffic_wait_feedback(
+            self.driving_plan.document['request_id'] if self.driving_plan is not None and self.driving_plan.document else None,
+            timestamp_s, final_decision, traffic_diagnostics)
         if parsed.requested_lane_direction in ('left','right') and final_decision.get('action')=='lane_change_'+parsed.requested_lane_direction:
             self._lane_change_issued=True
         text_to_command_wall_ms=(time.perf_counter()-decision_call_started)*1000.
@@ -1488,12 +1506,15 @@ class UniversalVLAController:
             "front_view_risk_assessment": front_view_risk,
             "directional_collision_assessment": directional_assessment,
             "vla_proposal": proposal,
+            "network_proposal_before_execution": network_proposal_before_execution,
+            "proposal_stage": "after_sequence_execution_and_risk_constraints",
             "control_decision": final_decision,
             "longitudinal_contract": contract_diagnostics,
             "active_instruction_contract": instruction_diagnostics,
             "issued_instruction_contract": issued_instruction_diagnostics,
             "issued_longitudinal_contract": issued_contract_diagnostics,
             "traffic_control_contract": traffic_diagnostics,
+            "mandatory_execution_wait": self._execution_wait_feedback,
             "lane_task_feedback": {"target_lane":self._lane_goal,"completed":self._lane_goal_complete},
             "control_plan_state": self.driving_plan.state if self.driving_plan is not None else None,
             "command_dispatch": self.command_queue.status() if self.command_queue is not None else {"mode":"route_latest"},

@@ -1,0 +1,6 @@
+{
+  "exit_code": 3,
+  "status": "INCOMPLETE_EVIDENCE",
+  "scope": "recorded_task_and_safety_checks_only",
+  "full_benchmark_acceptance": false
+}

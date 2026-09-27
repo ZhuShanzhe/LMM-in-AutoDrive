@@ -1,0 +1,251 @@
+[
+  {
+    "path": "experiment/CARLA/carla_multiview_sensor.py",
+    "sha256": "1ed3a72694db25e70826532bcbe20c53dd476ad3efe1854795aad9996177207c",
+    "symbols": [
+      {
+        "symbol": "camera_rgb_tensor",
+        "line": 18,
+        "end_line": 22
+      },
+      {
+        "symbol": "radar_closing_speed_mps",
+        "line": 32,
+        "end_line": 44
+      },
+      {
+        "symbol": "radar_relative_height_m",
+        "line": 47,
+        "end_line": 54
+      },
+      {
+        "symbol": "SynchronizedMultiviewCameraRig",
+        "line": 57,
+        "end_line": 627
+      },
+      {
+        "symbol": "__init__",
+        "line": 66,
+        "end_line": 194
+      },
+      {
+        "symbol": "view_available",
+        "line": 196,
+        "end_line": 197
+      },
+      {
+        "symbol": "_rasterize_lidar",
+        "line": 200,
+        "end_line": 236
+      },
+      {
+        "symbol": "_lidar_callback",
+        "line": 238,
+        "end_line": 259
+      },
+      {
+        "symbol": "_radar_callback",
+        "line": 261,
+        "end_line": 409
+      },
+      {
+        "symbol": "_callback",
+        "line": 411,
+        "end_line": 453
+      },
+      {
+        "symbol": "front_capture",
+        "line": 455,
+        "end_line": 458
+      },
+      {
+        "symbol": "front_capture_inverse",
+        "line": 460,
+        "end_line": 464
+      },
+      {
+        "symbol": "_stack_views",
+        "line": 466,
+        "end_line": 488
+      },
+      {
+        "symbol": "latest",
+        "line": 490,
+        "end_line": 514
+      },
+      {
+        "symbol": "latest_multisensor",
+        "line": 516,
+        "end_line": 551
+      },
+      {
+        "symbol": "latest_radar",
+        "line": 553,
+        "end_line": 614
+      },
+      {
+        "symbol": "close",
+        "line": 616,
+        "end_line": 627
+      },
+      {
+        "symbol": "receive",
+        "line": 271,
+        "end_line": 407
+      },
+      {
+        "symbol": "receive",
+        "line": 412,
+        "end_line": 451
+      }
+    ]
+  },
+  {
+    "path": "experiment/CARLA/radar_ground_filter.py",
+    "sha256": "2bbb651eb0fdc54275a4392fee31ab9264a2ff775034ecc880ac5456e91257ed",
+    "symbols": [
+      {
+        "symbol": "filter_ground",
+        "line": 9,
+        "end_line": 81
+      },
+      {
+        "symbol": "retain",
+        "line": 26,
+        "end_line": 28
+      },
+      {
+        "symbol": "is_ground",
+        "line": 30,
+        "end_line": 57
+      }
+    ]
+  },
+  {
+    "path": "experiment/CARLA/control/map_signal_observer.py",
+    "sha256": "e33247c73c3a9440c998ed92487e10d45bdaf46d726b9ee655deda53f444bb5e",
+    "symbols": [
+      {
+        "symbol": "mapped_stop_distance",
+        "line": 11,
+        "end_line": 17
+      },
+      {
+        "symbol": "connected_stop_distance",
+        "line": 20,
+        "end_line": 53
+      },
+      {
+        "symbol": "classify_signal_crop",
+        "line": 56,
+        "end_line": 68
+      },
+      {
+        "symbol": "PassedStopLineMemory",
+        "line": 71,
+        "end_line": 89
+      },
+      {
+        "symbol": "observe_tracked_lamp",
+        "line": 92,
+        "end_line": 105
+      },
+      {
+        "symbol": "MapSignalObserver",
+        "line": 108,
+        "end_line": 283
+      },
+      {
+        "symbol": "__init__",
+        "line": 73,
+        "end_line": 74
+      },
+      {
+        "symbol": "record",
+        "line": 76,
+        "end_line": 79
+      },
+      {
+        "symbol": "contains",
+        "line": 81,
+        "end_line": 89
+      },
+      {
+        "symbol": "__init__",
+        "line": 109,
+        "end_line": 142
+      },
+      {
+        "symbol": "_observe_static_heads",
+        "line": 144,
+        "end_line": 160
+      },
+      {
+        "symbol": "observe",
+        "line": 162,
+        "end_line": 283
+      }
+    ]
+  },
+  {
+    "path": "scene_understanding/src/control_decision.py",
+    "sha256": "04e5aeac60e8cd82224fea859a4acea046cb39d8a565f7608819f119719fe6e3",
+    "symbols": [
+      {
+        "symbol": "_is_number",
+        "line": 45,
+        "end_line": 50
+      },
+      {
+        "symbol": "_speed_kmh",
+        "line": 53,
+        "end_line": 57
+      },
+      {
+        "symbol": "_parse_confidence",
+        "line": 60,
+        "end_line": 66
+      },
+      {
+        "symbol": "_string_list",
+        "line": 69,
+        "end_line": 74
+      },
+      {
+        "symbol": "_validate_inputs",
+        "line": 77,
+        "end_line": 148
+      },
+      {
+        "symbol": "_alignment_for_step",
+        "line": 151,
+        "end_line": 163
+      },
+      {
+        "symbol": "_fallback_action",
+        "line": 166,
+        "end_line": 172
+      },
+      {
+        "symbol": "_map_step_action",
+        "line": 175,
+        "end_line": 254
+      },
+      {
+        "symbol": "_decision",
+        "line": 257,
+        "end_line": 297
+      },
+      {
+        "symbol": "build_control_decision",
+        "line": 300,
+        "end_line": 507
+      },
+      {
+        "symbol": "validate_control_decision",
+        "line": 510,
+        "end_line": 603
+      }
+    ]
+  }
+]

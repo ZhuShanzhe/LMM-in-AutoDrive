@@ -1,0 +1,627 @@
+    1 """Frame-synchronized physical sensor rig for online VLA inference."""
+    2
+    3 from __future__ import annotations
+    4
+    5 import math
+    6 import threading
+    7 import time
+    8 from collections import OrderedDict
+    9 from typing import Any, Sequence
+   10
+   11 import numpy as np
+   12 import torch
+   13
+   14
+   15 CAMERA_ORDER = ("front", "left", "right", "rear")
+   16
+   17
+   18 def camera_rgb_tensor(rgb, width, height, *, resize=False):
+   19     if resize:
+   20         import cv2
+   21         rgb = cv2.resize(rgb, (width, height), interpolation=cv2.INTER_AREA)
+   22     return torch.from_numpy(np.ascontiguousarray(rgb)).permute(2, 0, 1)
+   23
+   24 CAMERA_TRANSFORMS = {
+   25     "front": (1.45, 0.0, 1.55, -3.0, 0.0),
+   26     "left": (0.15, -0.65, 1.50, -2.0, -90.0),
+   27     "right": (0.15, 0.65, 1.50, -2.0, 90.0),
+   28     "rear": (-1.35, 0.0, 1.50, -2.0, 180.0),
+   29 }
+   30
+   31
+   32 def radar_closing_speed_mps(relative_velocity_mps: float) -> float:
+   33     """Convert CARLA radial velocity to a positive range-closing speed.
+   34
+   35     On the installed vehicle-mounted radars, decreasing range is represented
+   36     by a negative radial relative velocity.  Keeping this conversion explicit
+   37     prevents static road returns behind a moving ego (positive velocity in a
+   38     rear-facing sensor) from being mistaken for an accelerating rear vehicle.
+   39     """
+   40
+   41     value = float(relative_velocity_mps)
+   42     if not math.isfinite(value):
+   43         return 0.0
+   44     return max(0.0, -value)
+   45
+   46
+   47 def radar_relative_height_m(depth_m: float, altitude_rad: float) -> float:
+   48     """Return a radar point's vertical offset from the sensor origin."""
+   49
+   50     depth = float(depth_m)
+   51     altitude = float(altitude_rad)
+   52     if not math.isfinite(depth) or not math.isfinite(altitude):
+   53         return -math.inf
+   54     return depth * math.sin(altitude)
+   55
+   56
+   57 class SynchronizedMultiviewCameraRig:
+   58     """Own CARLA RGB sensors and expose only complete frame bundles.
+   59
+   60     The rig always returns the fixed four-view tensor structure defined by
+   61     ``CAMERA_ORDER``.  Views that are not installed on the ego are returned as
+   62     zero tensors with ``camera_view_mask=False``, so every scene produces the
+   63     same input schema.
+   64     """
+   65
+   66     def __init__(
+   67         self,
+   68         world: Any,
+   69         ego: Any,
+   70         *,
+   71         width: int = 224,
+   72         height: int = 224,
+   73         fov: float = 100.0,
+   74         sensor_tick: float = 0.05,
+   75         camera_attributes: dict[str, Any] | None = None,
+   76         front_capture_size: int | None = None,
+   77         retained_frames: int = 12,
+   78         enable_lidar: bool = False,
+   79         lidar_range_m: float = 80.0,
+   80         enable_radar: bool = True,
+   81         radar_range_m: float = 80.0,
+   82         lidar_channels: int = 32,
+   83         available_cameras: Sequence[str] | None = None,
+   84         recording_dir: str | None = None,
+   85         recording_limits: dict | None = None,
+   86     ) -> None:
+   87         self._capture = None
+   88         if recording_dir is not None:
+   89             from evaluation.model_rig_capture import ModelRigCapture
+   90             self._capture = ModelRigCapture(recording_dir, **dict(recording_limits or {}))
+   91         self.width = int(width)
+   92         self.height = int(height)
+   93         self.front_capture_size=int(front_capture_size) if front_capture_size is not None else None
+   94         self._front_images: OrderedDict[int,np.ndarray] = OrderedDict()
+   95         self._front_poses: OrderedDict[int,np.ndarray] = OrderedDict()
+   96         self._condition = threading.Condition()
+   97         self._frames: OrderedDict[int, dict[str, torch.Tensor]] = OrderedDict()
+   98         self._latest_complete_frame = -1
+   99         self._latest_multisensor_frame = -1
+  100         self._latest_returned_frame = -1
+  101         self._retained_frames = int(retained_frames)
+  102         self.sensors: list[Any] = []
+  103         self._radar_observations: dict[
+  104             str, OrderedDict[int, dict[str, Any]]
+  105         ] = {direction: OrderedDict() for direction in ("front", "rear")}
+  106         self.enable_lidar = bool(enable_lidar)
+  107         self.enable_radar = bool(enable_radar)
+  108         if available_cameras is None:
+  109             available_cameras = CAMERA_ORDER
+  110         unknown = set(available_cameras) - set(CAMERA_ORDER)
+  111         if unknown:
+  112             raise ValueError(f"unknown camera views: {sorted(unknown)}")
+  113         self.available_cameras = tuple(available_cameras)
+  114         library = world.get_blueprint_library()
+  115         carla = __import__("carla")
+  116         attributes = dict(camera_attributes or {})
+  117         for name in CAMERA_ORDER:
+  118             if name not in self.available_cameras:
+  119                 continue
+  120             blueprint = library.find("sensor.camera.rgb")
+  121             standard = {
+  122                 "image_size_x": str(self.width),
+  123                 "image_size_y": str(self.height),
+  124                 "fov": str(float(fov)),
+  125                 "sensor_tick": str(float(sensor_tick)),
+  126             }
+  127             if name=='front' and self.front_capture_size is not None:
+  128                 standard.update(image_size_x=str(self.front_capture_size),image_size_y=str(self.front_capture_size))
+  129             for key, value in {**attributes, **standard}.items():
+  130                 if key != "enabled" and blueprint.has_attribute(key):
+  131                     blueprint.set_attribute(key, str(value))
+  132             x, y, z, pitch, yaw = CAMERA_TRANSFORMS[name]
+  133             mounting = carla.Transform(carla.Location(x=x, y=y, z=z),
+  134                                       carla.Rotation(pitch=pitch, yaw=yaw, roll=0.0))
+  135             sensor = world.spawn_actor(
+  136                 blueprint,
+  137                 mounting,
+  138                 attach_to=ego,
+  139                 attachment_type=carla.AttachmentType.Rigid,
+  140             )
+  141             sensor.listen(self._callback(name))
+  142             self.sensors.append(sensor)
+  143             if self._capture is not None:
+  144                 self._capture.register(name, sensor, mounting)
+  145         if self.enable_lidar:
+  146             blueprint = library.find("sensor.lidar.ray_cast")
+  147             lidar_attributes = {
+  148                 "sensor_tick": str(float(sensor_tick)),
+  149                 "channels": str(int(lidar_channels)),
+  150                 "range": str(float(lidar_range_m)),
+  151                 "points_per_second": "56000",
+  152                 "rotation_frequency": str(1.0 / max(float(sensor_tick), 1e-3)),
+  153             }
+  154             for key, value in lidar_attributes.items():
+  155                 if blueprint.has_attribute(key):
+  156                     blueprint.set_attribute(key, value)
+  157             mounting = carla.Transform(carla.Location(z=2.6))
+  158             lidar = world.spawn_actor(
+  159                 blueprint,
+  160                 mounting,
+  161                 attach_to=ego,
+  162                 attachment_type=carla.AttachmentType.Rigid,
+  163             )
+  164             lidar.listen(self._lidar_callback)
+  165             self.sensors.append(lidar)
+  166             if self._capture is not None:
+  167                 self._capture.register("lidar", lidar, mounting)
+  168         if self.enable_radar:
+  169             for direction, x, yaw in (
+  170                 ("front", 2.0, 0.0),
+  171                 ("rear", -2.0, 180.0),
+  172             ):
+  173                 blueprint = library.find("sensor.other.radar")
+  174                 radar_attributes = {
+  175                     "sensor_tick": str(float(sensor_tick)),
+  176                     "horizontal_fov": "30.0",
+  177                     "vertical_fov": "10.0",
+  178                     "range": str(float(radar_range_m)),
+  179                     "points_per_second": "3000",
+  180                 }
+  181                 for key, value in radar_attributes.items():
+  182                     if blueprint.has_attribute(key):
+  183                         blueprint.set_attribute(key, value)
+  184                 mounting = carla.Transform(carla.Location(x=x, z=1.0), carla.Rotation(yaw=yaw))
+  185                 radar = world.spawn_actor(
+  186                     blueprint,
+  187                     mounting,
+  188                     attach_to=ego,
+  189                     attachment_type=carla.AttachmentType.Rigid,
+  190                 )
+  191                 radar.listen(self._radar_callback(direction))
+  192                 self.sensors.append(radar)
+  193                 if self._capture is not None:
+  194                     self._capture.register("radar_" + direction, radar, mounting)
+  195
+  196     def view_available(self, name: str) -> bool:
+  197         return name in self.available_cameras
+  198
+  199     @staticmethod
+  200     def _rasterize_lidar(measurement: Any) -> torch.Tensor:
+  201         points = np.frombuffer(measurement.raw_data, dtype=np.float32).reshape(-1, 4)
+  202         x, y, z, intensity = (points[:, index] for index in range(4))
+  203         valid = (
+  204             (x >= -20.0)
+  205             & (x <= 60.0)
+  206             & (y >= -30.0)
+  207             & (y <= 30.0)
+  208         )
+  209         x, y, z, intensity = x[valid], y[valid], z[valid], intensity[valid]
+  210         rows = np.rint((60.0 - x) / 80.0 * 63.0).astype(np.int64)
+  211         columns = np.rint((y + 30.0) / 60.0 * 63.0).astype(np.int64)
+  212         counts = np.zeros((64, 64), dtype=np.float32)
+  213         max_height = np.full((64, 64), -5.0, dtype=np.float32)
+  214         max_intensity = np.zeros((64, 64), dtype=np.float32)
+  215         np.add.at(counts, (rows, columns), 1.0)
+  216         np.maximum.at(max_height, (rows, columns), z)
+  217         np.maximum.at(max_intensity, (rows, columns), intensity)
+  218         occupied = counts > 0
+  219         distance = np.zeros((64, 64), dtype=np.float32)
+  220         distance[rows, columns] = np.minimum(
+  221             np.sqrt(x * x + y * y) / 100.0, 1.0
+  222         )
+  223         channels = np.stack(
+  224             [
+  225                 occupied.astype(np.float32),
+  226                 np.where(
+  227                     occupied,
+  228                     np.clip(max_height / 5.0, -1.0, 1.0),
+  229                     0.0,
+  230                 ),
+  231                 distance,
+  232                 np.minimum(np.log1p(counts) / np.log(17.0), 1.0)
+  233                 * np.clip(max_intensity, 0.0, 1.0),
+  234             ]
+  235         )
+  236         return torch.from_numpy(channels)
+  237
+  238     def _lidar_callback(self, measurement: Any) -> None:
+  239         capture = getattr(self, "_capture", None)
+  240         if capture is not None:
+  241             capture.record("lidar", measurement, "float32_le_xyzi")
+  242         frame = int(measurement.frame)
+  243         tensor = self._rasterize_lidar(measurement)
+  244         xyz = np.frombuffer(measurement.raw_data, dtype=np.float32).reshape(-1, 4)[:, :3]
+  245         pose = getattr(measurement, 'transform', None)
+  246         matrix = np.asarray(pose.get_matrix()) if hasattr(pose, 'get_matrix') else None
+  247         world_points = xyz @ matrix[:3, :3].T + matrix[:3, 3] if matrix is not None else None
+  248         with self._condition:
+  249             bundle = self._frames.setdefault(frame, {})
+  250             bundle["lidar_bev"] = tensor
+  251             bundle['ground_points_world'] = world_points
+  252             bundle['ground_timestamp_s'] = float(measurement.timestamp)
+  253             if all(name in bundle for name in self.available_cameras):
+  254                 self._latest_multisensor_frame = max(
+  255                     self._latest_multisensor_frame, frame
+  256                 )
+  257                 self._condition.notify_all()
+  258             while len(self._frames) > self._retained_frames:
+  259                 self._frames.popitem(last=False)
+  260
+  261     def _radar_callback(self, direction: str):
+  262         """Build a callback for one narrow, physical radar direction.
+  263
+  264         Only physical radar detections are used.  No CARLA actor enumeration,
+  265         role names, scenario ids or event schedules enter this observation.
+  266         """
+  267
+  268         if direction not in {"front", "rear"}:
+  269             raise ValueError("radar direction must be 'front' or 'rear'")
+  270
+  271         def receive(measurement: Any) -> None:
+  272             capture = getattr(self, "_capture", None)
+  273             if capture is not None:
+  274                 capture.record("radar_" + direction, measurement,
+  275                                "float32_le_velocity_azimuth_altitude_depth")
+  276             frame = int(measurement.frame)
+  277             candidates: list[dict[str, float]] = []
+  278             tracking_points: list[dict[str, float]] = []
+  279             for detection in measurement:
+  280                 depth_m = float(detection.depth)
+  281                 azimuth_deg = float(np.degrees(detection.azimuth))
+  282                 altitude_deg = float(np.degrees(detection.altitude))
+  283                 if (0.5 <= depth_m <= 80.0 and abs(azimuth_deg) <= 15.0
+  284                         and abs(altitude_deg) <= 8.0
+  285                         and radar_relative_height_m(depth_m, detection.altitude) >= -0.65):
+  286                     tracking_points.append(dict(distance_m=depth_m,
+  287                         relative_velocity_mps=float(detection.velocity),
+  288                         azimuth_deg=azimuth_deg, altitude_deg=altitude_deg))
+  289                 if (
+  290                     0.5 <= depth_m <= 80.0
+  291                     and abs(azimuth_deg) <= 8.0
+  292                     and abs(altitude_deg) <= 8.0
+  293                 ):
+  294                     candidates.append(
+  295                         {
+  296                             "distance_m": depth_m,
+  297                             "relative_velocity_mps": float(detection.velocity),
+  298                             "closing_speed_mps": radar_closing_speed_mps(detection.velocity),
+  299                             "azimuth_deg": azimuth_deg,
+  300                             "altitude_deg": altitude_deg,
+  301                             "relative_height_m": radar_relative_height_m(
+  302                                 depth_m,
+  303                                 detection.altitude,
+  304                             ),
+  305                         }
+  306                     )
+  307             # The conic radar also intersects the road.  A true vehicle,
+  308             # cyclist or guardrail provides returns near sensor height;
+  309             # ground points sit about one metre below this installation.
+  310             # Keep raw counts for audit, but exclude low ground returns from
+  311             # collision distance/TTC decisions.
+  312             obstacles = [
+  313                 item for item in candidates if item["relative_height_m"] >= -0.65
+  314             ]
+  315             # Preserve one nearest return per one-degree azimuth bin.  The
+  316             # controller can then reject a close guardrail outside the curved
+  317             # planned corridor without losing a farther return in another
+  318             # direction.  This remains physical sensor data only.
+  319             nearest_by_azimuth: dict[int, dict[str, float]] = {}
+  320             for item in obstacles:
+  321                 bin_index = int(round(float(item["azimuth_deg"])))
+  322                 previous = nearest_by_azimuth.get(bin_index)
+  323                 if (
+  324                     previous is None
+  325                     or item["distance_m"] < previous["distance_m"]
+  326                 ):
+  327                     nearest_by_azimuth[bin_index] = item
+  328             azimuth_obstacle_bins = [
+  329                 {
+  330                     key: round(float(item[key]), 4)
+  331                     for key in (
+  332                         "distance_m", "relative_velocity_mps",
+  333                         "closing_speed_mps", "azimuth_deg",
+  334                         "relative_height_m",
+  335                     )
+  336                 }
+  337                 for _bin, item in sorted(nearest_by_azimuth.items())
+  338             ]
+  339             nearest = min(
+  340                 obstacles,
+  341                 key=lambda item: item["distance_m"],
+  342                 default=None,
+  343             )
+  344             # Keep the nearest decreasing-range return separately so static
+  345             # road/guardrail points cannot hide a fast rear vehicle.
+  346             closing = [
+  347                 item
+  348                 for item in obstacles
+  349                 if item["closing_speed_mps"] > 0.5
+  350             ]
+  351             nearest_closing = min(
+  352                 closing,
+  353                 key=lambda item: item["distance_m"],
+  354                 default=None,
+  355             )
+  356             observation = {
+  357                 "schema_version": f"physical_{direction}_radar/1.0",
+  358                 "direction": direction,
+  359                 "sensor_frame": frame,
+  360                 "measurement_timestamp_s": float(measurement.timestamp),
+  361                 "measurement_pose": {
+  362                     "x": float(measurement.transform.location.x),
+  363                     "y": float(measurement.transform.location.y),
+  364                     "yaw_deg": float(measurement.transform.rotation.yaw),
+  365                 },
+  366                 "tracking_points": tracking_points,
+  367                 "_ground_candidates": [dict(p, relative_height_m=p['distance_m']*math.sin(math.radians(p['altitude_deg'])),
+  368                     closing_speed_mps=radar_closing_speed_mps(p['relative_velocity_mps'])) for p in tracking_points],
+  369                 "_sensor_matrix": np.asarray(measurement.transform.get_matrix()).tolist() if hasattr(measurement.transform, 'get_matrix') else None,
+  370                 "tracking_fov_deg": 30.0,
+  371                 "candidate_count": len(candidates),
+  372                 "obstacle_candidate_count": len(obstacles),
+  373                 "closing_candidate_count": len(closing),
+  374                 "height_filter_min_m": -0.65,
+  375                 "height_rejected_count": len(candidates)-len(obstacles),
+  376                 "height_boundary_candidate_count": sum(-0.65 <= item['relative_height_m'] <= -0.55 for item in candidates),
+  377                 "nearest_relative_height_m": round(float(nearest['relative_height_m']), 4) if nearest else None,
+  378                 "nearest_altitude_deg": round(float(nearest['altitude_deg']), 4) if nearest else None,
+  379                 "azimuth_obstacle_bins": azimuth_obstacle_bins,
+  380                 "nearest_distance_m": (
+  381                     round(float(nearest["distance_m"]), 3) if nearest else None
+  382                 ),
+  383                 "nearest_relative_velocity_mps": (
+  384                     round(float(nearest["relative_velocity_mps"]), 3)
+  385                     if nearest
+  386                     else None
+  387                 ),
+  388                 "nearest_azimuth_deg": (
+  389                     round(float(nearest["azimuth_deg"]), 3) if nearest else None
+  390                 ),
+  391                 "nearest_closing_distance_m": (
+  392                     round(float(nearest_closing["distance_m"]), 3)
+  393                     if nearest_closing
+  394                     else None
+  395                 ),
+  396                 "nearest_closing_velocity_mps": (
+  397                     round(float(nearest_closing["closing_speed_mps"]), 3)
+  398                     if nearest_closing
+  399                     else None
+  400                 ),
+  401             }
+  402             with self._condition:
+  403                 observations = self._radar_observations[direction]
+  404                 observations[frame] = observation
+  405                 while len(observations) > self._retained_frames:
+  406                     observations.popitem(last=False)
+  407                 self._condition.notify_all()
+  408
+  409         return receive
+  410
+  411     def _callback(self, name: str):
+  412         def receive(image: Any) -> None:
+  413             capture = getattr(self, "_capture", None)
+  414             if capture is not None:
+  415                 capture.record(name, image, "uint8_bgra", width=int(image.width), height=int(image.height))
+  416             bgra = np.frombuffer(image.raw_data, dtype=np.uint8).reshape(
+  417                 image.height, image.width, 4
+  418             )
+  419             rgb = np.ascontiguousarray(bgra[:, :, 2::-1])
+  420             front_rgb=rgb if name=='front' and getattr(self,'front_capture_size',None) is not None else None
+  421             tensor = camera_rgb_tensor(rgb, self.width, self.height, resize=front_rgb is not None)
+  422             frame = int(image.frame)
+  423             with self._condition:
+  424                 if front_rgb is not None:
+  425                     self._front_images[frame]=front_rgb
+  426                     if not hasattr(self,'_front_poses'):self._front_poses=OrderedDict()
+  427                     if getattr(image,'transform',None) is not None:
+  428                         self._front_poses[frame]=np.asarray(image.transform.get_inverse_matrix(),dtype=np.float64)
+  429                     while len(self._front_images)>self._retained_frames:
+  430                         expired,_=self._front_images.popitem(last=False)
+  431                         self._front_poses.pop(expired,None)
+  432                     while len(self._front_poses)>self._retained_frames:self._front_poses.popitem(last=False)
+  433                 bundle = self._frames.setdefault(frame, {})
+  434                 bundle[name] = tensor
+  435                 if all(
+  436                     camera_name in bundle for camera_name in self.available_cameras
+  437                 ):
+  438                     self._latest_complete_frame = max(
+  439                         self._latest_complete_frame, frame
+  440                     )
+  441                     self._condition.notify_all()
+  442                 if self.enable_lidar and "lidar_bev" in bundle and all(
+  443                     camera_name in bundle
+  444                     for camera_name in self.available_cameras
+  445                 ):
+  446                     self._latest_multisensor_frame = max(
+  447                         self._latest_multisensor_frame, frame
+  448                     )
+  449                     self._condition.notify_all()
+  450                 while len(self._frames) > self._retained_frames:
+  451                     self._frames.popitem(last=False)
+  452
+  453         return receive
+  454
+  455     def front_capture(self,frame):
+  456         """Return only the exact synchronized front frame, never a newer image."""
+  457         with self._condition:
+  458             return self._front_images.get(int(frame))
+  459
+  460     def front_capture_inverse(self,frame):
+  461         """Camera extrinsics at exposure time, not the vehicle's later pose."""
+  462         with self._condition:
+  463             pose=getattr(self,'_front_poses',{}).get(int(frame)) if int(frame) in self._front_images else None
+  464             return None if pose is None else pose.copy()
+  465
+  466     def _stack_views(
+  467         self,
+  468         bundle: dict[str, torch.Tensor],
+  469         frame: int,
+  470     ) -> tuple[torch.Tensor, torch.Tensor]:
+  471         template = None
+  472         for name in self.available_cameras:
+  473             if name in bundle:
+  474                 template = bundle[name]
+  475                 break
+  476         if template is None:
+  477             raise RuntimeError("no camera frame is available")
+  478         zeros = torch.zeros_like(template)
+  479         views = []
+  480         mask = torch.zeros((1, len(CAMERA_ORDER)), dtype=torch.bool)
+  481         for index, name in enumerate(CAMERA_ORDER):
+  482             if name in bundle:
+  483                 views.append(bundle[name])
+  484                 mask[0, index] = True
+  485             else:
+  486                 views.append(zeros)
+  487         images = torch.stack(views).unsqueeze(0)
+  488         return images, mask
+  489
+  490     def latest(
+  491         self,
+  492         *,
+  493         minimum_frame: int | None = None,
+  494         timeout_s: float = 0.08,
+  495     ) -> tuple[int, torch.Tensor, torch.Tensor, float]:
+  496         """Return ``[1,4,3,H,W]`` uint8 RGB from one exact CARLA frame."""
+  497
+  498         started = time.monotonic()
+  499         required = -1 if minimum_frame is None else int(minimum_frame)
+  500         with self._condition:
+  501             while self._latest_complete_frame < required:
+  502                 remaining = timeout_s - (time.monotonic() - started)
+  503                 if remaining <= 0:
+  504                     break
+  505                 self._condition.wait(remaining)
+  506             frame = self._latest_complete_frame
+  507             if frame < 0 or frame not in self._frames:
+  508                 raise RuntimeError("no synchronized multiview RGB frame is available")
+  509             bundle = self._frames[frame]
+  510             if any(name not in bundle for name in self.available_cameras):
+  511                 raise RuntimeError("latest camera frame bundle is incomplete")
+  512             images, mask = self._stack_views(bundle, frame)
+  513             self._latest_returned_frame = frame
+  514         return frame, images, mask, (time.monotonic() - started) * 1000.0
+  515
+  516     def latest_multisensor(
+  517         self,
+  518         *,
+  519         minimum_frame: int | None = None,
+  520         timeout_s: float = 0.08,
+  521     ) -> tuple[int, torch.Tensor, torch.Tensor, torch.Tensor, float]:
+  522         """Return exact-frame four-view RGB and a real LiDAR point-cloud BEV."""
+  523
+  524         if not self.enable_lidar:
+  525             raise RuntimeError("LiDAR was not enabled for this sensor rig")
+  526         started = time.monotonic()
+  527         required = -1 if minimum_frame is None else int(minimum_frame)
+  528         with self._condition:
+  529             while self._latest_multisensor_frame < required:
+  530                 remaining = timeout_s - (time.monotonic() - started)
+  531                 if remaining <= 0:
+  532                     break
+  533                 self._condition.wait(remaining)
+  534             frame = self._latest_multisensor_frame
+  535             if frame < 0 or frame not in self._frames:
+  536                 raise RuntimeError("no synchronized RGB/LiDAR frame is available")
+  537             bundle = self._frames[frame]
+  538             if "lidar_bev" not in bundle or any(
+  539                 name not in bundle for name in self.available_cameras
+  540             ):
+  541                 raise RuntimeError("latest RGB/LiDAR frame bundle is incomplete")
+  542             images, mask = self._stack_views(bundle, frame)
+  543             lidar_bev = bundle["lidar_bev"].unsqueeze(0)
+  544             self._latest_returned_frame = frame
+  545         return (
+  546             frame,
+  547             images,
+  548             mask,
+  549             lidar_bev,
+  550             (time.monotonic() - started) * 1000.0,
+  551         )
+  552
+  553     def latest_radar(
+  554         self,
+  555         direction: str = "front",
+  556         *,
+  557         maximum_frame: int | None = None,
+  558     ) -> dict[str, Any]:
+  559         """Return the newest directional radar observation at/before a frame."""
+  560
+  561         if direction not in {"front", "rear"}:
+  562             raise ValueError("radar direction must be 'front' or 'rear'")
+  563
+  564         if not self.enable_radar:
+  565             return {
+  566                 "schema_version": f"physical_{direction}_radar/1.0",
+  567                 "direction": direction,
+  568                 "sensor_frame": -1,
+  569                 "candidate_count": 0,
+  570                 "obstacle_candidate_count": 0,
+  571                 "closing_candidate_count": 0,
+  572                 "azimuth_obstacle_bins": [],
+  573                 "nearest_distance_m": None,
+  574                 "nearest_relative_velocity_mps": None,
+  575                 "nearest_azimuth_deg": None,
+  576                 "nearest_closing_distance_m": None,
+  577                 "nearest_closing_velocity_mps": None,
+  578             }
+  579         limit = math.inf if maximum_frame is None else int(maximum_frame)
+  580         with self._condition:
+  581             observations = self._radar_observations[direction]
+  582             for frame, observation in reversed(observations.items()):
+  583                 if frame <= limit:
+  584                     from radar_ground_filter import filter_ground
+  585                     if observation.get('_filtered') is not None:
+  586                         return dict(observation['_filtered'])
+  587                     cloud = self._frames.get(frame, {}).get('ground_points_world')
+  588                     stamp = self._frames.get(frame, {}).get('ground_timestamp_s')
+  589                     if stamp is None or abs(stamp-observation.get('measurement_timestamp_s', -math.inf))>.002:
+  590                         cloud=None
+  591                     if cloud is not None and stamp is not None:
+  592                         recent = [b['ground_points_world'] for f,b in self._frames.items()
+  593                             if f<=frame and b.get('ground_points_world') is not None
+  594                             and 0<=stamp-b.get('ground_timestamp_s', -math.inf)<=.2]
+  595                         cloud = np.concatenate(recent)
+  596                     filtered = filter_ground(observation, cloud, observation.get('_sensor_matrix'))
+  597                     filtered['ground_filter']['history_limit_s'] = .2
+  598                     if cloud is not None:
+  599                         observation['_filtered'] = filtered
+  600                     return filtered
+  601         return {
+  602             "schema_version": f"physical_{direction}_radar/1.0",
+  603             "direction": direction,
+  604             "sensor_frame": -1,
+  605             "candidate_count": 0,
+  606             "obstacle_candidate_count": 0,
+  607             "closing_candidate_count": 0,
+  608             "azimuth_obstacle_bins": [],
+  609             "nearest_distance_m": None,
+  610             "nearest_relative_velocity_mps": None,
+  611             "nearest_azimuth_deg": None,
+  612             "nearest_closing_distance_m": None,
+  613             "nearest_closing_velocity_mps": None,
+  614         }
+  615
+  616     def close(self) -> None:
+  617         for sensor in self.sensors:
+  618             try:
+  619                 if sensor.is_alive:
+  620                     sensor.stop()
+  621                 sensor.destroy()
+  622             except RuntimeError:
+  623                 pass
+  624         self.sensors.clear()
+  625         capture = getattr(self, "_capture", None)
+  626         if capture is not None:
+  627             capture.close()

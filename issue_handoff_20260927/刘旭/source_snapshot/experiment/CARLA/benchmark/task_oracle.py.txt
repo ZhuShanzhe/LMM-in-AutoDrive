@@ -1,0 +1,463 @@
+    1 """Independent truth-only task assessment. Never expose these inputs to policy."""
+    2 from __future__ import annotations
+    3
+    4 import copy
+    5 import json
+    6
+    7 from .catalog import CONFIG_ROOT, ConfigError, number
+    8 from . import extended_criteria
+    9 from .coverage import profile_coverage, instruction_status
+   10
+   11
+   12 KINDS = {'speed', 'lane_change', 'turn', 'yield_pedestrian', 'overtake', 'passed_target', 'progress', 'destination'} | extended_criteria.KINDS
+   13 TERMINAL = {'SUCCESS', 'FAILURE', 'SCENE_INVALID', 'TIMEOUT'}
+   14
+   15
+   16 def constraint_spec(spec, constraint):
+   17     return {**{k:v for k,v in spec.items() if k not in {'steps','constraints'}}, 'steps':[constraint]}
+   18
+   19
+   20 def load_profile(catalog, task):
+   21     if getattr(catalog, 'geometry_binding', None):
+   22         from .catalog import load_catalog
+   23         from continuous.task_geometry_binding import remap_commands
+   24         original = load_catalog(catalog.scene_id)
+   25         original_task = original.select(task.task_id)[0]
+   26         profile = load_profile(original, original_task)
+   27         if profile is None:
+   28             return None
+   29         anchors = catalog.geometry_binding['distance_anchors']
+   30
+   31         def bind_distances(value):
+   32             if isinstance(value, list):
+   33                 return [bind_distances(item) for item in value]
+   34             if not isinstance(value, dict):
+   35                 return value
+   36             result = {}
+   37             for key, item in value.items():
+   38                 if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+   39                     item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+   40                 else:
+   41                     item = bind_distances(item)
+   42                 result[key] = item
+   43             return result
+   44
+   45         profile = bind_distances(profile)
+   46         profile['source_sha256'] = catalog.source_sha256
+   47         return validate_spec(profile)
+   48     path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+   49     if not path.is_file():
+   50         return None
+   51     profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+   52     if (profile.get('source_sha256') != catalog.source_sha256
+   53             or profile.get('scene_id') != catalog.scene_id
+   54             or profile['task_id'] != task.task_id
+   55             or profile['activate_m'] != task.activate_m):
+   56         return None
+   57     earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+   58     if not set(profile.get('requires_task_success',[]))<=earlier:
+   59         raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+   60     return profile
+   61
+   62
+   63 def validate_spec(spec):
+   64     if not isinstance(spec, dict) or spec.get('schema_version') != 'task_oracle/1.0':
+   65         raise ConfigError('expected task_oracle/1.0')
+   66     if not isinstance(spec.get('task_id'), str) or not spec['task_id']:
+   67         raise ConfigError('task_id required')
+   68     profile_coverage(spec)
+   69     dependencies=spec.get('requires_task_success',[])
+   70     if (not isinstance(dependencies,list) or
+   71         any(not isinstance(d,str) or not d or d==spec['task_id'] for d in dependencies) or
+   72         len(set(dependencies))!=len(dependencies)):
+   73         raise ConfigError('invalid task prerequisites')
+   74     for key in ('activate_m', 'timeout_s', 'max_frame_gap_s'):
+   75         value = number(spec.get(key), key)
+   76         if value < 0 or (key != 'activate_m' and value == 0):
+   77             raise ConfigError(f'{key}: invalid bound')
+   78     budget = spec.get('violation_budget', 0)
+   79     if 'end_route_s_m' in spec and number(spec['end_route_s_m'],'end_route_s_m')<=spec['activate_m']:
+   80         raise ConfigError('task distance window must end after activation')
+   81     if number(spec.get('max_route_error_m',15),'max_route_error_m') <= 0:
+   82         raise ConfigError('positive route departure threshold required')
+   83     if isinstance(budget, bool) or not isinstance(budget, int) or budget < 0:
+   84         raise ConfigError('violation_budget must be a nonnegative integer')
+   85     constraints = spec.get('constraints', [])
+   86     if not isinstance(constraints, list):
+   87         raise ConfigError('constraints must be a list')
+   88     ids = set()
+   89     for constraint in constraints:
+   90         if not isinstance(constraint, dict) or constraint.get('kind') != 'maintain_interval':
+   91             raise ConfigError('parallel constraints currently require maintain_interval')
+   92         key = constraint.get('id')
+   93         if not isinstance(key, str) or not key or key in ids:
+   94             raise ConfigError('constraint IDs must be nonempty and unique')
+   95         ids.add(key)
+   96         validate_spec(constraint_spec(spec, constraint))
+   97     steps = spec.get('steps')
+   98     if not isinstance(steps, list) or not steps:
+   99         raise ConfigError('nonempty steps required')
+  100     required = {
+  101         'speed': ('target_kmh', 'tolerance_kmh', 'hold_s'),
+  102         'lane_change': ('hold_s', 'max_lateral_error_m', 'max_heading_error_deg'),
+  103         'turn': ('hold_s', 'min_heading_change_deg', 'max_lateral_error_m'),
+  104         'yield_pedestrian': ('stop_hold_s', 'stopped_kmh', 'clear_hold_s'),
+  105         'overtake': ('rear_clearance_m', 'hold_s'),
+  106         'passed_target': ('rear_clearance_m', 'hold_s'),
+  107         'progress': ('distance_m',),
+  108         'destination': ('max_distance_m','max_remaining_m'),
+  109     }
+  110     for step in steps:
+  111         if not isinstance(step, dict) or step.get('kind') not in KINDS:
+  112             raise ConfigError('unsupported criterion')
+  113         kind = step['kind']
+  114         if 'start_route_s_m' in step and number(step['start_route_s_m'],'start_route_s_m') < 0:
+  115             raise ConfigError('negative step start progress')
+  116         if kind in extended_criteria.KINDS:
+  117             extended_criteria.validate(step)
+  118             if kind == 'maintain_interval':
+  119                 if step['from_route_s_m'] < max(spec['activate_m'], step.get('start_route_s_m', 0)):
+  120                     raise ConfigError('interval begins before task/step activation')
+  121                 if 'end_route_s_m' in spec and step['until_route_s_m'] >= spec['end_route_s_m']:
+  122                     raise ConfigError('interval completion must precede task deadline boundary')
+  123             continue
+  124         for key in required[kind]:
+  125             if number(step.get(key), key) < 0:
+  126                 raise ConfigError(f'{key}: negative threshold')
+  127         for key in ('hold_s', 'stop_hold_s', 'clear_hold_s', 'rear_clearance_m', 'distance_m',
+  128                     'min_heading_change_deg'):
+  129             if key in step and step[key] <= 0:
+  130                 raise ConfigError(f'{key}: must be positive')
+  131         if kind in {'yield_pedestrian', 'overtake', 'passed_target'} and not step.get('target_role'):
+  132             raise ConfigError('target_role required')
+  133         if kind == 'passed_target' and not dependencies:
+  134             raise ConfigError('passed_target confirmation requires prior task evidence')
+  135         if kind == 'yield_pedestrian' and step.get('require_stop', True) is False:
+  136             if number(step.get('min_speed_drop_kmh'), 'min_speed_drop_kmh') <= 0:
+  137                 raise ConfigError('positive speed decrease required for rolling yield')
+  138         if kind=='speed':
+  139             if 'keep_lane' in step and not isinstance(step['keep_lane'],bool):
+  140                 raise ConfigError('keep_lane must be boolean')
+  141             for key in ('max_lateral_error_m','max_heading_error_deg'):
+  142                 if key in step and (not step.get('keep_lane') or number(step[key],key)<=0):
+  143                     raise ConfigError('speed lane bounds require keep_lane and positive thresholds')
+  144         if kind=='destination' and any(step[k]<=0 for k in ('max_distance_m','max_remaining_m')):
+  145             raise ConfigError('destination tolerances must be positive')
+  146         if kind=='destination' and 'keep_lane' in step:
+  147             if not isinstance(step['keep_lane'],bool):
+  148                 raise ConfigError('keep_lane must be boolean')
+  149             if step['keep_lane']:
+  150                 for key in ('max_lateral_error_m','max_heading_error_deg'):
+  151                     if number(step.get(key),key)<=0:
+  152                         raise ConfigError('positive destination lane bounds required')
+  153         if kind == 'lane_change' and step.get('direction') not in {'LEFT', 'RIGHT'}:
+  154             raise ConfigError('lane_change direction required')
+  155         if kind == 'turn' and step.get('direction') not in {'LEFT', 'RIGHT', 'U_TURN'}:
+  156             raise ConfigError('turn direction required')
+  157     return spec
+  158
+  159
+  160 class TaskOracle:
+  161     """One task, ordered criteria, monotonic frames and immutable final result."""
+  162
+  163     def __init__(self, spec):
+  164         self.spec = copy.deepcopy(validate_spec(spec))
+  165         self.status = 'WAITING'
+  166         self.reason = None
+  167         self.index = 0
+  168         self.evidence = []
+  169         self.last = None
+  170         self.started = None
+  171         self.baseline = (0, 0)
+  172         self.state = {}
+  173         self.roles = {}
+  174         self.fixtures = {}
+  175         self.last_counts = None
+  176         self.constraints = {c['id']:TaskOracle(constraint_spec(self.spec,c))
+  177                             for c in self.spec.get('constraints',[])}
+  178         self.constraint_reported = set()
+  179         self.original_lane = None
+  180         self.requires_original_lane = any(s['kind']=='return_original_lane' for s in self.spec['steps'])
+  181
+  182     def result(self):
+  183         result = dict(task_id=self.spec['task_id'], status=self.status, reason=self.reason,
+  184                     completed_steps=self.index, total_steps=len(self.spec['steps']),
+  185                     evidence=list(self.evidence))
+  186         result['coverage']=profile_coverage(self.spec)
+  187         result['instruction_status']=instruction_status(self.status,result['coverage'])
+  188         if self.constraints:
+  189             result['constraints'] = {key:value.result() for key,value in self.constraints.items()}
+  190         return result
+  191
+  192     def finish(self, status, reason, frame=None):
+  193         if self.status not in TERMINAL:
+  194             self.status, self.reason = status, reason
+  195             self.evidence.append(dict(event=status, reason=reason, frame=frame))
+  196         return self.result()
+  197
+  198     def end_of_stream(self):
+  199         # Truncated capture is not evidence of a model timeout or success.
+  200         return self.finish('SCENE_INVALID', 'observation_stream_ended')
+  201
+  202     def update(self, obs):
+  203         if self.status in TERMINAL:
+  204             return self.result()
+  205         try:
+  206             return self._update(obs)
+  207         except (KeyError, TypeError, ValueError) as error:
+  208             return self.finish('SCENE_INVALID', f'invalid_observation: {error}')
+  209
+  210     def _update(self, obs):
+  211         if obs['schema_version'] != 'task_truth/1.0' or obs['source'] != 'simulator_truth':
+  212             raise ConfigError('independent simulator truth required')
+  213         if 'source_sha256' in self.spec:
+  214             if obs.get('source_sha256') != self.spec['source_sha256'] or obs.get('task_id') != self.spec['task_id']:
+  215                 raise ConfigError('task/config provenance mismatch')
+  216         frame = obs['frame']
+  217         if isinstance(frame, bool) or not isinstance(frame, int) or frame < 0:
+  218             raise ConfigError('invalid frame')
+  219         now = number(obs['sim_time_s'], 'sim_time_s')
+  220         if self.last is not None:
+  221             if frame <= self.last[0] or now <= self.last[1]:
+  222                 raise ConfigError('non-monotonic observation')
+  223             if now - self.last[1] > self.spec['max_frame_gap_s'] + 1e-8:
+  224                 raise ConfigError('observation gap')
+  225         self.last = (frame, now)
+  226         if obs['scenario_valid'] is not True:
+  227             return self.finish('SCENE_INVALID', obs.get('invalid_reason', 'fixture_invalid'), frame)
+  228         ego = obs['ego']
+  229         progress = number(ego['route_s_m'], 'route_s_m')
+  230         speed = number(ego['speed_kmh'], 'speed_kmh')
+  231         if speed < 0:
+  232             raise ConfigError('negative speed')
+  233         if 'route_error_m' in ego and number(ego['route_error_m'],'route_error_m') > self.spec.get('max_route_error_m',15):
+  234             return self.finish('FAILURE','ego_route_departure',frame)
+  235         counts = tuple(obs['safety'][k] for k in ('collisions', 'violations'))
+  236         if any(isinstance(v, bool) or not isinstance(v, int) or v < 0 for v in counts):
+  237             raise ConfigError('invalid safety counters')
+  238         if self.last_counts is not None and any(v < b for v, b in zip(counts, self.last_counts)):
+  239             raise ConfigError('safety counters decreased')
+  240         self.last_counts = counts
+  241         if counts[0] > self.baseline[0]:
+  242             return self.finish('FAILURE', 'collision', frame)
+  243         if counts[1] - self.baseline[1] > self.spec.get('violation_budget', 0):
+  244             return self.finish('FAILURE', 'violation_budget_exceeded', frame)
+  245         if self.status == 'WAITING':
+  246             if progress < self.spec['activate_m']:
+  247                 return self.result()
+  248             if progress - self.spec['activate_m'] > 20:
+  249                 raise ConfigError('activation window skipped')
+  250             for dependency in self.spec.get('requires_task_success',[]):
+  251                 proof=obs['fixture'].get('prerequisites',{}).get(dependency,{})
+  252                 completed=proof.get('completion_frame')
+  253                 if (proof.get('status')!='SUCCESS' or proof.get('source')!='independent_task_oracle' or
+  254                     proof.get('source_sha256')!=self.spec.get('source_sha256') or
+  255                     type(completed) is not int or not 0<=completed<frame):
+  256                     raise ConfigError('missing independent prerequisite success: '+dependency)
+  257             self.status, self.started = 'RUNNING', now
+  258             if self.requires_original_lane:
+  259                 if (not isinstance(ego.get('lane_key'),str) or not ego['lane_key'] or
+  260                     not isinstance(ego.get('road_key'),str) or not ego['road_key'] or ego.get('in_junction') is not False):
+  261                     raise ConfigError('original lane requires non-junction task entry')
+  262                 self.original_lane=dict(lane_key=ego['lane_key'],road_key=ego['road_key'],frame=frame)
+  263                 self.evidence.append(dict(event='ORIGINAL_LANE_BOUND',**self.original_lane))
+  264             self.evidence.append(dict(event='START', frame=frame, sim_time_s=now))
+  265         if self.requires_original_lane and (ego['road_key']!=self.original_lane['road_key'] or ego['in_junction']):
+  266             raise ConfigError('original lane continuation across road/junction not verified')
+  267         if now - self.started > self.spec['timeout_s']:
+  268             return self.finish('TIMEOUT', 'task_deadline', frame)
+  269         if 'end_route_s_m' in self.spec and progress>=self.spec['end_route_s_m']:
+  270             return self.finish('TIMEOUT','task_distance_window_closed',frame)
+  271         for key, oracle in self.constraints.items():
+  272             constraint_obs = dict(obs)
+  273             fixture = dict(obs.get('fixture', {}))
+  274             fixture['steps'] = {'0':fixture.get('constraints', {}).get(key, {})}
+  275             constraint_obs['fixture'] = fixture
+  276             result = oracle.update(constraint_obs)
+  277             if oracle.status in TERMINAL and key not in self.constraint_reported:
+  278                 self.evidence.append(dict(event='CONSTRAINT_RESULT',constraint_id=key,
+  279                                           status=oracle.status,reason=oracle.reason,frame=frame))
+  280                 self.constraint_reported.add(key)
+  281             if oracle.status in {'FAILURE','SCENE_INVALID','TIMEOUT'}:
+  282                 return self.finish(oracle.status, f"constraint:{key}:{result['reason']}", frame)
+  283         if self.index == len(self.spec['steps']):
+  284             if all(c.status=='SUCCESS' for c in self.constraints.values()):
+  285                 return self.finish('SUCCESS','all_criteria_satisfied',frame)
+  286             return self.result()
+  287         step = self.spec['steps'][self.index]
+  288         if progress < step.get('start_route_s_m',0):
+  289             return self.result()
+  290         if self._criterion(step, obs, now):
+  291             self.evidence.append(dict(event='STEP_SUCCESS', step=self.index,
+  292                                      kind=step['kind'], frame=frame, sim_time_s=now))
+  293             self.index += 1
+  294             self.state = {}
+  295             if self.index == len(self.spec['steps']) and all(c.status=='SUCCESS' for c in self.constraints.values()):
+  296                 return self.finish('SUCCESS', 'all_criteria_satisfied', frame)
+  297         return self.result()
+  298
+  299     def _hold(self, key, condition, now, duration):
+  300         if not condition:
+  301             self.state.pop(key, None)
+  302             return False
+  303         start = self.state.setdefault(key, now)
+  304         return now - start + 1e-8 >= duration
+  305
+  306     def _target(self, step, obs):
+  307         role = step['target_role']
+  308         target = obs['actors'][role]
+  309         identity = target['actor_id']
+  310         if not isinstance(identity, (int, str)) or isinstance(identity, bool) or not str(identity):
+  311             raise ConfigError('invalid target identity')
+  312         if target['alive'] is not True or target.get('teleported', False):
+  313             raise ConfigError('target missing or teleported')
+  314         if self.roles.setdefault(role, identity) != identity:
+  315             raise ConfigError('bound target replaced')
+  316         return target
+  317
+  318     def _fixture(self, obs):
+  319         value = obs['fixture']['steps'][str(self.index)]
+  320         if self.fixtures.setdefault(self.index, copy.deepcopy(value)) != value:
+  321             raise ConfigError('fixture changed during task')
+  322         return value
+  323
+  324     def _criterion(self, step, obs, now):
+  325         ego, state = obs['ego'], self.state
+  326         speed = number(ego['speed_kmh'], 'speed_kmh')
+  327         kind = step['kind']
+  328         progress = number(ego['route_s_m'], 'route_s_m')
+  329         if kind in extended_criteria.KINDS:
+  330             return extended_criteria.evaluate(self, step, obs, now)
+  331         if kind == 'speed':
+  332             condition = abs(speed - step['target_kmh']) <= step['tolerance_kmh']
+  333             if step.get('keep_lane', False):
+  334                 if not isinstance(ego['lane_key'], str) or not ego['lane_key'] or not isinstance(ego['in_junction'], bool):
+  335                     raise ConfigError('invalid lane observation')
+  336                 evidence=obs.get('fixture',{}).get('steps',{}).get(str(self.index),{})
+  337                 if 'lane_corridor' in evidence:
+  338                     corridor=self._fixture(obs)['lane_corridor']
+  339                     segments=[s for s in corridor if s['start_m']<=progress<=s['end_m']]
+  340                     if not segments:
+  341                         raise ConfigError('speed lane corridor does not cover current progress')
+  342                     allowed={key for s in segments for key in s['lane_keys']}
+  343                     condition &= ego['lane_key'] in allowed
+  344                 else:
+  345                     initial = state.setdefault('lane', ego['lane_key'])
+  346                     condition &= ego['lane_key'] == initial and not ego['in_junction']
+  347                 for key,measurement in [('max_lateral_error_m','lateral_error_m'),
+  348                                         ('max_heading_error_deg','heading_error_deg')]:
+  349                     if key in step:
+  350                         condition &= abs(number(ego[measurement],measurement))<=step[key]
+  351             return self._hold('stable', condition, now, step['hold_s'])
+  352         if kind == 'lane_change':
+  353             if not isinstance(ego['in_junction'], bool):
+  354                 raise ConfigError('invalid junction flag')
+  355             fixture = self._fixture(obs)
+  356             if fixture['direction'] != step['direction'] or fixture['legal'] is not True:
+  357                 raise ConfigError('invalid lane-change fixture')
+  358             if any(not isinstance(value, str) or not value for value in (
+  359                     ego['lane_key'], fixture['entry_lane_key'], fixture['target_lane_key'])):
+  360                 raise ConfigError('invalid lane identity')
+  361             entries=fixture.get('entry_lane_keys',[fixture['entry_lane_key']])
+  362             targets=fixture.get('target_lane_keys',[fixture['target_lane_key']])
+  363             if (not isinstance(entries,list) or not isinstance(targets,list) or not entries or not targets
+  364                     or any(not isinstance(k,str) or not k for k in entries+targets)
+  365                     or fixture['entry_lane_key'] not in entries or fixture['target_lane_key'] not in targets
+  366                     or set(entries)&set(targets)):
+  367                 raise ConfigError('invalid continuous lane corridor')
+  368             if not state:
+  369                 if ego['lane_key'] not in entries:
+  370                     raise ConfigError('incorrect entry lane')
+  371                 if fixture['entry_lane_key'] == fixture['target_lane_key']:
+  372                     raise ConfigError('identical entry and target lanes')
+  373                 state['entered'] = True
+  374             condition = (ego['lane_key'] in targets and not ego['in_junction']
+  375                          and abs(number(ego['lateral_error_m'], 'lateral_error_m')) <= step['max_lateral_error_m']
+  376                          and abs(number(ego['heading_error_deg'], 'heading_error_deg')) <= step['max_heading_error_deg'])
+  377             return self._hold('stable', condition, now, step['hold_s'])
+  378         if kind == 'turn':
+  379             if not isinstance(ego['in_junction'], bool):
+  380                 raise ConfigError('invalid junction flag')
+  381             fixture = self._fixture(obs)
+  382             if fixture['direction'] != step['direction'] or fixture['legal'] is not True:
+  383                 raise ConfigError('invalid turn fixture')
+  384             if any(not isinstance(value, str) or not value for value in (
+  385                     ego['road_key'], fixture['entry_road_key'], fixture['exit_road_key'])):
+  386                 raise ConfigError('invalid road identity')
+  387             if not state:
+  388                 if ego['road_key'] != fixture['entry_road_key'] or ego['in_junction']:
+  389                     raise ConfigError('incorrect turn entry')
+  390                 state.update(entry_yaw=number(ego['yaw_deg'], 'yaw_deg'), saw_junction=False)
+  391             state['saw_junction'] |= ego['in_junction'] is True
+  392             delta = (number(ego['yaw_deg'], 'yaw_deg') - state['entry_yaw'] + 180) % 360 - 180
+  393             angle = step['min_heading_change_deg']
+  394             # CARLA yaw increases clockwise: positive is right.
+  395             directed = {'LEFT': delta <= -angle, 'RIGHT': delta >= angle,
+  396                         'U_TURN': abs(delta) >= angle}[step['direction']]
+  397             condition = (state['saw_junction'] and not ego['in_junction'] and directed
+  398                          and ego['road_key'] == fixture['exit_road_key']
+  399                          and fixture['entry_road_key'] != fixture['exit_road_key']
+  400                          and abs(number(ego['lateral_error_m'], 'lateral_error_m')) <= step['max_lateral_error_m'])
+  401             return self._hold('stable', condition, now, step['hold_s'])
+  402         if kind == 'yield_pedestrian':
+  403             target = self._target(step, obs)
+  404             entry_speed = state.setdefault('entry_speed', speed)
+  405             conflict = target['in_conflict_zone']
+  406             if not isinstance(conflict, bool):
+  407                 raise ConfigError('conflict flag must be geometric boolean')
+  408             stop_line = number(self._fixture(obs)['stop_line_route_s_m'], 'stop_line')
+  409             if conflict:
+  410                 state['seen_conflict'] = True
+  411                 state.pop('clear', None)
+  412                 if number(ego.get('front_route_s_m',progress),'front_route_s_m') > stop_line:
+  413                     self.finish('FAILURE', 'crossed_stop_line_while_pedestrian_conflict', obs['frame'])
+  414                     return False
+  415                 yielding = speed <= step['stopped_kmh']
+  416                 if step.get('require_stop', True) is False:
+  417                     yielding |= entry_speed - speed >= step['min_speed_drop_kmh']
+  418                 if self._hold('stopped', yielding, now, step['stop_hold_s']):
+  419                     state['yielded'] = True
+  420                 return False
+  421             return self._hold('clear', state.get('seen_conflict', False) and state.get('yielded', False),
+  422                               now, step['clear_hold_s'])
+  423         if kind in {'overtake', 'passed_target'}:
+  424             target = self._target(step, obs)
+  425             if not isinstance(ego['route_corridor_id'], str) or not ego['route_corridor_id']:
+  426                 raise ConfigError('invalid route corridor identity')
+  427             if target['route_corridor_id'] != ego['route_corridor_id']:
+  428                 raise ConfigError('target left shared route corridor')
+  429             separation = number(target['route_s_m'], 'target route_s_m') - progress
+  430             if number(ego['half_length_m'], 'ego half length') <= 0 or number(target['half_length_m'], 'target half length') <= 0:
+  431                 raise ConfigError('positive actor dimensions required')
+  432             state['was_ahead'] = state.get('was_ahead', False) or separation > 0
+  433             rear = number(ego.get('rear_route_s_m',progress-ego['half_length_m']),'ego rear')
+  434             front = number(target.get('front_route_s_m',target['route_s_m']+target['half_length_m']),'target front')
+  435             gap = rear-front
+  436             return self._hold('passed', (kind == 'passed_target' or state['was_ahead'])
+  437                               and gap >= step['rear_clearance_m'], now, step['hold_s'])
+  438         if kind == 'progress':
+  439             start = state.setdefault('start_progress', progress)
+  440             return progress - start >= step['distance_m']
+  441         if kind == 'destination':
+  442             fixture=self._fixture(obs)
+  443             if step.get('keep_lane'):
+  444                 corridor=fixture['lane_corridor']
+  445                 segments=[s for s in corridor if s['start_m']<=progress<=s['end_m']]
+  446                 if not segments:
+  447                     raise ConfigError('destination lane corridor does not cover current progress')
+  448                 allowed={key for s in segments for key in s['lane_keys']}
+  449                 if (ego['lane_key'] not in allowed or
+  450                     abs(number(ego['lateral_error_m'],'lateral_error_m'))>step['max_lateral_error_m'] or
+  451                     abs(number(ego['heading_error_deg'],'heading_error_deg'))>step['max_heading_error_deg']):
+  452                     self.finish('FAILURE','left_destination_lane_corridor',obs['frame'])
+  453                     return False
+  454             end=number(fixture['route_end_s_m'],'route_end_s_m')
+  455             if end<=self.spec['activate_m']:
+  456                 raise ConfigError('destination must follow task activation')
+  457             point=fixture['position_m']
+  458             actual=ego['position_m']
+  459             squared=sum((number(actual[k],'ego '+k)-number(point[k],'destination '+k))**2
+  460                         for k in ('x','y','z'))
+  461             return (end-step['max_remaining_m']<=progress<=end+step['max_remaining_m'] and
+  462                     squared<=step['max_distance_m']**2)
+  463         raise ConfigError('unsupported criterion')

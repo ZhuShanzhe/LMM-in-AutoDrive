@@ -1,0 +1,7 @@
+{
+  "evidence_integrity": "PASS",
+  "runtime_changed_since_diagnostic": [],
+  "capture_frames": 8,
+  "capture_input_sha256": "c95f4ddda992ed0f2c147de099244da2ca7fe4372b959342b5bb9f7d34ce5f58",
+  "scope": "package/replay integrity and contract probe only; all new acceptance criteria remain open"
+}

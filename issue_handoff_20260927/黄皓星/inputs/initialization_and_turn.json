@@ -1,0 +1,27 @@
+{
+  "scene3_start": {
+    "source_line": 1,
+    "record": {
+      "status": "fallback_safe_stop",
+      "error_type": "RuntimeError",
+      "error": "no synchronized RGB/LiDAR frame is available"
+    }
+  },
+  "turn_probe": {
+    "missing_target": {
+      "decision_status": "BLOCKED",
+      "action": "decelerate",
+      "blocked_reason_codes": [
+        "turn_target_location_missing",
+        "wait_for_safe"
+      ]
+    },
+    "supplied_target": {
+      "decision_status": "READY",
+      "action": "turn_right",
+      "blocked_reason_codes": []
+    },
+    "scope": "synthetic valid low-risk interface input; not driving success"
+  },
+  "scope": "startup is recorded; turn probe is synthetic"
+}

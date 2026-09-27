@@ -1,0 +1,296 @@
+{
+  "counts": {
+    "valid_decisions": 1800,
+    "high_risk_frames": 79,
+    "raw_accelerate_during_high_risk": 79,
+    "blocked_frames": 128
+  },
+  "reasons": {
+    "await_sustained_risk_clearance": 128,
+    "risk:learned_visual_risk_high": 79,
+    "risk:learned_visual_risk_medium": 2
+  },
+  "raw_actions": {
+    "accelerate": 1336,
+    "keep_lane": 342,
+    "decelerate": 120,
+    "stop": 2
+  },
+  "active_steps": {
+    "0": 23,
+    "1": 1777
+  },
+  "max_observed_speed_kmh": 42.6878842901574,
+  "last_route_s_m": 361.347,
+  "last_plan": {
+    "schema_version": "1.1.0",
+    "request_id": "s2_t05_cmd_01-configured",
+    "revision": 1799,
+    "plan_status": "ACTIVE",
+    "active_step_index": 1,
+    "active_step_id": "s2_t05_cmd_01_step_02",
+    "step_states": [
+      {
+        "step_id": "s2_t05_cmd_01_step_01",
+        "action": "KEEP_LANE",
+        "status": "COMPLETED",
+        "activation_frame_id": "carla_2821",
+        "terminal_frame_id": "carla_2844",
+        "reason_codes": [
+          "observed_physical_completion"
+        ],
+        "speed_reference_kmh": null,
+        "resolved_target_speed_kmh": null
+      },
+      {
+        "step_id": "s2_t05_cmd_01_step_02",
+        "action": "SET_SPEED",
+        "status": "ACTIVE",
+        "activation_frame_id": "carla_2844",
+        "terminal_frame_id": null,
+        "reason_codes": [],
+        "speed_reference_kmh": 8.654324,
+        "resolved_target_speed_kmh": 45.0
+      },
+      {
+        "step_id": "s2_t05_cmd_01_step_03",
+        "action": "TURN",
+        "status": "PENDING",
+        "activation_frame_id": null,
+        "terminal_frame_id": null,
+        "reason_codes": [],
+        "speed_reference_kmh": null,
+        "resolved_target_speed_kmh": null
+      },
+      {
+        "step_id": "s2_t05_cmd_01_step_04",
+        "action": "KEEP_LANE",
+        "status": "PENDING",
+        "activation_frame_id": null,
+        "terminal_frame_id": null,
+        "reason_codes": [],
+        "speed_reference_kmh": null,
+        "resolved_target_speed_kmh": null
+      }
+    ],
+    "last_frame_id": "carla_4620",
+    "last_feedback_outcome": "CONTINUE",
+    "reason_codes": []
+  },
+  "last_dispatch": {
+    "mode": "completion_serial",
+    "completed_commands": 0,
+    "total_commands": 15,
+    "active_request_id": "s2_t05_cmd_01-configured",
+    "failure": null,
+    "events": [
+      {
+        "request_id": "s2_t05_cmd_01-configured",
+        "status": "RUNNING",
+        "timestamp_s": 6.90573769621551,
+        "progress_m": 0.0
+      }
+    ],
+    "execution_elapsed_s": 77.70000115782022,
+    "safety_wait_elapsed_s": 12.250000182539225,
+    "feedback_scope": "model_execution_plan; not independent task assessment"
+  },
+  "last_decision": {
+    "schema_version": "1.0.0",
+    "request_id": "s2_t05_cmd_01-configured",
+    "frame_id": "carla_4620",
+    "decision_status": "READY",
+    "action": "accelerate",
+    "target_speed_kmh": 9.295935,
+    "target_lane": null,
+    "target_location": null,
+    "emergency": false,
+    "reason": "vla_accepted_phase-recovery-epoch_06",
+    "parse_status": "VALID",
+    "parse_confidence": 1.0,
+    "source_step_id": "s2_t05_cmd_01_step_02",
+    "source_step_action": "SET_SPEED",
+    "source_step_count": 4,
+    "matched_entity_id": null,
+    "risk_level": "low",
+    "risk_reason_codes": [],
+    "blocked_reason_codes": [],
+    "longitudinal_control_mode": "ABSOLUTE_SPEED",
+    "allow_positive_acceleration": true,
+    "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+    "target_acceleration_mps2": 2.439721251735154,
+    "sequence_valid_until_s": 97.15573903657496,
+    "control_valid_until_s": 97.15573903657496,
+    "command_id": "s2_t05_cmd_01-configured:s2_t05_cmd_01_step_02"
+  },
+  "last_traffic": {
+    "source": "traffic_control_contract/1.0",
+    "observation": {
+      "applicable": true,
+      "signal_id": "2426",
+      "state": "RED",
+      "confidence": 0.9999648332595825,
+      "stop_distance_m": 25.502365139217797,
+      "stop_line_source": "static_hdmap_stop_line",
+      "timestamp_s": 96.80573903657496,
+      "source": "rgb_lamp_net_static_head",
+      "truth_state_access": false,
+      "camera_pose_source": "image_exposure",
+      "expected_pixel_x": 688.1582678920944,
+      "expected_pixel_y": 632.1756288027723,
+      "roi_bounds": null,
+      "landmark_depth_m": 56.92646870059875,
+      "detections": [
+        {
+          "head_index": 0,
+          "bbox": [
+            610.9523257519702,
+            564.3931011200125,
+            613.7967700108313,
+            573.0091987700806
+          ],
+          "state": "RED",
+          "color_confidence": 0.9999971389770508,
+          "probabilities": {
+            "UNKNOWN": 2.6620111839292804e-06,
+            "RED": 0.9999971389770508,
+            "YELLOW": 1.857569031926687e-07,
+            "GREEN": 1.3662432296612792e-10
+          },
+          "color_pixels": {
+            "RED": 392,
+            "YELLOW": 0,
+            "GREEN": 0
+          },
+          "source": "current_rgb_static_head_lamp_net"
+        },
+        {
+          "head_index": 1,
+          "bbox": [
+            639.597093644381,
+            564.3936208413201,
+            642.2436088257781,
+            573.0096220289421
+          ],
+          "state": "RED",
+          "color_confidence": 0.9999940395355225,
+          "probabilities": {
+            "UNKNOWN": 5.904785666643875e-06,
+            "RED": 0.9999940395355225,
+            "YELLOW": 5.6167614559399226e-08,
+            "GREEN": 7.512319238900389e-11
+          },
+          "color_pixels": {
+            "RED": 293,
+            "YELLOW": 0,
+            "GREEN": 0
+          },
+          "source": "current_rgb_static_head_lamp_net"
+        },
+        {
+          "head_index": 2,
+          "bbox": [
+            587.0812486024021,
+            564.3926680109898,
+            590.105282493769,
+            573.0088460474165
+          ],
+          "state": "RED",
+          "color_confidence": 0.9999948740005493,
+          "probabilities": {
+            "UNKNOWN": 4.60733372165123e-06,
+            "RED": 0.9999948740005493,
+            "YELLOW": 5.098508495393617e-07,
+            "GREEN": 4.183330903906324e-10
+          },
+          "color_pixels": {
+            "RED": 446,
+            "YELLOW": 0,
+            "GREEN": 0
+          },
+          "source": "current_rgb_static_head_lamp_net"
+        },
+        {
+          "head_index": 3,
+          "bbox": [
+            685.9869324018904,
+            592.1600631507774,
+            688.9938279241144,
+            600.5415863031238
+          ],
+          "state": "RED",
+          "color_confidence": 0.9999648332595825,
+          "probabilities": {
+            "UNKNOWN": 3.288824518676847e-05,
+            "RED": 0.9999648332595825,
+            "YELLOW": 2.252675130876014e-06,
+            "GREEN": 3.9786618444281885e-09
+          },
+          "color_pixels": {
+            "RED": 823,
+            "YELLOW": 0,
+            "GREEN": 0
+          },
+          "source": "current_rgb_static_head_lamp_net"
+        }
+      ],
+      "image_source": "synchronized_front_capture"
+    },
+    "active": true,
+    "changed": false,
+    "policy_safety_credit": false,
+    "status": "wait_for_observed_green",
+    "state": "RED",
+    "speed_cap_kmh": 32.70714335321376
+  },
+  "examples": {
+    "risk_accelerate": {
+      "frame": 3686,
+      "proposal": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-3686",
+        "frame_id": "carla_3686",
+        "action": "accelerate",
+        "target_speed_kmh": 5.761016,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.979716,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 16.496725
+      },
+      "final": {
+        "schema_version": "1.0.0",
+        "request_id": "s2_t05_cmd_01-configured",
+        "frame_id": "carla_3686",
+        "decision_status": "BLOCKED",
+        "action": "emergency_brake",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": true,
+        "reason": "active_plan_not_ready",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "s2_t05_cmd_01_step_02",
+        "source_step_action": "SET_SPEED",
+        "source_step_count": 4,
+        "matched_entity_id": null,
+        "risk_level": "high",
+        "risk_reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "blocked_reason_codes": [
+          "await_sustained_risk_clearance"
+        ],
+        "longitudinal_control_mode": "RISK_SPEED_CAP",
+        "allow_positive_acceleration": false,
+        "control_valid_until_s": 50.45573834069073,
+        "command_id": "s2_t05_cmd_01-configured:s2_t05_cmd_01_step_02"
+      },
+      "risk_reasons": [
+        "learned_visual_risk_high"
+      ]
+    }
+  }
+}

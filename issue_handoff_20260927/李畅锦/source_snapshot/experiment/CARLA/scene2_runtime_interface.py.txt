@@ -1,0 +1,231 @@
+    1 """Pure-Python Scene 2 contracts shared with perception and control code."""
+    2
+    3 from __future__ import annotations
+    4
+    5 from typing import Any, Mapping, Sequence
+    6
+    7
+    8 DRIVING_INTENT_SCHEMA = "1.2.0"
+    9 WORLD_STATE_SCHEMA = "1.0.0"
+   10 MULTIMODAL_BUNDLE_SCHEMA = "1.0.0"
+   11 VLA_PROPOSAL_SCHEMA = "1.0.0"
+   12 CONTROL_DECISION_SCHEMA = "1.0.0"
+   13
+   14 CONTROL_ACTIONS = {
+   15     "keep_lane",
+   16     "accelerate",
+   17     "decelerate",
+   18     "stop",
+   19     "emergency_brake",
+   20     "lane_change_left",
+   21     "lane_change_right",
+   22     "turn_left",
+   23     "turn_right",
+   24 }
+   25
+   26
+   27 def _scene2_step_contract(
+   28     encoded: Any,
+   29 ) -> tuple[str, dict[str, Any], str, dict[str, Any]]:
+   30     """Normalize one compact Scene 2 step into the shared intent contract."""
+   31
+   32     action, separator, raw_parameter = str(encoded).partition(":")
+   33     action = action.strip().upper()
+   34     parameter = raw_parameter.strip().upper() if separator else ""
+   35     parameters: dict[str, Any] = {}
+   36     wait_actions = {"CHECK", "WAIT", "CONFIRM", "YIELD"}
+   37
+   38     if action == "SET_SPEED":
+   39         value = parameter.removesuffix("MPS")
+   40         try:
+   41             parameters["target_speed_mps"] = float(value)
+   42         except ValueError as error:
+   43             raise ValueError(
+   44                 "SET_SPEED requires a numeric mps value: {0}".format(encoded)
+   45             ) from error
+   46     elif action == "ADJUST_SPEED":
+   47         parameters["change"] = parameter or "HOLD"
+   48     elif action in {"CHANGE_LANE", "TURN", "PULL_OVER"}:
+   49         direction = parameter
+   50         if parameter == "RETURN_WHEN_SAFE":
+   51             direction = "RIGHT"
+   52         elif parameter.endswith("_WHEN_SAFE"):
+   53             direction = parameter.removesuffix("_WHEN_SAFE")
+   54         parameters["direction"] = direction
+   55     elif action == "KEEP_LANE" and parameter:
+   56         parameters["direction"] = parameter
+   57     elif parameter:
+   58         parameters["condition"] = parameter
+   59
+   60     on_blocked = (
+   61         "WAIT_FOR_SAFE"
+   62         if action in wait_actions
+   63         or parameter.endswith("_WHEN_SAFE")
+   64         else "SAFE_STOP"
+   65     )
+   66     completion_type = {
+   67         "SET_SPEED": "TARGET_SPEED_REACHED",
+   68         "CHANGE_LANE": "LANE_CHANGE_COMPLETED",
+   69         "PULL_OVER": "LANE_CHANGE_COMPLETED",
+   70         "TURN": "JUNCTION_EXITED",
+   71         "U_TURN": "JUNCTION_EXITED",
+   72         "STOP": "VEHICLE_STOPPED",
+   73         "WAIT": "ACTION_REACHED",
+   74     }.get(action, "ACTION_REACHED")
+   75     return action, parameters, on_blocked, {"type": completion_type}
+   76
+   77
+   78 def build_scheduled_driving_intent(
+   79     command: Mapping[str, Any],
+   80     simulation_frame: int,
+   81     route_s_m: float,
+   82     timestamp_s: float,
+   83 ) -> dict[str, Any]:
+   84     """Translate one competition schedule entry to DrivingIntent 1.2."""
+   85
+   86     steps = []
+   87     encoded_steps: Sequence[Any] = command.get("steps", [])
+   88     previous_step_id = None
+   89     for index, encoded in enumerate(encoded_steps, start=1):
+   90         action, parameters, on_blocked, completion = _scene2_step_contract(encoded)
+   91         step_id = "{0}_step_{1:02d}".format(command["id"], index)
+   92         steps.append(
+   93             {
+   94                 "step_id": step_id,
+   95                 "action": action,
+   96                 "parameters": parameters,
+   97                 "depends_on": [previous_step_id] if previous_step_id else [],
+   98                 "on_blocked": on_blocked,
+   99                 "trigger": {"type": "IMMEDIATE"},
+  100                 "preconditions": [],
+  101                 "completion": completion,
+  102                 "status": "PENDING",
+  103             }
+  104         )
+  105         previous_step_id = step_id
+  106     return {
+  107         "schema_version": DRIVING_INTENT_SCHEMA,
+  108         "request_id": "{0}-frame-{1}".format(
+  109             command["id"],
+  110             int(simulation_frame),
+  111         ),
+  112         "simulation_frame": int(simulation_frame),
+  113         "route_s_m": round(float(route_s_m), 3),
+  114         "timestamp_s": round(float(timestamp_s), 3),
+  115         "input": {
+  116             "modality": "TEXT",
+  117             "language": "zh-CN",
+  118             "raw_text": str(command["spoken_text"]),
+  119             "normalized_text": str(command["spoken_text"]),
+  120         },
+  121         "parse_result": {
+  122             "status": "VALID",
+  123             "confidence": 1.0,
+  124             "source": "competition_schedule",
+  125         },
+  126         "intent": {
+  127             "category": command["category"],
+  128             "urgency": command["urgency"],
+  129             "steps": steps,
+  130         },
+  131         "voice_text": command["spoken_text"],
+  132     }
+  133
+  134
+  135 def build_multimodal_frame_bundle(
+  136     scene_id: str,
+  137     simulation_frame: int,
+  138     world_state_frame: int,
+  139     latest_sensor_frames: Mapping[str, int],
+  140     driving_intent_request_id: str | None,
+  141 ) -> dict[str, Any]:
+  142     """Build a strict multimodal bundle without adjacent-frame filling."""
+  143
+  144     required = (
+  145         "front_rgb",
+  146         "left_rgb",
+  147         "right_rgb",
+  148         "rear_rgb",
+  149         "lidar",
+  150     )
+  151     frame = int(simulation_frame)
+  152     sensor_exact = all(
+  153         latest_sensor_frames.get(name) == frame
+  154         for name in required
+  155     )
+  156     world_state_exact = int(world_state_frame) == frame
+  157     exact = sensor_exact and world_state_exact
+  158     return {
+  159         "schema_version": MULTIMODAL_BUNDLE_SCHEMA,
+  160         "scene_id": scene_id,
+  161         "simulation_frame": frame,
+  162         "status": "COMPLETE" if exact else "INCOMPLETE",
+  163         "synchronization": {
+  164             "key": "simulation_frame",
+  165             "exact": exact,
+  166             "sensor_exact": sensor_exact,
+  167             "world_state_exact": world_state_exact,
+  168             "adjacent_frame_fill_used": False,
+  169         },
+  170         "modalities": {
+  171             name: {
+  172                 "frame": latest_sensor_frames.get(name),
+  173                 "available": name in latest_sensor_frames,
+  174                 "exact": latest_sensor_frames.get(name) == frame,
+  175             }
+  176             for name in required
+  177         },
+  178         "world_state_frame": int(world_state_frame),
+  179         "driving_intent_request_id": driving_intent_request_id,
+  180     }
+  181
+  182
+  183 def validate_control_decision(
+  184     decision: Mapping[str, Any],
+  185     simulation_frame: int,
+  186 ) -> dict[str, Any]:
+  187     """Validate the ControlDecision boundary before CARLA actuation.
+  188
+  189     The function does not perform safety gating. The caller must only pass a
+  190     decision already approved by deterministic RiskAssessment/VLA safety
+  191     gating.
+  192     """
+  193
+  194     if not isinstance(decision, Mapping):
+  195         raise TypeError("ControlDecision must be a mapping")
+  196     action = str(decision.get("action", "")).strip().lower()
+  197     if action not in CONTROL_ACTIONS:
+  198         raise ValueError(
+  199             "unsupported ControlDecision action: {0}".format(action)
+  200         )
+  201     decision_frame = decision.get("simulation_frame")
+  202     if decision_frame is None:
+  203         raise ValueError("ControlDecision simulation_frame is required")
+  204     if int(decision_frame) != int(simulation_frame):
+  205         raise ValueError(
+  206             "stale ControlDecision: expected frame {0}, got {1}".format(
+  207                 int(simulation_frame),
+  208                 int(decision_frame),
+  209             )
+  210         )
+  211     target_speed = float(decision.get("target_speed_kmh", 0.0))
+  212     if not 0.0 <= target_speed <= 100.0:
+  213         raise ValueError("target_speed_kmh must be in [0, 100]")
+  214     if decision.get("safety_gate_status") not in {
+  215         "APPROVED",
+  216         "OVERRIDDEN",
+  217     }:
+  218         raise ValueError(
+  219             "ControlDecision must be approved by the safety gate"
+  220         )
+  221     return {
+  222         "schema_version": CONTROL_DECISION_SCHEMA,
+  223         "simulation_frame": int(simulation_frame),
+  224         "action": action,
+  225         "target_speed_kmh": target_speed,
+  226         "target_lane": decision.get("target_lane"),
+  227         "emergency": bool(decision.get("emergency", False)),
+  228         "reason": str(decision.get("reason", "")),
+  229         "request_id": decision.get("request_id"),
+  230         "safety_gate_status": decision["safety_gate_status"],
+  231     }

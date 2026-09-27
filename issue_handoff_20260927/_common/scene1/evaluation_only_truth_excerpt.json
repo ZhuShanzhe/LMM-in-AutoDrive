@@ -1,0 +1,400 @@
+[
+  {
+    "source_line": 414,
+    "record": {
+      "frame": 7748,
+      "sim_time_s": 37.29382628202438,
+      "route_s_m": 62.093792425468656,
+      "actors": {
+        "393": {
+          "x": -16.63516616821289,
+          "y": -150.0792694091797,
+          "z": 0.001568489009514451,
+          "yaw": 89.76168823242188,
+          "vx": 0.038682784885168076,
+          "vy": 9.299737930297852,
+          "vz": -1.3160705520931515e-06
+        }
+      },
+      "traffic_observation": {
+        "frame": 7748,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  },
+  {
+    "source_line": 417,
+    "record": {
+      "frame": 7751,
+      "sim_time_s": 37.44382628425956,
+      "route_s_m": 63.52944702915271,
+      "actors": {
+        "393": {
+          "x": -16.629194259643555,
+          "y": -148.64361572265625,
+          "z": 0.0015733337495476007,
+          "yaw": 89.7616195678711,
+          "vx": 0.04089898616075516,
+          "vy": 9.830448150634766,
+          "vz": 1.7738342421580455e-06
+        }
+      },
+      "traffic_observation": {
+        "frame": 7751,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  },
+  {
+    "source_line": 420,
+    "record": {
+      "frame": 7754,
+      "sim_time_s": 37.59382628649473,
+      "route_s_m": 65.05301968750851,
+      "actors": {
+        "393": {
+          "x": -16.62285614013672,
+          "y": -147.1200408935547,
+          "z": 0.0015585327055305243,
+          "yaw": 89.76146697998047,
+          "vx": 0.04343358799815178,
+          "vy": 10.43466567993164,
+          "vz": -4.2915343101412873e-07
+        }
+      },
+      "traffic_observation": {
+        "frame": 7754,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  },
+  {
+    "source_line": 423,
+    "record": {
+      "frame": 7757,
+      "sim_time_s": 37.743826288729906,
+      "route_s_m": 66.66001653710046,
+      "actors": {
+        "393": {
+          "x": -16.616165161132812,
+          "y": -145.51304626464844,
+          "z": 0.0015679550124332309,
+          "yaw": 89.7613296508789,
+          "vx": 0.04561932012438774,
+          "vy": 10.953439712524414,
+          "vz": -8.29696659820911e-07
+        }
+      },
+      "traffic_observation": {
+        "frame": 7757,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  },
+  {
+    "source_line": 426,
+    "record": {
+      "frame": 7760,
+      "sim_time_s": 37.89382629096508,
+      "route_s_m": 68.34466548233036,
+      "actors": {
+        "393": {
+          "x": -16.609148025512695,
+          "y": -143.82839965820312,
+          "z": 0.0015808105235919356,
+          "yaw": 89.76123809814453,
+          "vx": 0.04775991290807724,
+          "vy": 11.46158504486084,
+          "vz": -7.24792471373803e-07
+        }
+      },
+      "traffic_observation": {
+        "frame": 7760,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  },
+  {
+    "source_line": 429,
+    "record": {
+      "frame": 7763,
+      "sim_time_s": 38.043826293200254,
+      "route_s_m": 70.07787148476913,
+      "actors": {
+        "393": {
+          "x": -16.60192108154297,
+          "y": -142.09519958496094,
+          "z": 0.0016915893647819757,
+          "yaw": 89.76124572753906,
+          "vx": 0.047961071133613586,
+          "vy": 11.507858276367188,
+          "vz": 8.010864007701457e-07
+        }
+      },
+      "traffic_observation": {
+        "frame": 7763,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  },
+  {
+    "source_line": 432,
+    "record": {
+      "frame": 7766,
+      "sim_time_s": 38.19382629543543,
+      "route_s_m": 71.77819001331525,
+      "actors": {
+        "393": {
+          "x": -16.594833374023438,
+          "y": -140.39488220214844,
+          "z": 0.0018618773901835084,
+          "yaw": 89.76123809814453,
+          "vx": 0.04671439155936241,
+          "vy": 11.208118438720703,
+          "vz": 6.294250169958104e-07
+        }
+      },
+      "traffic_observation": {
+        "frame": 7766,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  },
+  {
+    "source_line": 435,
+    "record": {
+      "frame": 7769,
+      "sim_time_s": 38.3438262976706,
+      "route_s_m": 73.45545249138563,
+      "actors": {
+        "393": {
+          "x": -16.58784294128418,
+          "y": -138.71762084960938,
+          "z": 0.0018617629539221525,
+          "yaw": 89.76123809814453,
+          "vx": 0.04673418402671814,
+          "vy": 11.212736129760742,
+          "vz": 1.6212462696785224e-06
+        }
+      },
+      "traffic_observation": {
+        "frame": 7769,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  },
+  {
+    "source_line": 438,
+    "record": {
+      "frame": 7772,
+      "sim_time_s": 38.49382629990578,
+      "route_s_m": 75.15046094711704,
+      "actors": {
+        "393": {
+          "x": -16.580780029296875,
+          "y": -137.02261352539062,
+          "z": 0.0018110275268554688,
+          "yaw": 89.76123809814453,
+          "vx": 0.04736832156777382,
+          "vy": 11.364917755126953,
+          "vz": 1.325607286162267e-06
+        }
+      },
+      "traffic_observation": {
+        "frame": 7772,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  },
+  {
+    "source_line": 441,
+    "record": {
+      "frame": 7775,
+      "sim_time_s": 38.64382630214095,
+      "route_s_m": 76.85677617537026,
+      "actors": {
+        "393": {
+          "x": -16.57366943359375,
+          "y": -135.31629943847656,
+          "z": 0.0018210220150649548,
+          "yaw": 89.76123809814453,
+          "vx": 0.047367386519908905,
+          "vy": 11.36466121673584,
+          "vz": 1.678466787780053e-06
+        }
+      },
+      "traffic_observation": {
+        "frame": 7775,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  },
+  {
+    "source_line": 444,
+    "record": {
+      "frame": 7778,
+      "sim_time_s": 38.793826304376125,
+      "route_s_m": 78.56144345788368,
+      "actors": {
+        "393": {
+          "x": -16.566564559936523,
+          "y": -133.61163330078125,
+          "z": 0.0018338393419981003,
+          "yaw": 89.76123809814453,
+          "vx": 0.047421135008335114,
+          "vy": 11.377592086791992,
+          "vz": 1.325607286162267e-06
+        }
+      },
+      "traffic_observation": {
+        "frame": 7778,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  },
+  {
+    "source_line": 798,
+    "record": {
+      "frame": 8132,
+      "sim_time_s": 56.49382656812668,
+      "route_s_m": 135.5711305494112,
+      "actors": {
+        "393": {
+          "x": -16.441497802734375,
+          "y": -76.60255432128906,
+          "z": 0.0017027663998305798,
+          "yaw": 89.89134979248047,
+          "vx": 0.005464398302137852,
+          "vy": 2.679856777191162,
+          "vz": -1.09672544112982e-06
+        }
+      },
+      "traffic_observation": {
+        "frame": 8132,
+        "counts": {
+          "front_cone": 1,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 1,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "39:0:6": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      }
+    }
+  }
+]

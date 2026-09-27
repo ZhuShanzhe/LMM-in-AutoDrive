@@ -1,0 +1,440 @@
+    1 from __future__ import annotations
+    2
+    3 import copy
+    4 import time
+    5 from typing import Any, Sequence
+    6
+    7 import torch
+    8
+    9 from .contracts import SensorTensorBatch
+   10 from .decision_adapter import LightweightDecisionAdapter, decode_proposal
+   11 from .safety_bridge import advance_vla_control_plan
+   12 from .temporal_supervisor import TemporalProposalSupervisor
+   13
+   14
+   15 VISUAL_RISK_LEVELS = ("low", "medium", "high")
+   16 VISUAL_HIGH_CONFIDENCE_THRESHOLD = 0.55
+   17
+   18
+   19 def decode_visual_risk_assessment(
+   20     logits: torch.Tensor,
+   21     *,
+   22     high_confidence_threshold: float = VISUAL_HIGH_CONFIDENCE_THRESHOLD,
+   23     temporal_used: bool = False,
+   24     risk_score: torch.Tensor | None = None,
+   25     risk_horizon_logits: torch.Tensor | None = None,
+   26     risk_uncertainty: torch.Tensor | None = None,
+   27 ) -> dict[str, Any]:
+   28     """Convert the learned visual-risk head into the safety-gate contract.
+   29
+   30     This adapter deliberately exposes no object identity or metric distance:
+   31     those values are unavailable from the raw-camera head.  It is therefore a
+   32     valid sensor-derived safety signal rather than a disguised simulator-truth
+   33     observation.
+   34     """
+   35     if logits.ndim != 2 or logits.shape != (1, len(VISUAL_RISK_LEVELS)):
+   36         raise ValueError("visual risk logits must have shape [1, 3]")
+   37     if not 0.0 < high_confidence_threshold < 1.0:
+   38         raise ValueError("high confidence threshold must be between 0 and 1")
+   39     probabilities = torch.softmax(logits.detach().float(), dim=-1)[0].cpu()
+   40     index = int(probabilities.argmax())
+   41     raw_level = VISUAL_RISK_LEVELS[index]
+   42     level = (
+   43         "medium"
+   44         if raw_level == "high"
+   45         and float(probabilities[2]) < high_confidence_threshold
+   46         else raw_level
+   47     )
+   48     recommended = {
+   49         "low": "keep_lane",
+   50         "medium": "decelerate",
+   51         "high": "emergency_brake",
+   52     }[level]
+   53     lane_safe = level == "low"
+   54     reason_codes = (
+   55         [] if level == "low" else [f"learned_visual_risk_{level}"]
+   56     )
+   57     score_value = None
+   58     if risk_score is not None:
+   59         score_value = round(float(risk_score.detach().float()[0].cpu()), 6)
+   60     horizon_probabilities = None
+   61     if risk_horizon_logits is not None:
+   62         horizon_probabilities = [
+   63             round(float(value), 6)
+   64             for value in torch.sigmoid(
+   65                 risk_horizon_logits.detach().float()[0]
+   66             ).cpu()
+   67         ]
+   68     uncertainty_value = None
+   69     if risk_uncertainty is not None:
+   70         uncertainty_value = round(
+   71             float(risk_uncertainty.detach().float()[0].cpu()), 6
+   72         )
+   73     return {
+   74         "risk_level": level,
+   75         "recommended_action": recommended,
+   76         "reason_codes": reason_codes,
+   77         "matched_entity_id": None,
+   78         "lane_change": {
+   79             direction: {
+   80                 "is_safe": lane_safe,
+   81                 "reason_codes": (
+   82                     [] if lane_safe else ["visual_risk_blocks_lane_change"]
+   83                 ),
+   84             }
+   85             for direction in ("left", "right")
+   86         },
+   87         "source": (
+   88             "learned_temporal_multisensor_risk_head"
+   89             if temporal_used
+   90             else "learned_raw_camera_visual_risk_head"
+   91         ),
+   92         "temporal_used": bool(temporal_used),
+   93         "risk_score": score_value,
+   94         "horizon_probabilities": horizon_probabilities,
+   95         "risk_uncertainty": uncertainty_value,
+   96         "raw_argmax_level": raw_level,
+   97         "high_confidence_threshold": high_confidence_threshold,
+   98         "probabilities": {
+   99             name: round(float(probabilities[value]), 6)
+  100             for value, name in enumerate(VISUAL_RISK_LEVELS)
+  101         },
+  102     }
+  103
+  104
+  105 class LightweightVLAPipeline:
+  106     def __init__(
+  107         self,
+  108         model: LightweightDecisionAdapter,
+  109         *,
+  110         model_name: str = "lightweight-vla-adapter",
+  111         device: str | torch.device = "cuda",
+  112         dtype: torch.dtype | None = None,
+  113         checkpoint_loaded: bool = False,
+  114         temporal_supervisor: TemporalProposalSupervisor | None = None,
+  115         high_confidence_threshold: float = VISUAL_HIGH_CONFIDENCE_THRESHOLD,
+  116     ) -> None:
+  117         self.device = torch.device(device)
+  118         self.model = model.to(device=self.device, dtype=dtype).eval()
+  119         self.model_name = model_name
+  120         self.dtype = next(self.model.parameters()).dtype
+  121         self.checkpoint_loaded = checkpoint_loaded
+  122         self.temporal_supervisor = (
+  123             temporal_supervisor or TemporalProposalSupervisor()
+  124         )
+  125         self._last_visual_risk_assessment: dict[str, Any] | None = None
+  126         self._risk_history: list[torch.Tensor] = []
+  127         self._risk_history_max = 5
+  128         self.high_confidence_threshold = float(high_confidence_threshold)
+  129
+  130     def _move(self, batch: SensorTensorBatch) -> SensorTensorBatch:
+  131         def floating(tensor: torch.Tensor) -> torch.Tensor:
+  132             return tensor.to(device=self.device, dtype=self.dtype)
+  133
+  134         def images(tensor: torch.Tensor) -> torch.Tensor:
+  135             moved = tensor.to(device=self.device, dtype=self.dtype)
+  136             return moved.div_(255.0) if not tensor.is_floating_point() else moved
+  137
+  138         return SensorTensorBatch(
+  139             camera_bev=floating(batch.camera_bev),
+  140             lidar_bev=floating(batch.lidar_bev),
+  141             ego_features=floating(batch.ego_features),
+  142             candidate_features=floating(batch.candidate_features),
+  143             candidate_mask=batch.candidate_mask.to(self.device),
+  144             intent_tokens=floating(batch.intent_tokens),
+  145             intent_mask=batch.intent_mask.to(self.device),
+  146             camera_images=(
+  147                 images(batch.camera_images)
+  148                 if batch.camera_images is not None
+  149                 else None
+  150             ),
+  151             camera_view_mask=(
+  152                 batch.camera_view_mask.to(self.device)
+  153                 if batch.camera_view_mask is not None
+  154                 else None
+  155             ),
+  156             environment_features=(
+  157                 floating(batch.environment_features)
+  158                 if batch.environment_features is not None
+  159                 else None
+  160             ),
+  161         )
+  162
+  163     @staticmethod
+  164     def _model_inputs(batch: SensorTensorBatch) -> dict[str, torch.Tensor | None]:
+  165         return {
+  166             "camera_bev": batch.camera_bev,
+  167             "lidar_bev": batch.lidar_bev,
+  168             "ego_features": batch.ego_features,
+  169             "candidate_features": batch.candidate_features,
+  170             "candidate_mask": batch.candidate_mask,
+  171             "intent_tokens": batch.intent_tokens,
+  172             "intent_mask": batch.intent_mask,
+  173             "camera_images": batch.camera_images,
+  174             "camera_view_mask": batch.camera_view_mask,
+  175             "environment_features": batch.environment_features,
+  176         }
+  177
+  178     def _risk_history_tensor(self) -> torch.Tensor | None:
+  179         if not self.model.use_temporal_risk or not self._risk_history:
+  180             return None
+  181         frames = self._risk_history[-(self._risk_history_max - 1):]
+  182         return torch.stack(frames, dim=1)
+  183
+  184     def predict_proposal(
+  185         self,
+  186         batch: SensorTensorBatch,
+  187         *,
+  188         request_id: str,
+  189         frame_id: str,
+  190         candidate_entity_ids: Sequence[Sequence[str]],
+  191         world_state: dict[str, Any] | None = None,
+  192         risk_assessment: dict[str, Any] | None = None,
+  193         stream_id: str | None = None,
+  194         use_model_risk_assessment: bool = False,
+  195         decision_residual=None,
+  196         motion_inputs: dict[str, torch.Tensor] | None = None,
+  197         longitudinal_authorized: bool = False,
+  198     ) -> dict[str, Any]:
+  199         if not self.checkpoint_loaded:
+  200             raise RuntimeError(
+  201                 "student checkpoint is not loaded; random initialization "
+  202                 "cannot be used for decision inference"
+  203             )
+  204         batch.validate()
+  205         if batch.camera_bev.shape[0] != 1:
+  206             raise ValueError("runtime predict_proposal currently requires batch size 1")
+  207         moved = self._move(batch)
+  208         if self.device.type == "cuda":
+  209             torch.cuda.synchronize(self.device)
+  210         started = time.perf_counter()
+  211         with torch.inference_mode():
+  212             model_inputs = self._model_inputs(moved)
+  213             if longitudinal_authorized and motion_inputs is not None and 'event_memory' in motion_inputs:
+  214                 from .event_observation import prepare_event_ego
+  215                 model_inputs['ego_features'] = prepare_event_ego(
+  216                     model_inputs['ego_features'], motion_inputs['event_memory'].to(self.device))
+  217             if self.model.use_temporal_risk:
+  218                 model_inputs["history_risk_features"] = (
+  219                     self._risk_history_tensor()
+  220                 )
+  221             output = self.model(**model_inputs)
+  222             if decision_residual is not None:
+  223                 if motion_inputs is None:
+  224                     raise ValueError("motion_inputs required for temporal decision residual")
+  225                 motion = {key: value.to(self.device) for key, value in motion_inputs.items()}
+  226                 output = decision_residual(
+  227                     output, motion,
+  228                     longitudinal_authorized=torch.tensor([longitudinal_authorized], device=self.device),
+  229                 )
+  230         self._last_visual_risk_assessment = decode_visual_risk_assessment(
+  231             output.visual_risk_logits,
+  232             high_confidence_threshold=self.high_confidence_threshold,
+  233             temporal_used=output.temporal_used,
+  234             risk_score=output.risk_score,
+  235             risk_horizon_logits=output.risk_horizon_logits,
+  236             risk_uncertainty=output.risk_uncertainty,
+  237         )
+  238         if decision_residual is not None and longitudinal_authorized and bool(
+  239             motion_inputs["motion_values"][0, 0] * motion_inputs["motion_valid_mask"][0, 0]
+  240         ):
+  241             self._last_visual_risk_assessment["source"] = "learned_motion_decision_residual"
+  242         if decision_residual is not None and getattr(decision_residual, "diagnostics", None):
+  243             self._last_visual_risk_assessment["event_memory"] = copy.deepcopy(decision_residual.diagnostics)
+  244             if longitudinal_authorized:
+  245                 self._last_visual_risk_assessment["source"] = "event_memory_vla"
+  246         if self.model.use_temporal_risk:
+  247             self._risk_history.append(output.risk_input_features.detach())
+  248             if len(self._risk_history) > self._risk_history_max:
+  249                 self._risk_history.pop(0)
+  250         if self.device.type == "cuda":
+  251             torch.cuda.synchronize(self.device)
+  252         latency_ms = (time.perf_counter() - started) * 1000.0
+  253         effective_candidate_ids = (
+  254             candidate_entity_ids
+  255             if self.model.use_candidate_entities
+  256             else [[] for _ in range(batch.camera_bev.shape[0])]
+  257         )
+  258         proposal = decode_proposal(
+  259             output,
+  260             request_id=request_id,
+  261             frame_id=frame_id,
+  262             candidate_entity_ids=effective_candidate_ids,
+  263             model_name=self.model_name,
+  264             latency_ms=latency_ms,
+  265         )[0]
+  266         self._last_raw_proposal = copy.deepcopy(proposal)
+  267         from .contracts import ACTION_LABELS
+  268         self._last_network_proposal = copy.deepcopy(proposal)
+  269         self._last_network_proposal['action'] = ACTION_LABELS[int(output.action_logits[0].argmax())]
+  270         self._last_network_proposal['target_speed_kmh'] = float(output.target_speed_kmh.reshape(-1)[0])
+  271         sequence = getattr(decision_residual, 'diagnostics', {}).get('longitudinal_sequence') if longitudinal_authorized else None
+  272         if sequence is not None:
+  273             self._last_network_proposal['longitudinal_sequence_schema'] = sequence['schema_version']
+  274             self._last_network_proposal['target_acceleration_mps2'] = sequence['acceleration_mps2'][0]
+  275             # Single-speed temporal smoothing is invalid for receding 0.1 s targets.
+  276             # The Universal controller still applies risk/FSM gates after this return.
+  277             return proposal
+  278         effective_risk = (
+  279             self._last_visual_risk_assessment
+  280             if use_model_risk_assessment
+  281             else risk_assessment
+  282         )
+  283         if world_state is not None and effective_risk is not None:
+  284             return self.temporal_supervisor.stabilize(
+  285                 proposal,
+  286                 world_state,
+  287                 effective_risk,
+  288                 stream_id=stream_id,
+  289             )
+  290         return proposal
+  291
+  292     def predict_visual_risk(
+  293         self,
+  294         batch: SensorTensorBatch,
+  295     ) -> dict[str, Any]:
+  296         """Run the learned risk head without changing proposal temporal state.
+  297
+  298         Callers may supply a camera-view mask to obtain sensor-only evidence
+  299         for a particular direction.  This performs a normal model forward but
+  300         does not overwrite the primary fused-view risk assessment used by the
+  301         proposal path.
+  302         """
+  303
+  304         if not self.checkpoint_loaded:
+  305             raise RuntimeError(
+  306                 "student checkpoint is not loaded; random initialization "
+  307                 "cannot be used for risk inference"
+  308             )
+  309         batch.validate()
+  310         if batch.camera_bev.shape[0] != 1:
+  311             raise ValueError("runtime predict_visual_risk requires batch size 1")
+  312         moved = self._move(batch)
+  313         if self.device.type == "cuda":
+  314             torch.cuda.synchronize(self.device)
+  315         with torch.inference_mode():
+  316             output = self.model(**self._model_inputs(moved))
+  317         if self.device.type == "cuda":
+  318             torch.cuda.synchronize(self.device)
+  319         return decode_visual_risk_assessment(
+  320             output.visual_risk_logits,
+  321             high_confidence_threshold=self.high_confidence_threshold,
+  322             temporal_used=output.temporal_used,
+  323             risk_score=output.risk_score,
+  324             risk_horizon_logits=output.risk_horizon_logits,
+  325             risk_uncertainty=output.risk_uncertainty,
+  326         )
+  327
+  328     @property
+  329     def last_visual_risk_assessment(self) -> dict[str, Any]:
+  330         if self._last_visual_risk_assessment is None:
+  331             raise RuntimeError("visual risk is unavailable before model inference")
+  332         return copy.deepcopy(self._last_visual_risk_assessment)
+  333
+  334     @property
+  335     def last_raw_proposal(self) -> dict[str, Any]:
+  336         if not hasattr(self, "_last_raw_proposal"):
+  337             raise RuntimeError("Raw proposal unavailable before model inference")
+  338         return copy.deepcopy(self._last_raw_proposal)
+  339
+  340     @property
+  341     def last_network_proposal(self) -> dict[str, Any]:
+  342         if not hasattr(self, "_last_network_proposal"):
+  343             raise RuntimeError("No network prediction available")
+  344         return copy.deepcopy(self._last_network_proposal)
+  345
+  346     def reset_temporal_state(self, stream_id: str | None = None) -> None:
+  347         self._risk_history.clear()
+  348         self.temporal_supervisor.reset(stream_id)
+  349
+  350     def warmup(self, batch: SensorTensorBatch, *, iterations: int = 10) -> None:
+  351         if iterations <= 0:
+  352             raise ValueError("warmup iterations must be positive")
+  353         batch.validate()
+  354         moved = self._move(batch)
+  355         with torch.inference_mode():
+  356             for _ in range(iterations):
+  357                 self.model(**self._model_inputs(moved))
+  358         if self.device.type == "cuda":
+  359             torch.cuda.synchronize(self.device)
+  360
+  361     def decide(
+  362         self,
+  363         batch: SensorTensorBatch,
+  364         driving_intent: dict[str, Any],
+  365         world_state: dict[str, Any],
+  366         semantic_alignment: dict[str, Any],
+  367         risk_assessment: dict[str, Any],
+  368         *,
+  369         candidate_entity_ids: Sequence[Sequence[str]],
+  370         prior_state: dict[str, Any] | None = None,
+  371         feedback: dict[str, Any] | None = None,
+  372     ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+  373         proposal = self.predict_proposal(
+  374             batch,
+  375             request_id=driving_intent["request_id"],
+  376             frame_id=world_state["frame_id"],
+  377             candidate_entity_ids=candidate_entity_ids,
+  378             world_state=world_state,
+  379             risk_assessment=risk_assessment,
+  380             stream_id=driving_intent["request_id"],
+  381         )
+  382         state, final_decision = advance_vla_control_plan(
+  383             driving_intent,
+  384             world_state,
+  385             semantic_alignment,
+  386             risk_assessment,
+  387             proposal,
+  388             prior_state=prior_state,
+  389             feedback=feedback,
+  390         )
+  391         return proposal, state, final_decision
+  392
+  393     @classmethod
+  394     def from_checkpoint(
+  395         cls,
+  396         model: LightweightDecisionAdapter,
+  397         checkpoint_path: str,
+  398         *,
+  399         model_name: str = "lightweight-vla-adapter",
+  400         device: str | torch.device = "cuda",
+  401         dtype: torch.dtype | None = None,
+  402         temporal_supervisor: TemporalProposalSupervisor | None = None,
+  403         strict_checkpoint: bool = True,
+  404         high_confidence_threshold: float = VISUAL_HIGH_CONFIDENCE_THRESHOLD,
+  405         fuse_conv_bn: bool = False,
+  406     ) -> "LightweightVLAPipeline":
+  407         if fuse_conv_bn and dtype not in {None, torch.float32}:
+  408             raise ValueError(
+  409                 "Experimental Conv/BN folding requires FP32; FP16 has not "
+  410                 "passed per-sample speed/risk parity checks"
+  411             )
+  412         if fuse_conv_bn and torch.device(device).type == "cuda" and (
+  413             torch.backends.cudnn.allow_tf32 or torch.backends.cuda.matmul.allow_tf32
+  414         ):
+  415             raise ValueError(
+  416                 "Experimental Conv/BN folding requires disabling CUDA matmul "
+  417                 "and cuDNN TF32 before loading the pipeline"
+  418             )
+  419         state = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+  420         incompatible = model.load_state_dict(state, strict=strict_checkpoint)
+  421         if not strict_checkpoint:
+  422             unexpected = list(incompatible.unexpected_keys)
+  423             if unexpected:
+  424                 raise RuntimeError(
+  425                     "legacy checkpoint contains unexpected parameters: "
+  426                     + ", ".join(unexpected)
+  427                 )
+  428         if fuse_conv_bn:
+  429             from .inference_optimization import fuse_inference_conv_bn
+  430
+  431             model, _ = fuse_inference_conv_bn(model.eval())
+  432         return cls(
+  433             model,
+  434             model_name=model_name,
+  435             device=device,
+  436             dtype=dtype,
+  437             checkpoint_loaded=True,
+  438             temporal_supervisor=temporal_supervisor,
+  439             high_confidence_threshold=high_confidence_threshold,
+  440         )

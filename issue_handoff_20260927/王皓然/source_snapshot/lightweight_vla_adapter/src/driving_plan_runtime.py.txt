@@ -1,0 +1,255 @@
+    1 """Online adapter for the existing multi-step executor; no first-step flattening."""
+    2
+    3 from copy import deepcopy
+    4 import json
+    5 import math
+    6
+    7 from scene_understanding.src.control_plan_executor import advance_control_plan
+    8
+    9
+   10 class DrivingPlanRuntime:
+   11     def __init__(self):
+   12         self.document=None
+   13         self.signature=None
+   14         self.state=None
+   15         self.feedback=None
+   16         self.settled_since=None
+   17         self.frame_id=None
+   18         self.timestamp_s=None
+   19         self.risk_pause=False
+   20         self.risk_clear_since=None
+   21         self.risk_clear_frame=None
+   22         self.risk_clear_last_time=None
+   23         self.completion_step=None
+   24         self.completion_time=None
+   25         self.completion_frame=None
+   26         self.completion_lane=None
+   27         self.junction_entered=False
+   28         self.junction_heading=None
+   29         self.condition_key=None
+   30         self.condition_since=None
+   31         self.condition_time=None
+   32         self.condition_frame=None
+   33
+   34     def enforce_execution(self,decision,canonical):
+   35         """A later liveness or sequence controller cannot bypass plan readiness."""
+   36         if canonical.get('decision_status')=='READY':return deepcopy(decision),False
+   37         result=deepcopy(decision)
+   38         emergency=(bool(result.get('emergency')) or result.get('action')=='emergency_brake'
+   39             or bool(canonical.get('emergency')) or canonical.get('action')=='emergency_brake')
+   40         result.update(action='emergency_brake' if emergency else 'stop',target_speed_kmh=0.,
+   41             target_lane=None,target_location=None,emergency=emergency,
+   42             allow_positive_acceleration=False,decision_status=canonical['decision_status'],
+   43             reason='active_plan_not_ready',blocked_reason_codes=canonical.get('blocked_reason_codes',[]))
+   44         for key in ('longitudinal_sequence_schema','target_acceleration_mps2','sequence_valid_until_s'):
+   45             result.pop(key,None)
+   46         return result,result!=decision
+   47
+   48     def prepare(self,document,*,frame_id,timestamp_s,speed_mps,execution_state=None):
+   49         signature=json.dumps(document,sort_keys=True,ensure_ascii=False)
+   50         if signature!=self.signature:
+   51             self.document=deepcopy(document);self.signature=signature
+   52             self.state=None;self.settled_since=None
+   53             self.risk_pause=False;self.risk_clear_since=None;self.risk_clear_frame=None
+   54             self.risk_clear_last_time=None
+   55             self.completion_step=None
+   56             self.condition_key=None;self.condition_since=None
+   57             self.condition_time=None;self.condition_frame=None
+   58         self.frame_id=frame_id;self.feedback=None
+   59         self.timestamp_s=timestamp_s
+   60         steps=self.document['intent']['steps']
+   61         if not steps:raise ValueError('Empty executable plan')
+   62         index=0 if self.state is None else self.state.get('active_step_index')
+   63         if index is None:return None
+   64         step=steps[index]
+   65         kind=(step.get('completion') or {}).get('type')
+   66         parameters=step.get('parameters') or {}
+   67         action=step['action']
+   68         evidence=execution_state or {}
+   69         fresh=(evidence.get('observation_frame_id')==frame_id
+   70             and evidence.get('source_step_id')==step['step_id'])
+   71         continuous=(self.completion_time is not None and 0 < timestamp_s-self.completion_time <= .25
+   72             and frame_id!=self.completion_frame)
+   73         if self.completion_step!=step['step_id']:
+   74             self.completion_step=step['step_id'];self.completion_lane=None
+   75             self.junction_entered=False;self.junction_heading=None;self.settled_since=None
+   76         if not continuous:self.settled_since=None
+   77         self.completion_time=timestamp_s;self.completion_frame=frame_id
+   78         if kind is None and index+1<len(steps):
+   79             kind={'STOP':'VEHICLE_STOPPED','EMERGENCY_BRAKE':'VEHICLE_STOPPED',
+   80                 'ADJUST_SPEED':'TARGET_SPEED_REACHED','SET_SPEED':'TARGET_SPEED_REACHED',
+   81                 'CHANGE_LANE':'LANE_CHANGE_COMPLETED'}.get(action)
+   82         satisfied=False
+   83         if kind=='VEHICLE_STOPPED':satisfied=speed_mps<.25
+   84         elif kind=='TARGET_SPEED_REACHED':
+   85             target=parameters.get('target_speed_mps')
+   86             if target is None and parameters.get('target_speed_kmh') is not None:
+   87                 target=parameters['target_speed_kmh']/3.6
+   88             if target is None and self.state is not None:
+   89                 step_state=next((item for item in self.state.get('step_states',[])
+   90                     if item.get('step_id')==step['step_id']),{})
+   91                 resolved=step_state.get('resolved_target_speed_kmh')
+   92                 if resolved is not None:target=float(resolved)/3.6
+   93             satisfied=target is not None and abs(speed_mps-float(target))<=1./3.6
+   94         elif kind=='LANE_CHANGE_COMPLETED':
+   95             evidence=execution_state or {}
+   96             satisfied=evidence.get('source_step_id')==step['step_id'] and evidence.get('pid',{}).get('lane_change_completed') is True
+   97         elif kind in ('ACTION_REACHED','JUNCTION_EXITED') and fresh:
+   98             pid=evidence.get('pid') or {}
+   99             lateral=pid.get('lateral_error_m');heading=pid.get('heading_error_deg')
+  100             centered=(isinstance(lateral,(int,float)) and isinstance(heading,(int,float))
+  101                 and math.isfinite(lateral) and math.isfinite(heading)
+  102                 and abs(lateral)<=.35 and abs(heading)<=5.
+  103                 and not pid.get('emergency_latched',False))
+  104             lane=pid.get('current_lane_id')
+  105             if action=='KEEP_LANE' and not parameters:
+  106                 if self.completion_lane is None:self.completion_lane=lane
+  107                 satisfied=(centered and lane is not None and lane==self.completion_lane
+  108                     and pid.get('in_junction') is False and speed_mps>.5)
+  109                 if lane!=self.completion_lane:self.completion_lane=lane;self.settled_since=None
+  110             elif ((action=='PROCEED' and parameters.get('condition')=='STRAIGHT_THROUGH_JUNCTION')
+  111                     or (kind=='JUNCTION_EXITED' and action in ('TURN','U_TURN'))):
+  112                 yaw=evidence.get('ego_heading_deg')
+  113                 active=(self.state is not None and self.state.get('plan_status')=='ACTIVE'
+  114                     and self.state['step_states'][index]['status']=='ACTIVE' and not self.risk_pause)
+  115                 if active and pid.get('in_junction') is True and not self.junction_entered:
+  116                     self.junction_entered=True;self.junction_heading=yaw
+  117                 heading_valid=(isinstance(yaw,(int,float)) and isinstance(self.junction_heading,(int,float))
+  118                     and math.isfinite(yaw) and math.isfinite(self.junction_heading)
+  119                     )
+  120                 delta=(yaw-self.junction_heading+180)%360-180 if heading_valid else None
+  121                 direction=str(parameters.get('direction','')).upper()
+  122                 aligned=(heading_valid and (
+  123                     (action=='PROCEED' and abs(delta)<=20.)
+  124                     or (action=='TURN' and direction=='RIGHT' and 30.<=delta<=150.)
+  125                     or (action=='TURN' and direction=='LEFT' and -150.<=delta<=-30.)
+  126                     or (action=='U_TURN' and abs(delta)>=150.)))
+  127                 satisfied=(self.junction_entered and pid.get('in_junction') is False
+  128                     and centered and aligned and speed_mps>.5)
+  129         if self.state is None or self.state.get('plan_status')!='ACTIVE' or self.state['step_states'][index]['status']!='ACTIVE':satisfied=False
+  130         if satisfied:
+  131             if self.settled_since is None:self.settled_since=timestamp_s
+  132         else:self.settled_since=None
+  133         # A single matching sample is not physical completion.  The same
+  134         # half-second hold is required after relative-target resolution so
+  135         # braking/acceleration overshoot cannot advance the next plan step.
+  136         required_hold=.5
+  137         if self.settled_since is not None and timestamp_s-self.settled_since>=required_hold:
+  138             self.feedback=dict(schema_version='1.0.0',request_id=document['request_id'],
+  139                 frame_id=frame_id,step_id=step['step_id'],outcome='COMPLETED',
+  140                 reason_codes=['observed_physical_completion'])
+  141             self.settled_since=None
+  142             index+=1
+  143         return steps[index] if index<len(steps) else None
+  144
+  145     def advance(self,world,risk,*,alignment=None,readiness=None):
+  146         risk=deepcopy(risk)
+  147         if risk.get('recommended_action')=='keep_lane':risk['recommended_action']='maintain_speed'
+  148         risk.setdefault('reason_codes',[])
+  149         for direction in ('left','right'):
+  150             risk.setdefault('lane_change',{}).setdefault(direction,dict(is_safe=False,reason_codes=['lane_observation_missing']))
+  151         if alignment is None:
+  152             aligned=[]
+  153             for step in self.document['intent']['steps']:
+  154                 params=step.get('parameters') or {}
+  155                 required=bool(step.get('target') or step.get('target_ref') or params.get('target') or params.get('target_ref'))
+  156                 aligned.append(dict(step_id=step['step_id'],alignment_required=required,
+  157                     alignment_success=not required,reason_code='target_observation_missing' if required else 'not_required',matched_entity=None))
+  158             alignment=dict(request_id=self.document['request_id'],world_state_frame_id=world['frame_id'],
+  159                 parse_status=self.document['parse_result']['status'],step_alignments=aligned)
+  160         if risk.get('risk_level')!='low':
+  161             self.feedback=None;self.settled_since=None
+  162         self._observe_condition_completion(world,risk)
+  163         state,decision=advance_control_plan(self.document,world,alignment,risk,
+  164             prior_state=self.state,feedback=self.feedback,transient_risk_wait=True)
+  165         self.feedback=None
+  166         index=state.get('active_step_index')
+  167         if index is not None:
+  168             transient_reasons={'risk_requires_emergency_brake','risk_requires_deceleration'}
+  169             if transient_reasons.intersection(decision.get('blocked_reason_codes',[])):
+  170                 self.risk_pause=True
+  171             if self.risk_pause:
+  172                 clear=(risk.get('frame_id')==world['frame_id'] and risk.get('risk_level')=='low'
+  173                     and risk.get('recommended_action')=='maintain_speed'
+  174                     and decision.get('decision_status')=='READY')
+  175                 if not clear:
+  176                     self.risk_clear_since=None;self.risk_clear_frame=None
+  177                     self.risk_clear_last_time=None
+  178                 elif (self.risk_clear_since is None or self.risk_clear_last_time is None
+  179                         or not 0. <= self.timestamp_s-self.risk_clear_last_time <= .5):
+  180                     self.risk_clear_since=self.timestamp_s;self.risk_clear_frame=world['frame_id']
+  181                     self.risk_clear_last_time=self.timestamp_s
+  182                 elif (world['frame_id']!=self.risk_clear_frame and
+  183                         self.timestamp_s-self.risk_clear_since>=.5):
+  184                     self.risk_pause=False;self.risk_clear_since=None;self.risk_clear_frame=None
+  185                     self.risk_clear_last_time=None
+  186                 elif world['frame_id']!=self.risk_clear_frame:
+  187                     self.risk_clear_frame=world['frame_id'];self.risk_clear_last_time=self.timestamp_s
+  188                 if self.risk_pause:
+  189                     state['step_states'][index]['status']='WAITING'
+  190                     state['reason_codes']=['await_sustained_risk_clearance']
+  191                     emergency=decision.get('action')=='emergency_brake' or bool(decision.get('emergency'))
+  192                     decision.update(decision_status='BLOCKED',action='emergency_brake' if emergency else 'stop',
+  193                         target_speed_kmh=0.,target_lane=None,target_location=None,emergency=emergency,
+  194                         reason='await_sustained_risk_clearance',blocked_reason_codes=['await_sustained_risk_clearance'])
+  195             step=self.document['intent']['steps'][index]
+  196             trigger=step.get('trigger') or {'type':'IMMEDIATE'}
+  197             completed={item['step_id'] for item in state['step_states'] if item['status']=='COMPLETED'}
+  198             trigger_ready=trigger.get('type')=='IMMEDIATE' or (
+  199                 trigger.get('type')=='AFTER_STEP' and trigger.get('step_id') in completed)
+  200             external=(readiness or {}).get(step['step_id']) or {}
+  201             external_ready=external.get('frame_id')==world['frame_id'] and external.get('satisfied') is True
+  202             if trigger.get('type') not in ('IMMEDIATE','AFTER_STEP'):
+  203                 trigger_ready=external_ready
+  204             for condition in step.get('preconditions') or []:
+  205                 if condition=='PATH_CLEAR':
+  206                     satisfied=risk.get('frame_id')==world['frame_id'] and risk.get('risk_level')=='low'
+  207                 elif condition=='TARGET_LANE_SAFE':
+  208                     direction=str((step.get('parameters') or {}).get('direction','')).lower()
+  209                     satisfied=risk.get('lane_change',{}).get(direction,{}).get('is_safe') is True
+  210                 elif condition=='TARGET_VISIBLE':
+  211                     aligned=next((x for x in alignment.get('step_alignments',[]) if x.get('step_id')==step['step_id']),{})
+  212                     satisfied=bool(aligned.get('alignment_success') and aligned.get('matched_entity'))
+  213                 else:satisfied=external_ready
+  214                 trigger_ready=trigger_ready and satisfied
+  215             if not trigger_ready:
+  216                 state['step_states'][index]['status']='WAITING'
+  217                 state['reason_codes']=['await_observed_step_condition']
+  218                 emergency=decision.get('action')=='emergency_brake' or bool(decision.get('emergency'))
+  219                 decision.update(decision_status='BLOCKED',action='emergency_brake' if emergency else 'stop',target_speed_kmh=0.,
+  220                     target_lane=None,target_location=None,emergency=emergency,
+  221                     blocked_reason_codes=['await_observed_step_condition'],reason='await_observed_step_condition')
+  222             elif state['step_states'][index]['status']=='WAITING' and decision.get('decision_status')=='READY':
+  223                 state['step_states'][index]['status']='ACTIVE'
+  224         elif state['plan_status']=='COMPLETED' and self.document['intent']['steps'][-1]['action'] in ('STOP','EMERGENCY_BRAKE'):
+  225             emergency=self.document['intent']['steps'][-1]['action']=='EMERGENCY_BRAKE'
+  226             decision.update(action='emergency_brake' if emergency else 'stop',target_speed_kmh=0.,emergency=emergency)
+  227         self.state=state
+  228         return decision
+  229
+  230     def _observe_condition_completion(self,world,risk):
+  231         """Only explicit, freshly observed predicates complete a check/wait."""
+  232         index=None if self.state is None else self.state.get('active_step_index')
+  233         step=self.document['intent']['steps'][index] if index is not None else None
+  234         condition=(step.get('parameters') or {}).get('condition') if step else None
+  235         eligible=(step is not None and self.state.get('plan_status')=='ACTIVE'
+  236                   and step['action'] in ('CHECK','WAIT','CONFIRM'))
+  237         fresh=(risk.get('frame_id')==world['frame_id']==self.frame_id)
+  238         clear=fresh and risk.get('risk_level')=='low' and not self.risk_pause
+  239         if condition in ('LEFT_LANE_SAFE','RIGHT_LANE_SAFE'):
+  240             direction=condition.split('_')[0].lower()
+  241             clear=clear and risk.get('lane_change',{}).get(direction,{}).get('is_safe') is True
+  242         elif condition!='PATH_CLEAR':
+  243             clear=False
+  244         key=(self.document['request_id'],step['step_id'],condition) if eligible else None
+  245         continuous=(self.condition_time is not None and self.timestamp_s is not None
+  246                     and 0 < self.timestamp_s-self.condition_time<=.25
+  247                     and self.condition_frame!=self.frame_id)
+  248         if key!=self.condition_key or not continuous or not eligible or not clear:
+  249             self.condition_since=self.timestamp_s if eligible and clear else None
+  250         self.condition_key=key;self.condition_time=self.timestamp_s;self.condition_frame=self.frame_id
+  251         if self.condition_since is not None and self.timestamp_s-self.condition_since>=.5:
+  252             self.feedback=dict(schema_version='1.0.0',request_id=self.document['request_id'],
+  253                 frame_id=self.frame_id,step_id=step['step_id'],outcome='COMPLETED',
+  254                 reason_codes=['observed_condition_completed'])
+  255             self.condition_since=None

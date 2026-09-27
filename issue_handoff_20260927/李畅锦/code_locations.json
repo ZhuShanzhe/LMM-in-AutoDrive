@@ -1,0 +1,315 @@
+[
+  {
+    "path": "experiment/CARLA/run_complex_avoidance_town05.py",
+    "sha256": "b190c52612429f77797ffc90706890ccae61a7a62b9e29b852a4098a4a024be6",
+    "symbols": [
+      {
+        "symbol": "lane_marking_name",
+        "line": 89,
+        "end_line": 92
+      },
+      {
+        "symbol": "lane_invasion_is_restricted",
+        "line": 95,
+        "end_line": 99
+      },
+      {
+        "symbol": "parse_args",
+        "line": 102,
+        "end_line": 278
+      },
+      {
+        "symbol": "build_vla_command_schedule",
+        "line": 281,
+        "end_line": 308
+      },
+      {
+        "symbol": "vla_route_context",
+        "line": 311,
+        "end_line": 347
+      },
+      {
+        "symbol": "load_config",
+        "line": 350,
+        "end_line": 445
+      },
+      {
+        "symbol": "road_option_name",
+        "line": 448,
+        "end_line": 455
+      },
+      {
+        "symbol": "route_aware_preview_speed_kmh",
+        "line": 458,
+        "end_line": 482
+      },
+      {
+        "symbol": "planned_turn_window_active",
+        "line": 485,
+        "end_line": 503
+      },
+      {
+        "symbol": "route_centering_steer_correction",
+        "line": 506,
+        "end_line": 530
+      },
+      {
+        "symbol": "audit_command_route_alignment",
+        "line": 533,
+        "end_line": 605
+      },
+      {
+        "symbol": "setup_navigation_agents",
+        "line": 608,
+        "end_line": 634
+      },
+      {
+        "symbol": "JsonlWriter",
+        "line": 637,
+        "end_line": 654
+      },
+      {
+        "symbol": "SafetyMonitor",
+        "line": 658,
+        "end_line": 754
+      },
+      {
+        "symbol": "apply_weather",
+        "line": 757,
+        "end_line": 775
+      },
+      {
+        "symbol": "load_packaged_map_layers",
+        "line": 778,
+        "end_line": 793
+      },
+      {
+        "symbol": "spawn_ego",
+        "line": 796,
+        "end_line": 810
+      },
+      {
+        "symbol": "overlay_payload",
+        "line": 813,
+        "end_line": 862
+      },
+      {
+        "symbol": "command_event_requirements_met",
+        "line": 865,
+        "end_line": 881
+      },
+      {
+        "symbol": "commands_for_segment",
+        "line": 884,
+        "end_line": 903
+      },
+      {
+        "symbol": "ready_commands_in_order",
+        "line": 906,
+        "end_line": 929
+      },
+      {
+        "symbol": "configure_traffic_manager_physics",
+        "line": 932,
+        "end_line": 945
+      },
+      {
+        "symbol": "configure_competition_artifacts",
+        "line": 948,
+        "end_line": 965
+      },
+      {
+        "symbol": "carla_world_can_be_reused",
+        "line": 968,
+        "end_line": 993
+      },
+      {
+        "symbol": "main",
+        "line": 996,
+        "end_line": 1926
+      },
+      {
+        "symbol": "__init__",
+        "line": 638,
+        "end_line": 640
+      },
+      {
+        "symbol": "write",
+        "line": 642,
+        "end_line": 651
+      },
+      {
+        "symbol": "close",
+        "line": 653,
+        "end_line": 654
+      },
+      {
+        "symbol": "__post_init__",
+        "line": 663,
+        "end_line": 671
+      },
+      {
+        "symbol": "start",
+        "line": 673,
+        "end_line": 690
+      },
+      {
+        "symbol": "_on_collision",
+        "line": 692,
+        "end_line": 734
+      },
+      {
+        "symbol": "_on_lane_invasion",
+        "line": 736,
+        "end_line": 746
+      },
+      {
+        "symbol": "restricted_lane_invasions",
+        "line": 749,
+        "end_line": 754
+      }
+    ]
+  },
+  {
+    "path": "experiment/CARLA/control/generic_instruction_fsm.py",
+    "sha256": "0383478554fa2fcbb5ca41125b4b013f91f27ce6a2fea17c78d99447422f00fb",
+    "symbols": [
+      {
+        "symbol": "ParsedInstruction",
+        "line": 62,
+        "end_line": 71
+      },
+      {
+        "symbol": "_intent_from_goals",
+        "line": 74,
+        "end_line": 96
+      },
+      {
+        "symbol": "GenericInstructionFSM",
+        "line": 99,
+        "end_line": 739
+      },
+      {
+        "symbol": "__init__",
+        "line": 102,
+        "end_line": 116
+      },
+      {
+        "symbol": "clear_caches",
+        "line": 118,
+        "end_line": 122
+      },
+      {
+        "symbol": "_cache_put",
+        "line": 124,
+        "end_line": 128
+      },
+      {
+        "symbol": "active_command",
+        "line": 130,
+        "end_line": 151
+      },
+      {
+        "symbol": "_command_trigger_m",
+        "line": 154,
+        "end_line": 159
+      },
+      {
+        "symbol": "_command_end_m",
+        "line": 162,
+        "end_line": 167
+      },
+      {
+        "symbol": "parse",
+        "line": 169,
+        "end_line": 232
+      },
+      {
+        "symbol": "_merge_structured_command",
+        "line": 235,
+        "end_line": 302
+      },
+      {
+        "symbol": "_parse_text_rules",
+        "line": 304,
+        "end_line": 388
+      },
+      {
+        "symbol": "_neutral_cruise",
+        "line": 391,
+        "end_line": 395
+      },
+      {
+        "symbol": "driving_intent",
+        "line": 397,
+        "end_line": 408
+      },
+      {
+        "symbol": "parsed_step",
+        "line": 410,
+        "end_line": 413
+      },
+      {
+        "symbol": "resolve_relative_speed",
+        "line": 415,
+        "end_line": 472
+      },
+      {
+        "symbol": "_extract_speed",
+        "line": 475,
+        "end_line": 482
+      },
+      {
+        "symbol": "_parser_result",
+        "line": 484,
+        "end_line": 509
+      },
+      {
+        "symbol": "_merge_parser_result",
+        "line": 512,
+        "end_line": 578
+      },
+      {
+        "symbol": "semantic_text",
+        "line": 580,
+        "end_line": 602
+      },
+      {
+        "symbol": "encode_tokens",
+        "line": 604,
+        "end_line": 638
+      },
+      {
+        "symbol": "canonical_decision",
+        "line": 640,
+        "end_line": 739
+      }
+    ]
+  },
+  {
+    "path": "experiment/CARLA/scene2_runtime_interface.py",
+    "sha256": "ab6b7379b6170e55f642f0ead83aa03c187c57737041ea66e0e1d4d3d452a3ed",
+    "symbols": [
+      {
+        "symbol": "_scene2_step_contract",
+        "line": 27,
+        "end_line": 75
+      },
+      {
+        "symbol": "build_scheduled_driving_intent",
+        "line": 78,
+        "end_line": 132
+      },
+      {
+        "symbol": "build_multimodal_frame_bundle",
+        "line": 135,
+        "end_line": 180
+      },
+      {
+        "symbol": "validate_control_decision",
+        "line": 183,
+        "end_line": 231
+      }
+    ]
+  }
+]

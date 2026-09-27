@@ -1,0 +1,2161 @@
+[
+  {
+    "source_line": 332,
+    "record": {
+      "frame": 19487,
+      "sim_time_s": 23.09195562079549,
+      "route_s_m": 81.17947315957234,
+      "actors": {
+        "910": {
+          "x": 189.39508056640625,
+          "y": 70.14583587646484,
+          "z": -0.01014663651585579,
+          "yaw": 90.73188781738281,
+          "vx": -0.14438459277153015,
+          "vy": 11.303902626037598,
+          "vz": -3.695487976074219e-05
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19487,
+        "counts": {
+          "front_cone": 4,
+          "same_direction": 1,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1,
+          "20:0:-1": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 333,
+    "record": {
+      "frame": 19488,
+      "sim_time_s": 23.141955621540546,
+      "route_s_m": 81.75596640300846,
+      "actors": {
+        "910": {
+          "x": 189.38771057128906,
+          "y": 70.72228240966797,
+          "z": -0.011029662564396858,
+          "yaw": 90.73194122314453,
+          "vx": -0.14870430529117584,
+          "vy": 11.641474723815918,
+          "vz": -9.971618419513106e-05
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19488,
+        "counts": {
+          "front_cone": 4,
+          "same_direction": 1,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1,
+          "20:0:-1": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 334,
+    "record": {
+      "frame": 19489,
+      "sim_time_s": 23.191955622285604,
+      "route_s_m": 82.34748303760486,
+      "actors": {
+        "910": {
+          "x": 189.38015747070312,
+          "y": 71.31375122070312,
+          "z": -0.011624717153608799,
+          "yaw": 90.73198699951172,
+          "vx": -0.1523805856704712,
+          "vy": 11.928466796875,
+          "vz": -0.00012996673467569053
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19489,
+        "counts": {
+          "front_cone": 4,
+          "same_direction": 1,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1,
+          "20:0:-1": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 335,
+    "record": {
+      "frame": 19490,
+      "sim_time_s": 23.241955623030663,
+      "route_s_m": 82.95110090814512,
+      "actors": {
+        "910": {
+          "x": 189.37245178222656,
+          "y": 71.91732025146484,
+          "z": -0.011838569305837154,
+          "yaw": 90.73210144042969,
+          "vx": -0.15517553687095642,
+          "vy": 12.146398544311523,
+          "vz": -0.0001066112527041696
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19490,
+        "counts": {
+          "front_cone": 4,
+          "same_direction": 1,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1,
+          "20:0:-1": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 336,
+    "record": {
+      "frame": 19491,
+      "sim_time_s": 23.29195562377572,
+      "route_s_m": 83.56209708014599,
+      "actors": {
+        "910": {
+          "x": 189.36463928222656,
+          "y": 72.52826690673828,
+          "z": -0.011603355407714844,
+          "yaw": 90.73210144042969,
+          "vx": -0.15662936866283417,
+          "vy": 12.259270668029785,
+          "vz": -3.9634702261537313e-05
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19491,
+        "counts": {
+          "front_cone": 4,
+          "same_direction": 1,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1,
+          "20:0:-1": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 337,
+    "record": {
+      "frame": 19492,
+      "sim_time_s": 23.34195562452078,
+      "route_s_m": 84.17499248973743,
+      "actors": {
+        "910": {
+          "x": 189.3568572998047,
+          "y": 73.14111328125,
+          "z": -0.010937690734863281,
+          "yaw": 90.73216247558594,
+          "vx": -0.1567249894142151,
+          "vy": 12.265891075134277,
+          "vz": 4.787445141118951e-05
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19492,
+        "counts": {
+          "front_cone": 4,
+          "same_direction": 1,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1,
+          "20:0:-1": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 338,
+    "record": {
+      "frame": 19493,
+      "sim_time_s": 23.391955625265837,
+      "route_s_m": 84.7858742285158,
+      "actors": {
+        "910": {
+          "x": 189.3490447998047,
+          "y": 73.75194549560547,
+          "z": -0.010015830397605896,
+          "yaw": 90.732177734375,
+          "vx": -0.1560026854276657,
+          "vy": 12.20866870880127,
+          "vz": 0.00011202811583643779
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19493,
+        "counts": {
+          "front_cone": 4,
+          "same_direction": 1,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1,
+          "20:0:-1": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 339,
+    "record": {
+      "frame": 19494,
+      "sim_time_s": 23.441955626010895,
+      "route_s_m": 85.39245274727314,
+      "actors": {
+        "910": {
+          "x": 189.34127807617188,
+          "y": 74.35847473144531,
+          "z": -0.009024390950798988,
+          "yaw": 90.73218536376953,
+          "vx": -0.154734268784523,
+          "vy": 12.10891056060791,
+          "vz": 0.00013626097643282264
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19494,
+        "counts": {
+          "front_cone": 4,
+          "same_direction": 1,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1,
+          "20:0:-1": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 340,
+    "record": {
+      "frame": 19495,
+      "sim_time_s": 23.491955626755953,
+      "route_s_m": 85.99372085669985,
+      "actors": {
+        "910": {
+          "x": 189.3335723876953,
+          "y": 74.9596939086914,
+          "z": -0.00812126137316227,
+          "yaw": 90.73217010498047,
+          "vx": -0.15333840250968933,
+          "vy": 11.999402046203613,
+          "vz": 0.00011959075345657766
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19495,
+        "counts": {
+          "front_cone": 4,
+          "same_direction": 1,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1,
+          "20:0:-1": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 341,
+    "record": {
+      "frame": 19496,
+      "sim_time_s": 23.54195562750101,
+      "route_s_m": 86.59009761442383,
+      "actors": {
+        "910": {
+          "x": 189.3259735107422,
+          "y": 75.55602264404297,
+          "z": -0.00742900837212801,
+          "yaw": 90.73213195800781,
+          "vx": -0.1521286517381668,
+          "vy": 11.904641151428223,
+          "vz": 8.654594421386719e-05
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19496,
+        "counts": {
+          "front_cone": 4,
+          "same_direction": 1,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1,
+          "20:0:-1": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 342,
+    "record": {
+      "frame": 19497,
+      "sim_time_s": 23.59195562824607,
+      "route_s_m": 87.18291166214637,
+      "actors": {
+        "910": {
+          "x": 189.31837463378906,
+          "y": 76.14878845214844,
+          "z": -0.00701217632740736,
+          "yaw": 90.73213195800781,
+          "vx": -0.15132813155651093,
+          "vy": 11.842047691345215,
+          "vz": 5.0516126066213474e-05
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19497,
+        "counts": {
+          "front_cone": 4,
+          "same_direction": 1,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1,
+          "20:0:-1": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 399,
+    "record": {
+      "frame": 19554,
+      "sim_time_s": 26.44195567071438,
+      "route_s_m": 118.68108081167257,
+      "actors": {
+        "910": {
+          "x": 188.63534545898438,
+          "y": 107.63246154785156,
+          "z": -0.00781883206218481,
+          "yaw": 92.95169830322266,
+          "vx": -0.7045228481292725,
+          "vy": 10.962154388427734,
+          "vz": -5.182266249903478e-05
+        },
+        "913": {
+          "x": -62.34263610839844,
+          "y": 99.18797302246094,
+          "z": 0.7238999605178833,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "912": {
+          "x": 122.06548309326172,
+          "y": -184.08206176757812,
+          "z": -0.011781997047364712,
+          "yaw": 14.415050506591797,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "917": {
+          "x": 150.70179748535156,
+          "y": -160.39151000976562,
+          "z": 1.107170581817627,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "915": {
+          "x": 135.88926696777344,
+          "y": -169.50518798828125,
+          "z": 1.107347011566162,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        },
+        "916": {
+          "x": 144.5232391357422,
+          "y": -164.4599151611328,
+          "z": 1.1074965000152588,
+          "yaw": 0.0,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 19554,
+        "counts": {
+          "front_cone": 3,
+          "same_direction": 0,
+          "opposite_direction": 3,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {
+          "38:0:-1": 1,
+          "38:0:-2": 1,
+          "38:0:-3": 1
+        },
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene2_crosswalk_pedestrian": {
+          "candidate_ids": [
+            913
+          ],
+          "binding": {
+            "actor_id": 913,
+            "half_length_m": 0.25,
+            "half_width_m": 0.25,
+            "initial_route_s_m": 851.2157961805793,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 675.7185826723121,
+          "route_error_m": 99.77617469040582,
+          "route_yaw_deg": -106.98884482371163,
+          "status": "BOUND"
+        },
+        "scene2_compound_slow_vehicle": {
+          "candidate_ids": [
+            912
+          ],
+          "binding": {
+            "actor_id": 912,
+            "half_length_m": 2.0906050205230713,
+            "half_width_m": 0.9970585703849792,
+            "initial_route_s_m": 1020.470774939238,
+            "offset_x_m": -0.0003742637054529041,
+            "offset_y_m": -4.6313757593452465e-06,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1020.470774939238,
+          "route_error_m": 0.011781997188865363,
+          "route_yaw_deg": 13.847535035068242,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_3": {
+          "candidate_ids": [
+            917
+          ],
+          "binding": {
+            "actor_id": 917,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1058.7634484495486,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1058.7634484495486,
+          "route_error_m": 8.503997306866184,
+          "route_yaw_deg": 38.8094458204954,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_1": {
+          "candidate_ids": [
+            915
+          ],
+          "binding": {
+            "actor_id": 915,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1039.4580066575681,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1039.4580066575681,
+          "route_error_m": 8.909933245523158,
+          "route_yaw_deg": 26.328334474595334,
+          "status": "BOUND"
+        },
+        "scene2_bus_passenger_2": {
+          "candidate_ids": [
+            916
+          ],
+          "binding": {
+            "actor_id": 916,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 1050.6903452769732,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 1050.6903452769732,
+          "route_error_m": 8.909948914091071,
+          "route_yaw_deg": 34.27136990369153,
+          "status": "BOUND"
+        },
+        "scene2_slow_cyclist": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  }
+]

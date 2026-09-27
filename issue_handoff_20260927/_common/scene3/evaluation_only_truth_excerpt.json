@@ -1,0 +1,5332 @@
+[
+  {
+    "source_line": 1,
+    "record": {
+      "frame": 8888,
+      "sim_time_s": 4.935920573771,
+      "route_s_m": 1.4186359060141,
+      "actors": {
+        "778": {
+          "x": 8.571528434753418,
+          "y": -203.98934936523438,
+          "z": 0.45204558968544006,
+          "yaw": 179.757080078125,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": -0.9800000786781311
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 8888,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 2,
+    "record": {
+      "frame": 8889,
+      "sim_time_s": 4.985920574516058,
+      "route_s_m": 1.4186359060141,
+      "actors": {
+        "778": {
+          "x": 8.571528434753418,
+          "y": -203.98934936523438,
+          "z": 0.38834547996520996,
+          "yaw": 179.757080078125,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": -1.470000147819519
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 8889,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 40,
+    "record": {
+      "frame": 8927,
+      "sim_time_s": 6.885920602828264,
+      "route_s_m": 2.317840471161905,
+      "actors": {
+        "778": {
+          "x": 7.672365665435791,
+          "y": -203.98570251464844,
+          "z": 0.01756340079009533,
+          "yaw": 179.7465057373047,
+          "vx": -2.3909242153167725,
+          "vy": 0.010596838779747486,
+          "vz": 0.02109450288116932
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 8927,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 41,
+    "record": {
+      "frame": 8928,
+      "sim_time_s": 6.935920603573322,
+      "route_s_m": 2.4408094181760474,
+      "actors": {
+        "778": {
+          "x": 7.549402713775635,
+          "y": -203.98513793945312,
+          "z": 0.01854904182255268,
+          "yaw": 179.7465057373047,
+          "vx": -2.4864799976348877,
+          "vy": 0.011015617288649082,
+          "vz": 0.022394046187400818
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 8928,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 42,
+    "record": {
+      "frame": 8929,
+      "sim_time_s": 6.98592060431838,
+      "route_s_m": 2.5672962254230347,
+      "actors": {
+        "778": {
+          "x": 7.422922134399414,
+          "y": -203.9845428466797,
+          "z": 0.01961158774793148,
+          "yaw": 179.74652099609375,
+          "vx": -2.555417060852051,
+          "vy": 0.011317189782857895,
+          "vz": 0.022625455632805824
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 8929,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 43,
+    "record": {
+      "frame": 8930,
+      "sim_time_s": 7.035920605063438,
+      "route_s_m": 2.6959001868066106,
+      "actors": {
+        "778": {
+          "x": 7.2943243980407715,
+          "y": -203.9839630126953,
+          "z": 0.02073776163160801,
+          "yaw": 179.74652099609375,
+          "vx": -2.571024179458618,
+          "vy": 0.011383239179849625,
+          "vz": 0.02313856966793537
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 8930,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 44,
+    "record": {
+      "frame": 8931,
+      "sim_time_s": 7.0859206058084965,
+      "route_s_m": 2.8212725930079823,
+      "actors": {
+        "778": {
+          "x": 7.1689581871032715,
+          "y": -203.98336791992188,
+          "z": 0.021931800991296768,
+          "yaw": 179.74652099609375,
+          "vx": -2.4700567722320557,
+          "vy": 0.010934288613498211,
+          "vz": 0.02197180688381195
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 8931,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 197,
+    "record": {
+      "frame": 9084,
+      "sim_time_s": 14.73592071980238,
+      "route_s_m": 18.291428018381094,
+      "actors": {
+        "778": {
+          "x": -8.287294387817383,
+          "y": -200.11422729492188,
+          "z": 0.72539222240448,
+          "yaw": 178.947265625,
+          "vx": -3.90484356880188,
+          "vy": -0.10441622138023376,
+          "vz": 0.3150552809238434
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9084,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 198,
+    "record": {
+      "frame": 9085,
+      "sim_time_s": 14.785920720547438,
+      "route_s_m": 18.49544827164081,
+      "actors": {
+        "778": {
+          "x": -8.49071216583252,
+          "y": -200.11859130859375,
+          "z": 0.7414475083351135,
+          "yaw": 179.2862548828125,
+          "vx": -4.132253170013428,
+          "vy": -0.11999604851007462,
+          "vz": 0.33525222539901733
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9085,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 199,
+    "record": {
+      "frame": 9086,
+      "sim_time_s": 14.835920721292496,
+      "route_s_m": 18.70843166383034,
+      "actors": {
+        "778": {
+          "x": -8.703065872192383,
+          "y": -200.1237030029297,
+          "z": 0.7583850026130676,
+          "yaw": 179.61163330078125,
+          "vx": -4.280162811279297,
+          "vy": -0.13352805376052856,
+          "vz": 0.3479602038860321
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9086,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 200,
+    "record": {
+      "frame": 9087,
+      "sim_time_s": 14.885920722037554,
+      "route_s_m": 18.923600401703478,
+      "actors": {
+        "778": {
+          "x": -8.91758918762207,
+          "y": -200.12939453125,
+          "z": 0.7756932377815247,
+          "yaw": 179.91180419921875,
+          "vx": -4.259875297546387,
+          "vy": -0.14186225831508636,
+          "vz": 0.3465822637081146
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9087,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 201,
+    "record": {
+      "frame": 9088,
+      "sim_time_s": 14.935920722782612,
+      "route_s_m": 19.132594607527693,
+      "actors": {
+        "778": {
+          "x": -9.125823020935059,
+          "y": -200.13540649414062,
+          "z": 0.7927078604698181,
+          "yaw": -179.82205200195312,
+          "vx": -4.0923285484313965,
+          "vy": -0.14398884773254395,
+          "vz": 0.3330327570438385
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9088,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 202,
+    "record": {
+      "frame": 9089,
+      "sim_time_s": 14.98592072352767,
+      "route_s_m": 19.329950318437614,
+      "actors": {
+        "778": {
+          "x": -9.322460174560547,
+          "y": -200.1414794921875,
+          "z": 0.8089392781257629,
+          "yaw": -179.5935516357422,
+          "vx": -3.8373031616210938,
+          "vy": -0.141837939620018,
+          "vz": 0.31228336691856384
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9089,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 203,
+    "record": {
+      "frame": 9090,
+      "sim_time_s": 15.035920724272728,
+      "route_s_m": 19.512643747647186,
+      "actors": {
+        "778": {
+          "x": -9.504487991333008,
+          "y": -200.14743041992188,
+          "z": 0.824091374874115,
+          "yaw": -179.39552307128906,
+          "vx": -3.5350582599639893,
+          "vy": -0.1365659087896347,
+          "vz": 0.290693074464798
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9090,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 204,
+    "record": {
+      "frame": 9091,
+      "sim_time_s": 15.085920725017786,
+      "route_s_m": 19.680257590926065,
+      "actors": {
+        "778": {
+          "x": -9.671490669250488,
+          "y": -200.15325927734375,
+          "z": 0.838322639465332,
+          "yaw": -179.22821044921875,
+          "vx": -3.2340102195739746,
+          "vy": -0.1304616928100586,
+          "vz": 0.2730092406272888
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9091,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 215,
+    "record": {
+      "frame": 9102,
+      "sim_time_s": 15.635920733213425,
+      "route_s_m": 20.944168680359198,
+      "actors": {
+        "778": {
+          "x": -10.930728912353516,
+          "y": -200.2093963623047,
+          "z": 0.949501097202301,
+          "yaw": -178.09364318847656,
+          "vx": -2.151923894882202,
+          "vy": -0.11827322095632553,
+          "vz": 0.19521456956863403
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9102,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 216,
+    "record": {
+      "frame": 9103,
+      "sim_time_s": 15.685920733958483,
+      "route_s_m": 21.0594501467165,
+      "actors": {
+        "778": {
+          "x": -11.045501708984375,
+          "y": -200.21533203125,
+          "z": 0.9594799876213074,
+          "yaw": -178.00912475585938,
+          "vx": -2.356499195098877,
+          "vy": -0.1290990561246872,
+          "vz": 0.2131589651107788
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9103,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 217,
+    "record": {
+      "frame": 9104,
+      "sim_time_s": 15.73592073470354,
+      "route_s_m": 21.18507409228265,
+      "actors": {
+        "778": {
+          "x": -11.170571327209473,
+          "y": -200.22181701660156,
+          "z": 0.9703584313392639,
+          "yaw": -177.9241485595703,
+          "vx": -2.5559473037719727,
+          "vy": -0.13882455229759216,
+          "vz": 0.23072980344295502
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9104,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 218,
+    "record": {
+      "frame": 9105,
+      "sim_time_s": 15.785920735448599,
+      "route_s_m": 21.318428154570945,
+      "actors": {
+        "778": {
+          "x": -11.303337097167969,
+          "y": -200.2285919189453,
+          "z": 0.9819871783256531,
+          "yaw": -177.84510803222656,
+          "vx": -2.6712656021118164,
+          "vy": -0.14337433874607086,
+          "vz": 0.2408614456653595
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9105,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 219,
+    "record": {
+      "frame": 9106,
+      "sim_time_s": 15.835920736193657,
+      "route_s_m": 21.452640437210604,
+      "actors": {
+        "778": {
+          "x": -11.436957359313965,
+          "y": -200.23536682128906,
+          "z": 0.9938530325889587,
+          "yaw": -177.77450561523438,
+          "vx": -2.638261079788208,
+          "vy": -0.13988883793354034,
+          "vz": 0.2377934753894806
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9106,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 220,
+    "record": {
+      "frame": 9107,
+      "sim_time_s": 15.885920736938715,
+      "route_s_m": 21.58120397904721,
+      "actors": {
+        "778": {
+          "x": -11.564953804016113,
+          "y": -200.24185180664062,
+          "z": 1.005394697189331,
+          "yaw": -177.71688842773438,
+          "vx": -2.4966697692871094,
+          "vy": -0.13096120953559875,
+          "vz": 0.2250295728445053
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9107,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 221,
+    "record": {
+      "frame": 9108,
+      "sim_time_s": 15.935920737683773,
+      "route_s_m": 21.70028132601124,
+      "actors": {
+        "778": {
+          "x": -11.68350601196289,
+          "y": -200.24777221679688,
+          "z": 1.016242265701294,
+          "yaw": -177.6685791015625,
+          "vx": -2.294591188430786,
+          "vy": -0.12000212073326111,
+          "vz": 0.20850980281829834
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9108,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 222,
+    "record": {
+      "frame": 9109,
+      "sim_time_s": 15.985920738428831,
+      "route_s_m": 21.807906001719903,
+      "actors": {
+        "778": {
+          "x": -11.790656089782715,
+          "y": -200.2530975341797,
+          "z": 1.0263034105300903,
+          "yaw": -177.62069702148438,
+          "vx": -2.02718448638916,
+          "vy": -0.10619146376848221,
+          "vz": 0.1882682591676712
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9109,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 237,
+    "record": {
+      "frame": 9124,
+      "sim_time_s": 16.735920749604702,
+      "route_s_m": 22.15377618167643,
+      "actors": {
+        "778": {
+          "x": -12.134988784790039,
+          "y": -200.2794647216797,
+          "z": 1.0579298734664917,
+          "yaw": -177.1313018798828,
+          "vx": -1.2722127437591553,
+          "vy": -0.08856498450040817,
+          "vz": 0.12072442471981049
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9124,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 238,
+    "record": {
+      "frame": 9125,
+      "sim_time_s": 16.78592075034976,
+      "route_s_m": 22.227126722952484,
+      "actors": {
+        "778": {
+          "x": -12.208014488220215,
+          "y": -200.2841339111328,
+          "z": 1.0645750761032104,
+          "yaw": -177.0974578857422,
+          "vx": -1.5484232902526855,
+          "vy": -0.10172732919454575,
+          "vz": 0.14699548482894897
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9125,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 239,
+    "record": {
+      "frame": 9126,
+      "sim_time_s": 16.835920751094818,
+      "route_s_m": 22.31047671636294,
+      "actors": {
+        "778": {
+          "x": -12.290995597839355,
+          "y": -200.2892608642578,
+          "z": 1.072204828262329,
+          "yaw": -177.0781707763672,
+          "vx": -1.701139211654663,
+          "vy": -0.10719272494316101,
+          "vz": 0.16223575174808502
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9126,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 240,
+    "record": {
+      "frame": 9127,
+      "sim_time_s": 16.885920751839876,
+      "route_s_m": 22.40101377461877,
+      "actors": {
+        "778": {
+          "x": -12.381132125854492,
+          "y": -200.29470825195312,
+          "z": 1.0807180404663086,
+          "yaw": -177.04483032226562,
+          "vx": -1.8391785621643066,
+          "vy": -0.11558284610509872,
+          "vz": 0.17895351350307465
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9127,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 241,
+    "record": {
+      "frame": 9128,
+      "sim_time_s": 16.935920752584934,
+      "route_s_m": 22.492796935798133,
+      "actors": {
+        "778": {
+          "x": -12.472509384155273,
+          "y": -200.3001251220703,
+          "z": 1.0896724462509155,
+          "yaw": -177.01882934570312,
+          "vx": -1.8043830394744873,
+          "vy": -0.10855945944786072,
+          "vz": 0.1777910739183426
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9128,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 242,
+    "record": {
+      "frame": 9129,
+      "sim_time_s": 16.985920753329992,
+      "route_s_m": 22.57664726668537,
+      "actors": {
+        "778": {
+          "x": -12.555989265441895,
+          "y": -200.30479431152344,
+          "z": 1.098183512687683,
+          "yaw": -177.0093536376953,
+          "vx": -1.4596078395843506,
+          "vy": -0.08187893778085709,
+          "vz": 0.14567136764526367
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9129,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 263,
+    "record": {
+      "frame": 9150,
+      "sim_time_s": 18.03592076897621,
+      "route_s_m": 23.19922939096695,
+      "actors": {
+        "778": {
+          "x": -13.17562198638916,
+          "y": -200.34335327148438,
+          "z": 1.1591025590896606,
+          "yaw": -176.8306121826172,
+          "vx": -2.1314759254455566,
+          "vy": -0.11906564235687256,
+          "vz": 0.21124139428138733
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9150,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 264,
+    "record": {
+      "frame": 9151,
+      "sim_time_s": 18.08592076972127,
+      "route_s_m": 23.312338808999492,
+      "actors": {
+        "778": {
+          "x": -13.288140296936035,
+          "y": -200.34922790527344,
+          "z": 1.1700975894927979,
+          "yaw": -176.8643035888672,
+          "vx": -2.3085808753967285,
+          "vy": -0.11721517145633698,
+          "vz": 0.22877298295497894
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9151,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 265,
+    "record": {
+      "frame": 9152,
+      "sim_time_s": 18.135920770466328,
+      "route_s_m": 23.434973399213174,
+      "actors": {
+        "778": {
+          "x": -13.410134315490723,
+          "y": -200.35536193847656,
+          "z": 1.182061791419983,
+          "yaw": -176.90219116210938,
+          "vx": -2.5128989219665527,
+          "vy": -0.12214276939630508,
+          "vz": 0.24919477105140686
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9152,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 266,
+    "record": {
+      "frame": 9153,
+      "sim_time_s": 18.185920771211386,
+      "route_s_m": 23.565002949569156,
+      "actors": {
+        "778": {
+          "x": -13.539484977722168,
+          "y": -200.36163330078125,
+          "z": 1.1948082447052002,
+          "yaw": -176.9530487060547,
+          "vx": -2.6114442348480225,
+          "vy": -0.12229655683040619,
+          "vz": 0.2589212954044342
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9153,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 267,
+    "record": {
+      "frame": 9154,
+      "sim_time_s": 18.235920771956444,
+      "route_s_m": 23.69670230931866,
+      "actors": {
+        "778": {
+          "x": -13.670496940612793,
+          "y": -200.36782836914062,
+          "z": 1.207838773727417,
+          "yaw": -177.00608825683594,
+          "vx": -2.611025094985962,
+          "vy": -0.11824026703834534,
+          "vz": 0.25908905267715454
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9154,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 268,
+    "record": {
+      "frame": 9155,
+      "sim_time_s": 18.285920772701502,
+      "route_s_m": 23.822432804198613,
+      "actors": {
+        "778": {
+          "x": -13.795571327209473,
+          "y": -200.37364196777344,
+          "z": 1.2204424142837524,
+          "yaw": -177.0772705078125,
+          "vx": -2.4324750900268555,
+          "vy": -0.10734599828720093,
+          "vz": 0.24129346013069153
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9155,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 279,
+    "record": {
+      "frame": 9166,
+      "sim_time_s": 18.83592078089714,
+      "route_s_m": 24.753262943728064,
+      "actors": {
+        "778": {
+          "x": -14.721553802490234,
+          "y": -200.4093780517578,
+          "z": 1.3174750804901123,
+          "yaw": -177.67425537109375,
+          "vx": -1.5259150266647339,
+          "vy": -0.03782607242465019,
+          "vz": 0.1670958697795868
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9166,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 280,
+    "record": {
+      "frame": 9167,
+      "sim_time_s": 18.8859207816422,
+      "route_s_m": 24.83735876202345,
+      "actors": {
+        "778": {
+          "x": -14.80521297454834,
+          "y": -200.41162109375,
+          "z": 1.326309323310852,
+          "yaw": -177.73240661621094,
+          "vx": -1.7703680992126465,
+          "vy": -0.042166221886873245,
+          "vz": 0.19366315007209778
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9167,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 281,
+    "record": {
+      "frame": 9168,
+      "sim_time_s": 18.935920782387257,
+      "route_s_m": 24.934652134449163,
+      "actors": {
+        "778": {
+          "x": -14.90200138092041,
+          "y": -200.4140625,
+          "z": 1.336492896080017,
+          "yaw": -177.7862548828125,
+          "vx": -2.0034356117248535,
+          "vy": -0.04583583399653435,
+          "vz": 0.21885859966278076
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9168,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 282,
+    "record": {
+      "frame": 9169,
+      "sim_time_s": 18.985920783132315,
+      "route_s_m": 25.04211361960253,
+      "actors": {
+        "778": {
+          "x": -15.00881290435791,
+          "y": -200.4166717529297,
+          "z": 1.3478020429611206,
+          "yaw": -177.85264587402344,
+          "vx": -2.178314208984375,
+          "vy": -0.04732406139373779,
+          "vz": 0.23772874474525452
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9169,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 283,
+    "record": {
+      "frame": 9170,
+      "sim_time_s": 19.035920783877373,
+      "route_s_m": 25.154055245758727,
+      "actors": {
+        "778": {
+          "x": -15.120075225830078,
+          "y": -200.41929626464844,
+          "z": 1.3597244024276733,
+          "yaw": -177.91937255859375,
+          "vx": -2.218289852142334,
+          "vy": -0.04637105390429497,
+          "vz": 0.24189847707748413
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9170,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 284,
+    "record": {
+      "frame": 9171,
+      "sim_time_s": 19.08592078462243,
+      "route_s_m": 25.263365850268894,
+      "actors": {
+        "778": {
+          "x": -15.22872257232666,
+          "y": -200.4217987060547,
+          "z": 1.3715440034866333,
+          "yaw": -177.98321533203125,
+          "vx": -2.126673460006714,
+          "vy": -0.04274490103125572,
+          "vz": 0.2318655103445053
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9171,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 319,
+    "record": {
+      "frame": 9206,
+      "sim_time_s": 20.835920810699463,
+      "route_s_m": 30.651567204596837,
+      "actors": {
+        "778": {
+          "x": -20.579408645629883,
+          "y": -200.4750213623047,
+          "z": 1.9999381303787231,
+          "yaw": -179.7849884033203,
+          "vx": -5.042038917541504,
+          "vy": 0.004277785774320364,
+          "vz": 0.6271799206733704
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9206,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 320,
+    "record": {
+      "frame": 9207,
+      "sim_time_s": 20.88592081144452,
+      "route_s_m": 30.92723695364107,
+      "actors": {
+        "778": {
+          "x": -20.852922439575195,
+          "y": -200.47560119628906,
+          "z": 2.033766508102417,
+          "yaw": -179.8091583251953,
+          "vx": -5.696346759796143,
+          "vy": -0.010968455113470554,
+          "vz": 0.7126043438911438
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9207,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 321,
+    "record": {
+      "frame": 9208,
+      "sim_time_s": 20.93592081218958,
+      "route_s_m": 31.232185962952503,
+      "actors": {
+        "778": {
+          "x": -21.15546417236328,
+          "y": -200.47642517089844,
+          "z": 2.070932626724243,
+          "yaw": -179.81655883789062,
+          "vx": -6.210289001464844,
+          "vy": -0.016096973791718483,
+          "vz": 0.7753476500511169
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9208,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 322,
+    "record": {
+      "frame": 9209,
+      "sim_time_s": 20.985920812934637,
+      "route_s_m": 31.557657126503305,
+      "actors": {
+        "778": {
+          "x": -21.478361129760742,
+          "y": -200.4773712158203,
+          "z": 2.1110033988952637,
+          "yaw": -179.81956481933594,
+          "vx": -6.540146350860596,
+          "vy": -0.018507463857531548,
+          "vz": 0.8236193060874939
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9209,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 323,
+    "record": {
+      "frame": 9210,
+      "sim_time_s": 21.035920813679695,
+      "route_s_m": 31.88550656273236,
+      "actors": {
+        "778": {
+          "x": -21.803617477416992,
+          "y": -200.47837829589844,
+          "z": 2.1520650386810303,
+          "yaw": -179.8201446533203,
+          "vx": -6.467430114746094,
+          "vy": -0.019082460552453995,
+          "vz": 0.8181605935096741
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9210,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 324,
+    "record": {
+      "frame": 9211,
+      "sim_time_s": 21.085920814424753,
+      "route_s_m": 32.20691158062056,
+      "actors": {
+        "778": {
+          "x": -22.122480392456055,
+          "y": -200.47935485839844,
+          "z": 2.192763566970825,
+          "yaw": -179.81985473632812,
+          "vx": -6.3394670486450195,
+          "vy": -0.0191842969506979,
+          "vz": 0.8038458228111267
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9211,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 377,
+    "record": {
+      "frame": 9264,
+      "sim_time_s": 23.73592085391283,
+      "route_s_m": 44.489733044399344,
+      "actors": {
+        "778": {
+          "x": -34.30815124511719,
+          "y": -200.5177459716797,
+          "z": 3.7362797260284424,
+          "yaw": -179.8189697265625,
+          "vx": -5.728126525878906,
+          "vy": -0.018203573301434517,
+          "vz": 0.7251248955726624
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9264,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 378,
+    "record": {
+      "frame": 9265,
+      "sim_time_s": 23.78592085465789,
+      "route_s_m": 44.796319070639754,
+      "actors": {
+        "778": {
+          "x": -34.61231231689453,
+          "y": -200.5187225341797,
+          "z": 3.774184465408325,
+          "yaw": -179.81861877441406,
+          "vx": -6.247008323669434,
+          "vy": -0.019858619198203087,
+          "vz": 0.7903118133544922
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9265,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 379,
+    "record": {
+      "frame": 9266,
+      "sim_time_s": 23.835920855402946,
+      "route_s_m": 45.12392246144136,
+      "actors": {
+        "778": {
+          "x": -34.93732452392578,
+          "y": -200.51976013183594,
+          "z": 3.8148417472839355,
+          "yaw": -179.8181610107422,
+          "vx": -6.583638668060303,
+          "vy": -0.020978722721338272,
+          "vz": 0.8326404094696045
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9266,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 380,
+    "record": {
+      "frame": 9267,
+      "sim_time_s": 23.885920856148005,
+      "route_s_m": 45.456766751764576,
+      "actors": {
+        "778": {
+          "x": -35.26753616333008,
+          "y": -200.5208282470703,
+          "z": 3.8565120697021484,
+          "yaw": -179.81814575195312,
+          "vx": -6.607198238372803,
+          "vy": -0.021082699298858643,
+          "vz": 0.8355874419212341
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9267,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 381,
+    "record": {
+      "frame": 9268,
+      "sim_time_s": 23.935920856893063,
+      "route_s_m": 45.78809225057974,
+      "actors": {
+        "778": {
+          "x": -35.59624099731445,
+          "y": -200.52191162109375,
+          "z": 3.898258686065674,
+          "yaw": -179.81813049316406,
+          "vx": -6.555686950683594,
+          "vy": -0.020941931754350662,
+          "vz": 0.8291597366333008
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9268,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 382,
+    "record": {
+      "frame": 9269,
+      "sim_time_s": 23.98592085763812,
+      "route_s_m": 46.11265803345975,
+      "actors": {
+        "778": {
+          "x": -35.91823959350586,
+          "y": -200.52296447753906,
+          "z": 3.9393317699432373,
+          "yaw": -179.81814575195312,
+          "vx": -6.381915092468262,
+          "vy": -0.020412230864167213,
+          "vz": 0.8072832226753235
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9269,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1055,
+    "record": {
+      "frame": 9942,
+      "sim_time_s": 57.635921359062195,
+      "route_s_m": 290.3323055469376,
+      "actors": {
+        "778": {
+          "x": -238.0986785888672,
+          "y": -122.79222106933594,
+          "z": 9.996363639831543,
+          "yaw": 102.98002624511719,
+          "vx": -1.7597533464431763,
+          "vy": 8.093337059020996,
+          "vz": -0.0004330348747316748
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9942,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1056,
+    "record": {
+      "frame": 9943,
+      "sim_time_s": 57.68592135980725,
+      "route_s_m": 290.818626349317,
+      "actors": {
+        "778": {
+          "x": -238.1864776611328,
+          "y": -122.3870849609375,
+          "z": 9.996344566345215,
+          "yaw": 102.63676452636719,
+          "vx": -1.711883306503296,
+          "vy": 8.11912727355957,
+          "vz": -0.0003860855067614466
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9943,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1057,
+    "record": {
+      "frame": 9944,
+      "sim_time_s": 57.73592136055231,
+      "route_s_m": 291.2329824090158,
+      "actors": {
+        "778": {
+          "x": -238.27200317382812,
+          "y": -121.98162078857422,
+          "z": 9.996328353881836,
+          "yaw": 102.3041763305664,
+          "vx": -1.668387770652771,
+          "vy": 8.112977027893066,
+          "vz": -0.00042307854164391756
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9944,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1058,
+    "record": {
+      "frame": 9945,
+      "sim_time_s": 57.78592136129737,
+      "route_s_m": 291.64750786970615,
+      "actors": {
+        "778": {
+          "x": -238.35543823242188,
+          "y": -121.57551574707031,
+          "z": 9.996304512023926,
+          "yaw": 101.98411560058594,
+          "vx": -1.627700924873352,
+          "vy": 8.137447357177734,
+          "vz": -0.00042786597623489797
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9945,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1059,
+    "record": {
+      "frame": 9946,
+      "sim_time_s": 57.83592136204243,
+      "route_s_m": 292.06188213214864,
+      "actors": {
+        "778": {
+          "x": -238.4370880126953,
+          "y": -121.1691665649414,
+          "z": 9.996286392211914,
+          "yaw": 101.6886978149414,
+          "vx": -1.5954231023788452,
+          "vy": 8.129409790039062,
+          "vz": -0.00040657995850779116
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9946,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1060,
+    "record": {
+      "frame": 9947,
+      "sim_time_s": 57.885921362787485,
+      "route_s_m": 292.4764646910221,
+      "actors": {
+        "778": {
+          "x": -238.51730346679688,
+          "y": -120.76228332519531,
+          "z": 9.99626350402832,
+          "yaw": 101.4251480102539,
+          "vx": -1.5699594020843506,
+          "vy": 8.151174545288086,
+          "vz": -0.0003964233328588307
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9947,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1061,
+    "record": {
+      "frame": 9948,
+      "sim_time_s": 57.93592136353254,
+      "route_s_m": 292.96358775106006,
+      "actors": {
+        "778": {
+          "x": -238.59628295898438,
+          "y": -120.35533142089844,
+          "z": 9.996246337890625,
+          "yaw": 101.20054626464844,
+          "vx": -1.549660563468933,
+          "vy": 8.137638092041016,
+          "vz": -0.00034515379229560494
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9948,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1062,
+    "record": {
+      "frame": 9949,
+      "sim_time_s": 57.9859213642776,
+      "route_s_m": 293.3779601224234,
+      "actors": {
+        "778": {
+          "x": -238.67434692382812,
+          "y": -119.94835662841797,
+          "z": 9.99622917175293,
+          "yaw": 101.0179214477539,
+          "vx": -1.5367741584777832,
+          "vy": 8.147127151489258,
+          "vz": -0.00034736632369458675
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9949,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1063,
+    "record": {
+      "frame": 9950,
+      "sim_time_s": 58.03592136502266,
+      "route_s_m": 293.79162651840267,
+      "actors": {
+        "778": {
+          "x": -238.7517547607422,
+          "y": -119.5419692993164,
+          "z": 9.996225357055664,
+          "yaw": 100.87933349609375,
+          "vx": -1.5265108346939087,
+          "vy": 8.12060832977295,
+          "vz": -0.0003363990690559149
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9950,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1064,
+    "record": {
+      "frame": 9951,
+      "sim_time_s": 58.08592136576772,
+      "route_s_m": 294.20473185947725,
+      "actors": {
+        "778": {
+          "x": -238.8284454345703,
+          "y": -119.1360092163086,
+          "z": 9.996219635009766,
+          "yaw": 100.77281188964844,
+          "vx": -1.5169906616210938,
+          "vy": 8.124006271362305,
+          "vz": -0.0003110218094661832
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9951,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1065,
+    "record": {
+      "frame": 9952,
+      "sim_time_s": 58.135921366512775,
+      "route_s_m": 294.61700236031385,
+      "actors": {
+        "778": {
+          "x": -238.90499877929688,
+          "y": -118.73087310791016,
+          "z": 9.996217727661133,
+          "yaw": 100.70826721191406,
+          "vx": -1.51954984664917,
+          "vy": 8.093951225280762,
+          "vz": -0.0002982139412779361
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 9952,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  },
+  {
+    "source_line": 1199,
+    "record": {
+      "frame": 10086,
+      "sim_time_s": 64.83592146635056,
+      "route_s_m": 350.061085578495,
+      "actors": {
+        "778": {
+          "x": -240.31166076660156,
+          "y": -64.18124389648438,
+          "z": 9.995468139648438,
+          "yaw": 89.01657104492188,
+          "vx": 0.14042001962661743,
+          "vy": 8.180258750915527,
+          "vz": 3.969192403019406e-05
+        },
+        "785": {
+          "x": -245.3031463623047,
+          "y": -135.87710571289062,
+          "z": 10.952963829040527,
+          "yaw": 108.95280456542969,
+          "vx": 0.0,
+          "vy": 0.0,
+          "vz": 0.0
+        }
+      },
+      "traffic_observation": {
+        "frame": 10086,
+        "counts": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "lane_counts": {},
+        "actors_missing_from_snapshot": 0,
+        "scope": "geometric_front_cone; no occlusion, illumination or camera detection check",
+        "population": "all_world_vehicles_including_task_actors"
+      },
+      "roles": {
+        "scene3_cut_in_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_crossing_worker": {
+          "candidate_ids": [
+            785
+          ],
+          "binding": {
+            "actor_id": 785,
+            "half_length_m": 0.18767888844013214,
+            "half_width_m": 0.18767888844013214,
+            "initial_route_s_m": 3369.4044746069035,
+            "offset_x_m": 0.0,
+            "offset_y_m": 0.0,
+            "box_yaw_deg": 0.0
+          },
+          "route_s_m": 3369.4044746069035,
+          "route_error_m": 7.064367555401976,
+          "route_yaw_deg": 108.37573796678,
+          "status": "BOUND"
+        },
+        "scene3_maintenance_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_rear_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        },
+        "scene3_gap_front_vehicle": {
+          "candidate_ids": [],
+          "status": "NOT_SPAWNED",
+          "reason": "no_matching_actor_in_snapshot"
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "local_inputs": [
+    "inputs/geometry_bindings.json",
+    "inputs/independent_assessment.json"
+  ],
+  "common": "../_common",
+  "sensor_capture": "../_common/capture_subset.zip",
+  "sensor_previews": "../_common/previews",
+  "environment": "../_common/environment.json",
+  "exact_runtime_files": "code_locations.json"
+}

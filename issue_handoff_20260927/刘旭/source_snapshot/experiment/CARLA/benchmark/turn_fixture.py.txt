@@ -1,0 +1,151 @@
+    1 """Topology-backed isolated junction turns on the selected CARLA map."""
+    2 import math
+    3
+    4 from .catalog import ConfigError
+    5 from .route_audit import audit_route
+    6 from .truth_capture import angle_delta
+    7
+    8
+    9 def turn_evidence(route, direction):
+   10     report=audit_route(route)
+   11     if report['suspicious_gaps']:
+   12         raise ConfigError('turn route contains discontinuities')
+   13     if not report['junction_visits']:
+   14         raise ConfigError('turn route contains no junction')
+   15     first=report['junction_visits'][0]
+   16     if not first['distinct_road_turn_candidate'] or first['direction']!=direction:
+   17         raise ConfigError('first junction does not match requested distinct-road turn')
+   18     return dict(direction=direction,legal=True,entry_road_key=str(first['entry_road_id']),
+   19                 exit_road_key=str(first['exit_road_id']),junction_start_m=first['start_m'],
+   20                 junction_end_m=first['end_m'],heading_change_deg=first['heading_change_deg'],
+   21                 legality_scope='directed_map_topology_not_signal_permission')
+   22
+   23
+   24 def waypoint_route(waypoints):
+   25     route=[]
+   26     distance=0.
+   27     for waypoint in waypoints:
+   28         pose=waypoint.transform
+   29         p=dict(x=pose.location.x,y=pose.location.y,z=pose.location.z,yaw=pose.rotation.yaw,
+   30                road_id=waypoint.road_id,section_id=waypoint.section_id,lane_id=waypoint.lane_id,
+   31                is_junction=bool(waypoint.is_junction))
+   32         if route:
+   33             gap=math.sqrt(sum((p[k]-route[-1][k])**2 for k in ('x','y','z')))
+   34             if gap<.05:
+   35                 continue
+   36             distance+=gap
+   37         p['distance_m']=distance
+   38         route.append(p)
+   39     return route
+   40
+   41
+   42 def bind_route_turn(route, direction, activation_m, end_m):
+   43     """Bind the next junction, never search ahead for a convenient matching turn."""
+   44     report=audit_route(route)
+   45     if report['suspicious_gaps']:
+   46         raise ConfigError('turn route contains discontinuities')
+   47     visits=[v for v in report['junction_visits'] if v['end_m']>=activation_m]
+   48     if not visits:
+   49         raise ConfigError('no next junction after task activation')
+   50     visit=visits[0]
+   51     if visit['start_m']<=activation_m:
+   52         raise ConfigError('turn task activated inside or after junction entry')
+   53     if visit['end_m']>=end_m:
+   54         raise ConfigError('turn exit overlaps next task boundary')
+   55     if not visit['distinct_road_turn_candidate'] or visit['direction']!=direction:
+   56         raise ConfigError('next junction does not match requested distinct-road turn')
+   57     return dict(direction=direction,legal=True,entry_road_key=str(visit['entry_road_id']),
+   58                 exit_road_key=str(visit['exit_road_id']),junction_start_m=visit['start_m'],
+   59                 junction_end_m=visit['end_m'],heading_change_deg=visit['heading_change_deg'],
+   60                 legality_scope='recorded_route_topology_not_signal_permission')
+   61
+   62
+   63 def build_turn_route(world_map, reference, direction, preferred_m):
+   64     from agents.navigation.global_route_planner import GlobalRoutePlanner
+   65
+   66     anchor=min(reference,key=lambda p:abs(p['distance_m']-preferred_m))
+   67     candidates=[]
+   68     for entry,exit_wp in world_map.get_topology():
+   69         if not entry.is_junction:
+   70             continue
+   71         delta=angle_delta(exit_wp.transform.rotation.yaw,entry.transform.rotation.yaw)
+   72         if not ((direction=='LEFT' and -145<delta<-45) or (direction=='RIGHT' and 45<delta<145)):
+   73             continue
+   74         position=entry.transform.location
+   75         candidates.append(((position.x-anchor['x'])**2+(position.y-anchor['y'])**2,entry,exit_wp))
+   76     candidates.sort(key=lambda v:(v[0],v[1].road_id,v[1].lane_id))
+   77     planner=GlobalRoutePlanner(world_map,2.0)
+   78     for _,entry,exit_wp in candidates:
+   79         starts=sorted(entry.previous(25),key=lambda w:(w.road_id,w.lane_id,w.s))
+   80         ends=sorted(exit_wp.next(60),key=lambda w:(w.road_id,w.lane_id,w.s))
+   81         for start in starts:
+   82             for end in ends:
+   83                 if start.is_junction or end.is_junction or start.road_id==end.road_id:
+   84                     continue
+   85                 path=[w for w,_ in planner.trace_route(start.transform.location,end.transform.location)]
+   86                 if len(path)<3:
+   87                     continue
+   88                 try:
+   89                     evidence=turn_evidence(waypoint_route(path),direction)
+   90                 except ConfigError:
+   91                     continue
+   92                 # A long continuation allows existing background-flow placement.
+   93                 cursor=path[-1]
+   94                 for _ in range(300):
+   95                     options=cursor.next(5)
+   96                     if not options:
+   97                         break
+   98                     cursor=min(options,key=lambda w:(abs(angle_delta(w.transform.rotation.yaw,
+   99                                       cursor.transform.rotation.yaw)),w.road_id,w.lane_id,w.s))
+  100                     path.append(cursor)
+  101                 route=waypoint_route(path)
+  102                 if route[-1]['distance_m']<1300:
+  103                     continue
+  104                 audit_route(route)
+  105                 return route,evidence
+  106     raise ConfigError('no directed-map junction turn could be constructed for requested direction')
+  107
+  108
+  109 def bind_straight_junction(route, world_map, location_factory, activation_m, end_m, max_heading_deg):
+  110     report = audit_route(route)
+  111     if report['suspicious_gaps']:
+  112         raise ConfigError('junction route contains discontinuities')
+  113     visits = [v for v in report['junction_visits'] if v['end_m'] >= activation_m]
+  114     if not visits:
+  115         raise ConfigError('no junction in remaining route')
+  116     visit = visits[0]
+  117     if not activation_m < visit['start_m'] < visit['end_m'] < end_m:
+  118         raise ConfigError('straight junction not contained in task window')
+  119     if abs(visit['heading_change_deg']) > max_heading_deg:
+  120         raise ConfigError('next junction is not straight')
+  121     ids = set()
+  122     for point in route:
+  123         if visit['start_m'] <= point['distance_m'] <= visit['end_m'] and point['is_junction']:
+  124             waypoint = world_map.get_waypoint(location_factory(**{k:point[k] for k in ('x','y','z')}))
+  125             if waypoint is None or not waypoint.is_junction:
+  126                 raise ConfigError('junction geometry differs from recorded route')
+  127             ids.add(waypoint.junction_id)
+  128     if len(ids) != 1:
+  129         raise ConfigError('straight fixture must identify exactly one junction')
+  130     return dict(direction='STRAIGHT',legal=True,junction_id=ids.pop(),
+  131                 entry_road_key=str(visit['entry_road_id']),exit_road_key=str(visit['exit_road_id']),
+  132                 junction_start_m=visit['start_m'],junction_end_m=visit['end_m'],
+  133                 legality_scope='recorded_route_topology_not_signal_permission')
+  134
+  135
+  136 def bind_junction_sequence(route, world_map, location_factory, steps, activation_m, end_m):
+  137     """Bind every requested junction once, in route order, without skipping mismatches."""
+  138     cursor=activation_m
+  139     result={}
+  140     for index,step in enumerate(steps):
+  141         if step['kind'] not in {'turn','straight_junction'}:
+  142             continue
+  143         start=max(cursor,step.get('start_route_s_m',cursor))
+  144         if step['kind']=='turn':
+  145             evidence=bind_route_turn(route,step['direction'],start,end_m)
+  146         else:
+  147             evidence=bind_straight_junction(route,world_map,location_factory,start,end_m,
+  148                                             step['max_heading_change_deg'])
+  149         result[str(index)]=evidence
+  150         cursor=evidence['junction_end_m']+1e-3
+  151     return result

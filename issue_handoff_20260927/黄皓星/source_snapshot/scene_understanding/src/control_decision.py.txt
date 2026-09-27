@@ -1,0 +1,603 @@
+    1 """Build a deterministic, safety-gated control decision from integration JSON.
+    2
+    3 The module is the boundary between scene understanding and the CARLA control
+    4 layer.  It consumes parser intent, metric world state, semantic alignment and
+    5 risk assessment documents.  It emits exactly one flat action compatible with
+    6 ``control.protocol.normalize_intent`` on the control branch.
+    7
+    8 Only the first intent step is selected here.  Sequencing several steps requires
+    9 a stateful executor and is intentionally outside this stateless JSON adapter.
+   10 """
+   11
+   12 from __future__ import annotations
+   13
+   14 import math
+   15 from typing import Any, Mapping
+   16
+   17 from scene_understanding.src.speed_target import resolve_step_speed_target
+   18
+   19
+   20 CONTROL_DECISION_SCHEMA_VERSION = "1.0.0"
+   21 DECISION_STATUSES = {"READY", "BLOCKED", "SAFE_FALLBACK"}
+   22 CONTROL_ACTIONS = {
+   23     "keep_lane",
+   24     "accelerate",
+   25     "decelerate",
+   26     "stop",
+   27     "emergency_brake",
+   28     "lane_change_left",
+   29     "lane_change_right",
+   30     "turn_left",
+   31     "turn_right",
+   32 }
+   33 PARSE_STATUSES = {"VALID", "NEEDS_CLARIFICATION", "UNSUPPORTED", "INVALID"}
+   34 RISK_LEVELS = {"none", "low", "medium", "high"}
+   35
+   36 DIRECT_ACTION_MAP = {
+   37     "KEEP_LANE": "keep_lane",
+   38     "STOP": "stop",
+   39     "EMERGENCY_BRAKE": "emergency_brake",
+   40     "RESUME": "keep_lane",
+   41     "CANCEL": "keep_lane",
+   42 }
+   43
+   44
+   45 def _is_number(value: Any) -> bool:
+   46     return (
+   47         not isinstance(value, bool)
+   48         and isinstance(value, (int, float))
+   49         and math.isfinite(float(value))
+   50     )
+   51
+   52
+   53 def _speed_kmh(world_state: Mapping[str, Any]) -> float:
+   54     speed_mps = world_state.get("ego", {}).get("speed_mps", 0.0)
+   55     if not _is_number(speed_mps) or float(speed_mps) < 0:
+   56         raise ValueError("WorldState ego.speed_mps must be a finite non-negative number")
+   57     return round(min(float(speed_mps) * 3.6, 100.0), 6)
+   58
+   59
+   60 def _parse_confidence(driving_intent: Mapping[str, Any]) -> float | None:
+   61     value = driving_intent["parse_result"].get("confidence")
+   62     if value is None:
+   63         return None
+   64     if not _is_number(value) or not 0 <= float(value) <= 1:
+   65         raise ValueError("DrivingIntent parse_result.confidence must be null or between 0 and 1")
+   66     return round(float(value), 6)
+   67
+   68
+   69 def _string_list(value: Any, path: str) -> list[str]:
+   70     if not isinstance(value, list) or any(
+   71         not isinstance(item, str) or not item for item in value
+   72     ):
+   73         raise ValueError(f"{path} must be an array of non-empty strings")
+   74     return list(value)
+   75
+   76
+   77 def _validate_inputs(
+   78     driving_intent: Any,
+   79     world_state: Any,
+   80     semantic_alignment: Any,
+   81     risk_assessment: Any,
+   82 ) -> None:
+   83     documents = {
+   84         "DrivingIntent": driving_intent,
+   85         "WorldState": world_state,
+   86         "SemanticAlignment": semantic_alignment,
+   87         "RiskAssessment": risk_assessment,
+   88     }
+   89     for name, document in documents.items():
+   90         if not isinstance(document, dict):
+   91             raise ValueError(f"{name} must be a JSON object")
+   92
+   93     request_id = driving_intent.get("request_id")
+   94     if not isinstance(request_id, str) or not request_id:
+   95         raise ValueError("DrivingIntent request_id must be a non-empty string")
+   96     if semantic_alignment.get("request_id") != request_id:
+   97         raise ValueError("request_id mismatch between DrivingIntent and SemanticAlignment")
+   98
+   99     frame_id = world_state.get("frame_id")
+  100     if not isinstance(frame_id, str) or not frame_id:
+  101         raise ValueError("WorldState frame_id must be a non-empty string")
+  102     if semantic_alignment.get("world_state_frame_id") != frame_id:
+  103         raise ValueError("frame_id mismatch between WorldState and SemanticAlignment")
+  104     if risk_assessment.get("frame_id") != frame_id:
+  105         raise ValueError("frame_id mismatch between WorldState and RiskAssessment")
+  106
+  107     parse_result = driving_intent.get("parse_result")
+  108     if not isinstance(parse_result, dict):
+  109         raise ValueError("DrivingIntent parse_result must be an object")
+  110     parse_status = parse_result.get("status")
+  111     if parse_status not in PARSE_STATUSES:
+  112         raise ValueError("DrivingIntent parse_result.status is invalid")
+  113     if semantic_alignment.get("parse_status") != parse_status:
+  114         raise ValueError("parse_status mismatch between DrivingIntent and SemanticAlignment")
+  115
+  116     intent = driving_intent.get("intent")
+  117     if not isinstance(intent, dict) or not isinstance(intent.get("steps"), list):
+  118         raise ValueError("DrivingIntent intent.steps must be an array")
+  119     if parse_status == "VALID" and not intent["steps"]:
+  120         raise ValueError("VALID DrivingIntent must contain at least one step")
+  121
+  122     alignments = semantic_alignment.get("step_alignments")
+  123     if not isinstance(alignments, list):
+  124         raise ValueError("SemanticAlignment step_alignments must be an array")
+  125     if any(not isinstance(item, dict) for item in alignments):
+  126         raise ValueError("SemanticAlignment step_alignments entries must be objects")
+  127
+  128     if risk_assessment.get("risk_level") not in RISK_LEVELS:
+  129         raise ValueError("RiskAssessment risk_level is invalid")
+  130     if risk_assessment.get("recommended_action") not in {
+  131         "maintain_speed", "monitor", "decelerate", "emergency_brake"
+  132     }:
+  133         raise ValueError("RiskAssessment recommended_action is invalid")
+  134     _string_list(risk_assessment.get("reason_codes"), "RiskAssessment reason_codes")
+  135
+  136     lane_change = risk_assessment.get("lane_change")
+  137     if not isinstance(lane_change, dict):
+  138         raise ValueError("RiskAssessment lane_change must be an object")
+  139     for direction in ("left", "right"):
+  140         judgment = lane_change.get(direction)
+  141         if not isinstance(judgment, dict) or not isinstance(judgment.get("is_safe"), bool):
+  142             raise ValueError(
+  143                 f"RiskAssessment lane_change.{direction}.is_safe must be a boolean"
+  144             )
+  145         _string_list(
+  146             judgment.get("reason_codes"),
+  147             f"RiskAssessment lane_change.{direction}.reason_codes",
+  148         )
+  149
+  150
+  151 def _alignment_for_step(
+  152     semantic_alignment: Mapping[str, Any], step_id: str
+  153 ) -> Mapping[str, Any]:
+  154     matches = [
+  155         item
+  156         for item in semantic_alignment["step_alignments"]
+  157         if item.get("step_id") == step_id
+  158     ]
+  159     if len(matches) != 1:
+  160         raise ValueError(
+  161             f"SemanticAlignment must contain exactly one entry for step {step_id!r}"
+  162         )
+  163     return matches[0]
+  164
+  165
+  166 def _fallback_action(on_blocked: Any) -> tuple[str, float | None, str]:
+  167     policy = str(on_blocked or "SAFE_STOP").strip().upper()
+  168     if policy in {"WAIT_FOR_SAFE", "WAIT", "SLOW_DOWN"}:
+  169         return "decelerate", None, "wait_for_safe"
+  170     if policy in {"SKIP", "SKIP_STEP", "CONTINUE"}:
+  171         return "keep_lane", None, "skip_blocked_step"
+  172     return "stop", 0.0, "safe_stop"
+  173
+  174
+  175 def _map_step_action(
+  176     step: Mapping[str, Any],
+  177     current_speed_kmh: float,
+  178     resolved_target_speed_kmh: float | None = None,
+  179 ) -> tuple[str, float, str | None, dict[str, float] | None]:
+  180     parser_action = str(step.get("action", "")).strip().upper()
+  181     parameters = step.get("parameters") or {}
+  182     if not isinstance(parameters, dict):
+  183         raise ValueError(f"DrivingIntent step {step.get('step_id')!r} parameters must be an object")
+  184
+  185     action = DIRECT_ACTION_MAP.get(parser_action)
+  186     target_speed_kmh = current_speed_kmh
+  187     target_lane: str | None = None
+  188     target_location: dict[str, float] | None = None
+  189
+  190     if parser_action in {"SET_SPEED", "ADJUST_SPEED"}:
+  191         action, target_speed_kmh = resolve_step_speed_target(
+  192             step,
+  193             current_speed_kmh,
+  194             resolved_target_speed_kmh=resolved_target_speed_kmh,
+  195         )
+  196     elif parser_action == "CHANGE_LANE":
+  197         direction = str(parameters.get("direction", "")).strip().upper()
+  198         if direction in {"LEFT", "RIGHT"}:
+  199             target_lane = direction.lower()
+  200             action = f"lane_change_{target_lane}"
+  201     elif parser_action == "TURN":
+  202         direction = str(parameters.get("direction", "")).strip().upper()
+  203         if direction == "STRAIGHT":
+  204             action = "keep_lane"
+  205         elif direction in {"LEFT", "RIGHT"}:
+  206             action = f"turn_{direction.lower()}"
+  207         location = parameters.get("target_location")
+  208         if location is not None:
+  209             if not isinstance(location, dict) or not all(
+  210                 key in location and _is_number(location[key]) for key in ("x", "y")
+  211             ):
+  212                 raise ValueError("TURN target_location requires finite x and y")
+  213             target_location = {
+  214                 "x": float(location["x"]),
+  215                 "y": float(location["y"]),
+  216                 "z": float(location.get("z", 0.0)),
+  217             }
+  218     elif parser_action == "OVERTAKE":
+  219         direction = str(parameters.get("direction", "")).strip().upper()
+  220         if direction in {"LEFT", "RIGHT"}:
+  221             target_lane = direction.lower()
+  222             action = f"lane_change_{target_lane}"
+  223         else:
+  224             # In a sequenced plan, CHANGE_LANE has already established the
+  225             # passing lane.  OVERTAKE therefore means build longitudinal
+  226             # speed while the normal target-alignment and risk gates remain
+  227             # authoritative.
+  228             action = "accelerate"
+  229     elif parser_action == "WAIT":
+  230         # WAIT remains an explicit stationary action until StepFeedback
+  231         # confirms that the observed condition has cleared.
+  232         action = "stop"
+  233     elif parser_action in {"CHECK", "CONFIRM", "COMPLETE"}:
+  234         # These are observation/verification steps.  Semantic alignment and
+  235         # the step's on_blocked policy decide whether the plan may proceed;
+  236         # when aligned they do not request an independent manoeuvre.
+  237         action = "keep_lane"
+  238     elif parser_action in {"PROCEED", "PASS_BY", "KEEP_SAFE_DISTANCE"}:
+  239         # Route following supplies steering for these auxiliary steps.  The
+  240         # risk gate can still reduce speed or stop for an observed hazard.
+  241         action = "keep_lane"
+  242     elif parser_action in {"YIELD", "PULL_OVER", "AVOID"}:
+  243         direction = str(parameters.get("direction", "")).strip().upper()
+  244         if direction in {"LEFT", "RIGHT"}:
+  245             target_lane = direction.lower()
+  246             action = f"lane_change_{target_lane}"
+  247         else:
+  248             action = "decelerate"
+  249
+  250     if action not in CONTROL_ACTIONS:
+  251         raise ValueError(f"unsupported DrivingIntent action {parser_action!r}")
+  252     if action in {"stop", "emergency_brake"}:
+  253         target_speed_kmh = 0.0
+  254     return action, target_speed_kmh, target_lane, target_location
+  255
+  256
+  257 def _decision(
+  258     *,
+  259     driving_intent: Mapping[str, Any],
+  260     world_state: Mapping[str, Any],
+  261     step: Mapping[str, Any] | None,
+  262     status: str,
+  263     action: str,
+  264     target_speed_kmh: float,
+  265     target_lane: str | None,
+  266     target_location: dict[str, float] | None,
+  267     reason: str,
+  268     matched_entity_id: str | None,
+  269     risk_assessment: Mapping[str, Any],
+  270     blocked_reason_codes: list[str],
+  271 ) -> dict[str, Any]:
+  272     parse_result = driving_intent["parse_result"]
+  273     result = {
+  274         "schema_version": CONTROL_DECISION_SCHEMA_VERSION,
+  275         "request_id": driving_intent["request_id"],
+  276         "frame_id": world_state["frame_id"],
+  277         "decision_status": status,
+  278         "action": action,
+  279         "target_speed_kmh": round(float(target_speed_kmh), 6),
+  280         "target_lane": target_lane,
+  281         "target_location": target_location,
+  282         "emergency": action == "emergency_brake",
+  283         "reason": reason,
+  284         "parse_status": parse_result["status"],
+  285         "parse_confidence": _parse_confidence(driving_intent),
+  286         "source_step_id": None if step is None else step.get("step_id"),
+  287         "source_step_action": None if step is None else step.get("action"),
+  288         "source_step_count": len(driving_intent["intent"]["steps"]),
+  289         "matched_entity_id": matched_entity_id,
+  290         "risk_level": risk_assessment["risk_level"],
+  291         "risk_reason_codes": list(risk_assessment["reason_codes"]),
+  292         "blocked_reason_codes": blocked_reason_codes,
+  293     }
+  294     errors = validate_control_decision(result)
+  295     if errors:
+  296         raise ValueError("invalid ControlDecision: " + "; ".join(errors))
+  297     return result
+  298
+  299
+  300 def build_control_decision(
+  301     driving_intent: dict[str, Any],
+  302     world_state: dict[str, Any],
+  303     semantic_alignment: dict[str, Any],
+  304     risk_assessment: dict[str, Any],
+  305     *,
+  306     source_step_id: str | None = None,
+  307     resolved_target_speed_kmh: float | None = None,
+  308 ) -> dict[str, Any]:
+  309     """Return one validated flat action after deterministic safety gating.
+  310
+  311     By default the first step is selected for backward compatibility.  A
+  312     stateful plan executor may pass ``source_step_id`` to evaluate a later
+  313     step without mutating the DrivingIntent document.  It also passes the
+  314     activation-time ``resolved_target_speed_kmh`` for relative speed steps;
+  315     direct stateless callers resolve against only their current input frame.
+  316     """
+  317
+  318     _validate_inputs(driving_intent, world_state, semantic_alignment, risk_assessment)
+  319     current_speed = _speed_kmh(world_state)
+  320     parse_status = driving_intent["parse_result"]["status"]
+  321     if parse_status != "VALID":
+  322         return _decision(
+  323             driving_intent=driving_intent,
+  324             world_state=world_state,
+  325             step=None,
+  326             status="SAFE_FALLBACK",
+  327             action="stop",
+  328             target_speed_kmh=0.0,
+  329             target_lane=None,
+  330             target_location=None,
+  331             reason=f"parse_status_{parse_status.lower()}",
+  332             matched_entity_id=None,
+  333             risk_assessment=risk_assessment,
+  334             blocked_reason_codes=[f"parse_status_{parse_status.lower()}"],
+  335         )
+  336
+  337     steps = driving_intent["intent"]["steps"]
+  338     if source_step_id is None:
+  339         step = steps[0]
+  340     else:
+  341         selected = [item for item in steps if item.get("step_id") == source_step_id]
+  342         if len(selected) != 1:
+  343             raise ValueError(
+  344                 "DrivingIntent must contain exactly one step matching "
+  345                 f"source_step_id {source_step_id!r}"
+  346             )
+  347         step = selected[0]
+  348     if not isinstance(step, dict):
+  349         raise ValueError("DrivingIntent first step must be an object")
+  350     step_id = step.get("step_id")
+  351     if not isinstance(step_id, str) or not step_id:
+  352         raise ValueError("DrivingIntent first step step_id must be a non-empty string")
+  353     alignment = _alignment_for_step(semantic_alignment, step_id)
+  354     action, target_speed, target_lane, target_location = _map_step_action(
+  355         step,
+  356         current_speed,
+  357         resolved_target_speed_kmh=resolved_target_speed_kmh,
+  358     )
+  359     parser_action = str(step.get("action", "")).strip().upper()
+  360     matched_entity = alignment.get("matched_entity")
+  361     matched_entity_id = (
+  362         matched_entity.get("entity_id") if isinstance(matched_entity, dict) else None
+  363     )
+  364
+  365     # A physical emergency has priority over an ordinary requested stop.  An
+  366     # explicit emergency command remains immediate even when risk is low.
+  367     recommended = risk_assessment["recommended_action"]
+  368     if action == "emergency_brake" or recommended == "emergency_brake":
+  369         return _decision(
+  370             driving_intent=driving_intent,
+  371             world_state=world_state,
+  372             step=step,
+  373             status=("READY" if action == "emergency_brake" else "BLOCKED"),
+  374             action="emergency_brake",
+  375             target_speed_kmh=0.0,
+  376             target_lane=None,
+  377             target_location=None,
+  378             reason=(
+  379                 f"driving_intent_{parser_action.lower()}"
+  380                 if action == "emergency_brake"
+  381                 else "risk_requires_emergency_brake"
+  382             ),
+  383             matched_entity_id=matched_entity_id,
+  384             risk_assessment=risk_assessment,
+  385             blocked_reason_codes=(
+  386                 []
+  387                 if action == "emergency_brake"
+  388                 else ["risk_requires_emergency_brake"]
+  389             ),
+  390         )
+  391
+  392     # Explicit non-emergency stops are never weakened by lower-priority rules.
+  393     if action == "stop":
+  394         return _decision(
+  395             driving_intent=driving_intent,
+  396             world_state=world_state,
+  397             step=step,
+  398             status="READY",
+  399             action="stop",
+  400             target_speed_kmh=0.0,
+  401             target_lane=None,
+  402             target_location=None,
+  403             reason=f"driving_intent_{parser_action.lower()}",
+  404             matched_entity_id=matched_entity_id,
+  405             risk_assessment=risk_assessment,
+  406             blocked_reason_codes=[],
+  407         )
+  408     if recommended == "decelerate" and action not in {"decelerate", "stop"}:
+  409         return _decision(
+  410             driving_intent=driving_intent,
+  411             world_state=world_state,
+  412             step=step,
+  413             status="BLOCKED",
+  414             action="decelerate",
+  415             target_speed_kmh=min(current_speed, 15.0),
+  416             target_lane=None,
+  417             target_location=None,
+  418             reason="risk_requires_deceleration",
+  419             matched_entity_id=matched_entity_id,
+  420             risk_assessment=risk_assessment,
+  421             blocked_reason_codes=["risk_requires_deceleration"],
+  422         )
+  423
+  424     if alignment.get("alignment_required") is True and alignment.get(
+  425         "alignment_success"
+  426     ) is not True:
+  427         fallback, fallback_speed, policy_reason = _fallback_action(step.get("on_blocked"))
+  428         reason_code = str(alignment.get("reason_code") or "target_not_aligned")
+  429         return _decision(
+  430             driving_intent=driving_intent,
+  431             world_state=world_state,
+  432             step=step,
+  433             status="BLOCKED",
+  434             action=fallback,
+  435             target_speed_kmh=(
+  436                 min(current_speed, 15.0)
+  437                 if fallback == "decelerate" and fallback_speed is None
+  438                 else current_speed if fallback_speed is None else fallback_speed
+  439             ),
+  440             target_lane=None,
+  441             target_location=None,
+  442             reason=f"{reason_code}_{policy_reason}",
+  443             matched_entity_id=None,
+  444             risk_assessment=risk_assessment,
+  445             blocked_reason_codes=[reason_code, policy_reason],
+  446         )
+  447
+  448     if action in {"lane_change_left", "lane_change_right"}:
+  449         direction = action.removeprefix("lane_change_")
+  450         judgment = risk_assessment["lane_change"][direction]
+  451         if not judgment["is_safe"]:
+  452             fallback, fallback_speed, policy_reason = _fallback_action(
+  453                 step.get("on_blocked")
+  454             )
+  455             lane_reasons = list(judgment["reason_codes"])
+  456             return _decision(
+  457                 driving_intent=driving_intent,
+  458                 world_state=world_state,
+  459                 step=step,
+  460                 status="BLOCKED",
+  461                 action=fallback,
+  462                 target_speed_kmh=(
+  463                     min(current_speed, 15.0)
+  464                     if fallback == "decelerate" and fallback_speed is None
+  465                     else current_speed if fallback_speed is None else fallback_speed
+  466                 ),
+  467                 target_lane=None,
+  468                 target_location=None,
+  469                 reason=f"lane_change_{direction}_blocked_{policy_reason}",
+  470                 matched_entity_id=matched_entity_id,
+  471                 risk_assessment=risk_assessment,
+  472                 blocked_reason_codes=lane_reasons or [
+  473                     f"lane_change_{direction}_unsafe"
+  474                 ],
+  475             )
+  476
+  477     if action in {"turn_left", "turn_right"} and target_location is None:
+  478         fallback, fallback_speed, policy_reason = _fallback_action(step.get("on_blocked"))
+  479         return _decision(
+  480             driving_intent=driving_intent,
+  481             world_state=world_state,
+  482             step=step,
+  483             status="BLOCKED",
+  484             action=fallback,
+  485             target_speed_kmh=current_speed if fallback_speed is None else fallback_speed,
+  486             target_lane=None,
+  487             target_location=None,
+  488             reason=f"turn_target_location_missing_{policy_reason}",
+  489             matched_entity_id=matched_entity_id,
+  490             risk_assessment=risk_assessment,
+  491             blocked_reason_codes=["turn_target_location_missing", policy_reason],
+  492         )
+  493
+  494     return _decision(
+  495         driving_intent=driving_intent,
+  496         world_state=world_state,
+  497         step=step,
+  498         status="READY",
+  499         action=action,
+  500         target_speed_kmh=target_speed,
+  501         target_lane=target_lane,
+  502         target_location=target_location,
+  503         reason=f"driving_intent_{parser_action.lower()}",
+  504         matched_entity_id=matched_entity_id,
+  505         risk_assessment=risk_assessment,
+  506         blocked_reason_codes=[],
+  507     )
+  508
+  509
+  510 def validate_control_decision(data: Any) -> list[str]:
+  511     """Return structural errors for the stable ControlDecision contract."""
+  512
+  513     if not isinstance(data, dict):
+  514         return ["root: expected an object"]
+  515     expected = {
+  516         "schema_version", "request_id", "frame_id", "decision_status",
+  517         "action", "target_speed_kmh", "target_lane", "target_location",
+  518         "emergency", "reason", "parse_status", "parse_confidence",
+  519         "source_step_id", "source_step_action", "source_step_count",
+  520         "matched_entity_id", "risk_level", "risk_reason_codes",
+  521         "blocked_reason_codes",
+  522     }
+  523     errors: list[str] = []
+  524     missing = sorted(expected - data.keys())
+  525     extra = sorted(data.keys() - expected)
+  526     if missing:
+  527         errors.append("root: missing fields: " + ", ".join(missing))
+  528     if extra:
+  529         errors.append("root: unexpected fields: " + ", ".join(extra))
+  530     if data.get("schema_version") != CONTROL_DECISION_SCHEMA_VERSION:
+  531         errors.append("schema_version: expected '1.0.0'")
+  532     for key in ("request_id", "frame_id", "reason"):
+  533         if not isinstance(data.get(key), str) or not data[key]:
+  534             errors.append(f"{key}: expected a non-empty string")
+  535     if data.get("decision_status") not in DECISION_STATUSES:
+  536         errors.append("decision_status: invalid value")
+  537     if data.get("action") not in CONTROL_ACTIONS:
+  538         errors.append("action: invalid value")
+  539     speed = data.get("target_speed_kmh")
+  540     if not _is_number(speed) or not 0 <= float(speed) <= 100:
+  541         errors.append("target_speed_kmh: expected a finite number between 0 and 100")
+  542     if data.get("target_lane") not in {None, "left", "right"}:
+  543         errors.append("target_lane: expected null, 'left', or 'right'")
+  544     location = data.get("target_location")
+  545     if location is not None:
+  546         allowed_location_keys = {"x", "y", "z", "yaw", "reference"}
+  547         if (
+  548             not isinstance(location, dict)
+  549             or not {"x", "y", "z"}.issubset(location)
+  550             or not set(location).issubset(allowed_location_keys)
+  551             or any(
+  552                 not _is_number(location.get(key))
+  553                 for key in ("x", "y", "z")
+  554             )
+  555             or (
+  556                 "yaw" in location and not _is_number(location.get("yaw"))
+  557             )
+  558         ):
+  559             errors.append(
+  560                 "target_location: expected finite x/y/z with optional yaw/reference"
+  561             )
+  562         reference = location.get("reference") if isinstance(location, dict) else None
+  563         if reference is not None and (
+  564             not isinstance(reference, dict)
+  565             or not {"x", "y", "yaw"}.issubset(reference)
+  566             or not set(reference).issubset({"x", "y", "z", "yaw"})
+  567             or any(
+  568                 not _is_number(reference.get(key))
+  569                 for key in reference
+  570             )
+  571         ):
+  572             errors.append(
+  573                 "target_location.reference: expected finite x/y/yaw with optional z"
+  574             )
+  575     if not isinstance(data.get("emergency"), bool):
+  576         errors.append("emergency: expected a boolean")
+  577     elif data.get("emergency") != (data.get("action") == "emergency_brake"):
+  578         errors.append("emergency: must be true exactly for emergency_brake")
+  579     if data.get("parse_status") not in PARSE_STATUSES:
+  580         errors.append("parse_status: invalid value")
+  581     confidence = data.get("parse_confidence")
+  582     if confidence is not None and (
+  583         not _is_number(confidence) or not 0 <= float(confidence) <= 1
+  584     ):
+  585         errors.append("parse_confidence: expected null or a number between 0 and 1")
+  586     for key in ("source_step_id", "source_step_action", "matched_entity_id"):
+  587         value = data.get(key)
+  588         if value is not None and (not isinstance(value, str) or not value):
+  589             errors.append(f"{key}: expected null or a non-empty string")
+  590     count = data.get("source_step_count")
+  591     if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+  592         errors.append("source_step_count: expected a non-negative integer")
+  593     if data.get("risk_level") not in RISK_LEVELS:
+  594         errors.append("risk_level: invalid value")
+  595     for key in ("risk_reason_codes", "blocked_reason_codes"):
+  596         value = data.get(key)
+  597         if not isinstance(value, list) or any(
+  598             not isinstance(item, str) or not item for item in value
+  599         ):
+  600             errors.append(f"{key}: expected an array of non-empty strings")
+  601         elif len(set(value)) != len(value):
+  602             errors.append(f"{key}: values must be unique")
+  603     return errors

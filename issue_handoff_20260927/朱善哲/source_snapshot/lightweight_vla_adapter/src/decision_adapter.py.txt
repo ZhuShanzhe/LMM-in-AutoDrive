@@ -1,0 +1,504 @@
+    1 from __future__ import annotations
+    2
+    3 import math
+    4 from dataclasses import dataclass
+    5 from typing import Sequence
+    6
+    7 import torch
+    8 from torch import nn
+    9 from torch.nn import functional as F
+   10
+   11 from .bev_encoder import LightweightBEVEncoder
+   12 from .contracts import ACTION_LABELS, VLA_PROPOSAL_SCHEMA_VERSION
+   13 from .raw_sensor_encoder import MultiviewImageEncoder
+   14
+   15
+   16 def _valid_token_count(mask: torch.Tensor) -> torch.Tensor:
+   17     # A finite integer Clip bound avoids int64 sentinel conversion in HBIR.
+   18     return mask.sum(dim=1, keepdim=True).clamp(min=1, max=max(1, mask.shape[1]))
+   19
+   20
+   21 class CrossAttentionBlock(nn.Module):
+   22     def __init__(
+   23         self, hidden_size: int, num_heads: int, dropout: float = 0.1
+   24     ) -> None:
+   25         super().__init__()
+   26         self.query_norm = nn.LayerNorm(hidden_size)
+   27         self.memory_norm = nn.LayerNorm(hidden_size)
+   28         self.attention = nn.MultiheadAttention(
+   29             hidden_size,
+   30             num_heads,
+   31             dropout=dropout,
+   32             batch_first=True,
+   33         )
+   34         self.ffn_norm = nn.LayerNorm(hidden_size)
+   35         self.ffn = nn.Sequential(
+   36             nn.Linear(hidden_size, hidden_size * 4),
+   37             nn.GELU(),
+   38             nn.Dropout(dropout),
+   39             nn.Linear(hidden_size * 4, hidden_size),
+   40             nn.Dropout(dropout),
+   41         )
+   42
+   43     def forward(
+   44         self,
+   45         query: torch.Tensor,
+   46         memory: torch.Tensor,
+   47         memory_padding_mask: torch.Tensor | None,
+   48     ) -> torch.Tensor:
+   49         normalized_query = self.query_norm(query)
+   50         normalized_memory = self.memory_norm(memory)
+   51         attended, _ = self.attention(
+   52             normalized_query,
+   53             normalized_memory,
+   54             normalized_memory,
+   55             key_padding_mask=memory_padding_mask,
+   56             need_weights=False,
+   57         )
+   58         query = query + attended
+   59         return query + self.ffn(self.ffn_norm(query))
+   60
+   61
+   62 @dataclass
+   63 class AdapterOutput:
+   64     action_logits: torch.Tensor
+   65     target_speed_kmh: torch.Tensor
+   66     target_lane_logits: torch.Tensor
+   67     target_pointer_logits: torch.Tensor
+   68     confidence_logits: torch.Tensor
+   69     confidence: torch.Tensor
+   70     decision_embedding: torch.Tensor
+   71     visual_risk_logits: torch.Tensor
+   72     risk_input_features: torch.Tensor
+   73     ordinal_risk_logits: torch.Tensor | None = None
+   74     risk_score: torch.Tensor | None = None
+   75     risk_type_logits: torch.Tensor | None = None
+   76     risk_horizon_logits: torch.Tensor | None = None
+   77     lane_risk_logits: torch.Tensor | None = None
+   78     risk_uncertainty: torch.Tensor | None = None
+   79     temporal_used: bool = False
+   80     sensor_intent_context: torch.Tensor | None = None
+   81
+   82
+   83 class LightweightDecisionAdapter(nn.Module):
+   84     """Four-to-six-layer scene-conditioned high-level driving policy."""
+   85
+   86     def __init__(
+   87         self,
+   88         *,
+   89         camera_channels: int,
+   90         lidar_channels: int,
+   91         candidate_dim: int,
+   92         ego_dim: int,
+   93         intent_dim: int,
+   94         hidden_size: int = 256,
+   95         num_layers: int = 4,
+   96         num_heads: int = 8,
+   97         dropout: float = 0.1,
+   98         bev_grid: tuple[int, int] = (8, 8),
+   99         environment_dim: int = 12,
+  100         num_camera_views: int = 4,
+  101         raw_camera_token_grid: tuple[int, int] = (2, 2),
+  102         raw_camera_input_size: tuple[int, int] = (224, 224),
+  103         require_raw_camera: bool = False,
+  104         use_raw_camera: bool = True,
+  105         use_environment: bool = True,
+  106         use_candidate_entities: bool = True,
+  107         use_structured_bev: bool = True,
+  108         fuse_structured_visual_risk: bool = False,
+  109         condition_decision_on_visual_risk: bool = False,
+  110         speed_cap_environment_index: int | None = None,
+  111         use_temporal_risk: bool = False,
+  112         risk_type_count: int = 6,
+  113         use_state_conditioned_risk: bool = False,
+  114     ) -> None:
+  115         super().__init__()
+  116         if not 4 <= num_layers <= 6:
+  117             raise ValueError("num_layers must be between 4 and 6")
+  118         if hidden_size % num_heads != 0:
+  119             raise ValueError("hidden_size must be divisible by num_heads")
+  120         self.bev_encoder = LightweightBEVEncoder(
+  121             camera_channels,
+  122             lidar_channels,
+  123             hidden_size,
+  124             output_grid=bev_grid,
+  125         )
+  126         self.intent_projection = nn.Linear(intent_dim, hidden_size)
+  127         self.candidate_projection = nn.Linear(candidate_dim, hidden_size)
+  128         self.ego_projection = nn.Linear(ego_dim, hidden_size)
+  129         self.environment_projection = nn.Linear(environment_dim, hidden_size)
+  130         self.raw_camera_encoder = MultiviewImageEncoder(
+  131             hidden_size,
+  132             num_views=num_camera_views,
+  133             token_grid=raw_camera_token_grid,
+  134             input_size=raw_camera_input_size,
+  135         )
+  136         self.query_tokens = nn.Parameter(torch.empty(2, hidden_size))
+  137         nn.init.normal_(self.query_tokens, std=0.02)
+  138         self.layers = nn.ModuleList(
+  139             CrossAttentionBlock(hidden_size, num_heads, dropout)
+  140             for _ in range(num_layers)
+  141         )
+  142         self.action_head = nn.Linear(hidden_size, len(ACTION_LABELS))
+  143         self.speed_head = nn.Linear(hidden_size, 1)
+  144         self.lane_head = nn.Linear(hidden_size, 3)
+  145         self.confidence_head = nn.Linear(hidden_size, 1)
+  146         self.visual_risk_head = nn.Linear(hidden_size, 3)
+  147         self.use_state_conditioned_risk = bool(use_state_conditioned_risk)
+  148         if self.use_state_conditioned_risk:
+  149             self.state_risk_residual = nn.Sequential(
+  150                 nn.Linear(hidden_size + ego_dim + environment_dim, hidden_size),
+  151                 nn.LayerNorm(hidden_size), nn.GELU(), nn.Linear(hidden_size, 3),
+  152             )
+  153             # Preserve the trained visual prior until the new branch is trained.
+  154             nn.init.zeros_(self.state_risk_residual[-1].weight)
+  155             nn.init.zeros_(self.state_risk_residual[-1].bias)
+  156         else:
+  157             self.state_risk_residual = None
+  158         self.visual_risk_fusion = (
+  159             nn.Sequential(
+  160                 nn.Linear(hidden_size * 3, hidden_size),
+  161                 nn.LayerNorm(hidden_size),
+  162                 nn.GELU(),
+  163             )
+  164             if fuse_structured_visual_risk
+  165             else nn.Identity()
+  166         )
+  167         self.visual_risk_projection = nn.Linear(3, hidden_size)
+  168         self.target_query = nn.Linear(hidden_size, hidden_size)
+  169         self.hidden_size = hidden_size
+  170         self.num_layers = num_layers
+  171         self.require_raw_camera = bool(require_raw_camera)
+  172         self.use_raw_camera = bool(use_raw_camera)
+  173         self.use_environment = bool(use_environment)
+  174         self.use_candidate_entities = bool(use_candidate_entities)
+  175         self.use_structured_bev = bool(use_structured_bev)
+  176         self.fuse_structured_visual_risk = bool(fuse_structured_visual_risk)
+  177         self.condition_decision_on_visual_risk = bool(
+  178             condition_decision_on_visual_risk
+  179         )
+  180         self.speed_cap_environment_index = speed_cap_environment_index
+  181         self.use_temporal_risk = bool(use_temporal_risk)
+  182         self.risk_type_count = int(risk_type_count)
+  183         if self.use_temporal_risk:
+  184             # This is the categorical risk output consumed by the runtime
+  185             # safety gate. The other temporal heads remain auxiliary tasks.
+  186             self.temporal_visual_risk_head = nn.Linear(hidden_size, 3)
+  187             self.temporal_risk_encoder = nn.GRU(
+  188                 hidden_size * 3,
+  189                 hidden_size,
+  190                 num_layers=2,
+  191                 batch_first=True,
+  192                 dropout=dropout if dropout > 0.0 else 0.0,
+  193             )
+  194             self.temporal_risk_projection = nn.Sequential(
+  195                 nn.Linear(hidden_size * 3, hidden_size),
+  196                 nn.LayerNorm(hidden_size),
+  197                 nn.GELU(),
+  198             )
+  199             self.ordinal_risk_head = nn.Linear(hidden_size, 2)
+  200             self.risk_score_head = nn.Linear(hidden_size, 1)
+  201             self.risk_type_head = nn.Linear(
+  202                 hidden_size, self.risk_type_count
+  203             )
+  204             self.risk_horizon_head = nn.Linear(hidden_size, 4)
+  205             self.lane_risk_head = nn.Linear(hidden_size, 6)
+  206             self.risk_uncertainty_head = nn.Linear(hidden_size, 1)
+  207         else:
+  208             self.temporal_visual_risk_head = None
+  209             self.temporal_risk_encoder = None
+  210             self.temporal_risk_projection = None
+  211             self.ordinal_risk_head = None
+  212             self.risk_score_head = None
+  213             self.risk_type_head = None
+  214             self.risk_horizon_head = None
+  215             self.lane_risk_head = None
+  216             self.risk_uncertainty_head = None
+  217         if speed_cap_environment_index is not None and not (
+  218             0 <= speed_cap_environment_index < environment_dim
+  219         ):
+  220             raise ValueError("speed_cap_environment_index is out of range")
+  221
+  222     def forward(
+  223         self,
+  224         *,
+  225         camera_bev: torch.Tensor,
+  226         lidar_bev: torch.Tensor,
+  227         ego_features: torch.Tensor,
+  228         candidate_features: torch.Tensor,
+  229         candidate_mask: torch.Tensor,
+  230         intent_tokens: torch.Tensor,
+  231         intent_mask: torch.Tensor,
+  232         camera_images: torch.Tensor | None = None,
+  233         camera_view_mask: torch.Tensor | None = None,
+  234         environment_features: torch.Tensor | None = None,
+  235         history_risk_features: torch.Tensor | None = None,
+  236     ) -> AdapterOutput:
+  237         batch = camera_bev.shape[0]
+  238         if self.require_raw_camera and camera_images is None:
+  239             raise ValueError("this checkpoint requires synchronized raw camera input")
+  240         bev_tokens = (
+  241             self.bev_encoder(camera_bev, lidar_bev)
+  242             if self.use_structured_bev
+  243             else camera_bev.new_zeros((batch, 0, self.hidden_size))
+  244         )
+  245         if camera_images is not None and self.use_raw_camera:
+  246             raw_camera_tokens, raw_camera_mask = self.raw_camera_encoder(
+  247                 camera_images, camera_view_mask
+  248             )
+  249         else:
+  250             raw_camera_tokens = camera_bev.new_zeros(
+  251                 (batch, 0, self.hidden_size)
+  252             )
+  253             raw_camera_mask = torch.zeros(
+  254                 (batch, 0), dtype=torch.bool, device=camera_bev.device
+  255             )
+  256         if raw_camera_tokens.shape[1] > 0:
+  257             valid_visual = _valid_token_count(raw_camera_mask)
+  258             raw_camera_summary = (
+  259                 raw_camera_tokens * raw_camera_mask.unsqueeze(-1)
+  260             ).sum(dim=1) / valid_visual
+  261         else:
+  262             raw_camera_summary = camera_bev.new_zeros(
+  263                 (batch, self.hidden_size)
+  264             )
+  265         intent_tokens = self.intent_projection(intent_tokens)
+  266         if self.use_candidate_entities:
+  267             projected_candidate_tokens = self.candidate_projection(
+  268                 candidate_features
+  269             )
+  270             candidate_tokens = projected_candidate_tokens
+  271             candidate_memory_mask = candidate_mask.to(dtype=torch.bool)
+  272         else:
+  273             projected_candidate_tokens = candidate_features.new_zeros(
+  274                 (*candidate_features.shape[:2], self.hidden_size)
+  275             )
+  276             candidate_tokens = projected_candidate_tokens[:, :0]
+  277             candidate_memory_mask = torch.zeros(
+  278                 (batch, 0), dtype=torch.bool, device=camera_bev.device
+  279             )
+  280         if bev_tokens.shape[1] > 0:
+  281             bev_summary = bev_tokens.mean(dim=1)
+  282         else:
+  283             bev_summary = camera_bev.new_zeros((batch, self.hidden_size))
+  284         if self.use_candidate_entities and projected_candidate_tokens.shape[1] > 0:
+  285             valid_candidates = _valid_token_count(candidate_memory_mask)
+  286             candidate_summary = (
+  287                 projected_candidate_tokens
+  288                 * candidate_memory_mask.unsqueeze(-1)
+  289             ).sum(dim=1) / valid_candidates
+  290         else:
+  291             candidate_summary = camera_bev.new_zeros(
+  292                 (batch, self.hidden_size)
+  293             )
+  294         if self.fuse_structured_visual_risk:
+  295             visual_summary = self.visual_risk_fusion(
+  296                 torch.cat(
+  297                     [raw_camera_summary, bev_summary, candidate_summary], dim=-1
+  298                 )
+  299             )
+  300         else:
+  301             visual_summary = raw_camera_summary
+  302         ego_token = self.ego_projection(ego_features).unsqueeze(1)
+  303         if self.use_environment:
+  304             if environment_features is None:
+  305                 environment_features = ego_features.new_zeros(
+  306                     (batch, self.environment_projection.in_features)
+  307                 )
+  308             environment_token = self.environment_projection(
+  309                 environment_features
+  310             ).unsqueeze(1)
+  311         else:
+  312             environment_token = ego_features.new_zeros(
+  313                 (batch, 0, self.hidden_size)
+  314             )
+  315
+  316         candidate_mask = candidate_mask.to(dtype=torch.bool)
+  317         intent_mask = intent_mask.to(dtype=torch.bool)
+  318         memory = torch.cat(
+  319             [
+  320                 bev_tokens,
+  321                 raw_camera_tokens,
+  322                 intent_tokens,
+  323                 candidate_tokens,
+  324                 ego_token,
+  325                 environment_token,
+  326             ],
+  327             dim=1,
+  328         )
+  329         bev_mask = torch.zeros(
+  330             (batch, bev_tokens.shape[1]), dtype=torch.bool, device=memory.device
+  331         )
+  332         ego_mask = torch.zeros((batch, 1), dtype=torch.bool, device=memory.device)
+  333         memory_padding_mask = torch.cat(
+  334             [
+  335                 bev_mask,
+  336                 ~raw_camera_mask,
+  337                 ~intent_mask,
+  338                 ~candidate_memory_mask,
+  339                 ego_mask,
+  340                 torch.zeros(
+  341                     (batch, environment_token.shape[1]),
+  342                     dtype=torch.bool,
+  343                     device=memory.device,
+  344                 ),
+  345             ],
+  346             dim=1,
+  347         )
+  348         query = self.query_tokens.unsqueeze(0).expand(batch, -1, -1)
+  349         valid_intent_count = _valid_token_count(intent_mask)
+  350         intent_summary = (
+  351             intent_tokens * intent_mask.unsqueeze(-1)
+  352         ).sum(dim=1) / valid_intent_count
+  353         query = query + intent_summary.unsqueeze(1)
+  354         for layer in self.layers:
+  355             query = layer(query, memory, memory_padding_mask)
+  356
+  357         decision_token = query[:, 0]
+  358         target_token = query[:, 1]
+  359         visual_risk_logits = self.visual_risk_head(visual_summary)
+  360         if self.use_state_conditioned_risk:
+  361             if environment_features is None:
+  362                 raise ValueError("state-conditioned risk requires environment features")
+  363             visual_risk_logits = visual_risk_logits + self.state_risk_residual(
+  364                 torch.cat([visual_summary, ego_features, environment_features], dim=-1)
+  365             )
+  366         temporal_used = False
+  367         risk_input = None
+  368         ordinal_risk_logits = None
+  369         risk_score = None
+  370         risk_type_logits = None
+  371         risk_horizon_logits = None
+  372         lane_risk_logits = None
+  373         risk_uncertainty = None
+  374         if self.use_temporal_risk:
+  375             risk_input = torch.cat(
+  376                 [
+  377                     visual_summary,
+  378                     bev_summary,
+  379                     self.ego_projection(ego_features),
+  380                 ],
+  381                 dim=-1,
+  382             )
+  383             if history_risk_features is not None:
+  384                 history = torch.cat(
+  385                     [history_risk_features, risk_input.unsqueeze(1)], dim=1
+  386                 )
+  387                 temporal_out, _ = self.temporal_risk_encoder(history)
+  388                 temporal_context = temporal_out[:, -1]
+  389                 temporal_used = True
+  390             else:
+  391                 temporal_context = self.temporal_risk_projection(risk_input)
+  392             # Preserve the independently trained single-frame risk prior;
+  393             # temporal learning supplies only a context-dependent residual.
+  394             visual_risk_logits = (
+  395                 visual_risk_logits
+  396                 + self.temporal_visual_risk_head(temporal_context)
+  397             )
+  398             ordinal_risk_logits = self.ordinal_risk_head(temporal_context)
+  399             risk_score = torch.sigmoid(
+  400                 self.risk_score_head(temporal_context)
+  401             ).squeeze(-1)
+  402             risk_type_logits = self.risk_type_head(temporal_context)
+  403             risk_horizon_logits = self.risk_horizon_head(temporal_context)
+  404             lane_risk_logits = self.lane_risk_head(temporal_context)
+  405             risk_uncertainty = F.softplus(
+  406                 self.risk_uncertainty_head(temporal_context)
+  407             ).squeeze(-1)
+  408         if self.condition_decision_on_visual_risk:
+  409             visual_risk_probabilities = torch.softmax(visual_risk_logits, dim=-1)
+  410             decision_token = decision_token + self.visual_risk_projection(
+  411                 visual_risk_probabilities
+  412             )
+  413         target_pointer_logits = torch.einsum(
+  414             "bd,bnd->bn",
+  415             self.target_query(target_token),
+  416             projected_candidate_tokens,
+  417         ) / math.sqrt(self.hidden_size)
+  418         target_pointer_logits = target_pointer_logits.masked_fill(
+  419             ~candidate_mask, torch.finfo(target_pointer_logits.dtype).min
+  420         )
+  421         confidence_logits = self.confidence_head(decision_token).squeeze(-1)
+  422         normalized_target_speed = torch.sigmoid(
+  423             self.speed_head(decision_token)
+  424         ).squeeze(-1)
+  425         target_speed_kmh = normalized_target_speed * 100.0
+  426         if self.speed_cap_environment_index is not None:
+  427             if environment_features is None:
+  428                 raise ValueError(
+  429                     "environment features are required for speed-cap conditioning"
+  430                 )
+  431             speed_cap_kmh = (
+  432                 environment_features[:, self.speed_cap_environment_index]
+  433                 .clamp(min=0.0, max=1.0)
+  434                 * 100.0
+  435             )
+  436             target_speed_kmh = normalized_target_speed * speed_cap_kmh
+  437         return AdapterOutput(
+  438             action_logits=self.action_head(decision_token),
+  439             target_speed_kmh=target_speed_kmh,
+  440             target_lane_logits=self.lane_head(decision_token),
+  441             target_pointer_logits=target_pointer_logits,
+  442             confidence_logits=confidence_logits,
+  443             confidence=torch.sigmoid(confidence_logits),
+  444             decision_embedding=decision_token,
+  445             visual_risk_logits=visual_risk_logits,
+  446             risk_input_features=risk_input,
+  447             ordinal_risk_logits=ordinal_risk_logits,
+  448             risk_score=risk_score,
+  449             risk_type_logits=risk_type_logits,
+  450             risk_horizon_logits=risk_horizon_logits,
+  451             lane_risk_logits=lane_risk_logits,
+  452             risk_uncertainty=risk_uncertainty,
+  453             temporal_used=temporal_used,
+  454             sensor_intent_context=torch.cat((raw_camera_summary, bev_summary, intent_summary), dim=-1),
+  455         )
+  456
+  457
+  458 def decode_proposal(
+  459     output: AdapterOutput,
+  460     *,
+  461     request_id: str,
+  462     frame_id: str,
+  463     candidate_entity_ids: Sequence[Sequence[str]],
+  464     model_name: str,
+  465     latency_ms: float,
+  466 ) -> list[dict]:
+  467     action_indices = output.action_logits.argmax(dim=-1).tolist()
+  468     lane_indices = output.target_lane_logits.argmax(dim=-1).tolist()
+  469     pointer_indices = output.target_pointer_logits.argmax(dim=-1).tolist()
+  470     speeds = output.target_speed_kmh.detach().cpu().tolist()
+  471     confidences = output.confidence.detach().cpu().tolist()
+  472     proposals: list[dict] = []
+  473     lane_labels = (None, "left", "right")
+  474     for batch_index, action_index in enumerate(action_indices):
+  475         action = ACTION_LABELS[action_index]
+  476         lane = lane_labels[lane_indices[batch_index]]
+  477         if action == "lane_change_left":
+  478             lane = "left"
+  479         elif action == "lane_change_right":
+  480             lane = "right"
+  481         elif not action.startswith("lane_change_"):
+  482             lane = None
+  483         entities = list(candidate_entity_ids[batch_index])
+  484         target_entity_id = (
+  485             entities[pointer_indices[batch_index]]
+  486             if entities and pointer_indices[batch_index] < len(entities)
+  487             else None
+  488         )
+  489         proposals.append(
+  490             {
+  491                 "schema_version": VLA_PROPOSAL_SCHEMA_VERSION,
+  492                 "request_id": request_id,
+  493                 "frame_id": frame_id,
+  494                 "action": action,
+  495                 "target_speed_kmh": round(float(speeds[batch_index]), 6),
+  496                 "target_lane": lane,
+  497                 "target_location": None,
+  498                 "target_entity_id": target_entity_id,
+  499                 "confidence": round(float(confidences[batch_index]), 6),
+  500                 "model": model_name,
+  501                 "latency_ms": round(float(latency_ms), 6),
+  502             }
+  503         )
+  504     return proposals

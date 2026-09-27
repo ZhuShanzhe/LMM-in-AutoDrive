@@ -1,0 +1,1527 @@
+[
+  {
+    "command_id": "s2_t05_cmd_01",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_01-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+        "normalized_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_01_step_01",
+            "action": "KEEP_LANE",
+            "parameters": {},
+            "depends_on": [],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_02",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 12.5
+            },
+            "depends_on": [
+              "s2_t05_cmd_01_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_03",
+            "action": "TURN",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_01_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "JUNCTION_EXITED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_04",
+            "action": "KEEP_LANE",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_01_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_02",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_02-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "确认前方道路安全，保持右侧车道，并恢复到50公里每小时继续行驶。",
+        "normalized_text": "确认前方道路安全，保持右侧车道，并恢复到50公里每小时继续行驶。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_02_step_01",
+            "action": "CHECK",
+            "parameters": {
+              "condition": "PATH_CLEAR"
+            },
+            "depends_on": [],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_02_step_02",
+            "action": "KEEP_LANE",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_02_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_02_step_03",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 13.89
+            },
+            "depends_on": [
+              "s2_t05_cmd_02_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_02_step_04",
+            "action": "PROCEED",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_02_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "确认前方道路安全，保持右侧车道，并恢复到50公里每小时继续行驶。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_03",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_03-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "前方有慢车且路口有横穿行人，先减速礼让行人，确认安全后向左变道超越慢车。",
+        "normalized_text": "前方有慢车且路口有横穿行人，先减速礼让行人，确认安全后向左变道超越慢车。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "URGENT",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_03_step_01",
+            "action": "YIELD",
+            "parameters": {
+              "condition": "PEDESTRIAN"
+            },
+            "depends_on": [],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_03_step_02",
+            "action": "ADJUST_SPEED",
+            "parameters": {
+              "change": "DECREASE"
+            },
+            "depends_on": [
+              "s2_t05_cmd_03_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_03_step_03",
+            "action": "CHANGE_LANE",
+            "parameters": {
+              "direction": "LEFT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_03_step_02"
+            ],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "LANE_CHANGE_COMPLETED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_03_step_04",
+            "action": "OVERTAKE",
+            "parameters": {
+              "condition": "SLOW_VEHICLE"
+            },
+            "depends_on": [
+              "s2_t05_cmd_03_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "前方有慢车且路口有横穿行人，先减速礼让行人，确认安全后向左变道超越慢车。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_04",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_04-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "确认行人离开车道后安全返回右侧车道，并恢复到45公里每小时。",
+        "normalized_text": "确认行人离开车道后安全返回右侧车道，并恢复到45公里每小时。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_04_step_01",
+            "action": "WAIT",
+            "parameters": {
+              "condition": "PEDESTRIAN_CLEAR"
+            },
+            "depends_on": [],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_04_step_02",
+            "action": "CHANGE_LANE",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_04_step_01"
+            ],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "LANE_CHANGE_COMPLETED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_04_step_03",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 12.5
+            },
+            "depends_on": [
+              "s2_t05_cmd_04_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "确认行人离开车道后安全返回右侧车道，并恢复到45公里每小时。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_05",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_05-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续行驶。",
+        "normalized_text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续行驶。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_05_step_01",
+            "action": "PULL_OVER",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "LANE_CHANGE_COMPLETED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_05_step_02",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 8.33
+            },
+            "depends_on": [
+              "s2_t05_cmd_05_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_05_step_03",
+            "action": "WAIT",
+            "parameters": {
+              "condition": "PASSENGERS_CLEAR"
+            },
+            "depends_on": [
+              "s2_t05_cmd_05_step_02"
+            ],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_05_step_04",
+            "action": "PROCEED",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_05_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "前方公交站有行人上下车，靠边减速至30公里每小时，确认安全后继续行驶。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_06",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_06-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "等待乘客离开车道，确认道路安全后保持右侧车道继续行驶。",
+        "normalized_text": "等待乘客离开车道，确认道路安全后保持右侧车道继续行驶。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_06_step_01",
+            "action": "WAIT",
+            "parameters": {
+              "condition": "PASSENGERS_CLEAR"
+            },
+            "depends_on": [],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_06_step_02",
+            "action": "CHECK",
+            "parameters": {
+              "condition": "PATH_CLEAR"
+            },
+            "depends_on": [
+              "s2_t05_cmd_06_step_01"
+            ],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_06_step_03",
+            "action": "KEEP_LANE",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_06_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_06_step_04",
+            "action": "PROCEED",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_06_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "等待乘客离开车道，确认道路安全后保持右侧车道继续行驶。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_07",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_07-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "右侧有自行车，减速并向左避让，超过后回到右侧车道。",
+        "normalized_text": "右侧有自行车，减速并向左避让，超过后回到右侧车道。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_07_step_01",
+            "action": "ADJUST_SPEED",
+            "parameters": {
+              "change": "DECREASE"
+            },
+            "depends_on": [],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_07_step_02",
+            "action": "CHANGE_LANE",
+            "parameters": {
+              "direction": "LEFT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_07_step_01"
+            ],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "LANE_CHANGE_COMPLETED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_07_step_03",
+            "action": "PASS_BY",
+            "parameters": {
+              "condition": "CYCLIST"
+            },
+            "depends_on": [
+              "s2_t05_cmd_07_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_07_step_04",
+            "action": "CHANGE_LANE",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_07_step_03"
+            ],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "LANE_CHANGE_COMPLETED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "右侧有自行车，减速并向左避让，超过后回到右侧车道。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_08",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_08-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "确认已安全超过自行车并返回右侧车道，保持安全车距继续行驶。",
+        "normalized_text": "确认已安全超过自行车并返回右侧车道，保持安全车距继续行驶。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_08_step_01",
+            "action": "CONFIRM",
+            "parameters": {
+              "condition": "CYCLIST_PASSED"
+            },
+            "depends_on": [],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_08_step_02",
+            "action": "CHANGE_LANE",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_08_step_01"
+            ],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "LANE_CHANGE_COMPLETED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_08_step_03",
+            "action": "KEEP_SAFE_DISTANCE",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_08_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_08_step_04",
+            "action": "PROCEED",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_08_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "确认已安全超过自行车并返回右侧车道，保持安全车距继续行驶。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_09",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_09-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "前方十字路口直行，通过后安全进入左侧车道并保持40公里每小时。",
+        "normalized_text": "前方十字路口直行，通过后安全进入左侧车道并保持40公里每小时。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_09_step_01",
+            "action": "PROCEED",
+            "parameters": {
+              "condition": "STRAIGHT_THROUGH_JUNCTION"
+            },
+            "depends_on": [],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_09_step_02",
+            "action": "CHANGE_LANE",
+            "parameters": {
+              "direction": "LEFT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_09_step_01"
+            ],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "LANE_CHANGE_COMPLETED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_09_step_03",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 11.11
+            },
+            "depends_on": [
+              "s2_t05_cmd_09_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "前方十字路口直行，通过后安全进入左侧车道并保持40公里每小时。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_10",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_10-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "通过路口并完成变道后保持当前车道，确认前方安全并恢复到45公里每小时。",
+        "normalized_text": "通过路口并完成变道后保持当前车道，确认前方安全并恢复到45公里每小时。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_10_step_01",
+            "action": "COMPLETE",
+            "parameters": {
+              "condition": "JUNCTION"
+            },
+            "depends_on": [],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_10_step_02",
+            "action": "COMPLETE",
+            "parameters": {
+              "condition": "LANE_CHANGE"
+            },
+            "depends_on": [
+              "s2_t05_cmd_10_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_10_step_03",
+            "action": "KEEP_LANE",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_10_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_10_step_04",
+            "action": "CHECK",
+            "parameters": {
+              "condition": "PATH_CLEAR"
+            },
+            "depends_on": [
+              "s2_t05_cmd_10_step_03"
+            ],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_10_step_05",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 12.5
+            },
+            "depends_on": [
+              "s2_t05_cmd_10_step_04"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "通过路口并完成变道后保持当前车道，确认前方安全并恢复到45公里每小时。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_11",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_11-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "前方路口右转前减速至30公里每小时，右转后保持当前车道。",
+        "normalized_text": "前方路口右转前减速至30公里每小时，右转后保持当前车道。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_11_step_01",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 8.33
+            },
+            "depends_on": [],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_11_step_02",
+            "action": "TURN",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_11_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "JUNCTION_EXITED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_11_step_03",
+            "action": "KEEP_LANE",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_11_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "前方路口右转前减速至30公里每小时，右转后保持当前车道。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_12",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_12-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "确认左侧安全后向左变道，保持安全车距，确认安全后返回原车道。",
+        "normalized_text": "确认左侧安全后向左变道，保持安全车距，确认安全后返回原车道。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_12_step_01",
+            "action": "CHECK",
+            "parameters": {
+              "condition": "LEFT_LANE_SAFE"
+            },
+            "depends_on": [],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_12_step_02",
+            "action": "CHANGE_LANE",
+            "parameters": {
+              "direction": "LEFT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_12_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "LANE_CHANGE_COMPLETED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_12_step_03",
+            "action": "KEEP_SAFE_DISTANCE",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_12_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_12_step_04",
+            "action": "CHANGE_LANE",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_12_step_03"
+            ],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "LANE_CHANGE_COMPLETED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "确认左侧安全后向左变道，保持安全车距，确认安全后返回原车道。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_13",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_13-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "保持安全车距，前方先右转，随后直行通过路口，再次右转后恢复到45公里每小时。",
+        "normalized_text": "保持安全车距，前方先右转，随后直行通过路口，再次右转后恢复到45公里每小时。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_13_step_01",
+            "action": "KEEP_SAFE_DISTANCE",
+            "parameters": {},
+            "depends_on": [],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_13_step_02",
+            "action": "TURN",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_13_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "JUNCTION_EXITED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_13_step_03",
+            "action": "PROCEED",
+            "parameters": {
+              "condition": "STRAIGHT_THROUGH_JUNCTION"
+            },
+            "depends_on": [
+              "s2_t05_cmd_13_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_13_step_04",
+            "action": "TURN",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_13_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "JUNCTION_EXITED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_13_step_05",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 12.5
+            },
+            "depends_on": [
+              "s2_t05_cmd_13_step_04"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "保持安全车距，前方先右转，随后直行通过路口，再次右转后恢复到45公里每小时。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_14",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_14-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "减速至30公里每小时，确认横道及路口安全后直行通过并保持当前车道。",
+        "normalized_text": "减速至30公里每小时，确认横道及路口安全后直行通过并保持当前车道。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "COMPLEX_OBSTACLE_AVOIDANCE",
+        "urgency": "URGENT",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_14_step_01",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 8.33
+            },
+            "depends_on": [],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_14_step_02",
+            "action": "CHECK",
+            "parameters": {
+              "condition": "CROSSWALK_CLEAR"
+            },
+            "depends_on": [
+              "s2_t05_cmd_14_step_01"
+            ],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_14_step_03",
+            "action": "PROCEED",
+            "parameters": {
+              "condition": "STRAIGHT_THROUGH_JUNCTION"
+            },
+            "depends_on": [
+              "s2_t05_cmd_14_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_14_step_04",
+            "action": "KEEP_LANE",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_14_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "减速至30公里每小时，确认横道及路口安全后直行通过并保持当前车道。"
+    }
+  },
+  {
+    "command_id": "s2_t05_cmd_15",
+    "plan": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_15-frame-0",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "确认道路安全后直行通过前方路口，随后右转，再通过下一个右转后以45公里每小时行驶至终点。",
+        "normalized_text": "确认道路安全后直行通过前方路口，随后右转，再通过下一个右转后以45公里每小时行驶至终点。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule"
+      },
+      "intent": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_15_step_01",
+            "action": "CHECK",
+            "parameters": {
+              "condition": "PATH_CLEAR"
+            },
+            "depends_on": [],
+            "on_blocked": "WAIT_FOR_SAFE",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_15_step_02",
+            "action": "PROCEED",
+            "parameters": {
+              "condition": "STRAIGHT_THROUGH_JUNCTION"
+            },
+            "depends_on": [
+              "s2_t05_cmd_15_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_15_step_03",
+            "action": "TURN",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_15_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "JUNCTION_EXITED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_15_step_04",
+            "action": "TURN",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_15_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "JUNCTION_EXITED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_15_step_05",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 12.5
+            },
+            "depends_on": [
+              "s2_t05_cmd_15_step_04"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_15_step_06",
+            "action": "PROCEED",
+            "parameters": {
+              "condition": "FINISH"
+            },
+            "depends_on": [
+              "s2_t05_cmd_15_step_05"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "确认道路安全后直行通过前方路口，随后右转，再通过下一个右转后以45公里每小时行驶至终点。"
+    }
+  }
+]

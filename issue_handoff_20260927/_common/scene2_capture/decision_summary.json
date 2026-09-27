@@ -1,0 +1,133 @@
+{
+  "counts": {
+    "valid_decisions": 400
+  },
+  "reasons": {},
+  "raw_actions": {
+    "accelerate": 288,
+    "keep_lane": 59,
+    "decelerate": 53
+  },
+  "active_steps": {
+    "0": 23,
+    "1": 377
+  },
+  "max_observed_speed_kmh": 44.16081226413167,
+  "last_route_s_m": 119.504,
+  "last_plan": {
+    "schema_version": "1.1.0",
+    "request_id": "s2_t05_cmd_01-configured",
+    "revision": 399,
+    "plan_status": "ACTIVE",
+    "active_step_index": 1,
+    "active_step_id": "s2_t05_cmd_01_step_02",
+    "step_states": [
+      {
+        "step_id": "s2_t05_cmd_01_step_01",
+        "action": "KEEP_LANE",
+        "status": "COMPLETED",
+        "activation_frame_id": "carla_19155",
+        "terminal_frame_id": "carla_19178",
+        "reason_codes": [
+          "observed_physical_completion"
+        ],
+        "speed_reference_kmh": null,
+        "resolved_target_speed_kmh": null
+      },
+      {
+        "step_id": "s2_t05_cmd_01_step_02",
+        "action": "SET_SPEED",
+        "status": "ACTIVE",
+        "activation_frame_id": "carla_19178",
+        "terminal_frame_id": null,
+        "reason_codes": [],
+        "speed_reference_kmh": 8.694297,
+        "resolved_target_speed_kmh": 45.0
+      },
+      {
+        "step_id": "s2_t05_cmd_01_step_03",
+        "action": "TURN",
+        "status": "PENDING",
+        "activation_frame_id": null,
+        "terminal_frame_id": null,
+        "reason_codes": [],
+        "speed_reference_kmh": null,
+        "resolved_target_speed_kmh": null
+      },
+      {
+        "step_id": "s2_t05_cmd_01_step_04",
+        "action": "KEEP_LANE",
+        "status": "PENDING",
+        "activation_frame_id": null,
+        "terminal_frame_id": null,
+        "reason_codes": [],
+        "speed_reference_kmh": null,
+        "resolved_target_speed_kmh": null
+      }
+    ],
+    "last_frame_id": "carla_19554",
+    "last_feedback_outcome": "CONTINUE",
+    "reason_codes": []
+  },
+  "last_dispatch": {
+    "mode": "completion_serial",
+    "completed_commands": 0,
+    "total_commands": 15,
+    "active_request_id": "s2_t05_cmd_01-configured",
+    "failure": null,
+    "events": [
+      {
+        "request_id": "s2_t05_cmd_01-configured",
+        "status": "RUNNING",
+        "timestamp_s": 6.4919553734362125,
+        "progress_m": 0.0
+      }
+    ],
+    "execution_elapsed_s": 19.950000297278166,
+    "safety_wait_elapsed_s": 0.0,
+    "feedback_scope": "model_execution_plan; not independent task assessment"
+  },
+  "last_decision": {
+    "schema_version": "1.0.0",
+    "request_id": "s2_t05_cmd_01-configured",
+    "frame_id": "carla_19554",
+    "decision_status": "READY",
+    "action": "accelerate",
+    "target_speed_kmh": 40.129059,
+    "target_lane": null,
+    "target_location": null,
+    "emergency": false,
+    "reason": "vla_accepted_phase-recovery-epoch_06",
+    "parse_status": "VALID",
+    "parse_confidence": 1.0,
+    "source_step_id": "s2_t05_cmd_01_step_02",
+    "source_step_action": "SET_SPEED",
+    "source_step_count": 4,
+    "matched_entity_id": null,
+    "risk_level": "low",
+    "risk_reason_codes": [],
+    "blocked_reason_codes": [],
+    "longitudinal_control_mode": "ABSOLUTE_SPEED",
+    "allow_positive_acceleration": true,
+    "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+    "target_acceleration_mps2": 0.5345925270537961,
+    "sequence_valid_until_s": 26.74195567071438,
+    "control_valid_until_s": 26.74195567071438,
+    "command_id": "s2_t05_cmd_01-configured:s2_t05_cmd_01_step_02"
+  },
+  "last_traffic": {
+    "source": "traffic_control_contract/1.0",
+    "observation": {
+      "applicable": false,
+      "state": "UNKNOWN",
+      "timestamp_s": 26.391955670714378,
+      "source": "rgb_static_opendrive",
+      "image_source": "synchronized_front_capture"
+    },
+    "active": false,
+    "changed": false,
+    "policy_safety_credit": false,
+    "status": "no_route_associated_signal"
+  },
+  "examples": {}
+}

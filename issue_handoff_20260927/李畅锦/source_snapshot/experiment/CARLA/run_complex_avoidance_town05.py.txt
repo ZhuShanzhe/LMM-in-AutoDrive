@@ -1,0 +1,1930 @@
+    1 """Run the Scene 2 environment on packaged CARLA Town05 assets."""
+    2
+    3 from __future__ import annotations
+    4
+    5 import argparse
+    6 import bisect
+    7 from collections import Counter
+    8 from dataclasses import dataclass
+    9 import json
+   10 import math
+   11 import os
+   12 from pathlib import Path
+   13 import sys
+   14 import time
+   15 from typing import Any, Mapping
+   16
+   17
+   18 ROOT = Path(__file__).resolve().parent
+   19 if str(ROOT) not in sys.path:
+   20     sys.path.insert(0, str(ROOT))
+   21
+   22 from carla_bootstrap import setup_carla_api
+   23 from evaluation.camera import ExperimentCamera
+   24 from evaluation.ground_truth import (
+   25     FrameGroundTruthRecorder,
+   26     validate_event_ground_truth_contracts,
+   27 )
+   28 from evaluation.multimodal import (
+   29     ExactFrameSensorSuite,
+   30     REQUIRED_SENSOR_NAMES,
+   31     Scene2RuntimeInterface,
+   32 )
+   33 from scenarios.complex.town05_scene2 import (
+   34     ActorRegistry,
+   35     DeterministicSceneEvents,
+   36     RouteProgressTracker,
+   37     TownTrafficFlow,
+   38     build_repeated_route,
+   39     choose_curved_route_destination,
+   40     route_curvature_degrees,
+   41     speed_kmh,
+   42 )
+   43 from scene2_runtime_interface import build_scheduled_driving_intent
+   44
+   45
+   46 DEFAULT_CONFIG = (
+   47     ROOT / "configs" / "scene_2_town05_runtime.json"
+   48 )
+   49 DEFAULT_OUTPUT = ROOT / "outputs" / "scene2_town05"
+   50 EGO_BLUEPRINTS = (
+   51     "vehicle.audi.a2",
+   52     "vehicle.nissan.micra",
+   53     "vehicle.tesla.model3",
+   54     "vehicle.lincoln.mkz_2020",
+   55 )
+   56
+   57 COMMAND_HUD_FALLBACKS = {
+   58     "s2_t05_cmd_01": "Keep lane, slow to 45 km/h, then continue straight",
+   59     "s2_t05_cmd_02": "Check the road, keep right and resume 50 km/h",
+   60     "s2_t05_cmd_03": "Yield to the pedestrian, then pass the slow car left",
+   61     "s2_t05_cmd_04": (
+   62         "After the pedestrian clears, return right and resume 45"
+   63     ),
+   64     "s2_t05_cmd_05": "Bus stop ahead: slow to 30 km/h and yield to passengers",
+   65     "s2_t05_cmd_06": "Wait for passengers, then continue in the right lane",
+   66     "s2_t05_cmd_07": "Pass the cyclist on the left, then return right",
+   67     "s2_t05_cmd_08": (
+   68         "After passing the cyclist, return right and keep a safe gap"
+   69     ),
+   70     "s2_t05_cmd_09": "Go straight, move left safely and hold 40 km/h",
+   71     "s2_t05_cmd_10": "After the junction and lane change, resume 45 km/h",
+   72     "s2_t05_cmd_11": "Slow to 30 km/h before turning right",
+   73     "s2_t05_cmd_12": "Change left safely, keep a gap, then return",
+   74     "s2_t05_cmd_13": "Keep a gap, turn right, straight, right, then resume 45",
+   75     "s2_t05_cmd_14": "Slow to 30, check the crosswalk, then go straight",
+   76     "s2_t05_cmd_15": "Go straight, turn right twice, then continue to finish",
+   77 }
+   78
+   79 RESTRICTED_LANE_MARKINGS = {
+   80     "Solid",
+   81     "SolidSolid",
+   82     "SolidBroken",
+   83     "BrokenSolid",
+   84     "Curb",
+   85     "Grass",
+   86 }
+   87
+   88
+   89 def lane_marking_name(value: Any) -> str:
+   90     """Return the stable enum suffix used by CARLA lane markings."""
+   91
+   92     return str(value).rsplit(".", 1)[-1]
+   93
+   94
+   95 def lane_invasion_is_restricted(event: Mapping[str, Any]) -> bool:
+   96     return any(
+   97         lane_marking_name(marking) in RESTRICTED_LANE_MARKINGS
+   98         for marking in event.get("markings", [])
+   99     )
+  100
+  101
+  102 def parse_args() -> argparse.Namespace:
+  103     parser = argparse.ArgumentParser(
+  104         description=(
+  105             "Run the competition Scene 2 route on Town05 with stable "
+  106             "Traffic Manager flow and deterministic special actors."
+  107         )
+  108     )
+  109     parser.add_argument("--host", default="localhost")
+  110     parser.add_argument("--port", type=int, default=2000)
+  111     parser.add_argument("--traffic-manager-port", type=int, default=8000)
+  112     parser.add_argument(
+  113         "--traffic-hybrid-physics",
+  114         action="store_true",
+  115         help=(
+  116             "Use full vehicle physics near the ego and kinematic Traffic "
+  117             "Manager updates for distant background vehicles."
+  118         ),
+  119     )
+  120     parser.add_argument(
+  121         "--traffic-hybrid-radius-m",
+  122         type=float,
+  123         default=100.0,
+  124     )
+  125     parser.add_argument("--timeout", type=float, default=30.0)
+  126     parser.add_argument(
+  127         "--reuse-current-world",
+  128         action="store_true",
+  129         help=(
+  130             "Reuse an actor-clean matching CARLA world. Disabled by default "
+  131             "because some server builds stall while applying new settings."
+  132         ),
+  133     )
+  134     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+  135     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
+  136     parser.add_argument(
+  137         "--duration",
+  138         type=float,
+  139         default=90.0,
+  140         help="Simulation seconds; 0 runs until 8 km route completion.",
+  141     )
+  142     parser.add_argument(
+  143         "--fixed-delta-seconds",
+  144         type=float,
+  145         default=0.05,
+  146     )
+  147     parser.add_argument("--camera-width", type=int, default=1920)
+  148     parser.add_argument("--camera-height", type=int, default=1080)
+  149     parser.add_argument("--video-fps", type=float, default=20.0)
+  150     parser.add_argument("--video-output", type=Path)
+  151     parser.add_argument("--ffmpeg")
+  152     parser.add_argument(
+  153         "--hud-font",
+  154         type=Path,
+  155         help=(
+  156             "Optional CJK-capable TTF/TTC/OTF font. The CARLA_HUD_FONT "
+  157             "environment variable is also supported."
+  158         ),
+  159     )
+  160     parser.add_argument("--record-images", action="store_true")
+  161     parser.add_argument("--video-overlay", action="store_true")
+  162     parser.add_argument(
+  163         "--no-video",
+  164         action="store_true",
+  165         help=(
+  166             "Disable the demonstration camera and video encoder for fast "
+  167             "scene/route regression runs. In a VLA competition run the "
+  168             "online multimodal cameras remain rendered and synchronized; "
+  169             "this flag only disables the separate presentation camera and "
+  170             "video encoder."
+  171         ),
+  172     )
+  173     parser.add_argument(
+  174         "--competition-logs-only",
+  175         action="store_true",
+  176         help=(
+  177             "Keep the formal route, traffic, online VLA sensors, control, "
+  178             "event and safety logs and demonstration video, but skip the "
+  179             "duplicate on-disk RGB/LiDAR evidence rig and per-frame actor truth. "
+  180             "This mode requires --competition-run and --vla-checkpoint."
+  181         ),
+  182     )
+  183     parser.add_argument("--record-ground-truth", action="store_true")
+  184     parser.add_argument("--ground-truth-every-n", type=int, default=1)
+  185     parser.add_argument(
+  186         "--record-multimodal",
+  187         action="store_true",
+  188         help="Record exact-frame four-view RGB and LiDAR evidence.",
+  189     )
+  190     parser.add_argument(
+  191         "--sensor-tick",
+  192         type=float,
+  193         help="Multimodal sampling period; defaults to config sensors value.",
+  194     )
+  195     parser.add_argument(
+  196         "--sensor-sync-timeout",
+  197         type=float,
+  198         default=5.0,
+  199         help="Wall-clock seconds to wait for all exact-frame artifacts.",
+  200     )
+  201     parser.add_argument(
+  202         "--competition-run",
+  203         action="store_true",
+  204         help=(
+  205             "Require the formal 8 km external-control run and enable all "
+  206             "competition evidence recorders."
+  207         ),
+  208     )
+  209     parser.add_argument(
+  210         "--variant-index",
+  211         type=int,
+  212         default=0,
+  213         help=(
+  214             "Deterministically select event micro-scenario variants; "
+  215             "use 0, 1, 2 for three reproducible evaluation episodes."
+  216         ),
+  217     )
+  218     parser.add_argument(
+  219         "--start-progress-m",
+  220         type=float,
+  221         default=0.0,
+  222         help="Diagnostic start along the route; normal runs use 0.",
+  223     )
+  224     parser.add_argument(
+  225         "--external-ego-control",
+  226         action="store_true",
+  227         help="Spawn and instrument ego but do not apply preview-agent control.",
+  228     )
+  229     parser.add_argument(
+  230         "--vla-checkpoint",
+  231         type=Path,
+  232         help=(
+  233             "Universal VLA checkpoint. When set, the model consumes raw "
+  234             "four-view RGB, LiDAR, vehicle/environment state, and the active "
+  235             "compound-command substep, then controls ego through the PID "
+  236             "executor."
+  237         ),
+  238     )
+  239     parser.add_argument("--vla-config", type=Path)
+  240     parser.add_argument("--command-parser-model", type=Path)
+  241     parser.add_argument("--vla-device", default="cuda")
+  242     parser.add_argument(
+  243         "--vla-precision",
+  244         choices=("fp32", "fp16", "bf16"),
+  245         default="fp16",
+  246     )
+  247     parser.add_argument(
+  248         "--vla-decision-every-n",
+  249         type=int,
+  250         default=3,
+  251         help=(
+  252             "Run the high-level VLA every N 20-Hz simulation frames and "
+  253             "hold the latest approved decision in the PID between updates; "
+  254             "the default is a 150-ms policy period."
+  255         ),
+  256     )
+  257     parser.add_argument(
+  258         "--validate-only",
+  259         action="store_true",
+  260         help="Validate the runtime contract without connecting to CARLA.",
+  261     )
+  262     parser.add_argument(
+  263         "--route-preflight",
+  264         action="store_true",
+  265         help=(
+  266             "Build the CARLA route, audit structured turn/straight steps, "
+  267             "then exit before spawning actors."
+  268         ),
+  269     )
+  270     parser.add_argument('--benchmark-assessment', action='store_true', help='Record independent scene_2 task assessment')
+  271     parser.add_argument('--benchmark-task', default='all', help='Assessment target ID or activation-order number; does not change driving route')
+  272     parser.add_argument('--vla-record-sensors', action='store_true', help='Save lossless actual VLA sensor inputs for offline replay')
+  273     parser.add_argument('--benchmark-compound-driver', action='store_true',
+  274                         help='Explicit truth-based task-3 control baseline, not model evaluation')
+  275     args = parser.parse_args()
+  276     from benchmark.selection import validate_assessment_args
+  277     validate_assessment_args(args, 'scene_2')
+  278     return args
+  279
+  280
+  281 def build_vla_command_schedule(
+  282     config: Mapping[str, Any],
+  283 ) -> list[dict[str, Any]]:
+  284     """Compile reviewed Scene-2 commands into compound DrivingIntents."""
+  285
+  286     result = []
+  287     for command in config["commands"]:
+  288         intent = build_scheduled_driving_intent(
+  289             command,
+  290             simulation_frame=0,
+  291             route_s_m=float(command["announce_at_m"]),
+  292             timestamp_s=0.0,
+  293         )
+  294         intent["request_id"] = "{0}-configured".format(command["id"])
+  295         result.append(
+  296             {
+  297                 "id": str(command["id"]),
+  298                 "announce_at_m": float(command["announce_at_m"]),
+  299                 "activate_at_m": float(command["announce_at_m"]),
+  300                 "voice_text": str(command["spoken_text"]),
+  301                 "target_speed_kmh": float(
+  302                     config["route"]["target_speed_kmh"]
+  303                 ),
+  304                 "action": "keep_lane",
+  305                 "driving_intent": intent,
+  306             }
+  307         )
+  308     return result
+  309
+  310
+  311 def vla_route_context(
+  312     route: list[tuple[Any, Any]],
+  313     route_distances: list[float],
+  314     tracker: Any,
+  315     progress_m: float,
+  316     simulation_time_s: float,
+  317     default_speed_kmh: float,
+  318 ) -> dict[str, Any]:
+  319     """Return the same short-horizon geometry contract as the unified runner."""
+  320
+  321     target_index = bisect.bisect_left(route_distances, progress_m + 10.0)
+  322     target_index = min(max(int(tracker.index), target_index), len(route) - 1)
+  323     target_transform = route[target_index][0].transform
+  324     reference_transform = route[int(tracker.index)][0].transform
+  325     return {
+  326         "progress_m": float(progress_m),
+  327         "simulation_time_s": float(simulation_time_s),
+  328         "default_speed_kmh": float(default_speed_kmh),
+  329         "route_target": {
+  330             "x": float(target_transform.location.x),
+  331             "y": float(target_transform.location.y),
+  332             "z": float(target_transform.location.z),
+  333             "yaw": float(target_transform.rotation.yaw),
+  334         },
+  335         "turn_route_target": {
+  336             "x": float(target_transform.location.x),
+  337             "y": float(target_transform.location.y),
+  338             "z": float(target_transform.location.z),
+  339             "yaw": float(target_transform.rotation.yaw),
+  340         },
+  341         "route_reference": {
+  342             "x": float(reference_transform.location.x),
+  343             "y": float(reference_transform.location.y),
+  344             "z": float(reference_transform.location.z),
+  345             "yaw": float(reference_transform.rotation.yaw),
+  346         },
+  347     }
+  348
+  349
+  350 def load_config(path: Path) -> dict[str, Any]:
+  351     payload = json.loads(path.read_text(encoding="utf-8"))
+  352     if payload.get("schema_version") != "scene_2_town05_runtime/v1":
+  353         raise ValueError("unsupported Town05 Scene 2 config schema")
+  354     if payload.get("map") != "Town05_Opt":
+  355         raise ValueError("Town05 Scene 2 must use Town05_Opt")
+  356     route = payload["route"]
+  357     if float(route["target_length_m"]) < 8000.0:
+  358         raise ValueError("Scene 2 route must be at least 8 km")
+  359     if float(route.get("minimum_curvature_degrees", 0.0)) < 180.0:
+  360         raise ValueError("Scene 2 route must require visible curved driving")
+  361     if len(payload.get("commands", [])) != 15:
+  362         raise ValueError("Scene 2 requires exactly 15 demonstration commands")
+  363     for command in payload["commands"]:
+  364         required_command_fields = {
+  365             "id",
+  366             "announce_at_m",
+  367             "text",
+  368             "spoken_text",
+  369             "category",
+  370             "urgency",
+  371             "steps",
+  372         }
+  373         missing = required_command_fields.difference(command)
+  374         if missing:
+  375             raise ValueError(
+  376                 "structured command fields are missing for {0}: {1}".format(
+  377                     command.get("id", "unknown"),
+  378                     sorted(missing),
+  379                 )
+  380             )
+  381         if len(command["steps"]) < 2:
+  382             raise ValueError(
+  383                 "competition commands must contain ordered compound steps"
+  384             )
+  385         if str(command["text"]) != str(command["spoken_text"]):
+  386             raise ValueError(
+  387                 "command display text and spoken text must match exactly: "
+  388                 + str(command["id"])
+  389             )
+  390     kinds = {
+  391         str(event["kind"])
+  392         for event in payload.get("special_events", [])
+  393     }
+  394     required = {
+  395         "slow_vehicle",
+  396         "crossing_pedestrian",
+  397         "bus_stop",
+  398         "cyclist",
+  399     }
+  400     if not required.issubset(kinds):
+  401         raise ValueError(
+  402             "special events must include slow vehicle, pedestrian, "
+  403             "bus stop, and cyclist"
+  404         )
+  405     for event in payload.get("special_events", []):
+  406         if len(event.get("variants", [])) < 2:
+  407             raise ValueError(
+  408                 "every Town05 special event requires at least two variants: "
+  409                 + str(event.get("id"))
+  410             )
+  411     validate_event_ground_truth_contracts(payload["special_events"])
+  412     traffic = payload["traffic"]
+  413     if bool(traffic["hybrid_physics"]):
+  414         raise ValueError(
+  415             "hybrid physics is disabled to prevent visible NPC teleporting"
+  416         )
+  417     if bool(traffic["respawn_dormant_vehicles"]):
+  418         raise ValueError(
+  419             "runtime respawn is disabled to prevent visible NPC pop-in"
+  420         )
+  421     weather = payload["weather"]
+  422     if (
+  423         weather.get("preset") != "cloudy-evening"
+  424         or float(weather["cloudiness"]) < 70.0
+  425         or float(weather["sun_altitude_angle"]) > 10.0
+  426     ):
+  427         raise ValueError(
+  428             "Scene 2 competition weather must be cloudy evening/low light"
+  429         )
+  430     sensors = payload["sensors"]
+  431     if not set(REQUIRED_SENSOR_NAMES).issubset(sensors["required"]):
+  432         raise ValueError("four RGB views and LiDAR are required")
+  433     interfaces = payload["interfaces"]
+  434     if not interfaces.get("simulation_frame_is_sync_key"):
+  435         raise ValueError("simulation_frame must be the synchronization key")
+  436     if interfaces.get("allow_adjacent_frame_fill"):
+  437         raise ValueError("adjacent-frame modality filling is forbidden")
+  438     acceptance = payload["acceptance"]
+  439     if float(acceptance["asr_accuracy_min"]) < 0.96:
+  440         raise ValueError("ASR acceptance must be at least 96%")
+  441     if float(acceptance["semantic_alignment_accuracy_min"]) < 0.985:
+  442         raise ValueError("semantic alignment acceptance must be at least 98.5%")
+  443     if int(acceptance["violation_count_at_most"]) > 1:
+  444         raise ValueError("competition allows at most one violation")
+  445     return payload
+  446
+  447
+  448 def road_option_name(value: Any) -> str:
+  449     # CARLA releases expose RoadOption as either Enum or IntEnum.  On modern
+  450     # Python, str(IntEnumMember) is the numeric value (for example ``2``), so
+  451     # parsing only its string representation silently loses every maneuver.
+  452     enum_name = getattr(value, "name", None)
+  453     if enum_name:
+  454         return str(enum_name).upper()
+  455     return str(value).rsplit(".", 1)[-1].upper()
+  456
+  457
+  458 def route_aware_preview_speed_kmh(
+  459     progress_m: float,
+  460     maneuvers: list[Mapping[str, Any]],
+  461     cruise_speed_kmh: float,
+  462     turn_speed_kmh: float,
+  463     approach_m: float,
+  464     exit_m: float,
+  465 ) -> float:
+  466     """Cap preview speed around planned turns to avoid corner cutting."""
+  467
+  468     cruise = max(0.0, float(cruise_speed_kmh))
+  469     turn_speed = min(cruise, max(0.0, float(turn_speed_kmh)))
+  470     approach = max(0.0, float(approach_m))
+  471     exit_distance = max(0.0, float(exit_m))
+  472     progress = float(progress_m)
+  473     for maneuver in maneuvers:
+  474         if str(maneuver.get("route_option", "")).upper() not in {
+  475             "LEFT",
+  476             "RIGHT",
+  477         }:
+  478             continue
+  479         delta_m = float(maneuver["progress_m"]) - progress
+  480         if -exit_distance <= delta_m <= approach:
+  481             return turn_speed
+  482     return cruise
+  483
+  484
+  485 def planned_turn_window_active(
+  486     progress_m: float,
+  487     maneuvers: list[Mapping[str, Any]],
+  488     approach_m: float,
+  489     exit_m: float,
+  490 ) -> bool:
+  491     """Return whether progress is inside a planned turn control window."""
+  492
+  493     progress = float(progress_m)
+  494     approach = max(0.0, float(approach_m))
+  495     exit_distance = max(0.0, float(exit_m))
+  496     return any(
+  497         str(maneuver.get("route_option", "")).upper()
+  498         in {"LEFT", "RIGHT"}
+  499         and -exit_distance
+  500         <= float(maneuver["progress_m"]) - progress
+  501         <= approach
+  502         for maneuver in maneuvers
+  503     )
+  504
+  505
+  506 def route_centering_steer_correction(
+  507     ego_location: Any,
+  508     route_waypoint: Any,
+  509     lateral_gain: float,
+  510     maximum_correction: float,
+  511 ) -> tuple[float, float]:
+  512     """Return a bounded steering correction toward the route centerline.
+  513
+  514     CARLA steering is positive to the right.  Signed lateral error is also
+  515     positive to the waypoint's right, so the stabilizing correction has the
+  516     opposite sign.  This guard is applied only around audited route turns.
+  517     """
+  518
+  519     transform = route_waypoint.transform
+  520     center = transform.location
+  521     yaw = math.radians(float(transform.rotation.yaw))
+  522     right_x = -math.sin(yaw)
+  523     right_y = math.cos(yaw)
+  524     dx = float(ego_location.x) - float(center.x)
+  525     dy = float(ego_location.y) - float(center.y)
+  526     lateral_error_m = dx * right_x + dy * right_y
+  527     limit = max(0.0, float(maximum_correction))
+  528     correction = -float(lateral_gain) * lateral_error_m
+  529     correction = max(-limit, min(limit, correction))
+  530     return correction, lateral_error_m
+  531
+  532
+  533 def audit_command_route_alignment(
+  534     commands: list[Mapping[str, Any]],
+  535     route: list[tuple[Any, Any]],
+  536     route_distances: list[float],
+  537     default_horizon_m: float = 350.0,
+  538 ) -> dict[str, Any]:
+  539     """Check explicit upcoming turn/straight steps against the GRP route."""
+  540
+  541     required_options = {
+  542         "TURN:LEFT": "LEFT",
+  543         "TURN:RIGHT": "RIGHT",
+  544         "PROCEED:STRAIGHT_THROUGH_JUNCTION": "STRAIGHT",
+  545     }
+  546     maneuver_names = {"LEFT", "RIGHT", "STRAIGHT"}
+  547     global_maneuvers = []
+  548     previous_name = None
+  549     for index, distance in enumerate(route_distances):
+  550         name = road_option_name(route[index][1])
+  551         if name in maneuver_names and name != previous_name:
+  552             global_maneuvers.append(
+  553                 {
+  554                     "route_option": name,
+  555                     "progress_m": round(float(distance), 3),
+  556                 }
+  557             )
+  558         previous_name = name
+  559
+  560     records = []
+  561     for command in commands:
+  562         required = [
+  563             required_options[step]
+  564             for step in command.get("steps", [])
+  565             if step in required_options
+  566         ]
+  567         start_m = float(command["announce_at_m"])
+  568         end_m = start_m + float(
+  569             command.get("route_alignment_horizon_m", default_horizon_m)
+  570         )
+  571         maneuvers = [
+  572             maneuver
+  573             for maneuver in global_maneuvers
+  574             if start_m <= maneuver["progress_m"] <= end_m
+  575         ]
+  576         encountered = [
+  577             maneuver["route_option"] for maneuver in maneuvers
+  578         ]
+  579         cursor = iter(encountered)
+  580         matched = all(
+  581             any(actual == expected for actual in cursor)
+  582             for expected in required
+  583         )
+  584         records.append(
+  585             {
+  586                 "command_id": str(command["id"]),
+  587                 "announce_at_m": start_m,
+  588                 "horizon_end_m": end_m,
+  589                 "required_route_options": required,
+  590                 "encountered_route_options": encountered,
+  591                 "maneuvers": maneuvers,
+  592                 "matched": matched,
+  593             }
+  594         )
+  595     mismatches = [
+  596         record for record in records if not record["matched"]
+  597     ]
+  598     return {
+  599         "schema_version": "scene_2_route_command_audit/v1",
+  600         "commands_audited": len(records),
+  601         "mismatch_count": len(mismatches),
+  602         "competition_ready": not mismatches,
+  603         "global_maneuvers": global_maneuvers,
+  604         "records": records,
+  605     }
+  606
+  607
+  608 def setup_navigation_agents(carla_root: str | None) -> None:
+  609     try:
+  610         __import__("agents.navigation.behavior_agent")
+  611         return
+  612     except ModuleNotFoundError as error:
+  613         if error.name and error.name != "agents":
+  614             raise RuntimeError(
+  615                 "CARLA navigation agent dependency is missing: "
+  616                 + error.name
+  617             ) from error
+  618     configured = carla_root or os.environ.get("CARLA_ROOT")
+  619     if configured:
+  620         api_path = Path(configured) / "PythonAPI" / "carla"
+  621         if api_path.exists() and str(api_path) not in sys.path:
+  622             sys.path.insert(0, str(api_path))
+  623     try:
+  624         __import__("agents.navigation.behavior_agent")
+  625     except ModuleNotFoundError as error:
+  626         if error.name and not error.name.startswith("agents"):
+  627             raise RuntimeError(
+  628                 "CARLA navigation agent dependency is missing: "
+  629                 + error.name
+  630             ) from error
+  631         raise RuntimeError(
+  632             "CARLA navigation agents are required for preview control; "
+  633             "set CARLA_ROOT to the extracted CARLA package"
+  634         ) from error
+  635
+  636
+  637 class JsonlWriter:
+  638     def __init__(self, path: Path) -> None:
+  639         path.parent.mkdir(parents=True, exist_ok=True)
+  640         self._handle = path.open("w", encoding="utf-8")
+  641
+  642     def write(self, payload: Mapping[str, Any]) -> None:
+  643         self._handle.write(
+  644             json.dumps(
+  645                 dict(payload),
+  646                 ensure_ascii=False,
+  647                 sort_keys=True,
+  648             )
+  649             + "\n"
+  650         )
+  651         self._handle.flush()
+  652
+  653     def close(self) -> None:
+  654         self._handle.close()
+  655
+  656
+  657 @dataclass
+  658 class SafetyMonitor:
+  659     world: Any
+  660     ego: Any
+  661     registry: ActorRegistry
+  662
+  663     def __post_init__(self) -> None:
+  664         # ``sensor.other.collision`` emits one callback for every contact
+  665         # frame.  Keep those raw samples for diagnostics, but group adjacent
+  666         # samples from the same actor into one physical collision episode.
+  667         self.collision_samples: list[dict[str, Any]] = []
+  668         self.collisions: list[dict[str, Any]] = []
+  669         self._open_collision_by_actor: dict[str, dict[str, Any]] = {}
+  670         self.lane_invasions: list[dict[str, Any]] = []
+  671         self.simulation_time_s = 0.0
+  672
+  673     def start(self) -> None:
+  674         import carla
+  675
+  676         library = self.world.get_blueprint_library()
+  677         collision = self.world.spawn_actor(
+  678             library.find("sensor.other.collision"),
+  679             carla.Transform(),
+  680             attach_to=self.ego,
+  681         )
+  682         lane = self.world.spawn_actor(
+  683             library.find("sensor.other.lane_invasion"),
+  684             carla.Transform(),
+  685             attach_to=self.ego,
+  686         )
+  687         collision.listen(self._on_collision)
+  688         lane.listen(self._on_lane_invasion)
+  689         self.registry.add(collision)
+  690         self.registry.add(lane)
+  691
+  692     def _on_collision(self, event: Any) -> None:
+  693         other = getattr(event, "other_actor", None)
+  694         frame = int(event.frame)
+  695         actor_id = getattr(other, "id", None)
+  696         actor_type = getattr(other, "type_id", "unknown")
+  697         actor_attributes = getattr(other, "attributes", {}) or {}
+  698         actor_role = actor_attributes.get("role_name")
+  699         sample = {
+  700             "frame": frame,
+  701             "simulation_time_s": self.simulation_time_s,
+  702             "other_actor_id": actor_id,
+  703             "other_actor_type": actor_type,
+  704             "other_actor_role": actor_role,
+  705         }
+  706         self.collision_samples.append(sample)
+  707
+  708         actor_key = (
+  709             "id:{0}".format(actor_id)
+  710             if actor_id is not None
+  711             else "type:{0}".format(actor_type)
+  712         )
+  713         episode = self._open_collision_by_actor.get(actor_key)
+  714         if (
+  715             episode is not None
+  716             and frame - int(episode["last_frame"]) <= 10
+  717         ):
+  718             episode["last_frame"] = frame
+  719             episode["last_time_s"] = self.simulation_time_s
+  720             episode["contact_samples"] += 1
+  721             return
+  722
+  723         episode = {
+  724             "first_frame": frame,
+  725             "last_frame": frame,
+  726             "first_time_s": self.simulation_time_s,
+  727             "last_time_s": self.simulation_time_s,
+  728             "other_actor_id": actor_id,
+  729             "other_actor_type": actor_type,
+  730             "other_actor_role": actor_role,
+  731             "contact_samples": 1,
+  732         }
+  733         self.collisions.append(episode)
+  734         self._open_collision_by_actor[actor_key] = episode
+  735
+  736     def _on_lane_invasion(self, event: Any) -> None:
+  737         payload = {
+  738             "frame": int(event.frame),
+  739             "simulation_time_s": self.simulation_time_s,
+  740             "markings": [
+  741                 lane_marking_name(marking.type)
+  742                 for marking in event.crossed_lane_markings
+  743             ],
+  744         }
+  745         payload["restricted"] = lane_invasion_is_restricted(payload)
+  746         self.lane_invasions.append(payload)
+  747
+  748     @property
+  749     def restricted_lane_invasions(self) -> list[dict[str, Any]]:
+  750         return [
+  751             event
+  752             for event in self.lane_invasions
+  753             if lane_invasion_is_restricted(event)
+  754         ]
+  755
+  756
+  757 def apply_weather(world: Any, config: Mapping[str, Any]) -> None:
+  758     import carla
+  759
+  760     world.set_weather(
+  761         carla.WeatherParameters(
+  762             cloudiness=float(config["cloudiness"]),
+  763             precipitation=float(config["precipitation"]),
+  764             precipitation_deposits=float(
+  765                 config["precipitation_deposits"]
+  766             ),
+  767             wind_intensity=float(config["wind_intensity"]),
+  768             sun_azimuth_angle=float(config["sun_azimuth_angle"]),
+  769             sun_altitude_angle=float(config["sun_altitude_angle"]),
+  770             fog_density=float(config["fog_density"]),
+  771             fog_distance=float(config["fog_distance"]),
+  772             fog_falloff=float(config["fog_falloff"]),
+  773             wetness=float(config["wetness"]),
+  774         )
+  775     )
+  776
+  777
+  778 def load_packaged_map_layers(world: Any) -> bool:
+  779     """Ensure optional Town assets are visible on ``*_Opt`` maps."""
+  780
+  781     import carla
+  782
+  783     loader = getattr(world, "load_map_layer", None)
+  784     map_layer = getattr(carla, "MapLayer", None)
+  785     if not callable(loader) or map_layer is None:
+  786         return False
+  787     try:
+  788         loader(map_layer.All)
+  789     except RuntimeError as error:
+  790         print("WARNING: optional Town map layers were not reloaded: {0}".format(error))
+  791         return False
+  792     print("Packaged Town optional map layers: ALL loaded")
+  793     return True
+  794
+  795
+  796 def spawn_ego(world: Any, transform: Any) -> Any:
+  797     library = world.get_blueprint_library()
+  798     for identifier in EGO_BLUEPRINTS:
+  799         try:
+  800             blueprint = library.find(identifier)
+  801         except (IndexError, RuntimeError):
+  802             continue
+  803         if blueprint.has_attribute("role_name"):
+  804             blueprint.set_attribute("role_name", "hero")
+  805         candidate = transform
+  806         candidate.location.z += 0.35
+  807         actor = world.try_spawn_actor(blueprint, candidate)
+  808         if actor is not None:
+  809             return actor
+  810     raise RuntimeError("failed to spawn Town05 Scene 2 ego")
+  811
+  812
+  813 def overlay_payload(
+  814     progress_m: float,
+  815     route_length_m: float,
+  816     ego: Any,
+  817     current_command: Mapping[str, Any] | None,
+  818     event_states: Mapping[str, str],
+  819     nearby: Mapping[str, int],
+  820 ) -> dict[str, Any]:
+  821     command_text = (
+  822         str(current_command["text"])
+  823         if current_command is not None
+  824         else "WAITING"
+  825     )
+  826     return {
+  827         "status": "RUNNING",
+  828         "route_progress_m": progress_m,
+  829         "route_length_m": route_length_m,
+  830         "speed_kmh": speed_kmh(ego),
+  831         "target_speed_kmh": 45.0,
+  832         "asr_text": command_text,
+  833         "asr_text_ascii": (
+  834             COMMAND_HUD_FALLBACKS.get(
+  835                 str(current_command["id"]),
+  836                 "Composite Scene 2 voice command",
+  837             )
+  838             if current_command is not None
+  839             else "Waiting for the next voice command"
+  840         ),
+  841         "source_step_action": (
+  842             "COMPOSITE_COMMAND"
+  843             if current_command is not None
+  844             else "WAITING"
+  845         ),
+  846         "active_step_id": (
+  847             str(current_command["id"])
+  848             if current_command is not None
+  849             else "WAITING"
+  850         ),
+  851         "parse_status": "PRESET_TEXT",
+  852         "risk_level": (
+  853             "MEDIUM"
+  854             if any(state == "ACTIVE" for state in event_states.values())
+  855             else "LOW"
+  856         ),
+  857         "reason": (
+  858             "Town05 packaged map / deterministic event actors"
+  859         ),
+  860         "traffic_count": int(nearby["vehicles"]),
+  861         "pedestrian_count": int(nearby["walkers"]),
+  862     }
+  863
+  864
+  865 def command_event_requirements_met(
+  866     command: Mapping[str, Any],
+  867     event_states: Mapping[str, str],
+  868 ) -> bool:
+  869     """Return whether all event-state gates for a command are satisfied."""
+  870
+  871     requirements = command.get("requires_event_states", {})
+  872     if requirements is None:
+  873         return True
+  874     if not isinstance(requirements, Mapping):
+  875         raise ValueError(
+  876             "command requires_event_states must be a mapping"
+  877         )
+  878     return all(
+  879         event_states.get(str(event_id)) == str(required_state)
+  880         for event_id, required_state in requirements.items()
+  881     )
+  882
+  883
+  884 def commands_for_segment(commands, start_progress_m):
+  885     """Cold segment runs omit earlier commands, without claiming they ran."""
+  886     start=float(start_progress_m)
+  887     if not math.isfinite(start) or start<0:
+  888         raise ValueError('segment start must be finite and nonnegative')
+  889     selected,skipped=[],[]
+  890     previous=-1.0
+  891     identities=set()
+  892     for command in commands:
+  893         position=float(command['announce_at_m'])
+  894         identity=str(command['id'])
+  895         if not math.isfinite(position) or position<0 or position<previous or identity in identities:
+  896             raise ValueError('command schedule must be finite, ordered and uniquely identified')
+  897         previous=position
+  898         identities.add(identity)
+  899         if position<start:
+  900             skipped.append(identity)
+  901         else:
+  902             selected.append(command)
+  903     return selected,skipped
+  904
+  905
+  906 def ready_commands_in_order(
+  907     commands: list[Mapping[str, Any]],
+  908     announced: set[str],
+  909     progress_m: float,
+  910     event_states: Mapping[str, str],
+  911 ) -> list[Mapping[str, Any]]:
+  912     """Return the contiguous, ordered prefix ready for announcement.
+  913
+  914     A command whose progress or event gate is not ready blocks every later
+  915     command.  This preserves the competition requirement that compound
+  916     instructions are delivered and evaluated in their configured order.
+  917     """
+  918
+  919     ready = []
+  920     for command in commands:
+  921         command_id = str(command["id"])
+  922         if command_id in announced:
+  923             continue
+  924         if progress_m < float(command["announce_at_m"]):
+  925             break
+  926         if not command_event_requirements_met(command, event_states):
+  927             break
+  928         ready.append(command)
+  929     return ready
+  930
+  931
+  932 def configure_traffic_manager_physics(
+  933     traffic_manager: Any,
+  934     *,
+  935     hybrid_enabled: bool,
+  936     hybrid_radius_m: float,
+  937 ) -> None:
+  938     """Configure transparent near-field physics for dense traffic runs."""
+  939
+  940     radius_m = float(hybrid_radius_m)
+  941     if not math.isfinite(radius_m) or radius_m <= 0.0:
+  942         raise ValueError("traffic hybrid radius must be positive")
+  943     traffic_manager.set_hybrid_physics_mode(bool(hybrid_enabled))
+  944     if hybrid_enabled:
+  945         traffic_manager.set_hybrid_physics_radius(radius_m)
+  946
+  947
+  948 def configure_competition_artifacts(args: Any, vla_enabled: bool) -> None:
+  949     """Configure evidence writers without changing the online VLA sensor rig."""
+  950
+  951     if args.competition_logs_only and not args.competition_run:
+  952         raise ValueError("--competition-logs-only requires --competition-run")
+  953     if args.competition_logs_only and not vla_enabled:
+  954         raise ValueError("--competition-logs-only requires --vla-checkpoint")
+  955     if not args.competition_run:
+  956         return
+  957     if args.competition_logs_only:
+  958         args.no_video = bool(args.no_video)
+  959         args.record_multimodal = False
+  960         args.record_ground_truth = False
+  961         args.video_overlay = not args.no_video
+  962         return
+  963     args.record_multimodal = True
+  964     args.record_ground_truth = True
+  965     args.video_overlay = True
+  966
+  967
+  968 def carla_world_can_be_reused(
+  969     world: Any,
+  970     requested_map: str,
+  971 ) -> bool:
+  972     """Return whether an already loaded, actor-clean CARLA world is reusable."""
+  973
+  974     try:
+  975         current_name = str(world.get_map().name)
+  976         current_asset = current_name.replace("\\", "/").rstrip("/").split("/")[-1]
+  977         requested_asset = (
+  978             str(requested_map).replace("\\", "/").rstrip("/").split("/")[-1]
+  979         )
+  980         if current_asset != requested_asset:
+  981             return False
+  982         blocking_prefixes = (
+  983             "vehicle.",
+  984             "walker.pedestrian.",
+  985             "controller.ai.walker",
+  986             "sensor.",
+  987         )
+  988         return not any(
+  989             str(getattr(actor, "type_id", "")).startswith(blocking_prefixes)
+  990             for actor in world.get_actors()
+  991         )
+  992     except Exception:
+  993         return False
+  994
+  995
+  996 def main() -> int:
+  997     args = parse_args()
+  998     config_path = args.config.resolve()
+  999     config = load_config(config_path)
+ 1000     start_progress_m = float(args.start_progress_m)
+ 1001     runtime_commands,skipped_command_ids=commands_for_segment(config['commands'],start_progress_m)
+ 1002     vla_enabled = args.vla_checkpoint is not None
+ 1003     if args.vla_record_sensors and not vla_enabled:
+ 1004         raise ValueError('--vla-record-sensors requires --vla-checkpoint')
+ 1005     if args.benchmark_compound_driver and (vla_enabled or args.external_ego_control
+ 1006             or not args.benchmark_assessment or args.duration<=0 or args.start_progress_m>800):
+ 1007         raise ValueError('compound driver requires independent assessment, finite duration, start<=800, no model/external control')
+ 1008     if vla_enabled and (
+ 1009         args.vla_config is None or args.command_parser_model is None
+ 1010     ):
+ 1011         raise ValueError(
+ 1012             "--vla-checkpoint requires --vla-config and "
+ 1013             "--command-parser-model"
+ 1014         )
+ 1015     if args.vla_decision_every_n <= 0:
+ 1016         raise ValueError("--vla-decision-every-n must be positive")
+ 1017     configure_competition_artifacts(args, vla_enabled)
+ 1018     if args.competition_run:
+ 1019         if args.no_video and not vla_enabled:
+ 1020             raise ValueError(
+ 1021                 "--competition-run --no-video requires --vla-checkpoint"
+ 1022             )
+ 1023         if args.duration != 0.0:
+ 1024             raise ValueError("--competition-run requires --duration 0")
+ 1025         if args.start_progress_m != 0.0:
+ 1026             raise ValueError(
+ 1027                 "--competition-run requires --start-progress-m 0"
+ 1028             )
+ 1029         if not args.external_ego_control:
+ 1030             raise ValueError(
+ 1031                 "--competition-run requires --external-ego-control"
+ 1032             )
+ 1033     print("Validated runtime config: {0}".format(config_path))
+ 1034     print("Map: {0}".format(config["map"]))
+ 1035     print("Commands: {0}".format(len(config["commands"])))
+ 1036     print(
+ 1037         "Traffic: {0} vehicles, {1} ambient walkers".format(
+ 1038             config["traffic"]["vehicles"],
+ 1039             config["traffic"]["ambient_walkers"],
+ 1040         )
+ 1041     )
+ 1042     if args.validate_only:
+ 1043         return 0
+ 1044
+ 1045     carla_root = setup_carla_api()
+ 1046     import carla
+ 1047
+ 1048     # GlobalRoutePlanner is required by every real CARLA run, including
+ 1049     # --route-preflight and external-control competition runs.  Only the
+ 1050     # BehaviorAgent controller itself is optional.
+ 1051     setup_navigation_agents(carla_root)
+ 1052     BehaviorAgent = None
+ 1053     if (
+ 1054         not args.external_ego_control
+ 1055         and not args.route_preflight
+ 1056         and not vla_enabled
+ 1057     ):
+ 1058         from agents.navigation.behavior_agent import BehaviorAgent
+ 1059
+ 1060     output_dir = args.output_dir.resolve()
+ 1061     output_dir.mkdir(parents=True, exist_ok=True)
+ 1062     video_output = None
+ 1063     if not args.no_video:
+ 1064         video_output = (
+ 1065             args.video_output.resolve()
+ 1066             if args.video_output is not None
+ 1067             else output_dir / "scene2_town05_preview.mp4"
+ 1068         )
+ 1069     runtime_log = JsonlWriter(output_dir / "runtime.jsonl")
+ 1070     event_log = JsonlWriter(output_dir / "events.jsonl")
+ 1071     command_log = JsonlWriter(output_dir / "commands.jsonl")
+ 1072     registry = ActorRegistry()
+ 1073     benchmark_assessment = None
+ 1074     client = None
+ 1075     world = None
+ 1076     original_settings = None
+ 1077     traffic_manager = None
+ 1078     camera = None
+ 1079     ground_truth = None
+ 1080     sensor_suite = None
+ 1081     runtime_interface = None
+ 1082     safety = None
+ 1083     unified_vla = None
+ 1084     unified_route_pid = None
+ 1085     summary: dict[str, Any] = {}
+ 1086
+ 1087     try:
+ 1088         client = carla.Client(args.host, args.port)
+ 1089         client.set_timeout(args.timeout)
+ 1090         current_world = client.get_world()
+ 1091         world_reused = bool(
+ 1092             args.reuse_current_world
+ 1093             and carla_world_can_be_reused(
+ 1094                 current_world, str(config["map"])
+ 1095             )
+ 1096         )
+ 1097         if world_reused:
+ 1098             world = current_world
+ 1099             print("CARLA world: reused clean {0}".format(config["map"]))
+ 1100         else:
+ 1101             world = client.load_world(str(config["map"]))
+ 1102             print("CARLA world: loaded {0}".format(config["map"]))
+ 1103         load_packaged_map_layers(world)
+ 1104         original_settings = world.get_settings()
+ 1105         settings = world.get_settings()
+ 1106         settings.synchronous_mode = True
+ 1107         settings.fixed_delta_seconds = float(
+ 1108             args.fixed_delta_seconds
+ 1109         )
+ 1110         # Camera-free regression runs do not need Unreal rendering.  Physics,
+ 1111         # traffic lights, Traffic Manager, collision sensors, and event actors
+ 1112         # continue to advance in synchronous mode.
+ 1113         settings.no_rendering_mode = bool(
+ 1114             args.no_video
+ 1115             and not vla_enabled
+ 1116             and not args.record_multimodal
+ 1117         )
+ 1118         world.apply_settings(settings)
+ 1119         apply_weather(world, config["weather"])
+ 1120
+ 1121         traffic_manager = client.get_trafficmanager(
+ 1122             args.traffic_manager_port
+ 1123         )
+ 1124         traffic_manager.set_synchronous_mode(True)
+ 1125         traffic_manager.set_random_device_seed(
+ 1126             int(config["traffic"]["seed"])
+ 1127         )
+ 1128         traffic_manager.set_global_distance_to_leading_vehicle(
+ 1129             float(
+ 1130                 config["traffic"][
+ 1131                     "global_distance_to_leading_vehicle_m"
+ 1132                 ]
+ 1133             )
+ 1134         )
+ 1135         traffic_manager.global_percentage_speed_difference(
+ 1136             float(
+ 1137                 config["traffic"]["global_speed_difference_pct"]
+ 1138             )
+ 1139         )
+ 1140         configure_traffic_manager_physics(
+ 1141             traffic_manager,
+ 1142             hybrid_enabled=bool(args.traffic_hybrid_physics),
+ 1143             hybrid_radius_m=float(args.traffic_hybrid_radius_m),
+ 1144         )
+ 1145         traffic_manager.set_respawn_dormant_vehicles(False)
+ 1146
+ 1147         sensor_tick = float(
+ 1148             args.sensor_tick
+ 1149             if args.sensor_tick is not None
+ 1150             else config["sensors"]["sensor_tick_s"]
+ 1151         )
+ 1152         sensor_stride = max(
+ 1153             1,
+ 1154             round(sensor_tick / float(args.fixed_delta_seconds)),
+ 1155         )
+ 1156         if not math.isclose(
+ 1157             sensor_tick,
+ 1158             sensor_stride * float(args.fixed_delta_seconds),
+ 1159             abs_tol=1e-9,
+ 1160         ):
+ 1161             raise ValueError(
+ 1162                 "sensor tick must be an integer multiple of fixed delta"
+ 1163             )
+ 1164
+ 1165         destination = config["route"]["turnaround_spawn_index"]
+ 1166         if destination == "auto":
+ 1167             destination, leg_length, leg_curvature = (
+ 1168                 choose_curved_route_destination(
+ 1169                     world.get_map(),
+ 1170                     int(config["route"]["start_spawn_index"]),
+ 1171                     float(config["route"]["route_sampling_m"]),
+ 1172                 )
+ 1173             )
+ 1174             print(
+ 1175                 "Auto-selected Town05 destination: index={0}, leg={1:.1f} "
+ 1176                 "m, curvature={2:.1f} deg".format(
+ 1177                     destination,
+ 1178                     leg_length,
+ 1179                     leg_curvature,
+ 1180                 )
+ 1181             )
+ 1182         route, route_distances = build_repeated_route(
+ 1183             world.get_map(),
+ 1184             int(config["route"]["start_spawn_index"]),
+ 1185             int(destination),
+ 1186             float(config["route"]["target_length_m"]),
+ 1187             float(config["route"]["route_sampling_m"]),
+ 1188         )
+ 1189         route_length_m = float(route_distances[-1])
+ 1190         curvature_degrees = route_curvature_degrees(route)
+ 1191         if curvature_degrees < float(
+ 1192             config["route"]["minimum_curvature_degrees"]
+ 1193         ):
+ 1194             raise RuntimeError(
+ 1195                 "selected route is too straight for Scene 2: "
+ 1196                 "{0:.1f} deg".format(curvature_degrees)
+ 1197             )
+ 1198         print(
+ 1199             "Town05 route geometry: {0:.1f} m, accumulated curvature "
+ 1200             "{1:.1f} deg".format(route_length_m, curvature_degrees)
+ 1201         )
+ 1202         route_command_audit = audit_command_route_alignment(
+ 1203             config["commands"],
+ 1204             route,
+ 1205             route_distances,
+ 1206         )
+ 1207         (output_dir / "route_command_audit.json").write_text(
+ 1208             json.dumps(
+ 1209                 route_command_audit,
+ 1210                 ensure_ascii=False,
+ 1211                 indent=2,
+ 1212             )
+ 1213             + "\n",
+ 1214             encoding="utf-8",
+ 1215         )
+ 1216         print(
+ 1217             "Route-command audit: {0} commands, {1} mismatches".format(
+ 1218                 route_command_audit["commands_audited"],
+ 1219                 route_command_audit["mismatch_count"],
+ 1220             )
+ 1221         )
+ 1222         if args.route_preflight:
+ 1223             print(json.dumps(route_command_audit, ensure_ascii=False, indent=2))
+ 1224             return 0 if route_command_audit["competition_ready"] else 2
+ 1225         if args.competition_run and not route_command_audit[
+ 1226             "competition_ready"
+ 1227         ]:
+ 1228             raise RuntimeError(
+ 1229                 "structured voice commands do not match the planned route; "
+ 1230                 "inspect route_command_audit.json"
+ 1231             )
+ 1232         start_route_index = min(
+ 1233             range(len(route_distances)),
+ 1234             key=lambda index: abs(
+ 1235                 route_distances[index] - start_progress_m
+ 1236             ),
+ 1237         )
+ 1238         ego = spawn_ego(
+ 1239             world,
+ 1240             route[start_route_index][0].transform,
+ 1241         )
+ 1242         registry.add(ego)
+ 1243         print("Ego vehicle blueprint: " + str(ego.type_id))
+ 1244
+ 1245         events = DeterministicSceneEvents(
+ 1246             world,
+ 1247             traffic_manager,
+ 1248             registry,
+ 1249             route,
+ 1250             route_distances,
+ 1251             config["special_events"],
+ 1252             int(config["traffic"]["seed"]),
+ 1253             episode_index=args.variant_index,
+ 1254         )
+ 1255         events.spawn()
+ 1256         print(
+ 1257             "Scene 2 variants: "
+ 1258             + json.dumps(events.selected_variants, ensure_ascii=False)
+ 1259         )
+ 1260         (output_dir / "selected_variants.json").write_text(
+ 1261             json.dumps(
+ 1262                 {
+ 1263                     "variant_index": int(args.variant_index),
+ 1264                     "events": events.selected_variants,
+ 1265                 },
+ 1266                 ensure_ascii=False,
+ 1267                 indent=2,
+ 1268             )
+ 1269             + "\n",
+ 1270             encoding="utf-8",
+ 1271         )
+ 1272         traffic = TownTrafficFlow(
+ 1273             client,
+ 1274             world,
+ 1275             traffic_manager,
+ 1276             registry,
+ 1277             route,
+ 1278             config["traffic"],
+ 1279         )
+ 1280         traffic.spawn(events.reserved_locations, ego.get_location())
+ 1281         safety = SafetyMonitor(world, ego, registry)
+ 1282         safety.start()
+ 1283         if args.record_ground_truth:
+ 1284             ground_truth = FrameGroundTruthRecorder(
+ 1285                 output_dir / "frame_ground_truth.jsonl",
+ 1286                 scene_id=str(config["scene_id"]),
+ 1287                 events=events.events,
+ 1288                 every_n_frames=args.ground_truth_every_n,
+ 1289                 model_output_used=bool(vla_enabled),
+ 1290             )
+ 1291
+ 1292         agent = None
+ 1293         compound_driver = None
+ 1294         behavior_profile = None
+ 1295         agent_target_speed_kmh = None
+ 1296         if not args.external_ego_control and not vla_enabled:
+ 1297             assert BehaviorAgent is not None
+ 1298             agent = BehaviorAgent(ego, behavior="normal")
+ 1299             cruise_speed_kmh = float(
+ 1300                 config["route"]["target_speed_kmh"]
+ 1301             )
+ 1302             agent.set_target_speed(cruise_speed_kmh)
+ 1303             agent_target_speed_kmh = cruise_speed_kmh
+ 1304             agent.set_global_plan(
+ 1305                 list(route[start_route_index:]),
+ 1306                 stop_waypoint_creation=True,
+ 1307                 clean_queue=True,
+ 1308             )
+ 1309             behavior_profile = getattr(agent, "_behavior", None)
+ 1310             if behavior_profile is None or not hasattr(
+ 1311                 behavior_profile,
+ 1312                 "tailgate_counter",
+ 1313             ):
+ 1314                 raise RuntimeError(
+ 1315                     "BehaviorAgent tailgating guard is unavailable"
+ 1316                 )
+ 1317             # CARLA's stock BehaviorAgent may change lane merely because a
+ 1318             # faster vehicle approaches from behind.  Such an uncommanded
+ 1319             # maneuver is unsafe for the competition route and previously
+ 1320             # caused restricted-line invasions.  A route-length-scale
+ 1321             # cooldown disables that opportunistic behavior while preserving
+ 1322             # GlobalRoutePlanner turns and ordinary obstacle following.
+ 1323             behavior_profile.tailgate_counter = 1_000_000_000
+ 1324             print(
+ 1325                 "BehaviorAgent autonomous tailgating lane changes: disabled"
+ 1326             )
+ 1327
+ 1328         if args.benchmark_compound_driver:
+ 1329             from benchmark.compound_driver import CompoundDriver
+ 1330             compound_driver=CompoundDriver(world,ego,agent,route,route_distances,events,config['commands'],
+ 1331                                            output_dir/'compound_driver.jsonl')
+ 1332
+ 1333         for _ in range(30):
+ 1334             ego.apply_control(carla.VehicleControl(brake=1.0))
+ 1335             world.tick()
+ 1336
+ 1337         if not args.no_video:
+ 1338             assert video_output is not None
+ 1339             camera = ExperimentCamera(
+ 1340                 world,
+ 1341                 ego,
+ 1342                 str(output_dir / "camera_frames"),
+ 1343                 every_n_frames=1,
+ 1344                 width=args.camera_width,
+ 1345                 height=args.camera_height,
+ 1346                 save_images=args.record_images,
+ 1347                 video_output=str(video_output),
+ 1348                 video_fps=args.video_fps,
+ 1349                 ffmpeg_path=args.ffmpeg,
+ 1350                 video_overlay=args.video_overlay,
+ 1351                 camera_attributes={
+ 1352                     "sensor_tick": f"{1.0 / max(1.0, float(args.video_fps)):.3f}",
+ 1353                     "gamma": "2.2",
+ 1354                     "exposure_mode": "histogram",
+ 1355                     "exposure_compensation": "-0.3",
+ 1356                     "exposure_speed_up": "3.0",
+ 1357                     "exposure_speed_down": "1.0",
+ 1358                     "bloom_intensity": "0.15",
+ 1359                     "lens_flare_intensity": "0.10",
+ 1360                     "motion_blur_intensity": "0.10",
+ 1361                 },
+ 1362                 camera_pose=(-9.0, 0.0, 3.2, -9.0, 0.0),
+ 1363                 hud_font_path=args.hud_font,
+ 1364             )
+ 1365             camera.start()
+ 1366
+ 1367         sensor_phase_frame = None
+ 1368         if args.record_multimodal:
+ 1369             sensor_suite = ExactFrameSensorSuite(
+ 1370                 world,
+ 1371                 ego,
+ 1372                 registry,
+ 1373                 output_dir,
+ 1374                 sensor_tick,
+ 1375                 image_width=int(config["sensors"]["image_width"]),
+ 1376                 image_height=int(config["sensors"]["image_height"]),
+ 1377             )
+ 1378             sensor_suite.start()
+ 1379             runtime_interface = Scene2RuntimeInterface(
+ 1380                 output_dir,
+ 1381                 config,
+ 1382             )
+ 1383             warmup_frames = [
+ 1384                 int(world.tick())
+ 1385                 for _ in range(sensor_stride * 3 + 2)
+ 1386             ]
+ 1387             (
+ 1388                 sensor_phase_frame,
+ 1389                 observed_sensor_frames,
+ 1390             ) = sensor_suite.wait_for_stable_phase(
+ 1391                 warmup_frames,
+ 1392                 sensor_stride,
+ 1393                 args.sensor_sync_timeout,
+ 1394             )
+ 1395             if sensor_phase_frame is None:
+ 1396                 raise RuntimeError(
+ 1397                     "multimodal sensor warm-up did not establish a stable "
+ 1398                     "four-RGB/LiDAR cadence; complete frames={0}".format(
+ 1399                         observed_sensor_frames
+ 1400                     )
+ 1401                 )
+ 1402             print(
+ 1403                 "Multimodal exact-frame barrier ready: phase={0}, "
+ 1404                 "stride={1}, observed={2}".format(
+ 1405                     sensor_phase_frame,
+ 1406                     sensor_stride,
+ 1407                     observed_sensor_frames,
+ 1408                 )
+ 1409             )
+ 1410
+ 1411         tracker = RouteProgressTracker(
+ 1412             route,
+ 1413             route_distances,
+ 1414             index=start_route_index,
+ 1415         )
+ 1416         if vla_enabled:
+ 1417             from types import SimpleNamespace
+ 1418
+ 1419             from control.generic_route_pid import GenericRoutePID
+ 1420             from universal_vla_controller import UniversalVLAController
+ 1421
+ 1422             vla_commands = build_vla_command_schedule({**config,'commands':runtime_commands})
+ 1423             route_context_view = SimpleNamespace(
+ 1424                 distances_m=route_distances,
+ 1425                 tracker=tracker,
+ 1426                 adapter=None,
+ 1427             )
+ 1428             unified_route_pid = GenericRoutePID(
+ 1429                 world,
+ 1430                 ego,
+ 1431                 target_speed_kmh=float(
+ 1432                     config["route"]["target_speed_kmh"]
+ 1433                 ),
+ 1434                 fixed_delta_seconds=float(args.fixed_delta_seconds),
+ 1435                 route_context=route_context_view,
+ 1436                 route_plan=route,
+ 1437             )
+ 1438             # Give the unified VLA's sensor rig one complete cadence before
+ 1439             # the timed loop starts.
+ 1440             for _ in range(int(args.vla_decision_every_n) + 2):
+ 1441                 world.tick()
+ 1442             unified_vla = UniversalVLAController(
+ 1443                 world=world,
+ 1444                 ego=ego,
+ 1445                 route_controller=unified_route_pid,
+ 1446                 commands=vla_commands,
+ 1447                 checkpoint_path=args.vla_checkpoint.resolve(),
+ 1448                 config_path=args.vla_config.resolve(),
+ 1449                 parser_model_path=args.command_parser_model.resolve(),
+ 1450                 output_path=output_dir / "vla_control_decisions.jsonl",
+ 1451                 device=args.vla_device,
+ 1452                 precision=args.vla_precision,
+ 1453                 decision_interval_frames=int(args.vla_decision_every_n),
+ 1454                 fixed_delta_seconds=float(args.fixed_delta_seconds),
+ 1455                 available_cameras=("front", "left", "right", "rear"),
+ 1456                 enable_lidar=True,
+ 1457                 sensor_recording_dir=output_dir/'model_inputs' if args.vla_record_sensors else None,
+ 1458                 default_speed_kmh=float(
+ 1459                     config["route"]["target_speed_kmh"]
+ 1460                 ),
+ 1461             )
+ 1462             # Give the unified controller's sensor rig one complete cadence.
+ 1463             for _ in range(int(args.vla_decision_every_n) + 2):
+ 1464                 world.tick()
+ 1465             print(
+ 1466                 "Scene 2 universal VLA control enabled: unified batch -> "
+ 1467                 "VLA pipeline -> temporal supervisor -> instruction FSM -> "
+ 1468                 "route PID"
+ 1469             )
+ 1470         announced: set[str] = set()
+ 1471         current_command = None
+ 1472         latest_intent = None
+ 1473         start_snapshot = world.get_snapshot()
+ 1474         if args.benchmark_assessment:
+ 1475             from benchmark.episode import attach_episode
+ 1476             benchmark_assessment = attach_episode('scene_2',route,world,ego,output_dir/'benchmark',args.config,
+ 1477                 initial_route_s_m=start_progress_m,task_selector=args.benchmark_task,
+ 1478                 run_metadata=dict(traffic_seed=int(config['traffic']['seed']),vla_enabled=bool(vla_enabled),
+ 1479                                   external_ego_control=bool(args.external_ego_control),
+ 1480                                   sensor_recording=bool(args.vla_record_sensors)))
+ 1481         start_time = float(start_snapshot.timestamp.elapsed_seconds)
+ 1482         frame_counter = 0
+ 1483         progress_m = 0.0
+ 1484         turn_centering_active = False
+ 1485         while True:
+ 1486             snapshot = world.get_snapshot()
+ 1487             simulation_time_s = (
+ 1488                 float(snapshot.timestamp.elapsed_seconds) - start_time
+ 1489             )
+ 1490             if safety is not None:
+ 1491                 safety.simulation_time_s = simulation_time_s
+ 1492
+ 1493             progress_m = tracker.update(ego.get_location())
+ 1494             for command in ready_commands_in_order(
+ 1495                 runtime_commands,
+ 1496                 announced,
+ 1497                 progress_m,
+ 1498                 events.states,
+ 1499             ):
+ 1500                 command_id = str(command["id"])
+ 1501                 announced.add(command_id)
+ 1502                 current_command = command
+ 1503                 command_log.write(
+ 1504                     {
+ 1505                         "frame": int(snapshot.frame),
+ 1506                         "simulation_time_s": simulation_time_s,
+ 1507                         "route_progress_m": progress_m,
+ 1508                         **command,
+ 1509                     }
+ 1510                 )
+ 1511                 if runtime_interface is not None:
+ 1512                     latest_intent = runtime_interface.publish_command(
+ 1513                         command,
+ 1514                         int(snapshot.frame),
+ 1515                         progress_m,
+ 1516                         simulation_time_s,
+ 1517                     )
+ 1518                 print(
+ 1519                     "COMMAND | {0} | {1:.1f} m | {2}".format(
+ 1520                         command_id,
+ 1521                         progress_m,
+ 1522                         command["text"],
+ 1523                     )
+ 1524                 )
+ 1525
+ 1526             for change in events.update(progress_m):
+ 1527                 event_log.write(
+ 1528                     {
+ 1529                         "frame": int(snapshot.frame),
+ 1530                         "simulation_time_s": simulation_time_s,
+ 1531                         **change,
+ 1532                     }
+ 1533                 )
+ 1534                 print(
+ 1535                     "EVENT | {0} | {1}".format(
+ 1536                         change["event_id"],
+ 1537                         change["state"],
+ 1538                     )
+ 1539                 )
+ 1540
+ 1541             if unified_vla is not None:
+ 1542                 control = unified_vla.run_step()
+ 1543                 unified_vla.apply_control(control)
+ 1544             elif agent is not None:
+ 1545                 desired_speed_kmh = route_aware_preview_speed_kmh(
+ 1546                     progress_m,
+ 1547                     route_command_audit["global_maneuvers"],
+ 1548                     float(config["route"]["target_speed_kmh"]),
+ 1549                     float(config["route"].get("turn_speed_kmh", 18.0)),
+ 1550                     float(
+ 1551                         config["route"].get(
+ 1552                             "turn_slowdown_approach_m",
+ 1553                             60.0,
+ 1554                         )
+ 1555                     ),
+ 1556                     float(
+ 1557                         config["route"].get(
+ 1558                             "turn_slowdown_exit_m",
+ 1559                             30.0,
+ 1560                         )
+ 1561                     ),
+ 1562                 )
+ 1563                 if (
+ 1564                     agent_target_speed_kmh is None
+ 1565                     or not math.isclose(
+ 1566                         desired_speed_kmh,
+ 1567                         agent_target_speed_kmh,
+ 1568                         abs_tol=1e-6,
+ 1569                     )
+ 1570                 ):
+ 1571                     assert behavior_profile is not None
+ 1572                     behavior_profile.max_speed = desired_speed_kmh
+ 1573                     agent.set_target_speed(desired_speed_kmh)
+ 1574                     agent_target_speed_kmh = desired_speed_kmh
+ 1575                 if compound_driver is not None:
+ 1576                     desired_speed_kmh=compound_driver.update(snapshot,progress_m,desired_speed_kmh)
+ 1577                     behavior_profile.max_speed=desired_speed_kmh
+ 1578                     agent.set_target_speed(desired_speed_kmh)
+ 1579                     agent_target_speed_kmh=desired_speed_kmh
+ 1580                 control = carla.VehicleControl(brake=1.0) if agent.done() else agent.run_step()
+ 1581                 centering_now = planned_turn_window_active(
+ 1582                     progress_m,
+ 1583                     route_command_audit["global_maneuvers"],
+ 1584                     float(
+ 1585                         config["route"].get(
+ 1586                             "turn_centering_approach_m",
+ 1587                             25.0,
+ 1588                         )
+ 1589                     ),
+ 1590                     float(
+ 1591                         config["route"].get(
+ 1592                             "turn_centering_exit_m",
+ 1593                             45.0,
+ 1594                         )
+ 1595                     ),
+ 1596                 )
+ 1597                 if compound_driver is not None and compound_driver.owns_plan:
+ 1598                     centering_now=False
+ 1599                 lateral_error_m = 0.0
+ 1600                 if centering_now:
+ 1601                     correction, lateral_error_m = (
+ 1602                         route_centering_steer_correction(
+ 1603                             ego.get_location(),
+ 1604                             route[tracker.index][0],
+ 1605                             float(
+ 1606                                 config["route"].get(
+ 1607                                     "turn_centering_lateral_gain",
+ 1608                                     0.22,
+ 1609                                 )
+ 1610                             ),
+ 1611                             float(
+ 1612                                 config["route"].get(
+ 1613                                     "turn_centering_max_steer_correction",
+ 1614                                     0.35,
+ 1615                                 )
+ 1616                             ),
+ 1617                         )
+ 1618                     )
+ 1619                     control.steer = max(
+ 1620                         -1.0,
+ 1621                         min(1.0, float(control.steer) + correction),
+ 1622                     )
+ 1623                 if centering_now != turn_centering_active:
+ 1624                     print(
+ 1625                         "Route turn centering: {0} at {1:.1f} m "
+ 1626                         "(lateral_error={2:.3f} m)".format(
+ 1627                             "ACTIVE" if centering_now else "INACTIVE",
+ 1628                             progress_m,
+ 1629                             lateral_error_m,
+ 1630                         )
+ 1631                     )
+ 1632                     turn_centering_active = centering_now
+ 1633                 control.manual_gear_shift = False
+ 1634                 if compound_driver is not None:
+ 1635                     compound_driver.record_control(snapshot,control)
+ 1636                 ego.apply_control(control)
+ 1637
+ 1638             frame = world.tick()
+ 1639             post_snapshot = world.get_snapshot()
+ 1640             if benchmark_assessment is not None:
+ 1641                 benchmark_assessment.observe(post_snapshot)
+ 1642             simulation_time_s = (
+ 1643                 float(post_snapshot.timestamp.elapsed_seconds) - start_time
+ 1644             )
+ 1645             if safety is not None:
+ 1646                 safety.simulation_time_s = simulation_time_s
+ 1647             nearby = traffic.nearby_counts(ego.get_location())
+ 1648             if camera is not None:
+ 1649                 camera.save_frame(
+ 1650                     frame,
+ 1651                     overlay=overlay_payload(
+ 1652                         progress_m,
+ 1653                         route_length_m,
+ 1654                         ego,
+ 1655                         current_command,
+ 1656                         events.states,
+ 1657                         nearby,
+ 1658                     ),
+ 1659                 )
+ 1660             if ground_truth is not None:
+ 1661                 ground_truth.record(
+ 1662                     world=world,
+ 1663                     ego=ego,
+ 1664                     simulation_frame=int(frame),
+ 1665                     timestamp_s=simulation_time_s,
+ 1666                     route_s_m=progress_m,
+ 1667                     event_states=events.states,
+ 1668                     actor_bindings=(
+ 1669                         events.ground_truth_actor_bindings()
+ 1670                     ),
+ 1671                     runtime_state=(
+ 1672                         events.ground_truth_runtime_state()
+ 1673                     ),
+ 1674                 )
+ 1675             if (
+ 1676                 sensor_suite is not None
+ 1677                 and runtime_interface is not None
+ 1678                 and sensor_phase_frame is not None
+ 1679                 and (int(frame) - sensor_phase_frame) % sensor_stride == 0
+ 1680             ):
+ 1681                 complete, sensor_frames = sensor_suite.wait_for_frame(
+ 1682                     int(frame),
+ 1683                     args.sensor_sync_timeout,
+ 1684                 )
+ 1685                 world_state = runtime_interface.publish_world_state(
+ 1686                     world,
+ 1687                     ego,
+ 1688                     int(frame),
+ 1689                     progress_m,
+ 1690                     simulation_time_s,
+ 1691                     safety,
+ 1692                     speed_kmh,
+ 1693                 )
+ 1694                 bundle = runtime_interface.publish_bundle(
+ 1695                     int(frame),
+ 1696                     world_state,
+ 1697                     sensor_frames,
+ 1698                     latest_intent,
+ 1699                 )
+ 1700                 if not complete or bundle["status"] != "COMPLETE":
+ 1701                     message = (
+ 1702                         "exact multimodal synchronization timed out at "
+ 1703                         "frame {0}: {1}".format(frame, sensor_frames)
+ 1704                     )
+ 1705                     if args.competition_run:
+ 1706                         raise RuntimeError(message)
+ 1707                     print("WARNING | " + message)
+ 1708             if frame_counter % 20 == 0:
+ 1709                 runtime_log.write(
+ 1710                     {
+ 1711                         "frame": int(frame),
+ 1712                         "simulation_time_s": simulation_time_s,
+ 1713                         "route_progress_m": progress_m,
+ 1714                         "route_length_m": route_length_m,
+ 1715                         "ego_speed_kmh": speed_kmh(ego),
+ 1716                         "nearby_vehicles_85m": nearby["vehicles"],
+ 1717                         "nearby_walkers_85m": nearby["walkers"],
+ 1718                         "event_states": dict(events.states),
+ 1719                         "selected_variants": dict(
+ 1720                             events.selected_variants
+ 1721                         ),
+ 1722                         "collisions": len(safety.collisions),
+ 1723                         "collision_contact_samples": len(
+ 1724                             safety.collision_samples
+ 1725                         ),
+ 1726                         "lane_invasions": len(
+ 1727                             safety.lane_invasions
+ 1728                         ),
+ 1729                         "restricted_lane_invasions": len(
+ 1730                             safety.restricted_lane_invasions
+ 1731                         ),
+ 1732                     }
+ 1733                 )
+ 1734             frame_counter += 1
+ 1735
+ 1736             if progress_m >= float(config["route"]["target_length_m"]):
+ 1737                 print("Town05 Scene 2 route completed")
+ 1738                 break
+ 1739             if (
+ 1740                 args.duration > 0.0
+ 1741                 and simulation_time_s >= args.duration
+ 1742             ):
+ 1743                 print("Town05 Scene 2 preview duration completed")
+ 1744                 break
+ 1745
+ 1746         summary = {
+ 1747             "schema_version": "scene_2_town05_summary/v1",
+ 1748             "map": world.get_map().name,
+ 1749             "world_reused": bool(world_reused),
+ 1750             "route_start_spawn_index": int(
+ 1751                 config["route"]["start_spawn_index"]
+ 1752             ),
+ 1753             "route_turnaround_spawn_index": int(destination),
+ 1754             "route_length_m": route_length_m,
+ 1755             "route_curvature_degrees": curvature_degrees,
+ 1756             "route_progress_m": progress_m,
+ 1757             "route_completed": progress_m
+ 1758             >= float(config["route"]["target_length_m"]),
+ 1759             "route_command_audit": route_command_audit,
+ 1760             "commands_announced": len(announced),
+ 1761             "segment_command_schedule": {
+ 1762                 "start_progress_m": start_progress_m,
+ 1763                 "mode": "cold_segment" if start_progress_m>0 else "full_route",
+ 1764                 "eligible_command_ids": [str(c['id']) for c in runtime_commands],
+ 1765                 "skipped_before_start_ids": skipped_command_ids,
+ 1766                 "announced_ids": [str(c['id']) for c in runtime_commands if str(c['id']) in announced],
+ 1767                 "restores_previous_instruction_state": False,
+ 1768             },
+ 1769             "traffic_vehicles_spawned": len(traffic.vehicles),
+ 1770             "ambient_walkers_spawned": len(traffic.walkers),
+ 1771             "traffic_hybrid_physics": {
+ 1772                 "enabled": bool(args.traffic_hybrid_physics),
+ 1773                 "radius_m": float(args.traffic_hybrid_radius_m),
+ 1774             },
+ 1775             "event_states": dict(events.states),
+ 1776             "event_summary": events.summary(),
+ 1777             "variant_index": int(args.variant_index),
+ 1778             "selected_variants": dict(events.selected_variants),
+ 1779             "spawn_diagnostics": dict(events.spawn_diagnostics),
+ 1780             "collision_count": len(safety.collisions),
+ 1781             "collision_contact_samples": len(
+ 1782                 safety.collision_samples
+ 1783             ),
+ 1784             "collision_events": list(safety.collisions),
+ 1785             "lane_invasion_count": len(safety.lane_invasions),
+ 1786             "lane_invasion_events": list(safety.lane_invasions),
+ 1787             "restricted_lane_invasion_count": len(
+ 1788                 safety.restricted_lane_invasions
+ 1789             ),
+ 1790             "restricted_lane_invasion_events": list(
+ 1791                 safety.restricted_lane_invasions
+ 1792             ),
+ 1793             "video_output": (
+ 1794                 str(video_output) if video_output is not None else None
+ 1795             ),
+ 1796             "artifact_recording": {
+ 1797                 "mode": (
+ 1798                     "structured_logs_only"
+ 1799                     if args.competition_logs_only
+ 1800                     else "full_artifacts"
+ 1801                 ),
+ 1802                 "online_vla_sensors_enabled": bool(vla_enabled),
+ 1803             },
+ 1804             "preview_controller": {
+ 1805                 "source": (
+ 1806                     "universal multisensor VLA + deterministic safety gate + PID"
+ 1807                     if vla_enabled
+ 1808                     else
+ 1809                     "external"
+ 1810                     if args.external_ego_control
+ 1811                     else "CARLA BehaviorAgent demonstration controller"
+ 1812                 ),
+ 1813                 "competition_metric_eligible": bool(vla_enabled),
+ 1814                 "compound_baseline_task": 's2_t05_cmd_03' if compound_driver is not None else None,
+ 1815                 "compound_baseline_uses_simulator_truth": compound_driver is not None,
+ 1816                 "behavior_agent_executes_announced_commands": False if agent is not None else None,
+ 1817                 "behavior_agent_scope": (
+ 1818                     "route_cruise_and_obstacle_response_not_compound_instruction_execution"
+ 1819                     if agent is not None else None
+ 1820                 ),
+ 1821             },
+ 1822         }
+ 1823         if vla_enabled:
+ 1824             summary["vla_control"] = unified_vla.summary()
+ 1825             summary["vla_control"]["checkpoint"] = str(args.vla_checkpoint)
+ 1826             summary["vla_control"]["config"] = str(args.vla_config)
+ 1827         if sensor_suite is not None:
+ 1828             summary["multimodal_evidence"] = sensor_suite.summary()
+ 1829             summary["multimodal_evidence"][
+ 1830                 "competition_required_exact_ratio"
+ 1831             ] = 1.0
+ 1832         if args.competition_logs_only:
+ 1833             vla_summary = summary.get("vla_control") or {}
+ 1834             sensor_evidence_available = bool(
+ 1835                 int(vla_summary.get("decision_count", 0)) > 0
+ 1836                 and "4view_rgb" in str(vla_summary.get("input_mode", ""))
+ 1837                 and vla_summary.get("sensor_batch_schema_version")
+ 1838                 == "unified_sensor_batch/1.0"
+ 1839             )
+ 1840         else:
+ 1841             sensor_evidence_available = bool(
+ 1842                 sensor_suite is not None
+ 1843                 and sensor_suite.summary()["exact_completion_ratio"] == 1.0
+ 1844             )
+ 1845         measurable_checks = {
+ 1846             "route_completed": bool(summary["route_completed"]),
+ 1847             "collision_count_equals_0": (
+ 1848                 summary["collision_count"] == 0
+ 1849             ),
+ 1850             "restricted_lane_invasions_at_most_1": (
+ 1851                 summary["restricted_lane_invasion_count"] <= 1
+ 1852             ),
+ 1853             "all_commands_announced": (
+ 1854                 summary["commands_announced"] == len(config["commands"])
+ 1855             ),
+ 1856             "all_events_resolved": all(
+ 1857                 state == "RESOLVED"
+ 1858                 for state in summary["event_states"].values()
+ 1859             ),
+ 1860             "route_commands_aligned": bool(
+ 1861                 route_command_audit["competition_ready"]
+ 1862             ),
+ 1863             "sensor_evidence_available": sensor_evidence_available,
+ 1864             "vla_fallback_count_equals_0": (
+ 1865                 not vla_enabled
+ 1866                 or summary["vla_control"]["fallback_count"] == 0
+ 1867             ),
+ 1868         }
+ 1869         summary["competition_acceptance"] = {
+ 1870             "measurable_checks": measurable_checks,
+ 1871             "measurable_checks_passed": all(measurable_checks.values()),
+ 1872             "pending_external_metrics": [
+ 1873                 "asr_accuracy",
+ 1874                 "ordered_step_completion_and_omissions",
+ 1875                 "semantic_alignment_accuracy",
+ 1876                 "instruction_parse_latency_ms",
+ 1877                 "end_to_end_decision_latency_ms",
+ 1878                 "task_completion_rate",
+ 1879                 "traffic_rule_violations_beyond_lane_invasion",
+ 1880             ],
+ 1881             "final_competition_pass_claimed": False,
+ 1882         }
+ 1883         if ground_truth is not None:
+ 1884             summary["ground_truth"] = ground_truth.summary()
+ 1885         (output_dir / "summary.json").write_text(
+ 1886             json.dumps(summary, ensure_ascii=False, indent=2),
+ 1887             encoding="utf-8",
+ 1888         )
+ 1889         print(json.dumps(summary, ensure_ascii=False, indent=2))
+ 1890         from benchmark.episode import finish_episode
+ 1891         assessment_exit_code=finish_episode(benchmark_assessment)
+ 1892         if args.competition_run and not all(measurable_checks.values()):
+ 1893             return assessment_exit_code or 2
+ 1894         return assessment_exit_code
+ 1895     finally:
+ 1896         from benchmark.episode import finish_episode
+ 1897         finish_episode(benchmark_assessment)
+ 1898         if unified_vla is not None:
+ 1899             try:
+ 1900                 unified_vla.close()
+ 1901             except RuntimeError:
+ 1902                 pass
+ 1903         if runtime_interface is not None:
+ 1904             runtime_interface.close()
+ 1905         if ground_truth is not None:
+ 1906             ground_truth.close()
+ 1907         runtime_log.close()
+ 1908         event_log.close()
+ 1909         command_log.close()
+ 1910         if camera is not None:
+ 1911             try:
+ 1912                 camera.destroy()
+ 1913             except RuntimeError:
+ 1914                 pass
+ 1915         if client is not None:
+ 1916             registry.destroy(client)
+ 1917         if traffic_manager is not None:
+ 1918             try:
+ 1919                 traffic_manager.set_synchronous_mode(False)
+ 1920             except RuntimeError:
+ 1921                 pass
+ 1922         if world is not None and original_settings is not None:
+ 1923             try:
+ 1924                 world.apply_settings(original_settings)
+ 1925             except RuntimeError:
+ 1926                 pass
+ 1927
+ 1928
+ 1929 if __name__ == "__main__":
+ 1930     raise SystemExit(main())

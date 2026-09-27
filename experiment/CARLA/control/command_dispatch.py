@@ -23,10 +23,15 @@ def resolve_command_dispatch_mode(commands, configured_mode=None):
 
 
 class CompletionCommandQueue:
-    def __init__(self, commands, timeout_s=120):
+    def __init__(self, commands, timeout_s=120, safety_wait_timeout_s=300):
         if not math.isfinite(timeout_s) or timeout_s <= 0:
             raise ValueError('positive command timeout required')
         self.timeout_s=timeout_s
+        if not math.isfinite(safety_wait_timeout_s) or safety_wait_timeout_s <= 0:
+            raise ValueError('positive safety wait timeout required')
+        self.safety_wait_timeout_s=safety_wait_timeout_s
+        self.execution_elapsed_s=0.
+        self.safety_wait_elapsed_s=0.
         self.commands=deepcopy(list(commands))
         seen=set()
         previous=-math.inf
@@ -59,16 +64,30 @@ class CompletionCommandQueue:
             raise ValueError('finite dispatch progress/time required')
         if self.last_time is not None and timestamp_s < self.last_time:
             raise ValueError('dispatch time regressed')
+        previous_time=self.last_time
         self.last_time=timestamp_s
         if self.failed:
             raise ValueError('command dispatch halted: '+self.failed)
         if self.current is not None:
             identity=self.current['driving_intent']['request_id']
             end=self.commands[self.index]['_dispatch_end_m']
+            matching=bool(feedback and feedback.get('request_id')==identity)
+            observed=feedback.get('observed_at_s') if matching else None
+            fresh=(isinstance(observed,(int,float)) and not isinstance(observed,bool)
+                   and math.isfinite(observed) and previous_time is not None
+                   and previous_time-1e-6 <= observed <= timestamp_s
+                   and timestamp_s-observed <= .5)
+            elapsed=max(0.,timestamp_s-previous_time) if previous_time is not None else 0.
+            if fresh and feedback.get('safety_wait') is True and feedback.get('plan_status')=='ACTIVE':
+                self.safety_wait_elapsed_s+=elapsed
+            else:
+                self.execution_elapsed_s+=elapsed
             if end is not None and progress_m>=end:
                 self.failed='ACTIVE_COMMAND_WINDOW_EXPIRED'
-            elif timestamp_s-self.started>=self.timeout_s:
+            elif self.execution_elapsed_s>=self.timeout_s:
                 self.failed='TIMEOUT'
+            elif self.safety_wait_elapsed_s>=self.safety_wait_timeout_s:
+                self.failed='SAFETY_WAIT_TIMEOUT'
             if not self.failed and feedback and feedback.get('request_id')==identity:
                 status=feedback.get('plan_status')
                 if status=='COMPLETED':
@@ -77,6 +96,11 @@ class CompletionCommandQueue:
                     self.index+=1
                 elif status in ('FAILED','CANCELLED'):
                     self.failed=status
+            if not self.failed and self.current is not None:
+                if self.safety_wait_elapsed_s>=self.safety_wait_timeout_s:
+                    self.failed='SAFETY_WAIT_TIMEOUT'
+                elif self.execution_elapsed_s>=self.timeout_s:
+                    self.failed='TIMEOUT'
             if self.failed:
                 self.events.append(dict(request_id=identity,status=self.failed,timestamp_s=timestamp_s,
                                         progress_m=progress_m,end_progress_m=end))
@@ -94,6 +118,8 @@ class CompletionCommandQueue:
                 self.current.pop('_dispatch_trigger_m')
                 self.current.pop('_dispatch_end_m')
                 self.started=timestamp_s
+                self.execution_elapsed_s=0.
+                self.safety_wait_elapsed_s=0.
                 self.events.append(dict(request_id=self.current['driving_intent']['request_id'],
                                         status='RUNNING',timestamp_s=timestamp_s,progress_m=progress_m))
         return deepcopy(self.current) if self.current else {'text':'Continue driving safely in the current lane.'}
@@ -102,4 +128,6 @@ class CompletionCommandQueue:
         return dict(mode='completion_serial',completed_commands=self.index,total_commands=len(self.commands),
                     active_request_id=self.current['driving_intent']['request_id'] if self.current else None,
                     failure=self.failed,events=deepcopy(self.events),
+                    execution_elapsed_s=self.execution_elapsed_s,
+                    safety_wait_elapsed_s=self.safety_wait_elapsed_s,
                     feedback_scope='model_execution_plan; not independent task assessment')

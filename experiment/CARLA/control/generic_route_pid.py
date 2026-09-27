@@ -44,6 +44,7 @@ class GenericRoutePID:
         self.fixed_delta_seconds = float(fixed_delta_seconds)
         self.target_speed_kmh = float(target_speed_kmh)
         self._default_speed_kmh = float(target_speed_kmh)
+        self._requested_cruise_speed_kmh = float(target_speed_kmh)
         self._action = "keep_lane"
         self._target_speed = float(target_speed_kmh)
         self._target_lane: str | None = None
@@ -55,6 +56,21 @@ class GenericRoutePID:
             world.get_map(),
             float(target_speed_kmh),
         )
+
+    def set_cruise_target_kmh(self, target: float | None) -> float:
+        """Keep the requested cruise goal distinct from the current road limit."""
+        if target is not None:
+            if isinstance(target,bool) or not math.isfinite(float(target)) or not 0 <= float(target) <= 120:
+                raise ValueError('Cruise target must be a finite speed from 0 to 120 km/h')
+            self._requested_cruise_speed_kmh=float(target)
+        requested=getattr(self,'_requested_cruise_speed_kmh',self._default_speed_kmh)
+        getter=getattr(getattr(self,'ego',None),'get_speed_limit',None)
+        try:limit=float(getter()) if callable(getter) else float('nan')
+        except (TypeError,ValueError,RuntimeError):limit=float('nan')
+        if not math.isfinite(limit) or limit<=0:
+            limit=self._default_speed_kmh
+        self.target_speed_kmh=max(0.,min(requested,limit,120.))
+        return self.target_speed_kmh
 
     def set_high_level_decision(self, decision: Mapping[str, Any]) -> None:
         """Store one gated VLA decision for the current control step."""
@@ -69,7 +85,7 @@ class GenericRoutePID:
         except (TypeError, ValueError):
             speed = 0.0
         self._target_speed = max(
-            0.0, min(self._default_speed_kmh, speed)
+            0.0, min(self.set_cruise_target_kmh(None), speed)
         )
         if self._action in {"stop", "emergency_brake"}:
             self._target_speed = 0.0

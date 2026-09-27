@@ -241,9 +241,15 @@ class SynchronizedMultiviewCameraRig:
             capture.record("lidar", measurement, "float32_le_xyzi")
         frame = int(measurement.frame)
         tensor = self._rasterize_lidar(measurement)
+        xyz = np.frombuffer(measurement.raw_data, dtype=np.float32).reshape(-1, 4)[:, :3]
+        pose = getattr(measurement, 'transform', None)
+        matrix = np.asarray(pose.get_matrix()) if hasattr(pose, 'get_matrix') else None
+        world_points = xyz @ matrix[:3, :3].T + matrix[:3, 3] if matrix is not None else None
         with self._condition:
             bundle = self._frames.setdefault(frame, {})
             bundle["lidar_bev"] = tensor
+            bundle['ground_points_world'] = world_points
+            bundle['ground_timestamp_s'] = float(measurement.timestamp)
             if all(name in bundle for name in self.available_cameras):
                 self._latest_multisensor_frame = max(
                     self._latest_multisensor_frame, frame
@@ -358,10 +364,18 @@ class SynchronizedMultiviewCameraRig:
                     "yaw_deg": float(measurement.transform.rotation.yaw),
                 },
                 "tracking_points": tracking_points,
+                "_ground_candidates": [dict(p, relative_height_m=p['distance_m']*math.sin(math.radians(p['altitude_deg'])),
+                    closing_speed_mps=radar_closing_speed_mps(p['relative_velocity_mps'])) for p in tracking_points],
+                "_sensor_matrix": np.asarray(measurement.transform.get_matrix()).tolist() if hasattr(measurement.transform, 'get_matrix') else None,
                 "tracking_fov_deg": 30.0,
                 "candidate_count": len(candidates),
                 "obstacle_candidate_count": len(obstacles),
                 "closing_candidate_count": len(closing),
+                "height_filter_min_m": -0.65,
+                "height_rejected_count": len(candidates)-len(obstacles),
+                "height_boundary_candidate_count": sum(-0.65 <= item['relative_height_m'] <= -0.55 for item in candidates),
+                "nearest_relative_height_m": round(float(nearest['relative_height_m']), 4) if nearest else None,
+                "nearest_altitude_deg": round(float(nearest['altitude_deg']), 4) if nearest else None,
                 "azimuth_obstacle_bins": azimuth_obstacle_bins,
                 "nearest_distance_m": (
                     round(float(nearest["distance_m"]), 3) if nearest else None
@@ -567,7 +581,23 @@ class SynchronizedMultiviewCameraRig:
             observations = self._radar_observations[direction]
             for frame, observation in reversed(observations.items()):
                 if frame <= limit:
-                    return dict(observation)
+                    from radar_ground_filter import filter_ground
+                    if observation.get('_filtered') is not None:
+                        return dict(observation['_filtered'])
+                    cloud = self._frames.get(frame, {}).get('ground_points_world')
+                    stamp = self._frames.get(frame, {}).get('ground_timestamp_s')
+                    if stamp is None or abs(stamp-observation.get('measurement_timestamp_s', -math.inf))>.002:
+                        cloud=None
+                    if cloud is not None and stamp is not None:
+                        recent = [b['ground_points_world'] for f,b in self._frames.items()
+                            if f<=frame and b.get('ground_points_world') is not None
+                            and 0<=stamp-b.get('ground_timestamp_s', -math.inf)<=.2]
+                        cloud = np.concatenate(recent)
+                    filtered = filter_ground(observation, cloud, observation.get('_sensor_matrix'))
+                    filtered['ground_filter']['history_limit_s'] = .2
+                    if cloud is not None:
+                        observation['_filtered'] = filtered
+                    return filtered
         return {
             "schema_version": f"physical_{direction}_radar/1.0",
             "direction": direction,

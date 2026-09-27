@@ -1,0 +1,404 @@
+    1 """Independent episode journal and task assessment; never supplies policy inputs."""
+    2 from dataclasses import asdict
+    3 import hashlib
+    4 import json
+    5 from pathlib import Path
+    6 from types import SimpleNamespace as NS
+    7
+    8 from .catalog import ConfigError, load_catalog, load_episode_catalog
+    9 from .monitor import TaskMonitor
+   10 from .safety_events import SafetyLedger
+   11 from .task_oracle import load_profile
+   12 from .role_journal import RoleJournal, configured_role_anchors
+   13 from .traffic_observation import observe_traffic, TrafficDensitySummary
+   14 from .truth_capture import ActorBinding, RouteProjector, SnapshotTruthCollector, prepare_lane_fixture
+   15
+   16
+   17 def attach_episode(scene,route,world,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+   18     from .turn_fixture import waypoint_route
+   19     if not route or source_config is None:
+   20         raise ConfigError('formal assessment requires an explicit source config and route')
+   21     if not isinstance(route[0],dict):
+   22         route=waypoint_route([item[0] for item in route])
+   23     settings=world.get_settings()
+   24     metadata=dict(runner=dict(run_metadata or {}),world_settings={
+   25         key:getattr(settings,key,None) for key in ('synchronous_mode','fixed_delta_seconds',
+   26         'substepping','max_substep_delta_time','max_substeps','no_rendering_mode')})
+   27     observer=EpisodeAssessment(scene,route,world.get_map(),ego,output,source_config,initial_route_s_m,task_selector,metadata)
+   28     observer.actor_provider=world.get_actors
+   29     observer.attach_sensors(world)
+   30     return observer
+   31
+   32
+   33 def assessment_outcome(summary):
+   34     """Process result for recorded checks, never a full benchmark certificate."""
+   35     statuses=[v.get('status') for v in summary.get('tasks',{}).values()]
+   36     safety=summary.get('episode_safety',{}).get('status')
+   37     if summary.get('status')=='ASSESSMENT_ERROR':
+   38         code,status=4,'ASSESSMENT_ERROR'
+   39     elif safety=='FAILURE' or any(s in {'FAILURE','TIMEOUT'} for s in statuses):
+   40         code,status=2,'CHECK_FAILED'
+   41     elif (not statuses or safety!='NO_RECORDED_VIOLATION' or
+   42           not any(s=='SUCCESS' for s in statuses) or
+   43           any(s not in {'SUCCESS','NOT_RUN'} for s in statuses)):
+   44         code,status=3,'INCOMPLETE_EVIDENCE'
+   45     else:
+   46         code,status=0,'RECORDED_CHECKS_PASSED'
+   47     return dict(exit_code=code,status=status,scope='recorded_task_and_safety_checks_only',
+   48                 full_benchmark_acceptance=False)
+   49
+   50
+   51 def finish_episode(observer):
+   52     """Preserve teardown even if assessment fails; never turn that failure into success."""
+   53     if observer is None:
+   54         return 0
+   55     if hasattr(observer,'final_exit_code'):
+   56         return observer.final_exit_code
+   57     try:
+   58         payload=observer.close()
+   59     except Exception as error:
+   60         try:
+   61             observer.stream.close()
+   62         except Exception:
+   63             pass
+   64         payload=dict(status='ASSESSMENT_ERROR',reason=f'{type(error).__name__}: {error}',benchmark_ready=False)
+   65         print('Independent assessment failed:',payload['reason'])
+   66     outcome=assessment_outcome(payload)
+   67     try:
+   68         if payload.get('status')=='ASSESSMENT_ERROR':
+   69             (observer.output/'summary.json').write_text(json.dumps(payload,indent=2),encoding='utf-8')
+   70         (observer.output/'run_outcome.json').write_text(json.dumps(outcome,indent=2),encoding='utf-8')
+   71     except OSError as error:
+   72         print('Independent assessment result could not be saved:',error)
+   73         outcome['exit_code']=4
+   74     observer.final_exit_code=outcome['exit_code']
+   75     return observer.final_exit_code
+   76
+   77
+   78 def pack_actor(actor):
+   79     pose,velocity=actor.get_transform(),actor.get_velocity()
+   80     return dict(x=pose.location.x,y=pose.location.y,z=pose.location.z,yaw=pose.rotation.yaw,
+   81                 vx=velocity.x,vy=velocity.y,vz=velocity.z)
+   82
+   83
+   84 def unpack_snapshot(row, location_factory=NS):
+   85     actors={}
+   86     for identity,state in row['actors'].items():
+   87         pose=NS(location=location_factory(**{k:state[k] for k in ('x','y','z')}),rotation=NS(yaw=state['yaw']))
+   88         velocity=NS(x=state['vx'],y=state['vy'],z=state['vz'])
+   89         actors[int(identity)]=NS(get_transform=lambda p=pose:p,get_velocity=lambda v=velocity:v)
+   90     return NS(frame=row['frame'],timestamp=NS(elapsed_seconds=row['sim_time_s']),find=actors.get)
+   91
+   92
+   93 class EpisodeAssessment:
+   94     def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+   95         self.catalog=load_episode_catalog(scene, source_config, world_map)
+   96         from .selection import assessment_selection
+   97         self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+   98         if hashlib.sha256(Path(source_config).read_bytes()).hexdigest()!=self.catalog.source_sha256:
+   99             raise ConfigError('assessment source configuration differs from registered catalog')
+  100         if world_map.name.split('/')[-1]!=self.catalog.map_name:
+  101             raise ConfigError('assessment map mismatch')
+  102         self.route=route
+  103         self.projector=RouteProjector(route)
+  104         self.map=world_map
+  105         self.ego=ego
+  106         self.output=Path(output)
+  107         self.output.mkdir(parents=True,exist_ok=False)
+  108         if not route[0]['distance_m']<=initial_route_s_m<=route[-1]['distance_m']:
+  109             raise ConfigError('episode start outside route')
+  110         self.binding=ActorBinding.from_actor(ego,initial_route_s_m)
+  111         self.ledger=SafetyLedger()
+  112         self.sensors=[]
+  113         self.closed=False
+  114         self.frames=0
+  115         self.last_frame=None
+  116         self.location_factory=NS
+  117         self.hint=initial_route_s_m
+  118         self.monitors={}
+  119         self.unavailable={}
+  120         self.profiles={}
+  121         for task in self.assessment_tasks:
+  122             profile=load_profile(self.catalog,task)
+  123             if task.activate_m<initial_route_s_m:
+  124                 self.unavailable[task.task_id]='before_segment_start'
+  125             elif profile is None:
+  126                 self.unavailable[task.task_id]='missing_or_unbound_profile'
+  127             else:
+  128                 self.profiles[task.task_id]=profile
+  129         anchors=configured_role_anchors(self.catalog.events)
+  130         self.role_journal=RoleJournal(self.profiles.values(),anchors)
+  131         self.actor_provider=None
+  132         self.traffic_density=TrafficDensitySummary()
+  133         self.traffic_segments={}
+  134         map_xml=world_map.to_opendrive() if hasattr(world_map,'to_opendrive') else None
+  135         map_hash=hashlib.sha256(map_xml.encode('utf-8')).hexdigest() if map_xml else None
+  136         if map_xml:
+  137             (self.output/'map.xodr').write_bytes(map_xml.encode('utf-8'))
+  138         self.stream=(self.output/'episode_truth.jsonl').open('x',encoding='utf-8')
+  139         (self.output/'route.json').write_text(json.dumps(route,indent=2),encoding='utf-8')
+  140         self.manifest=dict(scene_id=scene,source_sha256=self.catalog.source_sha256,
+  141             geometry_binding=self.catalog.geometry_binding,
+  142             route_sha256=hashlib.sha256(json.dumps(route,sort_keys=True,separators=(',',':'),allow_nan=False).encode('utf-8')).hexdigest(),
+  143             run_metadata=json.loads(json.dumps(run_metadata or {},allow_nan=False)),
+  144             assessment_profile_sha256={identity:hashlib.sha256(
+  145                 json.dumps(profile,sort_keys=True,separators=(',',':'),allow_nan=False).encode('utf-8')).hexdigest()
+  146                 for identity,profile in self.profiles.items()},
+  147             reproducibility_scope='recorded inputs and settings; not deterministic trajectory certification',
+  148             task_selector=task_selector,selected_task_ids=[task.task_id for task in self.selected_tasks],
+  149             evidence_task_ids=[task.task_id for task in self.assessment_tasks],
+  150             map_name=world_map.name,map_geometry_sha256=map_hash,ego_binding=asdict(self.binding),
+  151             mode='formal_runner_observer',policy_inputs=False,
+  152             required_roles=self.role_journal.expected,
+  153             safety_scope=['collision','solid_lane_marking'])
+  154         (self.output/'manifest.json').write_text(json.dumps(self.manifest,indent=2),encoding='utf-8')
+  155
+  156     def attach_sensors(self,world):
+  157         import carla
+  158         try:
+  159             for kind in ('collision','lane_invasion'):
+  160                 sensor=world.spawn_actor(world.get_blueprint_library().find('sensor.other.'+kind),
+  161                                          carla.Transform(),attach_to=self.ego)
+  162                 self.sensors.append(sensor)
+  163                 if kind=='collision':
+  164                     sensor.listen(lambda e:self.ledger.record('collision',int(e.frame),other_actor_id=e.other_actor.id))
+  165                 else:
+  166                     sensor.listen(lambda e:self.ledger.record('lane_invasion',int(e.frame),
+  167                         illegal=any('Solid' in str(m.type) or str(m.type)=='Curb' for m in e.crossed_lane_markings)))
+  168         except Exception:
+  169             for sensor in self.sensors:
+  170                 if sensor.is_listening:
+  171                     sensor.stop()
+  172                 sensor.destroy()
+  173             self.sensors.clear()
+  174             self.stream.close()
+  175             raise
+  176
+  177     def observe(self,snapshot):
+  178         if self.closed:
+  179             raise RuntimeError('episode assessment closed')
+  180         if self.last_frame is not None and snapshot.frame<=self.last_frame:
+  181             raise ConfigError('duplicate or nonmonotonic episode frame')
+  182         actor=snapshot.find(self.binding.actor_id)
+  183         if actor is None:
+  184             raise ConfigError('episode ego missing')
+  185         point=actor.get_transform().location
+  186         self.location_factory=type(point)
+  187         self.hint=self.projector.project(point,self.hint)['route_s_m']
+  188         row=dict(frame=snapshot.frame,sim_time_s=snapshot.timestamp.elapsed_seconds,
+  189                  route_s_m=self.hint,actors={str(self.binding.actor_id):pack_actor(actor)})
+  190         live_actors=list(self.actor_provider()) if self.actor_provider is not None else []
+  191         if self.actor_provider is not None:
+  192             vehicle_ids=[a.id for a in live_actors if getattr(a,'type_id','').startswith('vehicle.')]
+  193             observation=observe_traffic(snapshot,self.binding.actor_id,vehicle_ids,self.map)
+  194             observation['population']='all_world_vehicles_including_task_actors'
+  195             row['traffic_observation']=observation
+  196             self.traffic_density.update(observation)
+  197             segment=int(self.hint//500)*500
+  198             self.traffic_segments.setdefault(segment,TrafficDensitySummary()).update(observation)
+  199         if self.role_journal.expected:
+  200             roles,actors=self.role_journal.capture(snapshot,live_actors,self.projector,
+  201                                                   self.hint,pack_actor)
+  202             if str(self.binding.actor_id) in actors:
+  203                 raise ConfigError('task role must not bind ego')
+  204             row['roles']=roles
+  205             row['actors'].update(actors)
+  206         self.stream.write(json.dumps(row,allow_nan=False)+'\n')
+  207         self.stream.flush()
+  208         self.frames+=1
+  209         self.last_frame=snapshot.frame
+  210
+  211     def _prepare(self,task_id,profile,snapshot,progress,role_states=None):
+  212         fixture={'steps':{}}
+  213         try:
+  214             for dependency in profile.get('requires_task_success',[]):
+  215                 prior=self.monitors.get(dependency)
+  216                 result=prior.oracle.result() if prior is not None else {}
+  217                 completion=next((e for e in result.get('evidence',[]) if e['event']=='SUCCESS'),None)
+  218                 if result.get('status')!='SUCCESS' or completion is None or completion['frame']>=snapshot.frame:
+  219                     raise ConfigError('prerequisite not independently completed: '+dependency)
+  220                 fixture.setdefault('prerequisites',{})[dependency]=dict(status='SUCCESS',
+  221                     source='independent_task_oracle',source_sha256=self.catalog.source_sha256,
+  222                     completion_frame=completion['frame'])
+  223             roles={}
+  224             required_roles = {step['target_role'] for step in profile['steps'] if 'target_role' in step}
+  225             required_roles.update(role for step in profile['steps'] for role in step.get('target_roles', []))
+  226             for role in sorted(required_roles):
+  227                 state=(role_states or {}).get(role,{})
+  228                 if state.get('status')!='BOUND':
+  229                     raise ConfigError(f'role {role} not valid at task entry: '+state.get('reason','not recorded'))
+  230                 roles[role]=ActorBinding(**state['binding'])
+  231                 if 'route_s_m' in state:
+  232                     roles[role]=ActorBinding(**dict(state['binding'],initial_route_s_m=state['route_s_m']))
+  233                 if snapshot.find(roles[role].actor_id) is None:
+  234                     raise ConfigError(f'role {role} absent at task entry')
+  235             from .turn_fixture import bind_junction_sequence
+  236             later=[task.activate_m for task in self.catalog.tasks if task.activate_m>profile['activate_m']]
+  237             junction_end=profile.get('end_route_s_m',min(later) if later else self.route[-1]['distance_m'])
+  238             fixture['steps'].update(bind_junction_sequence(self.route,self.map,self.location_factory,
+  239                 profile['steps'],progress,junction_end))
+  240             for i,step in enumerate(profile['steps']):
+  241                 if step['kind']=='maintain_interval' and step.get('keep_lane'):
+  242                     from .lane_continuity import build_lane_corridor
+  243                     fixture['steps'][str(i)]=dict(lane_corridor=build_lane_corridor(
+  244                         self.map,self.route,step['from_route_s_m'],self.location_factory,
+  245                         step['until_route_s_m']))
+  246                 elif step['kind']=='speed' and step.get('keep_lane'):
+  247                     from .lane_continuity import trace_lane_corridor
+  248                     from .truth_capture import lane_key
+  249                     end=profile.get('end_route_s_m',self.route[-1]['distance_m'])
+  250                     evidence=trace_lane_corridor(self.map,self.route,profile['activate_m'],
+  251                                                 self.location_factory,end)
+  252                     segments=evidence['lane_corridor']
+  253                     current=self.map.get_waypoint(snapshot.find(self.binding.actor_id).get_transform().location)
+  254                     allowed={key for s in segments if s['start_m']<=progress<=s['end_m'] for key in s['lane_keys']}
+  255                     if current is None or lane_key(current) not in allowed:
+  256                         raise ConfigError('current lane differs from speed-task route corridor')
+  257                     fixture['steps'][str(i)]=evidence
+  258                 elif step['kind']=='destination':
+  259                     end=self.route[-1]
+  260                     if end['distance_m']<self.catalog.route_length_m:
+  261                         raise ConfigError('recorded route ends before required scene distance')
+  262                     fixture['steps'][str(i)]=dict(route_end_s_m=end['distance_m'],
+  263                         position_m={key:end[key] for key in ('x','y','z')})
+  264                     if step.get('keep_lane'):
+  265                         from .lane_continuity import build_lane_corridor
+  266                         fixture['steps'][str(i)]['lane_corridor']=build_lane_corridor(
+  267                             self.map,self.route,profile['activate_m'],self.location_factory)
+  268                         current=self.map.get_waypoint(snapshot.find(self.binding.actor_id).get_transform().location)
+  269                         segments=fixture['steps'][str(i)]['lane_corridor']
+  270                         allowed={key for segment in segments if segment['start_m']<=progress<=segment['end_m']
+  271                                  for key in segment['lane_keys']}
+  272                         from .truth_capture import lane_key
+  273                         if current is None or lane_key(current) not in allowed:
+  274                             raise ConfigError('current lane differs from destination route corridor')
+  275                 elif step['kind'] in {'lane_change','guarded_lane_change'}:
+  276                     location=snapshot.find(self.binding.actor_id).get_transform().location
+  277                     if i>0:
+  278                         previous = fixture['steps'].get(str(i-1), {})
+  279                         if 'start_route_s_m' in step:
+  280                             anchor=step['start_route_s_m']
+  281                         elif profile['steps'][i-1]['kind'] in {'turn','straight_junction'} and 'junction_end_m' in previous:
+  282                             anchor=previous['junction_end_m']+5.0
+  283                         elif all(s['kind'] in {'speed','speed_ceiling','speed_change','lane_hold','wait_clear'} for s in profile['steps'][:i]):
+  284                             anchor=progress
+  285                         else:
+  286                             raise ConfigError('sequential lane change requires explicit route entry')
+  287                         if not progress<=anchor<=self.route[-1]['distance_m']:
+  288                             raise ConfigError('sequential lane entry outside remaining route')
+  289                         point=min(self.route,key=lambda p:abs(p['distance_m']-anchor))
+  290                         location=self.location_factory(**{k:point[k] for k in ('x','y','z')})
+  291                     fixture['steps'][str(i)]=prepare_lane_fixture(self.map,location,step['direction'])
+  292                 elif step['kind'] in {'yield_pedestrian','wait_clear'}:
+  293                     from .event_fixture import crosswalk_fixture, route_crossing_fixture
+  294                     target_roles=set(step.get('target_roles',[step.get('target_role')]))
+  295                     events=[e for e in self.catalog.events
+  296                             if target_roles <= set(e.get('ground_truth',{}).get('actor_roles',[]))
+  297                             and ('crosswalk_polygon_index' in e or e.get('scenario')=='temporary_worker_crossing'
+  298                                  or e.get('kind')=='bus_stop')]
+  299                     if len(events)!=1:
+  300                         raise ConfigError('pedestrian requires one source-configured crossing event')
+  301                     event=events[0]
+  302                     if event.get('kind')=='bus_stop':
+  303                         from .event_fixture import bus_passenger_fixture
+  304                         fixture['steps'][str(i)]=bus_passenger_fixture(
+  305                             self.map,self.route,event,target_roles,self.location_factory)
+  306                         continue
+  307                     if event.get('scenario')=='temporary_worker_crossing':
+  308                         workers=[w for w in event.get('workers',[]) if w.get('role_name') in target_roles]
+  309                         anchors={w['start_s_m'] for w in workers}
+  310                         if len(workers)!=len(target_roles) or len(anchors)!=1:
+  311                             raise ConfigError('crossing roles require one configured unmarked crossing anchor')
+  312                         fixture['steps'][str(i)]=route_crossing_fixture(
+  313                             self.map,self.route,anchors.pop(),self.location_factory)
+  314                         continue
+  315                     if 'crosswalk_polygon_index' not in event or 'anchor_progress_m' not in event:
+  316                         raise ConfigError('crossing event lacks explicit geometry')
+  317                     fixture['steps'][str(i)]=crosswalk_fixture(self.map,self.route,
+  318                         event['crosswalk_polygon_index'],event['anchor_progress_m'])
+  319             for constraint in profile.get('constraints',[]):
+  320                 if constraint.get('keep_lane'):
+  321                     from .lane_continuity import build_lane_corridor
+  322                     fixture.setdefault('constraints',{})[constraint['id']]=dict(
+  323                         lane_corridor=build_lane_corridor(self.map,self.route,
+  324                             constraint['from_route_s_m'],self.location_factory,constraint['until_route_s_m']))
+  325             binding=ActorBinding(**dict(asdict(self.binding),initial_route_s_m=progress))
+  326             collector=SnapshotTruthCollector(profile,self.route,self.map,binding,roles,fixture,'formal_route')
+  327             self.monitors[task_id]=TaskMonitor(collector,self.output/'tasks'/task_id)
+  328         except (ConfigError, KeyError, TypeError, ValueError) as error:
+  329             self.unavailable[task_id]='invalid_entry_fixture: '+str(error)
+  330
+  331     def close(self):
+  332         if self.closed:
+  333             return self.summary
+  334         self.stream.close()
+  335         cleanup_errors=[]
+  336         for sensor in self.sensors:
+  337             try:
+  338                 if sensor.is_listening:
+  339                     sensor.stop()
+  340             except RuntimeError as error:
+  341                 cleanup_errors.append(str(error))
+  342             try:
+  343                 sensor.destroy()
+  344             except RuntimeError as error:
+  345                 cleanup_errors.append(str(error))
+  346         self.sensors.clear()
+  347         if cleanup_errors:
+  348             raise ConfigError('assessment sensor cleanup failed: '+'; '.join(cleanup_errors))
+  349         self.ledger.seal_after_quiet()
+  350         try:
+  351             with (self.output/'episode_truth.jsonl').open(encoding='utf-8') as stream:
+  352                 for line in stream:
+  353                     row=json.loads(line)
+  354                     snapshot=unpack_snapshot(row,self.location_factory)
+  355                     for identity,profile in self.profiles.items():
+  356                         if identity in self.unavailable or row['route_s_m']<profile['activate_m']:
+  357                             continue
+  358                         if identity not in self.monitors:
+  359                             self._prepare(identity,profile,snapshot,row['route_s_m'],row.get('roles'))
+  360                         if identity in self.monitors:
+  361                             needed=self.monitors[identity].collector.bindings.keys()-{'ego'}
+  362                             invalid=[role for role in needed if row.get('roles',{}).get(role,{}).get('status')!='BOUND']
+  363                             self.monitors[identity].observe(snapshot,self.ledger.packet(snapshot.frame),
+  364                                 dict(frame=snapshot.frame,complete=True,valid=not invalid,
+  365                                      reason='invalid task roles: '+', '.join(sorted(invalid))))
+  366         finally:
+  367             for monitor in self.monitors.values():
+  368                 monitor.close()
+  369         results={}
+  370         for task in self.assessment_tasks:
+  371             identity=task.task_id
+  372             if identity in self.monitors:
+  373                 results[identity]=self.monitors[identity].feedback()
+  374             elif identity in self.unavailable:
+  375                 reason=self.unavailable[identity]
+  376                 results[identity]=dict(status='NOT_RUN' if reason=='before_segment_start' else
+  377                                        'SCENE_INVALID' if reason.startswith('invalid_entry_fixture:')
+  378                                        else 'UNSUPPORTED',reason=reason)
+  379             else:
+  380                 results[identity]=dict(status='NOT_REACHED',reason='activation_not_observed')
+  381         selected_ids={task.task_id for task in self.selected_tasks}
+  382         prerequisite_results={key:value for key,value in results.items() if key not in selected_ids}
+  383         results={key:value for key,value in results.items() if key in selected_ids}
+  384         successful=sum(v['status']=='SUCCESS' for v in results.values())
+  385         verified=sum(v.get('instruction_status')=='SUCCESS' for v in results.values())
+  386         self.summary=dict(**self.manifest,captured_frames=self.frames,final_route_s_m=self.hint,
+  387             tasks=results,prerequisite_tasks=prerequisite_results,success_count=successful,total_tasks=len(results),
+  388             recorded_criteria_pass_rate=successful/len(results),
+  389             verified_instruction_success_count=verified,
+  390             verified_completion_rate_lower_bound=verified/len(results),
+  391             success_count_scope='registered_criteria_not_full_instruction_semantics',
+  392             assessed_tasks=len(self.monitors),benchmark_ready=False,
+  393             traffic_density=dict(status='RECORDED' if self.traffic_density.frames else 'UNAVAILABLE',
+  394                 overall=self.traffic_density.result(),
+  395                 route_segments=[dict(from_m=start,until_m=start+500,**summary.result())
+  396                     for start,summary in sorted(self.traffic_segments.items())],
+  397                 population='all_world_vehicles_including_task_actors',
+  398                 sampling='each observed frame; frame weighted, not distance weighted'),
+  399             role_capture_errors=self.role_journal.errors,
+  400             episode_safety=self.ledger.episode_result(),safety=self.ledger.export(),
+  401             scope='partial_formal_runner_assessment_not_full_acceptance')
+  402         (self.output/'summary.json').write_text(json.dumps(self.summary,ensure_ascii=False,indent=2),encoding='utf-8')
+  403         self.closed=True
+  404         return self.summary

@@ -1,0 +1,232 @@
+{
+  "scene_id": "scene_3",
+  "source_sha256": "007c79147004474e15af945092ba428288bbe4afd7be93b7a721d7ea5089438d",
+  "geometry_binding": null,
+  "route_sha256": "3ddc4557b8028687aa47615805d87980a99f334312633fcb4e6a4c5e6f0b0709",
+  "run_metadata": {
+    "runner": {
+      "traffic_seed": 42,
+      "controller": "vla-route-pid",
+      "sensor_recording": false
+    },
+    "world_settings": {
+      "synchronous_mode": true,
+      "fixed_delta_seconds": 0.05,
+      "substepping": true,
+      "max_substep_delta_time": 0.01,
+      "max_substeps": 10,
+      "no_rendering_mode": false
+    }
+  },
+  "assessment_profile_sha256": {
+    "scene3_general_hazard": "504b85141bb124630f715ec3aac69962eb47bfd25e5b89c355d298ee1f0ff031",
+    "scene3_cut_in_decelerate": "61b0f894070425f2d44502b86eab2ba4277eada3de3773ff6e6eed4622fa091e",
+    "scene3_work_zone_warning": "2d98962ee75ce566be42628e00c8c3d15cfb3859e439f5e944c3c73a346371f7",
+    "scene3_right_lane_closure": "f78c31d632dd3a0af07386c2fec3512d262cafafb2418801a066befbdb5f9d47",
+    "scene3_pass_work_zone": "5b3f7a3929c1c26bb4e206481ed123996efbeb6f2d28834ee486506b26b8d6e2",
+    "scene3_worker_crossing": "46f343dd47e1147e5f1ff06111ac00f5b91d71fee7f631181ad9854bd4215693",
+    "scene3_blocked_lane_change_left": "3d4290182110074fdb4ea7e37de164008e0d6ed880e1a50eb48bb574607e9c91",
+    "scene3_resume_normal_driving": "b51b8276acb984aed4566b4f653836efcb5f85930af3e9800194cf9db7093ca9"
+  },
+  "reproducibility_scope": "recorded inputs and settings; not deterministic trajectory certification",
+  "task_selector": "all",
+  "selected_task_ids": [
+    "scene3_general_hazard",
+    "scene3_cut_in_decelerate",
+    "scene3_work_zone_warning",
+    "scene3_right_lane_closure",
+    "scene3_pass_work_zone",
+    "scene3_worker_crossing",
+    "scene3_blocked_lane_change_left",
+    "scene3_resume_normal_driving"
+  ],
+  "evidence_task_ids": [
+    "scene3_general_hazard",
+    "scene3_cut_in_decelerate",
+    "scene3_work_zone_warning",
+    "scene3_right_lane_closure",
+    "scene3_pass_work_zone",
+    "scene3_worker_crossing",
+    "scene3_blocked_lane_change_left",
+    "scene3_resume_normal_driving"
+  ],
+  "map_name": "Carla/Maps/Town05_Opt",
+  "map_geometry_sha256": "7edc53b0be840e177598da7a4ed9571146d7b2595ce280d154c90f92e8a48851",
+  "ego_binding": {
+    "actor_id": 778,
+    "half_length_m": 2.44619083404541,
+    "half_width_m": 0.9183566570281982,
+    "initial_route_s_m": 0,
+    "offset_x_m": -0.006292593199759722,
+    "offset_y_m": 9.434893399884459e-06,
+    "box_yaw_deg": 0.0
+  },
+  "mode": "formal_runner_observer",
+  "policy_inputs": false,
+  "required_roles": {
+    "scene3_cut_in_vehicle": "vehicle.",
+    "scene3_crossing_worker": "walker.pedestrian.",
+    "scene3_maintenance_vehicle": "vehicle.",
+    "scene3_gap_rear_vehicle": "vehicle.",
+    "scene3_gap_front_vehicle": "vehicle."
+  },
+  "safety_scope": [
+    "collision",
+    "solid_lane_marking"
+  ],
+  "captured_frames": 1200,
+  "final_route_s_m": 350.47058004778484,
+  "tasks": {
+    "scene3_general_hazard": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "scene3_cut_in_decelerate": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "scene3_work_zone_warning": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "scene3_right_lane_closure": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "scene3_pass_work_zone": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "scene3_worker_crossing": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "scene3_blocked_lane_change_left": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    },
+    "scene3_resume_normal_driving": {
+      "status": "NOT_REACHED",
+      "reason": "activation_not_observed"
+    }
+  },
+  "prerequisite_tasks": {},
+  "success_count": 0,
+  "total_tasks": 8,
+  "recorded_criteria_pass_rate": 0.0,
+  "verified_instruction_success_count": 0,
+  "verified_completion_rate_lower_bound": 0.0,
+  "success_count_scope": "registered_criteria_not_full_instruction_semantics",
+  "assessed_tasks": 0,
+  "benchmark_ready": false,
+  "traffic_density": {
+    "status": "RECORDED",
+    "overall": {
+      "frames": 1200,
+      "minimum": {
+        "front_cone": 0,
+        "same_direction": 0,
+        "opposite_direction": 0,
+        "cross_direction": 0,
+        "ego_lane": 0
+      },
+      "maximum": {
+        "front_cone": 0,
+        "same_direction": 0,
+        "opposite_direction": 0,
+        "cross_direction": 0,
+        "ego_lane": 0
+      },
+      "mean": {
+        "front_cone": 0.0,
+        "same_direction": 0.0,
+        "opposite_direction": 0.0,
+        "cross_direction": 0.0,
+        "ego_lane": 0.0
+      },
+      "below_three_front_actor_fraction": 1.0,
+      "empty_ego_lane_fraction": 1.0,
+      "scope": "sampled geometry only; not visual traffic acceptance"
+    },
+    "route_segments": [
+      {
+        "from_m": 0,
+        "until_m": 500,
+        "frames": 1200,
+        "minimum": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "maximum": {
+          "front_cone": 0,
+          "same_direction": 0,
+          "opposite_direction": 0,
+          "cross_direction": 0,
+          "ego_lane": 0
+        },
+        "mean": {
+          "front_cone": 0.0,
+          "same_direction": 0.0,
+          "opposite_direction": 0.0,
+          "cross_direction": 0.0,
+          "ego_lane": 0.0
+        },
+        "below_three_front_actor_fraction": 1.0,
+        "empty_ego_lane_fraction": 1.0,
+        "scope": "sampled geometry only; not visual traffic acceptance"
+      }
+    ],
+    "population": "all_world_vehicles_including_task_actors",
+    "sampling": "each observed frame; frame weighted, not distance weighted"
+  },
+  "role_capture_errors": {},
+  "episode_safety": {
+    "status": "NO_RECORDED_VIOLATION",
+    "coverage": [
+      "collision",
+      "solid_lane_marking"
+    ],
+    "limitations": [
+      "no_transport_ack",
+      "red_light_and_other_violations_not_measured"
+    ]
+  },
+  "safety": {
+    "events": [
+      {
+        "kind": "lane_invasion",
+        "frame": 8973,
+        "illegal": false
+      },
+      {
+        "kind": "lane_invasion",
+        "frame": 9011,
+        "illegal": false
+      },
+      {
+        "kind": "lane_invasion",
+        "frame": 9018,
+        "illegal": false
+      },
+      {
+        "kind": "lane_invasion",
+        "frame": 9050,
+        "illegal": false
+      }
+    ],
+    "late_events": [],
+    "sealed": true,
+    "coverage": [
+      "collision",
+      "solid_lane_marking"
+    ],
+    "limitations": [
+      "no_transport_ack",
+      "red_light_and_other_violations_not_measured"
+    ]
+  },
+  "scope": "partial_formal_runner_assessment_not_full_acceptance"
+}
