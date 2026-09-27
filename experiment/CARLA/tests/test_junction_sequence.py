@@ -1,4 +1,5 @@
 import pytest
+from types import SimpleNamespace as NS
 
 from benchmark import turn_fixture
 from benchmark.catalog import ConfigError,load_catalog
@@ -36,4 +37,20 @@ def test_new_profiles_bind_to_source():
     for identity in ('s2_t05_cmd_13','s2_t05_cmd_15'):
         profile=load_profile(catalog,catalog.select(identity)[0])
         assert profile is not None
-        assert len([s for s in profile['steps'] if s['kind'] in {'turn','straight_junction'}])==3
+        expected=4 if identity=='s2_t05_cmd_13' else 3
+        assert len([s for s in profile['steps'] if s['kind'] in {'turn','straight_junction'}])==expected
+
+
+def test_straight_entry_projection_tie_requires_interior_junction():
+    route=[dict(distance_m=d,x=d,y=0,z=0,yaw=0,road_id=1 if d<10 else 2,
+                section_id=0,lane_id=-1,is_junction=10<=d<20)
+           for d in (0,5,10,15,20,25)]
+    def waypoint(location):
+        return NS(is_junction=location.x==15,junction_id=7)
+    world_map=NS(get_waypoint=waypoint)
+    result=turn_fixture.bind_straight_junction(route,world_map,
+        lambda **kw:NS(**kw),0,25,20)
+    assert result['junction_id']==7
+    world_map.get_waypoint=lambda location:NS(is_junction=False,junction_id=7)
+    with pytest.raises(ConfigError,match='junction geometry'):
+        turn_fixture.bind_straight_junction(route,world_map,lambda **kw:NS(**kw),0,25,20)

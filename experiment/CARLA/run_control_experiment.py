@@ -442,6 +442,8 @@ def parse_args():
     parser.add_argument('--bind-task-geometry', action='store_true',
                         help='Bind task distances to valid map geometry and save the resolved assessment config')
     parser.add_argument("--duration-s", type=float, default=None)
+    parser.add_argument('--max-stall-s', type=float, default=0.0,
+                        help='End a recorded run after this many simulation seconds without 2 m route progress; 0 disables')
     parser.add_argument("--fixed-delta-s", type=float, default=0.05)
     parser.add_argument("--target-speed-kmh", type=float, default=25.0)
     parser.add_argument("--controller", choices=["pid", "basic", "behavior"], default="pid")
@@ -968,6 +970,8 @@ def main():
         start_sim_time = world.get_snapshot().timestamp.elapsed_seconds
         sim_time = 0.0
         runner_stop_reason = "duration_limit"
+        best_route_progress_m = 0.0
+        last_route_advance_s = 0.0
         latest_scene_sensor_events = scene_sensor_events(None)
         previous_snapshot_time = start_sim_time
         control_delta_s = float(args.fixed_delta_s)
@@ -1252,10 +1256,18 @@ def main():
             for event in call_scenario_method(scenario, "drain_event_log", []):
                 logger.log_event(event)
             records.append(record)
+            route_progress_m = record["scenario_status"].get("route_progress_m")
+            if isinstance(route_progress_m,(int,float)) and not isinstance(route_progress_m,bool):
+                if route_progress_m >= best_route_progress_m + 2.0:
+                    best_route_progress_m = route_progress_m
+                    last_route_advance_s = sim_time
             if scenario.finished():
                 runner_stop_reason = "scenario_{0}".format(
                     call_scenario_method(scenario, "get_status", {}).get("status", "finished").lower()
                 )
+                break
+            if args.max_stall_s > 0 and sim_time - last_route_advance_s >= args.max_stall_s:
+                runner_stop_reason = 'route_stalled'
                 break
             if args.stop_when_goal_reached and args.goal_distance_m is not None:
                 if travelled_distance_m >= args.goal_distance_m:

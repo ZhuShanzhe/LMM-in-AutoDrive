@@ -86,9 +86,9 @@ class LampStateClassifier:
         for crop, p in zip(crops, probs):
             index = int(p.argmax()); state = STATES[index]; confidence = float(p[index])
             counts = color_evidence(crop)
-            # A model prediction cannot create a permissive state without current RGB evidence.
-            if state != 'UNKNOWN' and (confidence < self.threshold or sum(counts.values()) < 3
-                    or (state=='GREEN' and (counts['GREEN']<3 or counts['GREEN']>.24*crop.shape[0]*crop.shape[1]))):
+            # Reject confident predictions unsupported by the current lamp pixels.
+            if state != 'UNKNOWN' and (confidence < self.threshold or counts[state] < 3
+                    or (state=='GREEN' and counts['GREEN']>.24*crop.shape[0]*crop.shape[1])):
                 state, confidence = 'UNKNOWN', 0.
             output.append(dict(state=state, color_confidence=confidence,
                 probabilities={k:float(v) for k,v in zip(STATES,p)}, color_pixels=counts,

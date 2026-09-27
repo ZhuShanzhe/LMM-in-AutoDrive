@@ -1,7 +1,7 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_3",
-  "source_sha256": "007c79147004474e15af945092ba428288bbe4afd7be93b7a721d7ea5089438d",
+  "source_sha256": "88d7fbff44150e7aec69048c8dcb8759a6e9f78a961ce0229987e7350b425116",
   "task_id": "scene3_blocked_lane_change_left",
   "activate_m": 4700,
   "end_route_s_m": 5000,

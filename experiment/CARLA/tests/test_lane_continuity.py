@@ -3,7 +3,7 @@ from types import SimpleNamespace as NS
 import pytest
 
 from benchmark.catalog import ConfigError
-from benchmark.lane_continuity import build_lane_corridor, trace_lane_corridor
+from benchmark.lane_continuity import build_lane_corridor, trace_lane_corridor, trace_speed_lane_corridor
 
 
 class Location:
@@ -47,6 +47,17 @@ def test_unique_successor_resolves_spatially_overlapping_connector():
     assert all('99:0:-3' not in s['lane_keys'] for s in corridor)
 
 
+def test_branch_resolves_only_when_nearest_connector_is_wrong():
+    route,wps,world_map=setup()
+    other=NS(road_id=99,section_id=0,lane_id=-3,lane_type='Driving',
+             transform=NS(location=Location(10),rotation=NS(yaw=0)))
+    wps[1].next=lambda distance:[wps[2],other]
+    world_map.get_waypoint=lambda loc:other if loc.x==10 else wps[int(loc.x/5)]
+    result=trace_speed_lane_corridor(world_map,route,0,Location,15)
+    assert result['stop_reason'] is None
+    assert result['verified_end_m']==15
+
+
 def test_ambiguous_initial_anchor_is_not_overridden_by_route_label():
     route,wps,world_map=setup()
     wps[0].road_id=99
@@ -64,6 +75,53 @@ def test_partial_corridor_records_unverified_future_without_accepting_branch():
     assert len(result['lane_corridor'])==1
     with pytest.raises(ConfigError):
         build_lane_corridor(world_map,route,0,Location)
+
+
+def test_speed_corridor_keeps_proven_prefix_at_fork():
+    route,wps,world_map=setup()
+    wps[1].next=lambda distance:[wps[2],wps[3]]
+    result=trace_speed_lane_corridor(world_map,route,0,Location,15)
+    assert result['verified_end_m']==5
+    assert result['stop_reason']=='lane corridor has ambiguous forward topology'
+
+
+def test_speed_corridor_rejects_real_route_map_mismatch():
+    route,wps,world_map=setup()
+    wps[2].road_id=99
+    with pytest.raises(ConfigError,match='route/map mismatch'):
+        trace_speed_lane_corridor(world_map,route,0,Location,15)
+
+
+def test_unique_successor_can_cross_sampled_road_endpoint():
+    route,wps,world_map=setup()
+    boundary=NS(road_id=1,section_id=0,lane_id=-1,lane_type='Driving',
+                transform=NS(location=Location(9.7),rotation=NS(yaw=0)))
+    wps[1].next=lambda distance:[boundary] if distance<=5 else [wps[2]]
+    result=trace_speed_lane_corridor(world_map,route,0,Location,15)
+    assert result['verified_end_m']==15
+    assert result['stop_reason'] is None
+
+
+def test_unique_predecessor_resolves_short_road_boundary_overshoot():
+    route,wps,world_map=setup()
+    before=NS(road_id=2,section_id=0,lane_id=-1,lane_type='Driving',
+              transform=NS(location=Location(9.8),rotation=NS(yaw=0)))
+    wps[1].next=lambda distance:[before] if distance<5 else [
+        NS(road_id=3,section_id=0,lane_id=-1,lane_type='Driving',
+           transform=NS(location=Location(10.3),rotation=NS(yaw=0)))]
+    result=trace_speed_lane_corridor(world_map,route,0,Location,10)
+    assert result['verified_end_m']==10
+    assert result['stop_reason'] is None
+
+
+def test_endpoint_extension_does_not_choose_one_branch():
+    route,wps,world_map=setup()
+    boundary=NS(road_id=1,section_id=0,lane_id=-1,lane_type='Driving',
+                transform=NS(location=Location(9.7),rotation=NS(yaw=0)))
+    wps[1].next=lambda distance:[boundary] if distance<=5 else [wps[2],wps[3]]
+    result=trace_speed_lane_corridor(world_map,route,0,Location,15)
+    assert result['verified_end_m']==5
+    assert result['stop_reason']=='lane corridor has ambiguous forward topology'
 
 
 @pytest.mark.parametrize('end',[0,-1,20,float('nan')])

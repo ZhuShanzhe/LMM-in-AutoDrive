@@ -123,6 +123,8 @@ def bind_straight_junction(route, world_map, location_factory, activation_m, end
         if visit['start_m'] <= point['distance_m'] <= visit['end_m'] and point['is_junction']:
             waypoint = world_map.get_waypoint(location_factory(**{k:point[k] for k in ('x','y','z')}))
             if waypoint is None or not waypoint.is_junction:
+                if abs(point['distance_m']-visit['start_m']) <= 1e-3:
+                    continue
                 raise ConfigError('junction geometry differs from recorded route')
             ids.add(waypoint.junction_id)
     if len(ids) != 1:

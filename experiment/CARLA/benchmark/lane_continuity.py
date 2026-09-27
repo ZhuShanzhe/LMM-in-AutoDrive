@@ -12,6 +12,14 @@ def build_lane_corridor(world_map,route,start_m,location_factory,end_m=None):
     return result['lane_corridor']
 
 
+def trace_speed_lane_corridor(world_map, route, start_m, location_factory, end_m):
+    result = trace_lane_corridor(world_map, route, start_m, location_factory, end_m)
+    if result['stop_reason'] in {'lane corridor route/map mismatch',
+                                 'lane corridor heading mismatch'}:
+        raise ConfigError(result['stop_reason'])
+    return result
+
+
 def trace_lane_corridor(world_map,route,start_m,location_factory,end_m=None):
     """Return only the proven prefix; the caller must reject observations beyond it."""
     end_m=route[-1]['distance_m'] if end_m is None and route else end_m
@@ -36,6 +44,13 @@ def trace_lane_corridor(world_map,route,start_m,location_factory,end_m=None):
             if not math.isfinite(distance) or not 0<distance<=10:
                 raise ConfigError('lane corridor samples too sparse or unordered')
             successors=waypoints[-1].next(distance)
+            expected=f"{point['road_id']}:{point['section_id']}:{point['lane_id']}"
+            if len(successors)>1 and (nearest is None or lane_key(nearest)!=expected):
+                matching=[candidate for candidate in successors
+                          if lane_key(candidate)==expected
+                          and candidate.transform.location.distance(location)<=.75]
+                if len(matching)==1:
+                    successors=matching
             if len(successors)!=1:
                 stop_reason='lane corridor has ambiguous forward topology'
                 break
@@ -43,6 +58,21 @@ def trace_lane_corridor(world_map,route,start_m,location_factory,end_m=None):
         if wp is None or str(wp.lane_type)!='Driving':
             raise ConfigError('lane corridor has no driving waypoint')
         expected=f"{point['road_id']}:{point['section_id']}:{point['lane_id']}"
+        if (waypoints and nearest is not None and lane_key(nearest)==expected
+                and (lane_key(wp)!=expected or wp.transform.location.distance(location)>.75)):
+            for adjusted_distance in (distance-.5,distance+.5):
+                if adjusted_distance<=0:
+                    continue
+                adjusted=waypoints[-1].next(adjusted_distance)
+                if len(adjusted)>1:
+                    stop_reason='lane corridor has ambiguous forward topology'
+                    break
+                if len(adjusted)==1 and lane_key(adjusted[0])==expected \
+                        and adjusted[0].transform.location.distance(location)<=.75:
+                    wp=adjusted[0]
+                    break
+            if stop_reason is not None:
+                break
         if lane_key(wp)!=expected or wp.transform.location.distance(location)>.75:
             stop_reason='lane corridor route/map mismatch'
             break

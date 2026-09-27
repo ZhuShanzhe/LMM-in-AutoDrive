@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.metadata
 import json
 import math
@@ -13,6 +14,30 @@ import sys
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 SCENES = {'scene1': 'Town04', 'scene2': 'Town05', 'scene3': 'Town05'}
+
+
+def compatible_carla_build(server_version, client_version):
+    return server_version.startswith('0.9.16') or server_version == client_version
+
+
+def record_source_version(output, report):
+    try:
+        revision = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT,
+                                  capture_output=True, text=True, check=True)
+        changed = subprocess.run(['git', 'status', '--porcelain'], cwd=ROOT,
+                                 capture_output=True, text=True, check=True)
+        diff = subprocess.run(['git', 'diff', '--binary'], cwd=ROOT,
+                              capture_output=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        report['code_revision'] = None
+        report['working_tree_dirty'] = None
+        return
+    report['code_revision'] = revision.stdout.strip()
+    report['working_tree_dirty'] = bool(changed.stdout.strip())
+    if diff.stdout:
+        path = output/'source_changes.patch'
+        path.write_bytes(diff.stdout)
+        report['source_changes'] = path.name
 
 
 def runner_result(output, returncode):
@@ -39,13 +64,16 @@ def runner_result(output, returncode):
                 assessment_outcome=outcome)
 
 
-def build_command(scene, model_root, config, output, host, port, device, seconds):
+def build_command(scene, model_root, config, output, host, port, device, seconds,
+                  ffmpeg=None, stall_timeout_s=0):
     if scene not in SCENES or not math.isfinite(seconds) or seconds <= 0:
         raise ValueError('A supported scene and positive bounded duration are required')
     common = ['--host', host, '--port', str(port), '--output-dir', str(output),
               '--benchmark-assessment', '--vla-record-sensors',
               '--vla-checkpoint', str(model_root/'lightweight_vla_adapter/universal_three_scene_v6_sensor_policy/model.pt'),
               '--vla-config', str(config), '--vla-device', device, '--vla-precision', 'fp32']
+    if ffmpeg is not None:
+        common.extend(['--ffmpeg', str(ffmpeg)])
     parser_model = str(model_root/'modernbert-drive-command-compositional')
     if scene == 'scene1':
         runner = 'run_control_experiment.py'
@@ -53,17 +81,23 @@ def build_command(scene, model_root, config, output, host, port, device, seconds
                    str(ROOT/'experiment/CARLA/configs/basic_voice_urban_5km.json'),
                    '--duration-s', str(seconds), '--decision-source', 'vla_scene_bridge',
                    '--command-parser-model', parser_model, '--command-parser-device', device]
+        if stall_timeout_s > 0:
+            options.extend(['--max-stall-s', str(stall_timeout_s)])
     elif scene == 'scene2':
         runner = 'run_complex_avoidance_town05.py'
         options = ['--duration', str(seconds), '--variant-index', '0', '--external-ego-control',
                    '--record-ground-truth', '--ground-truth-every-n', '1', '--record-multimodal',
                    '--command-parser-model', parser_model, '--vla-decision-every-n', '1']
+        if stall_timeout_s > 0:
+            options.extend(['--max-stall-s', str(stall_timeout_s)])
     else:
         runner = 'run_emergency_response_6km.py'
         options = ['--duration', str(seconds), '--event-variant', 'auto', '--seed', '42',
                    '--record-ground-truth', '--ground-truth-every-n', '1',
                    '--ego-controller', 'vla-route-pid', '--vla-parser-model', parser_model,
                    '--vla-decision-every-n', '1']
+        if stall_timeout_s > 0:
+            options.extend(['--max-stall-s', str(stall_timeout_s)])
     return [sys.executable, str(ROOT/'experiment/CARLA'/runner), *options, *common]
 
 
@@ -79,6 +113,9 @@ def main():
     parser.add_argument('--check-server', action='store_true')
     parser.add_argument('--execute', action='store_true')
     parser.add_argument('--fuse-conv-bn', action='store_true')
+    parser.add_argument('--ffmpeg', type=Path, help='FFmpeg executable for scene video recording')
+    parser.add_argument('--stall-timeout-s', type=float, default=0,
+                        help='Scene 2 simulation seconds without route progress before stopping')
     args = parser.parse_args()
     if not math.isfinite(args.duration_s) or args.duration_s <= 0:
         parser.error('--duration-s must be finite and positive')
@@ -89,6 +126,7 @@ def main():
     report = dict(status='checking', closed_loop_validated=False, j6p_test=False,
                   scope='x86 text-to-control diagnostic; not full ASR or competition acceptance',
                   device=args.device, scene=args.scene, blockers=[])
+    record_source_version(output, report)
     try:
         import torch
         import carla
@@ -97,6 +135,8 @@ def main():
         from benchmark.catalog import load_catalog, validate_catalog
         model_root = args.model_root.resolve()
         manifest = json.loads((ROOT/'lightweight_vla_adapter/configs/challenge_assets.json').read_text())
+        report['asset_manifest_sha256'] = hashlib.sha256(
+            (ROOT/'lightweight_vla_adapter/configs/challenge_assets.json').read_bytes()).hexdigest()
         report['verified_assets'] = len(verify_assets(model_root, manifest))
         report['versions'] = {name: importlib.metadata.version(name) for name in
                               ['torch', 'torchvision', 'transformers', 'carla', 'numpy', 'scipy']}
@@ -114,7 +154,8 @@ def main():
         if not catalog['config_valid']:
             raise ValueError('Invalid scene catalog')
         command = build_command(args.scene, model_root, config_path, output/'run',
-                                args.host, args.port, args.device, args.duration_s)
+                                args.host, args.port, args.device, args.duration_s,
+                                args.ffmpeg, args.stall_timeout_s)
         report['command'] = command
         report['fuse_conv_bn'] = args.fuse_conv_bn
         # --help verifies imports without connecting to or changing the simulation.
@@ -128,7 +169,8 @@ def main():
             client.set_timeout(5.0)
             version = client.get_server_version()
             report['server_version'] = version
-            if not version.startswith('0.9.16'):
+            report['client_build'] = client.get_client_version()
+            if not compatible_carla_build(version, report['client_build']):
                 raise ValueError('CARLA server version must match 0.9.16')
             report['server_checked'] = True
         report['status'] = 'prepared'
