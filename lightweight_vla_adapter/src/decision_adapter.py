@@ -455,6 +455,19 @@ class LightweightDecisionAdapter(nn.Module):
         )
 
 
+def validate_prediction_output(output):
+    """Reject invalid predictions before argmax can disguise NaNs as actions."""
+    for name in ('action_logits', 'target_speed_kmh', 'target_lane_logits',
+                 'target_pointer_logits', 'confidence', 'visual_risk_logits'):
+        value = getattr(output, name)
+        if not bool(torch.isfinite(value).all()):
+            raise ValueError('Non-finite model output: ' + name)
+    if bool((output.target_speed_kmh < 0).any()):
+        raise ValueError('Negative model target speed')
+    if bool(((output.confidence < 0) | (output.confidence > 1)).any()):
+        raise ValueError('Model confidence outside [0, 1]')
+
+
 def decode_proposal(
     output: AdapterOutput,
     *,
@@ -464,6 +477,7 @@ def decode_proposal(
     model_name: str,
     latency_ms: float,
 ) -> list[dict]:
+    validate_prediction_output(output)
     action_indices = output.action_logits.argmax(dim=-1).tolist()
     lane_indices = output.target_lane_logits.argmax(dim=-1).tolist()
     pointer_indices = output.target_pointer_logits.argmax(dim=-1).tolist()

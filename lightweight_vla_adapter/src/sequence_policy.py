@@ -48,8 +48,9 @@ class SequenceEventHead(EventMemoryHead):
     def forward(self, memory, valid, context=None):
         result = super().forward(memory, valid, context, return_features=True)
         command = 5.5 * self.acceleration_sequence_head(result.pop('_features')).tanh() - 2.5
-        speed, acceleration = integrate_acceleration(command, memory[:, -1, 40] * 40,
-                                                     memory[:, -1, 42] * (100 / 3.6))
+        current = torch.where(valid[:, -1, None], memory[:, -1], torch.zeros_like(memory[:, -1]))
+        speed, acceleration = integrate_acceleration(command, current[:, 40] * 40,
+                                                     current[:, 42] * (100 / 3.6))
         action = first_action(speed[:, 0], acceleration[:, 0])
         result.update(speed_sequence_mps=speed, acceleration_sequence_mps2=acceleration,
                       commanded_acceleration_mps2=command, target_speed_mps=speed[:, 0],
@@ -67,6 +68,12 @@ class SequenceMemoryRuntime(EventMemoryRuntime):
     def forward(self, base_output, batch, *, longitudinal_authorized):
         result = super().forward(base_output, batch, longitudinal_authorized=longitudinal_authorized)
         output = self.last_output
+        # A discarded memory prediction must never become an executable sequence.
+        if not self.diagnostics['applied']:
+            return result
+        for name in ('speed_sequence_mps', 'acceleration_sequence_mps2'):
+            if not bool(torch.isfinite(output[name]).all()):
+                raise ValueError('Non-finite longitudinal sequence: ' + name)
         self.diagnostics['longitudinal_sequence'] = dict(
             schema_version=SEQUENCE_SCHEMA, dt_s=DT, horizon_s=DT * STEPS,
             speed_mps=output['speed_sequence_mps'][0].detach().cpu().tolist(),

@@ -95,7 +95,9 @@ class EventMemoryHead(nn.Module):
             raise ValueError('Expected [batch,80,52] event memory')
         if valid.shape != memory.shape[:2]:
             raise ValueError('Memory validity shape mismatch')
-        masked = memory * valid[..., None]
+        masked = torch.where(valid[..., None], memory, torch.zeros_like(memory))
+        if not bool(torch.isfinite(masked).all()):
+            raise ValueError('Non-finite valid event memory')
         tokens = self.token(masked) * valid[..., None]
         # Left padding makes the convolution causal, including during training.
         temporal = self.temporal_conv(F.pad(tokens.transpose(1, 2), (2, 0))).transpose(1, 2)
@@ -173,9 +175,22 @@ class EventMemoryRuntime(nn.Module):
                 extra['recursive_state'] = batch['recursive_state'].float()
         if self.head.schema_version in ('layered_behavior_sequence/1.0','layered_behavior_sequence/2.0'):
             extra['layered_context']=batch['layered_context'].float()
-        output = self.head(batch['event_memory'].float(), batch['event_memory_valid'],
+        memory = batch['event_memory'].float()
+        valid = batch['event_memory_valid']
+        memory = torch.where(valid[..., None], memory, torch.zeros_like(memory))
+        if 'behavior_memory' in extra:
+            values = extra['behavior_memory']
+            values = torch.where(extra['behavior_valid'][..., None], values, torch.zeros_like(values))
+            if not bool(torch.isfinite(values).all()):
+                raise ValueError('Non-finite valid behavior memory')
+            extra['behavior_memory'] = values
+        output = self.head(memory, valid,
                            base_output.decision_embedding.float(), **extra)
         self.last_output = output
+        authorized = torch.as_tensor(longitudinal_authorized, device=base_output.action_logits.device, dtype=torch.bool)
+        if authorized.shape != (base_output.action_logits.shape[0],):
+            raise ValueError('Authorization must be a batch vector')
+        applied = output['available'] & authorized
         self.diagnostics = dict(schema_version=self.head.schema_version,
             event_probabilities=output['event_logits'][0].sigmoid().detach().cpu().tolist(),
             event_names=list(EVENT_NAMES),
@@ -190,8 +205,11 @@ class EventMemoryRuntime(nn.Module):
             raw_action=ACTION_LABELS[int(output['action_logits'][0].argmax())],
             raw_target_speed_kmh=float(output['target_speed_mps'][0] * 3.6),
             raw_risk_probabilities=output['risk_logits'][0].softmax(-1).detach().cpu().tolist(),
+            risk_scope='joint_front_rear_rollout_surrogate',
             score_semantics='learned kinematic surrogate; not calibrated real-world probability',
-            applied=bool(longitudinal_authorized[0]))
+            authorized=bool(authorized[0]),
+            available=bool(output['available'][0]),
+            applied=bool(applied[0]))
         if extra:
             self.diagnostics['behavior_memory'] = dict(
                 extension_probability=float(output['extend_memory_logits'][0].sigmoid()),

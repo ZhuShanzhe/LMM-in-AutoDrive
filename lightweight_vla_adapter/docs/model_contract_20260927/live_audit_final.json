@@ -1,0 +1,28 @@
+{
+  "scope": "model contract and self-consistency only, not risk accuracy or driving acceptance",
+  "counts": {
+    "records": 400,
+    "decisions": 400,
+    "with_provenance": 400
+  },
+  "contract_violations": [],
+  "last_route_s_m": 114.23,
+  "last_dispatch": {
+    "mode": "completion_serial",
+    "completed_commands": 0,
+    "total_commands": 15,
+    "active_request_id": "s2_t05_cmd_01-configured",
+    "failure": null,
+    "events": [
+      {
+        "request_id": "s2_t05_cmd_01-configured",
+        "status": "RUNNING",
+        "timestamp_s": 6.795587558299303,
+        "progress_m": 0.0
+      }
+    ],
+    "execution_elapsed_s": 19.950000297278166,
+    "safety_wait_elapsed_s": 0.0,
+    "feedback_scope": "model_execution_plan; not independent task assessment"
+  }
+}

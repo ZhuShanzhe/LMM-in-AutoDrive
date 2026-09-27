@@ -7,7 +7,7 @@ from typing import Any, Sequence
 import torch
 
 from .contracts import SensorTensorBatch
-from .decision_adapter import LightweightDecisionAdapter, decode_proposal
+from .decision_adapter import LightweightDecisionAdapter, decode_proposal, validate_prediction_output
 from .safety_bridge import advance_vla_control_plan
 from .temporal_supervisor import TemporalProposalSupervisor
 
@@ -34,6 +34,10 @@ def decode_visual_risk_assessment(
     """
     if logits.ndim != 2 or logits.shape != (1, len(VISUAL_RISK_LEVELS)):
         raise ValueError("visual risk logits must have shape [1, 3]")
+    for name, value in (('logits', logits), ('risk_score', risk_score),
+                        ('risk_horizon_logits', risk_horizon_logits), ('risk_uncertainty', risk_uncertainty)):
+        if value is not None and not bool(torch.isfinite(value).all()):
+            raise ValueError('Non-finite visual risk output: ' + name)
     if not 0.0 < high_confidence_threshold < 1.0:
         raise ValueError("high confidence threshold must be between 0 and 1")
     probabilities = torch.softmax(logits.detach().float(), dim=-1)[0].cpu()
@@ -219,6 +223,13 @@ class LightweightVLAPipeline:
                     self._risk_history_tensor()
                 )
             output = self.model(**model_inputs)
+            validate_prediction_output(output)
+            from .contracts import ACTION_LABELS
+            def stage_snapshot(value):
+                return dict(action=ACTION_LABELS[int(value.action_logits[0].argmax())],
+                            target_speed_kmh=float(value.target_speed_kmh.reshape(-1)[0]),
+                            risk_probabilities=value.visual_risk_logits[0].float().softmax(-1).detach().cpu().tolist())
+            base_prediction = stage_snapshot(output)
             if decision_residual is not None:
                 if motion_inputs is None:
                     raise ValueError("motion_inputs required for temporal decision residual")
@@ -227,6 +238,8 @@ class LightweightVLAPipeline:
                     output, motion,
                     longitudinal_authorized=torch.tensor([longitudinal_authorized], device=self.device),
                 )
+            validate_prediction_output(output)
+            effective_prediction = stage_snapshot(output)
         self._last_visual_risk_assessment = decode_visual_risk_assessment(
             output.visual_risk_logits,
             high_confidence_threshold=self.high_confidence_threshold,
@@ -237,12 +250,31 @@ class LightweightVLAPipeline:
         )
         if decision_residual is not None and longitudinal_authorized and bool(
             motion_inputs["motion_values"][0, 0] * motion_inputs["motion_valid_mask"][0, 0]
-        ):
+        ) and (not getattr(decision_residual, 'diagnostics', None)
+               or decision_residual.diagnostics.get('applied', False)):
             self._last_visual_risk_assessment["source"] = "learned_motion_decision_residual"
         if decision_residual is not None and getattr(decision_residual, "diagnostics", None):
             self._last_visual_risk_assessment["event_memory"] = copy.deepcopy(decision_residual.diagnostics)
-            if longitudinal_authorized:
+            if decision_residual.diagnostics.get('applied', False):
                 self._last_visual_risk_assessment["source"] = "event_memory_vla"
+                if 'front_rear_horizon_scores' in decision_residual.diagnostics:
+                    self._last_visual_risk_assessment['risk_semantics'] = dict(
+                        scope='joint_front_rear_rollout_surrogate',
+                        calibrated=False,
+                        horizon_seconds=decision_residual.diagnostics['horizon_seconds'],
+                        directional_horizon_scores=dict(zip(
+                            ('front', 'rear'), decision_residual.diagnostics['front_rear_horizon_scores'])),
+                        note='legacy visual reason codes retained; this head is not a front-only visual probability')
+        residual_diagnostics = getattr(decision_residual, 'diagnostics', {}) or {}
+        self._last_visual_risk_assessment['prediction_provenance'] = dict(
+            schema_version='vla_prediction_provenance/1.0',
+            base=base_prediction, effective=effective_prediction,
+            residual_present=decision_residual is not None,
+            residual_applied=residual_diagnostics.get('applied'),
+            effective_action_source=('sequence_first_sample_encoding'
+                                     if 'longitudinal_sequence' in residual_diagnostics
+                                     else 'effective_action_logits'),
+            scope='model stages before execution and safety gates; not ground-truth correctness')
         if self.model.use_temporal_risk:
             self._risk_history.append(output.risk_input_features.detach())
             if len(self._risk_history) > self._risk_history_max:

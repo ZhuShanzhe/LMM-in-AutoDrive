@@ -1,0 +1,5 @@
+{
+  "frames": 8,
+  "base_policy_parity": "EXACT",
+  "scope": "eight recorded physical inputs plus real ModernBERT; BASE policy only, no reconstructed event/behavior memory, no closed-loop acceptance"
+}
