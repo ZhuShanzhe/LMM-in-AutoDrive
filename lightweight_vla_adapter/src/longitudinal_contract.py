@@ -4,7 +4,14 @@ import math
 
 
 def enforce_active_instruction_contract(decision, parsed_intent, target_speed_kmh, ego_speed_kmh):
-    """Keep an active stop or speed bound authoritative over recovery policies."""
+    """Keep an active stop or explicit speed setpoint authoritative.
+
+    ``SET_SPEED`` is an absolute execution goal, not merely an upper bound for
+    the learned proposal.  The goal is only promoted to the issued setpoint
+    while the already-gated decision is ready for ordinary forward motion.
+    Stops, deceleration, blocked decisions and downstream risk/traffic/road
+    caps therefore remain authoritative.
+    """
     result = dict(decision)
     before = dict(result)
     speed = float(ego_speed_kmh)
@@ -23,7 +30,17 @@ def enforce_active_instruction_contract(decision, parsed_intent, target_speed_km
         requested = float(result.get('target_speed_kmh', 0.))
         if not math.isfinite(requested):
             raise ValueError('Finite decision target speed required')
-        result['target_speed_kmh'] = max(0., min(requested, cap))
+        setpoint_ready = (
+            parsed_intent == 'SET_SPEED'
+            and result.get('decision_status', 'READY') == 'READY'
+            and result.get('action') in ('accelerate', 'keep_lane')
+            and not result.get('emergency', False)
+            and not result.get('blocked_reason_codes')
+            and result.get('allow_positive_acceleration', True) is not False
+        )
+        result['target_speed_kmh'] = (
+            cap if setpoint_ready else max(0., min(requested, cap))
+        )
         if speed >= cap:
             result['allow_positive_acceleration'] = False
     if active_stop or result.get('allow_positive_acceleration') is False or (
@@ -33,9 +50,19 @@ def enforce_active_instruction_contract(decision, parsed_intent, target_speed_km
             result.pop(key, None)
     changed = result != before
     if changed:
-        result['reason'] = 'active_instruction_stop' if active_stop else 'active_instruction_speed_bound'
+        result['reason'] = (
+            'active_instruction_stop' if active_stop else
+            'active_instruction_speed_setpoint'
+            if parsed_intent == 'SET_SPEED' else
+            'active_instruction_speed_bound'
+        )
     return result, dict(schema_version='active_instruction_contract/1.0',
         parsed_intent=parsed_intent, active_stop=active_stop, speed_bound_kmh=cap,
+        speed_contract_mode=(
+            'STOP' if active_stop else
+            'ABSOLUTE_SETPOINT' if cap is not None and parsed_intent == 'SET_SPEED' else
+            'UPPER_BOUND' if cap is not None else 'NONE'
+        ),
         input_action=before.get('action'), input_target_speed_kmh=before.get('target_speed_kmh'),
         issued_action=result.get('action'), issued_target_speed_kmh=result.get('target_speed_kmh'),
         changed=changed, policy_safety_credit=False)

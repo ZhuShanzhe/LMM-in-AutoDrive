@@ -175,3 +175,185 @@ def test_risk_recovery_never_bypasses_missing_trigger_or_advances_step():
         assert decision['decision_status']=='BLOCKED'
         assert runtime.state['active_step_id']=='step_1'
         if i==0:assert decision['action']=='emergency_brake'
+
+
+def execution(frame, step_id, **pid):
+    defaults=dict(current_lane_id=-2,in_junction=False,
+        lateral_error_m=.1,heading_error_deg=1.)
+    defaults.update(pid)
+    return dict(source_step_id=step_id,observation_frame_id=frame,pid=defaults)
+
+
+def test_constrained_speed_target_completes_at_observed_safe_cap():
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    for i in range(9):
+        frame=f'cap-{i}';w['frame_id']=r['frame_id']=frame
+        observed=execution(frame,'step_1',speed_target_status='CONSTRAINED',
+            effective_target_speed_kmh=10.8,
+            speed_constraint_codes=['road_speed_limit'])
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=3.,
+            execution_state=observed)
+        runtime.advance(w,r)
+    first=runtime.state['step_states'][0]
+    assert first['status']=='COMPLETED'
+    assert 'observed_constrained_speed_completion' in first['reason_codes']
+    assert runtime.state['active_step_id']=='step_2'
+
+
+def test_explicit_unreachable_speed_fails_instead_of_deadlocking():
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    frame='start';w['frame_id']=r['frame_id']=frame
+    runtime.prepare(d,frame_id=frame,timestamp_s=0.,speed_mps=0.,
+        execution_state=execution(frame,'step_1'))
+    runtime.advance(w,r)
+    frame='unreachable';w['frame_id']=r['frame_id']=frame
+    observed=execution(frame,'step_1',speed_target_status='UNREACHABLE',
+        speed_constraint_codes=['road_target_unreachable'])
+    runtime.prepare(d,frame_id=frame,timestamp_s=.1,speed_mps=0.,execution_state=observed)
+    decision=runtime.advance(w,r)
+    assert runtime.state['plan_status']=='FAILED'
+    assert runtime.state['active_step_id'] is None
+    assert decision['action']=='stop'
+    assert 'target_speed_unreachable' in runtime.state['reason_codes']
+
+
+def predicate(d,frame,step_id,condition,**changes):
+    result=dict(request_id=d['request_id'],step_id=step_id,frame_id=frame,
+        condition=condition,satisfied=True,valid=True,source='scene_observer')
+    result.update(changes)
+    return {step_id:result}
+
+
+@pytest.mark.parametrize('fault',[None,'wrong_request','wrong_step','stale','invalid'])
+def test_non_risk_condition_requires_fresh_bound_predicate(fault):
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    d['intent']['steps'][0].update(action='WAIT',parameters={'condition':'PEDESTRIAN_CLEAR'},
+        completion={'type':'ACTION_REACHED'})
+    for i in range(9):
+        frame=f'predicate-{i}';w['frame_id']=r['frame_id']=frame
+        ready=predicate(d,frame,'step_1','PEDESTRIAN_CLEAR')
+        item=ready['step_1']
+        if fault=='wrong_request':item['request_id']='old-request'
+        if fault=='wrong_step':item['step_id']='old-step'
+        if fault=='stale':item['frame_id']='old-frame'
+        if fault=='invalid':item['valid']=False
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=0.)
+        runtime.advance(w,r,readiness=ready)
+    assert (runtime.state['step_states'][0]['status']=='COMPLETED') == (fault is None)
+
+
+def return_document():
+    d,w,r=documents()
+    d['intent']['steps'][0].update(action='CHANGE_LANE',
+        parameters={'return_to':'ORIGINAL_LANE'},
+        completion={'type':'LANE_CHANGE_COMPLETED'})
+    return d,w,r
+
+
+@pytest.mark.parametrize('current,left,right,expected',[
+    (-1,None,-2,'RIGHT'),(-3,-2,None,'LEFT')])
+def test_return_direction_is_resolved_from_original_lane_topology(current,left,right,expected):
+    d,w,r=return_document();runtime=DrivingPlanRuntime()
+    runtime.lane_change_history=[dict(source=dict(lane_id=-2,road_id=1,section_id=0),
+        target=dict(lane_id=current,road_id=1,section_id=0),returned=False)]
+    frame='return';w['frame_id']=r['frame_id']=frame
+    observed=execution(frame,'step_1',current_lane_ref=dict(lane_id=current,road_id=1,section_id=0),
+        left_lane_ref=None if left is None else dict(lane_id=left,road_id=1,section_id=0),
+        right_lane_ref=None if right is None else dict(lane_id=right,road_id=1,section_id=0),
+        left_lane_change_allowed=True,right_lane_change_allowed=True)
+    step=runtime.prepare(d,frame_id=frame,timestamp_s=0.,speed_mps=2.,execution_state=observed)
+    assert step['parameters']['direction']==expected
+    decision=runtime.advance(w,r)
+    assert decision['action']=='lane_change_'+expected.lower()
+
+
+def test_return_waits_for_lane_safety_then_resumes_same_step():
+    d,w,r=return_document();runtime=DrivingPlanRuntime()
+    runtime.lane_change_history=[dict(source=dict(lane_id=-2),target=dict(lane_id=-1),returned=False)]
+    for i,safe in enumerate((False,True)):
+        frame=f'safe-{i}';w['frame_id']=r['frame_id']=frame
+        r['lane_change']['right']={'is_safe':safe,'reason_codes':[] if safe else ['rear_ttc_low']}
+        observed=execution(frame,'step_1',current_lane_ref=dict(lane_id=-1),
+            right_lane_ref=dict(lane_id=-2),right_lane_change_allowed=True)
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=2.,execution_state=observed)
+        decision=runtime.advance(w,r)
+        assert runtime.state['active_step_id']=='step_1'
+        assert decision['action']==('lane_change_right' if safe else 'decelerate')
+
+
+def test_unreachable_original_lane_waits_without_inventing_a_direction():
+    d,w,r=return_document();runtime=DrivingPlanRuntime()
+    runtime.lane_change_history=[dict(source=dict(lane_id=-2),target=dict(lane_id=-1),returned=False)]
+    frame='return';w['frame_id']=r['frame_id']=frame
+    observed=execution(frame,'step_1',current_lane_ref=dict(lane_id=-1),
+        left_lane_ref=None,right_lane_ref=dict(lane_id=-3),right_lane_change_allowed=True)
+    step=runtime.prepare(d,frame_id=frame,timestamp_s=0.,speed_mps=2.,execution_state=observed)
+    assert 'direction' not in step['parameters']
+    decision=runtime.advance(w,r)
+    assert decision['action']=='stop' and decision['decision_status']=='BLOCKED'
+    assert decision['blocked_reason_codes']==['original_lane_not_adjacent']
+
+
+def test_lane_change_history_drives_later_return_step():
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    d['intent']['steps'][0].update(action='CHANGE_LANE',parameters={'direction':'LEFT'},
+        completion={'type':'LANE_CHANGE_COMPLETED'})
+    d['intent']['steps'][1].update(action='CHANGE_LANE',
+        parameters={'return_to':'ORIGINAL_LANE'},
+        completion={'type':'LANE_CHANGE_COMPLETED'})
+    for i in range(9):
+        frame=f'outbound-{i}';w['frame_id']=r['frame_id']=frame
+        pid=dict(current_lane_ref=dict(road_id=1,section_id=0,lane_id=-2 if i==0 else -1),
+            left_lane_ref=dict(road_id=1,section_id=0,lane_id=-1),
+            right_lane_ref=dict(road_id=1,section_id=0,lane_id=-2),
+            left_lane_change_allowed=True,right_lane_change_allowed=True,
+            lane_change_completed=i>0)
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=2.,
+            execution_state=execution(frame,'step_1',**pid))
+        decision=runtime.advance(w,r)
+    assert runtime.lane_change_history[-1]['source']['lane_id']==-2
+    assert runtime.state['active_step_id']=='step_2'
+    assert decision['action']=='lane_change_right'
+
+
+def test_already_in_original_lane_completes_without_lateral_command():
+    d,w,r=return_document();runtime=DrivingPlanRuntime()
+    runtime.lane_change_history=[dict(source=dict(lane_id=-2),target=dict(lane_id=-1),returned=False)]
+    decisions=[]
+    for i in range(9):
+        frame=f'already-{i}';w['frame_id']=r['frame_id']=frame
+        observed=execution(frame,'step_1',current_lane_ref=dict(lane_id=-2),
+            left_lane_ref=dict(lane_id=-1),right_lane_ref=dict(lane_id=-3))
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=2.,execution_state=observed)
+        decisions.append(runtime.advance(w,r))
+    assert all(not item['action'].startswith('lane_change_') for item in decisions)
+    assert runtime.state['step_states'][0]['reason_codes']==['already_in_original_lane']
+    assert runtime.lane_change_history[-1]['returned'] is True
+
+
+def test_turn_consumes_only_fresh_reachable_road_target():
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    d['intent']['steps'][0].update(action='TURN',parameters={'direction':'RIGHT'},
+        completion={'type':'JUNCTION_EXITED'})
+    frame='turn';w['frame_id']=r['frame_id']=frame
+    ready={'step_1':dict(request_id=d['request_id'],step_id='step_1',frame_id=frame,
+        reachable=True,source='road_topology',target_location={'x':10.,'y':5.,'z':0.})}
+    step=runtime.prepare(d,frame_id=frame,timestamp_s=0.,speed_mps=2.,
+        execution_state=execution(frame,'step_1'),readiness=ready)
+    assert step['parameters']['target_location']=={'x':10.,'y':5.,'z':0.}
+    assert runtime.advance(w,r,readiness=ready)['decision_status']=='READY'
+
+
+def test_turn_rejects_stale_road_target():
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    d['intent']['steps'][0].update(action='TURN',parameters={'direction':'RIGHT'},
+        completion={'type':'JUNCTION_EXITED'},on_blocked='WAIT_FOR_SAFE')
+    frame='turn';w['frame_id']=r['frame_id']=frame
+    ready={'step_1':dict(request_id=d['request_id'],step_id='step_1',frame_id='old',
+        reachable=True,source='road_topology',target_location={'x':10.,'y':5.})}
+    step=runtime.prepare(d,frame_id=frame,timestamp_s=0.,speed_mps=2.,
+        execution_state=execution(frame,'step_1'),readiness=ready)
+    assert 'target_location' not in step['parameters']
+    decision=runtime.advance(w,r,readiness=ready)
+    assert decision['decision_status']=='BLOCKED'
+    assert 'turn_target_location_missing' in decision['blocked_reason_codes']

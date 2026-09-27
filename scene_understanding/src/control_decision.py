@@ -198,6 +198,11 @@ def _map_step_action(
         if direction in {"LEFT", "RIGHT"}:
             target_lane = direction.lower()
             action = f"lane_change_{target_lane}"
+        else:
+            # A semantic return-to-origin step is resolved by the stateful
+            # runtime from observed lane topology.  Missing topology must not
+            # silently turn into an arbitrary left/right manoeuvre.
+            action = "keep_lane"
     elif parser_action == "TURN":
         direction = str(parameters.get("direction", "")).strip().upper()
         if direction == "STRAIGHT":
