@@ -66,6 +66,7 @@ class Catalog:
     route_length_m: float
     tasks: tuple[Task, ...]
     events: tuple[dict, ...]
+    geometry_binding: dict | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -79,10 +80,10 @@ class Catalog:
         raise ConfigError(f'unknown task {selector!r} in {self.scene_id}')
 
 
-def load_catalog(scene: str, config_root: Path = CONFIG_ROOT) -> Catalog:
+def load_catalog(scene: str, config_root: Path = CONFIG_ROOT, *, source_path=None) -> Catalog:
     if scene not in SCENES:
         raise ConfigError(f'unknown scene: {scene}')
-    path = config_root / SCENES[scene][0]
+    path = Path(source_path) if source_path is not None else config_root / SCENES[scene][0]
     payload = path.read_bytes()
     try:
         raw = json.loads(payload)
@@ -134,7 +135,34 @@ def load_catalog(scene: str, config_root: Path = CONFIG_ROOT) -> Catalog:
     tasks.sort(key=lambda t: (t.activate_m, t.source_order))
     tasks = tuple(Task(**{**asdict(t), 'order': i}) for i, t in enumerate(tasks, 1))
     return Catalog('benchmark_catalog/1.0', scene, raw.get('scene_id', raw.get('scenario_id', scene)),
-                   path.name, hashlib.sha256(payload).hexdigest(), map_name, length, tasks, tuple(events))
+                   path.name, hashlib.sha256(payload).hexdigest(), map_name, length, tasks, tuple(events),
+                   raw.get('geometry_binding'))
+
+
+def load_episode_catalog(scene, source_path, world_map):
+    """Accept exact registered configs or a provenance-checked geometry binding."""
+    registered = load_catalog(scene)
+    payload = Path(source_path).read_bytes()
+    if hashlib.sha256(payload).hexdigest() == registered.source_sha256:
+        return registered
+    raw = json.loads(payload)
+    binding = raw.get('geometry_binding', {})
+    if scene != 'scene_1' or binding.get('source_sha256') != registered.source_sha256:
+        raise ConfigError('assessment source configuration differs from registered catalog')
+    if binding.get('map_sha256') != hashlib.sha256(world_map.to_opendrive().encode()).hexdigest():
+        raise ConfigError('geometry binding map checksum mismatch')
+    from continuous.task_geometry_binding import remap_commands
+    expected = json.loads((CONFIG_ROOT / registered.source_file).read_bytes())
+    expected['commands'] = remap_commands(expected['commands'], binding['distance_anchors'])
+    if binding['distance_anchors'][0] != [0., 0.] or binding['distance_anchors'][-1] != [registered.route_length_m]*2:
+        raise ConfigError('geometry binding must preserve route endpoints')
+    expected['route']['start_spawn_index'] = raw['route']['start_spawn_index']
+    expected['route']['strict_start_spawn'] = True
+    expected['route']['spawn_backoff_m'] = 0.
+    expected['geometry_binding'] = binding
+    if raw != expected:
+        raise ConfigError('geometry binding changed task semantics or acceptance constraints')
+    return load_catalog(scene, source_path=source_path)
 
 
 def validate_catalog(catalog: Catalog) -> dict:

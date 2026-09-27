@@ -16,6 +16,7 @@ def test_challenge_command_keeps_model_and_independent_assessment(scene, tmp_pat
     assert command[command.index('--vla-config')+1] == str(tmp_path/'runtime.json')
     assert 'route-pid' not in command
     assert '--benchmark-compound-driver' not in command
+    assert '--competition-run' not in command
     if scene == 'scene3':
         assert command[command.index('--ego-controller')+1] == 'vla-route-pid'
 

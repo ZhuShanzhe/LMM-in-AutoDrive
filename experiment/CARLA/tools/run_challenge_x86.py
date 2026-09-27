@@ -15,6 +15,30 @@ sys.path.insert(0, str(ROOT))
 SCENES = {'scene1': 'Town04', 'scene2': 'Town05', 'scene3': 'Town05'}
 
 
+def runner_result(output, returncode):
+    """Keep task failure distinct from an entry-point or model-load failure."""
+    outcome_path = Path(output)/'run/benchmark/run_outcome.json'
+    decisions = Path(output)/'run/vla_control_decisions.jsonl'
+    outcome = json.loads(outcome_path.read_text()) if outcome_path.is_file() else None
+    valid_frames = 0
+    if decisions.is_file():
+        with decisions.open() as stream:
+            for line in stream:
+                try:
+                    row = json.loads(line)
+                except ValueError:
+                    continue
+                if 'simulation_frame' in row and 'error' not in row:
+                    valid_frames += 1
+    started = bool(outcome is not None and valid_frames)
+    statuses = {0: 'recorded_checks_passed', 2: 'assessment_failed',
+                3: 'assessment_incomplete', 4: 'assessment_error'}
+    return dict(runner_exit_code=returncode, closed_loop_started=started,
+                valid_control_frames=valid_frames,
+                status=statuses.get(returncode, 'runner_failed') if started else 'runner_failed',
+                assessment_outcome=outcome)
+
+
 def build_command(scene, model_root, config, output, host, port, device, seconds):
     if scene not in SCENES or not math.isfinite(seconds) or seconds <= 0:
         raise ValueError('A supported scene and positive bounded duration are required')
@@ -25,13 +49,13 @@ def build_command(scene, model_root, config, output, host, port, device, seconds
     parser_model = str(model_root/'modernbert-drive-command-compositional')
     if scene == 'scene1':
         runner = 'run_control_experiment.py'
-        options = ['basic_voice_urban_5km', '--map', 'Town04_Opt', '--scenario-config',
+        options = ['basic_voice_urban_5km', '--map', 'Town04_Opt', '--bind-task-geometry', '--scenario-config',
                    str(ROOT/'experiment/CARLA/configs/basic_voice_urban_5km.json'),
                    '--duration-s', str(seconds), '--decision-source', 'vla_scene_bridge',
                    '--command-parser-model', parser_model, '--command-parser-device', device]
     elif scene == 'scene2':
         runner = 'run_complex_avoidance_town05.py'
-        options = ['--duration', str(seconds), '--competition-run', '--variant-index', '0',
+        options = ['--duration', str(seconds), '--variant-index', '0', '--external-ego-control',
                    '--record-ground-truth', '--ground-truth-every-n', '1', '--record-multimodal',
                    '--command-parser-model', parser_model, '--vla-decision-every-n', '1']
     else:
@@ -112,19 +136,19 @@ def main():
             report['status'] = 'running'
             (output/'preflight.json').write_text(json.dumps(report, indent=2)+'\n')
             env = dict(os.environ, OMP_NUM_THREADS='2', MKL_NUM_THREADS='2')
+            env['PYTHONPATH'] = str(ROOT) + (os.pathsep+env['PYTHONPATH'] if env.get('PYTHONPATH') else '')
             with (output/'runner.log').open('w') as log:
                 result = subprocess.run(command, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT)
-            report['runner_exit_code'] = result.returncode
-            report['status'] = 'runner_finished' if result.returncode == 0 else 'runner_failed'
+            report.update(runner_result(output, result.returncode))
             # Process completion alone is not a successful driving assessment.
-            if result.returncode:
+            if report['status'] == 'runner_failed':
                 raise RuntimeError('Runner failed; inspect runner.log and partial run artifacts')
     except Exception as error:
         report['status'] = 'blocked'
         report['blockers'].append(str(error))
     (output/'preflight.json').write_text(json.dumps(report, ensure_ascii=False, indent=2)+'\n')
     print(json.dumps({k: v for k, v in report.items() if k != 'catalog'}, indent=2))
-    return 1 if report['blockers'] else 0
+    return 1 if report['blockers'] else report.get('runner_exit_code', 0)
 
 
 if __name__ == '__main__':

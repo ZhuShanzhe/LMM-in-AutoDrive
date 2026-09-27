@@ -18,6 +18,33 @@ def constraint_spec(spec, constraint):
 
 
 def load_profile(catalog, task):
+    if getattr(catalog, 'geometry_binding', None):
+        from .catalog import load_catalog
+        from continuous.task_geometry_binding import remap_commands
+        original = load_catalog(catalog.scene_id)
+        original_task = original.select(task.task_id)[0]
+        profile = load_profile(original, original_task)
+        if profile is None:
+            return None
+        anchors = catalog.geometry_binding['distance_anchors']
+
+        def bind_distances(value):
+            if isinstance(value, list):
+                return [bind_distances(item) for item in value]
+            if not isinstance(value, dict):
+                return value
+            result = {}
+            for key, item in value.items():
+                if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                    item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                else:
+                    item = bind_distances(item)
+                result[key] = item
+            return result
+
+        profile = bind_distances(profile)
+        profile['source_sha256'] = catalog.source_sha256
+        return validate_spec(profile)
     path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
     if not path.is_file():
         return None

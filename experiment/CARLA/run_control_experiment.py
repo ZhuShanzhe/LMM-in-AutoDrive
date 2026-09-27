@@ -439,6 +439,8 @@ def parse_args():
         help="Draw persistent six-lane road markings after OpenDRIVE generation",
     )
     parser.add_argument("--scenario-config", default=None, help="Optional JSON configuration for a configurable scenario")
+    parser.add_argument('--bind-task-geometry', action='store_true',
+                        help='Bind task distances to valid map geometry and save the resolved assessment config')
     parser.add_argument("--duration-s", type=float, default=None)
     parser.add_argument("--fixed-delta-s", type=float, default=0.05)
     parser.add_argument("--target-speed-kmh", type=float, default=25.0)
@@ -675,6 +677,13 @@ def main():
         target_map = resolve_carla_map_name(target_map, client.get_available_maps())
     if not args.opendrive_map and target_map and not world.get_map().name.endswith(target_map):
         world = client.load_world(target_map)
+    if args.bind_task_geometry:
+        if scenario_config_path is None:
+            parser.error('--bind-task-geometry requires --scenario-config')
+        from continuous.task_geometry_binding import bind_task_geometry
+        scenario_config_path = str(bind_task_geometry(
+            world, scenario_config_path,
+            Path(output_dir) / 'scenario_config.map_bound.json'))
     original_settings = world.get_settings()
     settings = world.get_settings()
     settings.synchronous_mode = True

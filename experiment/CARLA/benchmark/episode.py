@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace as NS
 
-from .catalog import ConfigError, load_catalog
+from .catalog import ConfigError, load_catalog, load_episode_catalog
 from .monitor import TaskMonitor
 from .safety_events import SafetyLedger
 from .task_oracle import load_profile
@@ -92,7 +92,7 @@ def unpack_snapshot(row, location_factory=NS):
 
 class EpisodeAssessment:
     def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
-        self.catalog=load_catalog(scene)
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
         from .selection import assessment_selection
         self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
         if hashlib.sha256(Path(source_config).read_bytes()).hexdigest()!=self.catalog.source_sha256:
@@ -138,6 +138,7 @@ class EpisodeAssessment:
         self.stream=(self.output/'episode_truth.jsonl').open('x',encoding='utf-8')
         (self.output/'route.json').write_text(json.dumps(route,indent=2),encoding='utf-8')
         self.manifest=dict(scene_id=scene,source_sha256=self.catalog.source_sha256,
+            geometry_binding=self.catalog.geometry_binding,
             route_sha256=hashlib.sha256(json.dumps(route,sort_keys=True,separators=(',',':'),allow_nan=False).encode('utf-8')).hexdigest(),
             run_metadata=json.loads(json.dumps(run_metadata or {},allow_nan=False)),
             assessment_profile_sha256={identity:hashlib.sha256(
