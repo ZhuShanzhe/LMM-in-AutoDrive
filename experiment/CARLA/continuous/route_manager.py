@@ -277,13 +277,16 @@ class RouteManager:
         if not candidates:
             return None
         reference_yaw = math.radians(waypoint.transform.rotation.yaw)
-        return min(
-            candidates,
-            key=lambda candidate: abs(self._angle_delta(
-                math.radians(candidate.transform.rotation.yaw),
-                reference_yaw,
-            )),
-        )
+        def direction_cost(candidate):
+            endpoint=candidate
+            # Connector entrance headings can be straight even for a turn.
+            if not waypoint.is_junction and candidate.is_junction:
+                endpoint=self._trace_junction_exit(candidate)
+                if endpoint is None:return float('inf')
+            return abs(self._angle_delta(
+                math.radians(endpoint.transform.rotation.yaw),reference_yaw))
+        selected=min(candidates,key=direction_cost)
+        return selected if math.isfinite(direction_cost(selected)) else None
 
     def _choose_turn(self, waypoint, candidates, action):
         if not candidates or waypoint.is_junction:

@@ -1780,6 +1780,26 @@ class DeterministicSceneEvents:
         )
 
         cyclist_config = by_kind["cyclist"]
+        self.spawn_diagnostics["scene2_slow_cyclist"] = {
+            "source": "deferred_event_staging",
+            "staging_progress_m": self._staging_progress(cyclist_config),
+            "spawned": False,
+        }
+        self._spawned = True
+
+    @staticmethod
+    def _staging_progress(event):
+        """Event setup only: future-lap actors must not occupy earlier laps."""
+        activate = float(event.get("activate_progress_m", float(event["anchor_progress_m"]) - 80.))
+        lead = float(event.get("staging_lead_m", 200.))
+        if not math.isfinite(activate) or not math.isfinite(lead) or lead < 0:
+            raise ValueError("finite event activation and nonnegative staging lead required")
+        return max(0., activate - lead)
+
+    def _stage_cyclist(self, cyclist_config, progress_m):
+        import carla
+        if self.cyclist is not None:
+            return
         cyclist_waypoint = self._waypoint(
             float(cyclist_config["anchor_progress_m"])
         )
@@ -1800,6 +1820,9 @@ class DeterministicSceneEvents:
         self.spawn_diagnostics["scene2_slow_cyclist"].update(
             {
                 "activation_source": "physical_parked_cyclist_release",
+                "spawned": True,
+                "staged_at_progress_m": float(progress_m),
+                "staging_progress_m": self._staging_progress(cyclist_config),
                 "activation_location": {
                     "x": round(
                         float(self.cyclist_transform.location.x), 3
@@ -1813,7 +1836,6 @@ class DeterministicSceneEvents:
                 },
             }
         )
-        self._spawned = True
 
     def update(self, progress_m: float) -> list[dict[str, Any]]:
         changes = []
@@ -1826,6 +1848,9 @@ class DeterministicSceneEvents:
                     event.get("anchor_progress_m", 0.0) - 80.0,
                 )
             )
+            if (event["kind"] == "cyclist" and state == "STAGED"
+                    and progress_m >= self._staging_progress(event)):
+                self._stage_cyclist(event, progress_m)
             if state == "STAGED" and progress_m >= activate_at:
                 self.states[event_id] = "ACTIVE"
                 changes.append(
