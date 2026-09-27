@@ -298,14 +298,15 @@
     {
       "id": "s2_t05_cmd_01",
       "announce_at_m": 0.0,
-      "text": "保持当前车道，减速至45公里每小时，通过前方路口后继续直行。",
-      "spoken_text": "保持当前车道，减速至45公里每小时，通过前方路口后继续直行。",
+      "text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+      "spoken_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
       "category": "NAVIGATION",
       "urgency": "NORMAL",
       "steps": [
         "KEEP_LANE",
         "SET_SPEED:12.50mps",
-        "PROCEED:STRAIGHT_THROUGH_JUNCTION"
+        "TURN:RIGHT",
+        "KEEP_LANE"
       ]
     },
     {
