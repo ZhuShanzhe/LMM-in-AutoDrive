@@ -69,6 +69,8 @@ class ParsedInstruction:
     speed_change: str | None = None
     speed_delta_kmh: float | None = None
     speed_reference_kmh: float | None = None
+    parse_status: str = "VALID"
+    parse_source: str | None = None
 
 
 def _intent_from_goals(goals: Sequence[str]) -> tuple[str | None, str | None, float | None]:
@@ -403,6 +405,9 @@ class GenericInstructionFSM:
         intent=cached.get('intent') or {}
         if len(intent.get('steps') or [])<2:return None
         result=copy.deepcopy(cached);result.pop('intent',None)
+        result.setdefault('source','structured_command_parser')
+        result['source_kind']='TEXT_MODEL_PARSE'
+        result['model_prediction']=True
         return dict(schema_version='1.2.0',request_id=str(command.get('id') or 'plan-'+hashlib.sha256(text.encode()).hexdigest()[:16]),
             input=dict(modality='TEXT',language='en-US',raw_text=text,normalized_text=text),
             intent=copy.deepcopy(intent),parse_result=result)
@@ -513,8 +518,15 @@ class GenericInstructionFSM:
         parsed: ParsedInstruction,
         parse_result: Mapping[str, Any],
     ) -> ParsedInstruction:
-        if str(parse_result.get("status", "")) != "VALID":
-            return parsed
+        status = str(parse_result.get("status", "") or "").strip().upper()
+        source = parse_result.get("source")
+        source_name = str(source) if source is not None else None
+        if status != "VALID":
+            return replace(
+                parsed,
+                parse_status=status or "INVALID",
+                parse_source=source_name,
+            )
         intent = parsed.parsed_intent
         steps = (parse_result.get("intent") or {}).get("steps") or []
         if steps:
@@ -575,7 +587,11 @@ class GenericInstructionFSM:
                     speed_change=change if action == "ADJUST_SPEED" else None,
                     speed_delta_kmh=delta_kmh,
                 )
-        return parsed
+        return replace(
+            parsed,
+            parse_status="VALID",
+            parse_source=source_name,
+        )
 
     def semantic_text(self, parsed: ParsedInstruction) -> str:
         """Deterministic English text fed to the text encoder."""
