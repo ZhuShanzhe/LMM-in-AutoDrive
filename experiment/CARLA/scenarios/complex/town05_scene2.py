@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import bisect
 import math
 import random
 from typing import Any, Iterable, Mapping, Sequence
+
+from scenarios.following_lane_source import LaneTrafficSource
 
 
 WALKER_LATERAL_OFFSETS_M = (
@@ -130,6 +133,55 @@ def cumulative_route_distances(
     return distances
 
 
+def route_spatial_audit(
+    route: Sequence[tuple[Any, Any]],
+    distances: Sequence[float],
+    sample_interval_m: float = 20.0,
+    cell_size_m: float = 20.0,
+) -> dict[str, Any]:
+    """Measure route retracing and junction density independently of turn labels."""
+
+    if not route or len(route) != len(distances):
+        raise ValueError("route and distances must be nonempty and aligned")
+    if sample_interval_m <= 0.0 or cell_size_m <= 0.0:
+        raise ValueError("route audit scales must be positive")
+
+    cells: set[tuple[int, int]] = set()
+    repeated = 0
+    samples = 0
+    sample_s = 0.0
+    while sample_s <= float(distances[-1]):
+        index = min(bisect.bisect_left(distances, sample_s), len(route) - 1)
+        location = route[index][0].transform.location
+        cell = (
+            math.floor(float(location.x) / cell_size_m),
+            math.floor(float(location.y) / cell_size_m),
+        )
+        repeated += int(cell in cells)
+        cells.add(cell)
+        samples += 1
+        sample_s += sample_interval_m
+
+    junction_entries = 0
+    previously_inside = False
+    for waypoint, _ in route:
+        inside = bool(getattr(waypoint, "is_junction", False))
+        junction_entries += int(inside and not previously_inside)
+        previously_inside = inside
+
+    return {
+        "schema_version": "scene_route_spatial_audit/v1",
+        "sample_interval_m": sample_interval_m,
+        "cell_size_m": cell_size_m,
+        "samples": samples,
+        "unique_cells": len(cells),
+        "repeated_cell_fraction": round(repeated / samples, 4),
+        "junction_entries": junction_entries,
+        "mean_m_per_junction": round(float(distances[-1]) / junction_entries, 1)
+        if junction_entries else None,
+    }
+
+
 def route_curvature_degrees(
     route: Sequence[tuple[Any, Any]],
 ) -> float:
@@ -246,6 +298,106 @@ def build_repeated_route(
         if distance >= float(target_length_m)
     )
     return route[: end_index + 1], distances[: end_index + 1]
+
+
+def extend_route_for_coverage(
+    planner: Any,
+    spawn_points: Sequence[Any],
+    prefix: Sequence[tuple[Any, Any]],
+    target_length_m: float,
+    candidate_limit: int = 32,
+    candidate_offset: int = 1,
+) -> tuple[list[tuple[Any, Any]], list[float], list[dict[str, Any]]]:
+    """Continue an event-bearing route through new streets deterministically."""
+
+    if not prefix or candidate_limit < 1:
+        raise ValueError("route prefix and candidates are required")
+
+    def occupied_cells(points: Sequence[tuple[Any, Any]]) -> set[tuple[int, int]]:
+        return {
+            (
+                math.floor(point.transform.location.x / 20.0),
+                math.floor(point.transform.location.y / 20.0),
+            )
+            for point, _ in points
+        }
+
+    route = list(prefix)
+    stride = max(1, len(spawn_points) // candidate_limit)
+    candidates = range(candidate_offset % stride, len(spawn_points), stride)
+    selected_legs: list[dict[str, Any]] = []
+    while cumulative_route_distances(route)[-1] < target_length_m:
+        occupied = occupied_cells(route)
+        source = route[-1][0].transform.location
+        scored = []
+        for destination_index in candidates:
+            leg = planner.trace_route(
+                source, spawn_points[destination_index].location
+            )
+            if len(leg) < 3:
+                continue
+            length_m = cumulative_route_distances(leg)[-1]
+            if not 350.0 <= length_m <= 1600.0:
+                continue
+            segment_cells = occupied_cells(leg)
+            novelty = len(segment_cells - occupied) / max(1, len(segment_cells))
+            score = length_m * (novelty - 0.25 * (1.0 - novelty))
+            scored.append((score, novelty, length_m, destination_index, leg))
+        if not scored:
+            raise RuntimeError("no coverage-route continuation from endpoint")
+        _, novelty, length_m, destination_index, leg = max(
+            scored, key=lambda item: (item[0], item[1], item[2], -item[3])
+        )
+        route.extend(leg[1:])
+        selected_legs.append({
+            "spawn_index": destination_index,
+            "length_m": round(length_m, 1),
+            "new_cell_fraction": round(novelty, 3),
+        })
+        if len(selected_legs) > 16:
+            raise RuntimeError("coverage route exceeded 16 continuation legs")
+    distances = cumulative_route_distances(route)
+    end_index = bisect.bisect_left(distances, target_length_m)
+    return route[:end_index + 1], distances[:end_index + 1], selected_legs
+
+
+def build_configured_route(
+    carla_map: Any, route_config: Mapping[str, Any],
+) -> tuple[list[tuple[Any, Any]], list[float], list[dict[str, Any]], int]:
+    """Build the identical route for runtime and actor-free preflight."""
+    destination = route_config["turnaround_spawn_index"]
+    if destination == "auto":
+        destination, _, _ = choose_curved_route_destination(
+            carla_map,
+            int(route_config["start_spawn_index"]),
+            float(route_config["route_sampling_m"]),
+        )
+    route, distances = build_repeated_route(
+        carla_map,
+        int(route_config["start_spawn_index"]),
+        int(destination),
+        float(route_config["target_length_m"]),
+        float(route_config["route_sampling_m"]),
+    )
+    coverage_legs: list[dict[str, Any]] = []
+    if route_config.get("strategy") == "coverage_greedy_v1":
+        from agents.navigation.global_route_planner import GlobalRoutePlanner
+
+        prefix_end = bisect.bisect_left(
+            distances, float(route_config["preserve_event_prefix_m"])
+        )
+        planner = GlobalRoutePlanner(
+            carla_map, float(route_config["route_sampling_m"])
+        )
+        route, distances, coverage_legs = extend_route_for_coverage(
+            planner,
+            carla_map.get_spawn_points(),
+            route[:prefix_end + 1],
+            float(route_config["target_length_m"]),
+            candidate_limit=int(route_config["coverage_candidate_limit"]),
+            candidate_offset=int(route_config["coverage_candidate_offset"]),
+        )
+    return route, distances, coverage_legs, int(destination)
 
 
 def route_index_at(
@@ -389,7 +541,9 @@ class TownTrafficFlow:
         self.reserved_locations: list[Any] = []
         self._maintenance_ticks = 0
         self._replenished = 0
+        self._following_sources: dict[tuple[int, int], LaneTrafficSource] = {}
         self._initial_route_spawned = 0
+        self.initial_route_spawns: list[dict[str, Any]] = []
         self.replenishment_events: list[dict[str, Any]] = []
         self.replenishment_settings = {
             "check_ticks": int(self.config.get("replenish_check_ticks", 20)),
@@ -397,8 +551,18 @@ class TownTrafficFlow:
             "minimum_same_direction_vehicles": int(
                 self.config.get("minimum_same_direction_vehicles", 2)
             ),
-            "lookahead_m": float(self.config.get("replenish_lookahead_m", 240.0)),
+            "lookahead_m": max(
+                360.0, float(self.config.get("replenish_lookahead_m", 360.0))
+            ),
+            "visibility_clearance_m": 350.0,
             "maximum_extra_actors": int(self.config.get("maximum_extra_actors", 12)),
+            "following_source_actor_reserve": max(0, int(self.config.get("following_source_actor_reserve", 12))),
+            "lane_spacing_m": max(35.0, float(self.config.get("replenish_lane_spacing_m", 75.0))),
+            "staging_window_m": max(100.0, float(self.config.get("replenish_staging_window_m", 300.0))),
+            "following_source_back_m": max(75.0, float(self.config.get("following_source_back_m", 100.0))),
+            "following_source_spacing_m": max(40.0, float(self.config.get("following_source_spacing_m", 65.0))),
+            "following_source_lane_vehicles": max(1, int(self.config.get("following_source_lane_vehicles", 2))),
+            "following_source_front_vehicles": max(1, int(self.config.get("following_source_front_vehicles", 2))),
         }
 
     def spawn(
@@ -412,36 +576,73 @@ class TownTrafficFlow:
             self.reserved_locations,
             ego_location,
         )
-        for offset_m, lane_choice in ((100.0, 0), (145.0, 0),
-                                      (165.0, 1), (230.0, 0),
-                                      (275.0, 0), (300.0, 1)):
-            if self._spawn_route_vehicle(
+        for offset_m, lane_choice in ((50.0, 0), (75.0, 1),
+                                      (105.0, 2), (135.0, 0),
+                                      (170.0, 1), (205.0, 2),
+                                      (240.0, 0), (275.0, 1),
+                                      (315.0, 2), (355.0, 0),
+                                      (400.0, 1)):
+            spawned = self._spawn_route_vehicle(
                 ego_location, ego_progress_m + offset_m,
-                minimum_ego_distance_m=70.0, lane_choice=lane_choice,
-            ) is not None:
+                minimum_ego_distance_m=45.0, lane_choice=lane_choice,
+            )
+            if spawned is not None:
                 self._initial_route_spawned += 1
+                actor, location = spawned
+                self.initial_route_spawns.append({
+                    "actor_id": actor.id,
+                    "requested_offset_m": offset_m,
+                    "actual_distance_from_ego_m": round(distance_2d(location, ego_location), 1),
+                })
         self._spawn_walkers()
+
+    @staticmethod
+    def _same_direction_lanes(base: Any) -> list[Any]:
+        """Return all drivable lanes of this road, ordered right to left."""
+        def matching(candidate: Any) -> bool:
+            return bool(candidate is not None
+                        and candidate.road_id == base.road_id
+                        and candidate.lane_id * base.lane_id > 0
+                        and "Driving" in str(candidate.lane_type))
+
+        lanes = [base]
+        seen = {(base.road_id, base.lane_id)}
+        for side, prepend in (("get_right_lane", True), ("get_left_lane", False)):
+            current = base
+            for _ in range(8):
+                neighbor = getattr(current, side)()
+                if not matching(neighbor) or (neighbor.road_id, neighbor.lane_id) in seen:
+                    break
+                seen.add((neighbor.road_id, neighbor.lane_id))
+                if prepend:
+                    lanes.insert(0, neighbor)
+                else:
+                    lanes.append(neighbor)
+                current = neighbor
+        return lanes
 
     def _spawn_route_vehicle(self, ego_location: Any, route_s_m: float,
                              *, minimum_ego_distance_m: float,
-                             lane_choice: int) -> tuple[Any, Any] | None:
+                             lane_choice: int,
+                             strict_lane_choice: bool = False,
+                             speed_range_kmh: tuple[float, float] = (28.0, 42.0)) -> tuple[Any, Any] | None:
         import bisect
         import carla
 
         index = bisect.bisect_left(self.route_distances, route_s_m)
-        for offset in (0, 10, 20, 30, 40):
+        offsets = (0, 1, 2, 3, 4) if strict_lane_choice else (0, 10, 20, 30, 40)
+        for offset in offsets:
             candidate_index = min(index + offset, len(self.route) - 1)
             base = self.route[candidate_index][0]
             if base.is_junction:
                 continue
-            lanes = [base]
-            for side in ("get_left_lane", "get_right_lane"):
-                neighbor = getattr(base, side)()
-                if (neighbor is not None and neighbor.road_id == base.road_id
-                        and neighbor.lane_id * base.lane_id > 0
-                        and "Driving" in str(neighbor.lane_type)):
-                    lanes.append(neighbor)
-            for lane in lanes[lane_choice:] + lanes[:lane_choice]:
+            lanes = self._same_direction_lanes(base)
+            if strict_lane_choice and lane_choice >= len(lanes):
+                continue
+            selected = lane_choice % len(lanes)
+            lane_order = ([lanes[selected]] if strict_lane_choice
+                          else lanes[selected:] + lanes[:selected])
+            for lane in lane_order:
                 location = lane.transform.location
                 if (distance_2d(location, ego_location) < minimum_ego_distance_m
                         or any(distance_2d(location, reserved) < 18
@@ -458,7 +659,7 @@ class TownTrafficFlow:
                         self._initial_route_spawned + self._replenished),
                 )
                 transform = carla.Transform(
-                    carla.Location(x=location.x, y=location.y, z=location.z + 0.45),
+                    carla.Location(x=location.x, y=location.y, z=location.z + 0.25),
                     lane.transform.rotation,
                 )
                 actor = self.world.try_spawn_actor(blueprint, transform)
@@ -473,6 +674,10 @@ class TownTrafficFlow:
                 self.traffic_manager.vehicle_percentage_speed_difference(
                     actor, self.rng.uniform(-3.0, 14.0)
                 )
+                if hasattr(self.traffic_manager, "set_desired_speed"):
+                    self.traffic_manager.set_desired_speed(
+                        actor, self.rng.uniform(*speed_range_kmh)
+                    )
                 self.traffic_manager.auto_lane_change(actor, False)
                 self.traffic_manager.update_vehicle_lights(actor, True)
                 self.registry.add(actor)
@@ -515,24 +720,210 @@ class TownTrafficFlow:
                 same_visible += int(aligned)
         return front, same_visible, same_nearby
 
+    def _route_ahead_counts(self, progress_m: float) -> tuple[int, int]:
+        """Count both visible and staged traffic on the upcoming route."""
+        import bisect
+
+        start = bisect.bisect_left(self.route_distances, progress_m + 8.0)
+        staging_horizon_m = max(
+            500.0, self.replenishment_settings["lookahead_m"] + 140.0
+        )
+        end = bisect.bisect_right(
+            self.route_distances, progress_m + staging_horizon_m
+        )
+        if start >= end:
+            return 0, 0
+        sample_indices = list(range(start, end, 5))
+        if sample_indices[-1] != end - 1:
+            sample_indices.append(end - 1)
+        close = ahead = 0
+        get_map = getattr(self.world, "get_map", None)
+        road_map = get_map() if callable(get_map) else None
+        for actor in self.vehicles:
+            if not actor.is_alive:
+                continue
+            position = actor.get_location()
+            nearest = min(sample_indices, key=lambda index: distance_2d(
+                position, self.route[index][0].transform.location
+            ))
+            waypoint = self.route[nearest][0]
+            if distance_2d(position, waypoint.transform.location) > 12.0:
+                continue
+            if road_map is not None:
+                import carla
+
+                actor_waypoint = road_map.get_waypoint(
+                    position, project_to_road=True,
+                    lane_type=carla.LaneType.Driving,
+                )
+                if (actor_waypoint is None
+                        or actor_waypoint.road_id != waypoint.road_id
+                        or actor_waypoint.section_id != waypoint.section_id
+                        or actor_waypoint.lane_id * waypoint.lane_id <= 0):
+                    continue
+            route_forward = waypoint.transform.get_forward_vector()
+            actor_forward = actor.get_transform().get_forward_vector()
+            if actor_forward.x * route_forward.x + actor_forward.y * route_forward.y <= 0.5:
+                continue
+            ahead += 1
+            if self.route_distances[nearest] - progress_m <= 120.0:
+                close += 1
+        return close, ahead
+
+    def _staging_lane_gaps(self, ego_location: Any, progress_m: float) -> list[tuple[float, int]]:
+        """Find empty lane cells beyond the forward camera and event actors."""
+        start = progress_m + self.replenishment_settings["lookahead_m"]
+        start += 35.0 * (self._replenished % 4)
+        end = min(start + self.replenishment_settings["staging_window_m"],
+                  self.route_distances[-1] - 30.0)
+        if start >= end:
+            return []
+
+        spacing = self.replenishment_settings["lane_spacing_m"]
+        actors = [(actor, actor.get_location()) for actor in self.vehicles if actor.is_alive]
+        get_map = getattr(self.world, "get_map", None)
+        road_map = get_map() if callable(get_map) else None
+        actor_lanes = {}
+        if road_map is not None:
+            import carla
+            for actor, location in actors:
+                actor_lanes[id(actor)] = road_map.get_waypoint(
+                    location, project_to_road=True, lane_type=carla.LaneType.Driving)
+
+        cells = []
+        lane_coverage = {}
+        route_s_m = start
+        while route_s_m <= end:
+            index = min(bisect.bisect_left(self.route_distances, route_s_m), len(self.route) - 1)
+            base = self.route[index][0]
+            if not base.is_junction:
+                for rank, lane in enumerate(self._same_direction_lanes(base)):
+                    location = lane.transform.location
+                    if distance_2d(location, ego_location) < self.replenishment_settings["visibility_clearance_m"]:
+                        continue
+                    if any(distance_2d(location, reserved) < 25.0
+                           for reserved in self.reserved_locations):
+                        continue
+                    forward = lane.transform.get_forward_vector()
+                    occupied = False
+                    for actor, actor_location in actors:
+                        dx = actor_location.x - location.x
+                        dy = actor_location.y - location.y
+                        along = abs(dx * forward.x + dy * forward.y)
+                        across = abs(dx * forward.y - dy * forward.x)
+                        if along >= spacing * 0.85 or across >= 2.5:
+                            continue
+                        actor_lane = actor_lanes.get(id(actor))
+                        if (actor_lane is not None and hasattr(lane, "road_id")
+                                and (actor_lane.road_id != lane.road_id
+                                     or actor_lane.lane_id != lane.lane_id
+                                     or getattr(actor_lane, "section_id", None)
+                                     != getattr(lane, "section_id", None))):
+                            continue
+                        occupied = True
+                        break
+                    lane_coverage[rank] = lane_coverage.get(rank, 0) + int(occupied)
+                    if not occupied:
+                        cells.append((route_s_m, rank))
+            route_s_m += spacing
+
+        rotation = self._replenished % max(1, len(lane_coverage))
+        return sorted(cells, key=lambda cell: (
+            lane_coverage.get(cell[1], 0),
+            (cell[1] - rotation) % max(1, len(lane_coverage)),
+            cell[0],
+        ))
+
+    def _following_lane_sources(
+        self, ego_location: Any, progress_m: float
+    ) -> list[tuple[float, int, tuple[int, int]]]:
+        """Move the per-lane spawn sources along the route behind the ego."""
+        back_m = self.replenishment_settings["following_source_back_m"]
+        if progress_m < back_m + 30.0:
+            return []
+        ego_index = bisect.bisect_left(self.route_distances, progress_m)
+        if self.route[min(ego_index, len(self.route) - 1)][0].is_junction:
+            return []
+        source_s_m = progress_m - back_m
+        index = bisect.bisect_left(self.route_distances, source_s_m)
+        for offset in range(11):
+            candidate_index = max(0, index - offset)
+            candidate = self.route[candidate_index][0]
+            if (not candidate.is_junction
+                    and not any(self.route[nearby][0].is_junction
+                                for nearby in range(max(0, candidate_index - 5),
+                                                    min(len(self.route), candidate_index + 6)))):
+                break
+        else:
+            return []
+        source_s_m = self.route_distances[candidate_index]
+        spacing = self.replenishment_settings["following_source_spacing_m"]
+        actors = [actor.get_location() for actor in self.vehicles if actor.is_alive]
+        candidates = []
+        for rank, lane in enumerate(self._same_direction_lanes(candidate)):
+            location = lane.transform.location
+            if distance_2d(location, ego_location) < back_m * 0.7:
+                continue
+            if any(distance_2d(location, reserved) < 35.0
+                   for reserved in self.reserved_locations):
+                continue
+            key = (lane.road_id, lane.lane_id)
+            source = self._following_sources.setdefault(
+                key, LaneTrafficSource(lane, source_s_m)
+            )
+            source.waypoint = lane
+            source.route_s_m = source_s_m
+            source.actors = [actor for actor in source.actors
+                             if actor.is_alive
+                             and distance_2d(actor.get_location(), ego_location) < 300.0]
+            if progress_m - source.last_spawn_progress_m < spacing:
+                continue
+            forward = lane.transform.get_forward_vector()
+            near_source = near_ego = 0
+            for actor_location in actors:
+                dx, dy = actor_location.x - location.x, actor_location.y - location.y
+                along = dx * forward.x + dy * forward.y
+                across = abs(dx * forward.y - dy * forward.x)
+                if across >= 2.5:
+                    continue
+                near_source += int(-spacing * 0.5 < along < spacing)
+                near_ego += int(-50.0 < along < back_m + 150.0)
+            front_source_actors = sum(
+                (actor.get_location().x - location.x) * forward.x
+                + (actor.get_location().y - location.y) * forward.y > back_m
+                for actor in source.actors
+            )
+            if (len(source.actors) >=
+                    self.replenishment_settings["following_source_lane_vehicles"]
+                    + self.replenishment_settings["following_source_front_vehicles"]):
+                continue
+            if front_source_actors >= self.replenishment_settings["following_source_front_vehicles"]:
+                continue
+            if near_source or near_ego >= self.replenishment_settings["following_source_lane_vehicles"]:
+                continue
+            candidates.append((near_ego, rank, source_s_m, key))
+        candidates.sort(key=lambda item: (item[0], (item[1] - self._replenished) % 8))
+        return [(source_s, rank, key) for _, rank, source_s, key in candidates]
+
     def maintain(self, ego: Any, progress_m: float) -> None:
         """Replenish only beyond the camera range, without moving task actors."""
         self._maintenance_ticks += 1
         if self._maintenance_ticks % self.replenishment_settings["check_ticks"]:
             return
+        dead = [actor for actor in self.vehicles if not actor.is_alive]
+        if dead:
+            self.vehicles = [actor for actor in self.vehicles if actor.is_alive]
+            for actor in dead:
+                if actor in self.registry.actors:
+                    self.registry.actors.remove(actor)
         origin = ego.get_location()
         visible, same_visible, same_nearby = self._nearby_traffic_counts(
             ego, self.vehicles
         )
-        if (visible >= self.replenishment_settings["minimum_front_vehicles"]
-                and same_visible >= self.replenishment_settings["minimum_same_direction_vehicles"]):
-            return
-        if same_nearby >= self.replenishment_settings["minimum_same_direction_vehicles"]:
-            return
-
-        interval = self.replenishment_settings["lookahead_m"]
-        start = float(progress_m) + interval
-        if start >= self.route_distances[-1] - 30:
+        route_close, route_ahead = self._route_ahead_counts(progress_m)
+        gaps = self._staging_lane_gaps(origin, progress_m)
+        following_sources = self._following_lane_sources(origin, progress_m)
+        if not gaps and not following_sources:
             return
         source = None
         for actor in self.vehicles:
@@ -548,24 +939,70 @@ class TownTrafficFlow:
             if self.route_distances[nearest] < progress_m - 300:
                 source = actor
                 break
+        if source is None:
+            distant = [actor for actor in self.vehicles
+                       if actor.is_alive
+                       and distance_2d(actor.get_location(), origin) >= 500.0]
+            if distant:
+                source = max(distant, key=lambda actor:
+                             distance_2d(actor.get_location(), origin))
         if (source is None and len(self.vehicles) >=
                 int(self.config["vehicles"]) +
                 self.replenishment_settings["maximum_extra_actors"]):
             return
-        result = self._spawn_route_vehicle(
-            origin, start, minimum_ego_distance_m=180.0,
-            lane_choice=self._replenished % 3,
-        )
+        result = None
+        start = lane_choice = source_kind = source_key = None
+        front_candidates = [(distance_m, lane, "forward_staging", None)
+                            for distance_m, lane in gaps[:6]]
+        rear_candidates = [(distance_m, lane, "following_lane_source", key)
+                           for distance_m, lane, key in following_sources[:3]]
+        candidates = (rear_candidates + front_candidates if self._replenished % 3 == 2
+                      else front_candidates + rear_candidates)
+        for candidate_s_m, candidate_lane, candidate_kind, candidate_key in candidates:
+            result = self._spawn_route_vehicle(
+                origin, candidate_s_m,
+                minimum_ego_distance_m=(
+                    self.replenishment_settings["visibility_clearance_m"]
+                    if candidate_kind == "forward_staging" else 70.0
+                ),
+                lane_choice=candidate_lane,
+                strict_lane_choice=True,
+                speed_range_kmh=((28.0, 42.0) if candidate_kind == "forward_staging"
+                                 else (50.0, 60.0)),
+            )
+            if result is not None:
+                start, lane_choice = candidate_s_m, candidate_lane
+                source_kind, source_key = candidate_kind, candidate_key
+                break
         if result is None:
             return
         replacement, location = result
         self._replenished += 1
+        if source_key is not None:
+            lane_source = self._following_sources[source_key]
+            lane_source.actors.append(replacement)
+            lane_source.last_spawn_progress_m = progress_m
+            if hasattr(ego, "get_velocity") and hasattr(replacement, "set_target_velocity"):
+                import carla
+                speed = min(ego.get_velocity().length(), 15.0)
+                previous = lane_source.actors[-2] if len(lane_source.actors) > 1 else None
+                if previous is not None:
+                    speed = min(speed, previous.get_velocity().length())
+                direction = lane_source.waypoint.transform.get_forward_vector()
+                replacement.set_target_velocity(carla.Vector3D(
+                    x=speed * direction.x, y=speed * direction.y, z=0.0
+                ))
         self.replenishment_events.append({
             "ego_progress_m": round(float(progress_m), 1),
             "spawn_distance_from_ego_m": round(distance_2d(location, origin), 1),
             "front_vehicles_before": visible,
             "same_direction_visible_before": same_visible,
             "same_direction_nearby_before": same_nearby,
+            "route_vehicles_120m_before": route_close,
+            "route_vehicles_staging_before": route_ahead,
+            "requested_spawn_route_m": round(start, 1),
+            "lane_from_right": lane_choice + 1,
+            "source_kind": source_kind,
             "new_actor_id": replacement.id,
             "retired_actor_id": source.id if source is not None else None,
         })
@@ -678,7 +1115,10 @@ class TownTrafficFlow:
                 buses.append(library.find(identifier))
             except (IndexError, RuntimeError):
                 continue
-        requested = int(self.config["vehicles"])
+        requested = max(
+            0, int(self.config["vehicles"])
+            - self.replenishment_settings["following_source_actor_reserve"],
+        )
         bus_count = min(int(self.config["buses"]), requested)
         blueprints = [
             buses[index % len(buses)]
@@ -845,6 +1285,17 @@ def _lane_sidewalk(
         if "Sidewalk" in str(current.lane_type):
             return current
     return None
+
+
+def roadside_bus_waypoint(driving_waypoint: Any, carla_module: Any) -> Any:
+    shoulder = driving_waypoint.get_right_lane()
+    if (
+        shoulder is None
+        or shoulder.lane_type != carla_module.LaneType.Shoulder
+        or float(shoulder.lane_width) < 3.0
+    ):
+        raise ValueError("bus stop requires a right-side shoulder at the route anchor")
+    return shoulder
 
 
 def crossing_endpoints(waypoint: Any) -> tuple[Any, Any]:
@@ -1141,6 +1592,7 @@ class DeterministicSceneEvents:
         self.bindings: dict[str, Any] = {}
         self.spawn_diagnostics: dict[str, dict[str, Any]] = {}
         self.slow_vehicle: Any | None = None
+        self._slow_vehicle_prestaged = False
         self.route_slow_vehicles: dict[str, Any] = {}
         for event in self.events:
             if event['kind'] == 'route_slow_vehicle':
@@ -1238,7 +1690,7 @@ class DeterministicSceneEvents:
         )
         return True
 
-    def _retire_event_actors(self, event_id: str) -> int:
+    def _retire_event_actors(self, event_id: str, *, force: bool = False) -> int:
         """Remove resolved event actors from the drivable corridor once."""
 
         event_id = str(event_id)
@@ -1258,10 +1710,17 @@ class DeterministicSceneEvents:
             ]
         elif event_id == "slow_cyclist":
             roles = ["scene2_slow_cyclist"]
+        elif event_id in self.route_slow_vehicles:
+            roles = [
+                str(event["actor_role"])
+                for event in self.events if str(event["id"]) == event_id
+            ]
         else:
             roles = []
 
-        retained = [role for role in roles if role in self.preserve_roles]
+        retained = [] if force else [
+            role for role in roles if role in self.preserve_roles
+        ]
         if retained:
             for role in retained:
                 self.spawn_diagnostics.setdefault(role, {}).update(
@@ -1284,64 +1743,73 @@ class DeterministicSceneEvents:
             route_index_at(self.distances, progress_m)
         ][0]
 
-    def _free_vehicle_waypoint(
-        self,
-        progress_m: float,
-        lead_distance_m: float,
-        staged_actor: Any,
-    ) -> tuple[Any, float]:
-        """Choose a route point ahead that is not occupied by traffic."""
+    def _prestage_slow_vehicle(
+        self, event: Mapping[str, Any], progress_m: float
+    ) -> None:
+        if self._slow_vehicle_prestaged or self.slow_vehicle is None:
+            return
+        activate_at = float(event["activate_progress_m"])
+        if progress_m < activate_at - float(
+            event.get("prestage_before_activation_m", 80.0)
+        ):
+            return
+        if self.ego is None:
+            raise RuntimeError("slow vehicle prestaging requires the ego actor")
 
-        vehicles = list(
-            self.world.get_actors().filter("vehicle.*")
-        )
-        candidate_leads = (
-            float(lead_distance_m),
-            float(lead_distance_m) + 12.0,
-            max(24.0, float(lead_distance_m) - 12.0),
-            float(lead_distance_m) + 24.0,
-        )
-        for lead in candidate_leads:
-            waypoint = self._waypoint(float(progress_m) + lead)
+        import carla
+
+        ego_transform = self.ego.get_transform()
+        origin = ego_transform.location
+        forward = ego_transform.get_forward_vector()
+        vehicles = self.world.get_actors().filter("vehicle.*")
+        for offset_m in (0.0, 12.0, -12.0, 24.0, -24.0):
+            waypoint = self._waypoint(float(event["anchor_progress_m"]) + offset_m)
             location = waypoint.transform.location
-            occupied = False
-            for vehicle in vehicles:
-                if int(vehicle.id) == int(staged_actor.id):
-                    continue
-                try:
-                    distance = vehicle.get_location().distance(location)
-                except RuntimeError:
-                    continue
-                if float(distance) < 9.0:
-                    occupied = True
-                    break
-            if not occupied:
-                return waypoint, lead
-        return self._waypoint(
-            float(progress_m) + float(lead_distance_m)
-        ), float(lead_distance_m)
+            dx, dy = location.x - origin.x, location.y - origin.y
+            along = dx * forward.x + dy * forward.y
+            lateral = abs(dx * forward.y - dy * forward.x)
+            if along > 0.0 and lateral < along:
+                continue
+            if any(
+                actor.id != self.slow_vehicle.id
+                and distance_2d(actor.get_location(), location) < 9.0
+                for actor in vehicles if actor.is_alive
+            ):
+                continue
+            transform = carla.Transform(
+                carla.Location(x=location.x, y=location.y, z=location.z + 0.45),
+                waypoint.transform.rotation,
+            )
+            self.slow_vehicle.set_transform(transform)
+            self.slow_vehicle.set_simulate_physics(True)
+            self.slow_vehicle.apply_control(
+                carla.VehicleControl(brake=1.0, hand_brake=True)
+            )
+            self.reserved_locations.append(transform.location)
+            self._slow_vehicle_prestaged = True
+            self.spawn_diagnostics["scene2_slow_vehicle"].update({
+                "prestage_progress_m": round(float(progress_m), 3),
+                "prestage_route_offset_m": offset_m,
+                "prestage_forward_m": round(along, 3),
+                "prestage_lateral_m": round(lateral, 3),
+                "activation_source": "physical_parked_release",
+            })
+            return
+        if progress_m >= activate_at - 20.0:
+            raise RuntimeError("slow vehicle cannot be prestaged outside ego view")
 
     def _activate_slow_vehicle(
         self,
         event: Mapping[str, Any],
         progress_m: float,
     ) -> None:
-        """Place the slow vehicle near ego only when its event activates."""
+        """Release the already visible slow vehicle without relocating it."""
 
-        if self.slow_vehicle is None:
-            return
-        lead_distance_m = float(
-            event.get("spawn_lead_distance_m", 45.0)
-        )
-        waypoint, selected_lead_m = self._free_vehicle_waypoint(
-            progress_m,
-            lead_distance_m,
-            self.slow_vehicle,
-        )
-        transform = waypoint.transform
-        transform.location.z += 0.45
-        self.slow_vehicle.set_transform(transform)
-        self.slow_vehicle.set_simulate_physics(True)
+        if self.slow_vehicle is None or not self._slow_vehicle_prestaged:
+            raise RuntimeError("slow vehicle was not prestaged before activation")
+        import carla
+
+        self.slow_vehicle.apply_control(carla.VehicleControl())
         self.slow_vehicle.set_autopilot(
             True,
             self.traffic_manager.get_port(),
@@ -1361,12 +1829,7 @@ class DeterministicSceneEvents:
         )
         self.spawn_diagnostics["scene2_slow_vehicle"].update(
             {
-                "activation_source": "route_relative_restage",
                 "activation_progress_m": round(float(progress_m), 3),
-                "activation_lead_distance_m": round(
-                    selected_lead_m,
-                    3,
-                ),
             }
         )
 
@@ -1833,22 +2296,10 @@ class DeterministicSceneEvents:
         )
 
         bus_config = by_kind["bus_stop"]
-        bus_waypoint = self._waypoint(
+        bus_route_waypoint = self._waypoint(
             float(bus_config["anchor_progress_m"])
         )
-        bus_waypoint_transform = bus_waypoint.transform
-        self.bus_transform = carla.Transform(
-            carla.Location(
-                x=float(bus_waypoint_transform.location.x),
-                y=float(bus_waypoint_transform.location.y),
-                z=float(bus_waypoint_transform.location.z) + 0.45,
-            ),
-            carla.Rotation(
-                pitch=float(bus_waypoint_transform.rotation.pitch),
-                yaw=float(bus_waypoint_transform.rotation.yaw),
-                roll=float(bus_waypoint_transform.rotation.roll),
-            ),
-        )
+        bus_waypoint = roadside_bus_waypoint(bus_route_waypoint, carla)
         self.bus = self._spawn_vehicle(
             (
                 "vehicle.mitsubishi.fusorosa",
@@ -1860,7 +2311,6 @@ class DeterministicSceneEvents:
         )
         self.bus_transform = self._vehicle_spawn_transforms['scene2_bus_stop_bus']
         self.bus.set_autopilot(False,self.traffic_manager.get_port())
-        self.reserved_locations.append(self.bus_transform.location)
         self.bus.apply_control(
             carla.VehicleControl(hand_brake=True)
         )
@@ -1982,6 +2432,20 @@ class DeterministicSceneEvents:
         )
         self._spawned = True
 
+    def skip_events_before(self, start_progress_m: float) -> list[str]:
+        """Cold segments must not activate actors belonging to earlier tasks."""
+
+        skipped = []
+        for event in self.events:
+            event_id = str(event["id"])
+            if float(event["anchor_progress_m"]) >= start_progress_m - 300.0:
+                continue
+            if self.states[event_id] == "STAGED":
+                self.states[event_id] = "SKIPPED"
+                self._retire_event_actors(event_id, force=True)
+                skipped.append(event_id)
+        return skipped
+
     def _prestage_cyclist(self, event: Mapping[str, Any], progress_m: float) -> None:
         """Place the parked cyclist only after the earlier route overlap is passed."""
         if self._cyclist_placed or self.cyclist is None:
@@ -2028,8 +2492,11 @@ class DeterministicSceneEvents:
 
     def update(self, progress_m: float) -> list[dict[str, Any]]:
         changes = []
+        slow_event = next((event for event in self.events if event["kind"] == "slow_vehicle"), None)
+        if slow_event is not None and self.states[str(slow_event["id"])] == "STAGED":
+            self._prestage_slow_vehicle(slow_event, progress_m)
         cyclist_event = next((event for event in self.events if event["kind"] == "cyclist"), None)
-        if cyclist_event is not None:
+        if cyclist_event is not None and self.states[str(cyclist_event["id"])] == "STAGED":
             self._prestage_cyclist(cyclist_event, progress_m)
         for event in self.events:
             event_id = str(event["id"])
@@ -2159,7 +2626,7 @@ class DeterministicSceneEvents:
         return changes
 
     def summary(self) -> dict[str, int]:
-        result = {"STAGED": 0, "ACTIVE": 0, "RESOLVED": 0}
+        result = {"STAGED": 0, "ACTIVE": 0, "RESOLVED": 0, "SKIPPED": 0}
         for state in self.states.values():
             result[state] += 1
         return result

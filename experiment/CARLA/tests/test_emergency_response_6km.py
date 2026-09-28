@@ -193,9 +193,13 @@ class EmergencyRuntimeConfigTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            config["traffic"],
+            {key: config["traffic"][key] for key in (
+                "private_vehicle_count", "work_vehicle_count",
+                "maintenance_vehicle_count", "worker_count",
+                "minimum_ego_spawn_clearance_m",
+            )},
             {
-                "private_vehicle_count": 16,
+                "private_vehicle_count": 18,
                 "work_vehicle_count": 2,
                 "maintenance_vehicle_count": 1,
                 "worker_count": 2,
@@ -204,8 +208,9 @@ class EmergencyRuntimeConfigTests(unittest.TestCase):
         )
         self.assertEqual(
             len(scene_events.BACKGROUND_TRAFFIC_PLAN),
-            14,
+            16,
         )
+        self.assertEqual(config["traffic"]["following_source_max_actors"], 6)
 
     def test_work_zone_boundary_cones_leave_exit_handoff_clear(self):
         positions = scene_events.work_zone_boundary_positions(
@@ -573,6 +578,64 @@ class EmergencyRoadContractTests(unittest.TestCase):
             locations,
         )
 
+    def test_fixture_route_uses_open_lane_only_during_work_zone(self):
+        distances = [0.0, 2800.0, 2900.0, 3100.0, 3400.0, 5200.0, 5300.0, 5400.0]
+        route = [
+            (SimpleNamespace(is_junction=False), None)
+            for _ in distances
+        ]
+        adapter = mock.Mock()
+        adapter.logical_waypoint.side_effect = lambda lane, progress: (
+            SimpleNamespace(lane_id=lane)
+        )
+        context = SimpleNamespace(route=route, distances_m=distances, adapter=adapter)
+        events = runner.load_runtime_config(CONFIG_PATH)["events"]
+
+        default = runner.build_ego_route_plan(context, events)
+        fixture = runner.build_ego_route_plan(
+            context, events, scenario_fixture_route=True,
+        )
+
+        self.assertEqual([point.lane_id for point, _ in default], [-2] * len(distances))
+        self.assertEqual(
+            [point.lane_id for point, _ in fixture],
+            [-2, -2, -1, -1, -1, -1, -2, -2],
+        )
+
+    def test_fixture_route_rejects_vla_controller(self):
+        args = runner.build_parser().parse_args([
+            "--scenario-fixture-route", "--ego-controller", "vla-route-pid",
+        ])
+        with self.assertRaisesRegex(ValueError, "non-VLA controller"):
+            runner.validate_args(args)
+
+    def test_crossing_worker_does_not_share_cone_position(self):
+        config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        zone = next(
+            event["zone"] for event in config["events"]
+            if event["id"] == "scene3_work_zone"
+        )
+        worker = next(
+            event["workers"][0] for event in config["events"]
+            if event["id"] == "scene3_temporary_pedestrian"
+        )
+        self.assertGreaterEqual(
+            min(
+                abs(worker["start_s_m"] - position)
+                for position in scene_events.work_zone_boundary_positions(
+                    zone["start_s_m"], zone["end_s_m"],
+                    zone.get("boundary_cone_spacing_m", 30.0),
+                )
+            ),
+            5.0,
+        )
+        worker["start_s_m"] = 3330.0
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "blocked_worker.json"
+            path.write_text(json.dumps(config), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "overlaps a work-zone cone"):
+                runner.load_runtime_config(path)
+
     def test_checked_in_xodr_is_valid(self):
         root = ET.parse(XODR_PATH).getroot()
 
@@ -732,7 +795,52 @@ class EmergencyEventSchedulerTests(unittest.TestCase):
 
 
 class EmergencyActorRuntimeTests(unittest.TestCase):
-    def test_cone_taper_retires_free_flow_traffic_before_activation(self):
+    def test_following_source_skips_events_and_recycles_only_far_actor(self):
+        ego = mock.Mock()
+        ego.get_location.return_value = SimpleNamespace(x=500.0, y=0.0, z=0.0)
+        carla_map = mock.Mock()
+
+        def waypoint(_road_id, lane_id, progress):
+            return SimpleNamespace(
+                is_junction=False, road_id=1, lane_id=lane_id,
+                transform=SimpleNamespace(
+                    location=SimpleNamespace(x=progress, y=lane_id * 4.0, z=0.0),
+                    get_forward_vector=lambda: SimpleNamespace(x=1.0, y=0.0),
+                ),
+            )
+
+        carla_map.get_waypoint_xodr.side_effect = waypoint
+        runtime = scene_events.EmergencySceneActorRuntime(
+            carla_module=mock.Mock(), world=mock.Mock(), carla_map=carla_map,
+            traffic_manager=mock.Mock(), traffic_manager_port=8000,
+            actor_sink=[], ego_actor=ego,
+        )
+        runtime._following_source_config = {
+            "following_source_max_actors": 1,
+            "following_source_check_ticks": 1,
+            "following_source_exclusion_windows_m": [[1150, 1600]],
+        }
+        first = mock.Mock(is_alive=True)
+        first.get_location.return_value = SimpleNamespace(x=395.0, y=-4.0, z=0.0)
+        second = mock.Mock(is_alive=True)
+        second.get_location.return_value = SimpleNamespace(x=695.0, y=-4.0, z=0.0)
+        runtime._spawn_moving_vehicle = mock.Mock(side_effect=[first, second])
+
+        runtime._update_following_sources(1300.0)
+        runtime._spawn_moving_vehicle.assert_not_called()
+        runtime._update_following_sources(500.0)
+        self.assertEqual(len(runtime._following_source_vehicles), 1)
+        self.assertEqual(runtime._following_source_spawns, 1)
+        runtime._update_following_sources(520.0)
+        self.assertEqual(runtime._spawn_moving_vehicle.call_count, 1)
+
+        ego.get_location.return_value = SimpleNamespace(x=800.0, y=0.0, z=0.0)
+        runtime._update_following_sources(800.0)
+        first.destroy.assert_called_once_with()
+        self.assertEqual(runtime._following_source_vehicles, [second])
+        self.assertEqual(runtime._following_source_spawns, 2)
+
+    def test_cone_taper_requests_free_flow_retirement_before_activation(self):
         runtime = scene_events.EmergencySceneActorRuntime(
             carla_module=mock.Mock(),
             world=mock.Mock(),
@@ -755,9 +863,70 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
 
         runtime._retire_resolved_cut_in.assert_called_once_with()
         runtime._retire_background_traffic.assert_called_once_with(
-            retire_pending=True,
+            retire_pending_through_s_m=5100.0,
         )
         runtime._activate_cone_taper.assert_called_once_with(event)
+
+    def test_work_zone_retirement_keeps_post_zone_traffic_pending(self):
+        runtime = scene_events.EmergencySceneActorRuntime(
+            carla_module=mock.Mock(),
+            world=mock.Mock(),
+            carla_map=mock.Mock(),
+            traffic_manager=mock.Mock(),
+            traffic_manager_port=8000,
+            actor_sink=[],
+        )
+        runtime._background_plan = [
+            {"role_name": "work_zone", "s_m": 2650.0},
+            {"role_name": "post_zone", "s_m": 5300.0},
+        ]
+
+        runtime._retire_background_traffic(
+            retire_pending_through_s_m=5100.0,
+        )
+
+        self.assertIn("work_zone", runtime._background_spawned_roles)
+        self.assertNotIn("post_zone", runtime._background_spawned_roles)
+
+    def test_background_retirement_waits_until_actor_is_out_of_view(self):
+        ego = mock.Mock()
+        ego.get_location.return_value = SimpleNamespace(x=0.0, y=0.0)
+        near = mock.Mock()
+        near.is_alive = True
+        near.get_location.return_value = SimpleNamespace(x=60.0, y=0.0)
+        far = mock.Mock()
+        far.is_alive = True
+        far.get_location.return_value = SimpleNamespace(x=220.0, y=0.0)
+        runtime = scene_events.EmergencySceneActorRuntime(
+            carla_module=mock.Mock(), world=mock.Mock(),
+            carla_map=mock.Mock(), traffic_manager=mock.Mock(),
+            traffic_manager_port=8000, actor_sink=[], ego_actor=ego,
+        )
+        runtime._background_vehicles = [near, far]
+
+        retired = runtime._retire_background_traffic(
+            retire_pending_through_s_m=5100.0,
+        )
+
+        self.assertEqual(retired, 1)
+        far.destroy.assert_called_once_with()
+        near.destroy.assert_not_called()
+        self.assertEqual(runtime._background_vehicles, [near])
+        self.assertEqual(runtime._background_retirement_pending, [near])
+
+        near.get_location.return_value = SimpleNamespace(x=170.0, y=0.0)
+        runtime._drain_background_retirement()
+
+        near.destroy.assert_called_once_with()
+        self.assertEqual(runtime._background_vehicles, [])
+        self.assertEqual(runtime._background_retirement_pending, [])
+
+    def test_background_plan_covers_pre_and_post_work_zone(self):
+        positions = [s_m for _, s_m, _ in scene_events.BACKGROUND_TRAFFIC_PLAN]
+        self.assertEqual(len(positions), 16)
+        self.assertEqual(positions, sorted(positions))
+        self.assertTrue(any(300.0 < s_m < 1200.0 for s_m in positions))
+        self.assertTrue(any(s_m > 5100.0 for s_m in positions))
 
     def test_resolved_cut_in_is_retired_before_next_event_family(self):
         traffic_manager = mock.Mock()
@@ -795,7 +964,7 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         }
         available.update(
             (lane_id, s_m)
-            for lane_id, s_m, _ in scene_events.BACKGROUND_TRAFFIC_PLAN[:4]
+            for lane_id, s_m, _ in scene_events.BACKGROUND_TRAFFIC_PLAN[:6]
         )
         carla_map = mock.Mock()
         carla_map.get_waypoint_xodr.side_effect = (
@@ -826,12 +995,20 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         )
 
         runtime.spawn_background_traffic(
-            {"private_vehicle_count": 16}
+            {"private_vehicle_count": 18}
         )
+        next_s_m = scene_events.BACKGROUND_TRAFFIC_PLAN[6][1]
+        runtime._update_background_traffic(
+            next_s_m - scene_events.BACKGROUND_SPAWN_LEAD_M - 1.0
+        )
+        self.assertEqual(runtime._spawn_moving_vehicle.call_count, 6)
         for _lane_id, s_m, _speed_kmh in (
             scene_events.BACKGROUND_TRAFFIC_PLAN
         ):
-            runtime._update_background_traffic(s_m + 80.0)
+            runtime._update_background_traffic(max(
+                s_m - scene_events.BACKGROUND_SPAWN_LEAD_M,
+                5100.0 if s_m >= 5100.0 else 0.0,
+            ))
 
         actual_lane_ids = [
             call.kwargs["actor_config"]["lane_id"]
@@ -841,15 +1018,63 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         ]
         self.assertEqual(
             actual_lane_ids,
-            [-3, -1, -3, -1] + [-2] * (len(scene_events.BACKGROUND_TRAFFIC_PLAN) - 4),
+            [-3, -1, -2, -3, -1, -2]
+            + [-2] * (len(scene_events.BACKGROUND_TRAFFIC_PLAN) - 6),
         )
 
-    def test_initial_background_traffic_uses_adjacent_lane(self):
-        self.assertEqual(
-            [lane_id for lane_id, _, _ in scene_events.BACKGROUND_TRAFFIC_PLAN[:4]],
-            [-3, -1, -3, -1],
+    def test_occupied_background_spawn_retries_without_aborting(self):
+        runtime = scene_events.EmergencySceneActorRuntime(
+            carla_module=mock.Mock(), world=mock.Mock(),
+            carla_map=mock.Mock(), traffic_manager=mock.Mock(),
+            traffic_manager_port=8000, actor_sink=[],
         )
-        self.assertLess(scene_events.BACKGROUND_TRAFFIC_PLAN[0][1], 250.0)
+        runtime._background_plan = [dict(
+            role_name='retry_car', lane_id=-2, s_m=500.0,
+            speed_kmh=30.0, color='80,80,80', blueprint_ids=['vehicle.test'],
+        )]
+        car = mock.Mock()
+        runtime._spawn_moving_vehicle = mock.Mock(side_effect=[RuntimeError('occupied'), car])
+
+        runtime._update_background_traffic(280.0)
+        self.assertNotIn('retry_car', runtime._background_spawned_roles)
+        runtime._update_background_traffic(284.0)
+        self.assertEqual(runtime._spawn_moving_vehicle.call_count, 1)
+        runtime._update_background_traffic(285.0)
+        self.assertIn('retry_car', runtime._background_spawned_roles)
+        self.assertEqual(runtime._background_vehicles, [car])
+        self.assertEqual(runtime._spawn_moving_vehicle.call_count, 2)
+
+    def test_initial_background_traffic_includes_ego_lane(self):
+        self.assertEqual(
+            [lane_id for lane_id, _, _ in scene_events.BACKGROUND_TRAFFIC_PLAN[:6]],
+            [-3, -1, -2, -3, -1, -2],
+        )
+        self.assertEqual(
+            [s_m for _, s_m, _ in scene_events.BACKGROUND_TRAFFIC_PLAN[:6]],
+            [40.0, 65.0, 110.0, 150.0, 180.0, 240.0],
+        )
+        self.assertTrue(all(
+            28.0 <= speed_kmh <= 32.0
+            for _, _, speed_kmh in scene_events.BACKGROUND_TRAFFIC_PLAN[:6]
+        ))
+
+    def test_occupied_initial_background_vehicle_remains_retryable(self):
+        runtime = scene_events.EmergencySceneActorRuntime(
+            carla_module=mock.Mock(), world=mock.Mock(),
+            carla_map=mock.Mock(), traffic_manager=mock.Mock(),
+            traffic_manager_port=8000, actor_sink=[],
+        )
+        vehicles = [mock.Mock() for _ in range(6)]
+        runtime._spawn_moving_vehicle = mock.Mock(
+            side_effect=[RuntimeError('occupied'), *vehicles]
+        )
+        runtime.spawn_background_traffic({'private_vehicle_count': 18})
+        self.assertNotIn('scene3_background_01', runtime._background_spawned_roles)
+        self.assertEqual(len(runtime._background_vehicles), 5)
+
+        runtime._update_background_traffic(0.0)
+        self.assertIn('scene3_background_01', runtime._background_spawned_roles)
+        self.assertEqual(len(runtime._background_vehicles), 6)
 
     def test_worker_spawn_retries_equivalent_pose(
         self,
@@ -999,10 +1224,35 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         )
 
         worker.set_location.assert_not_called()
-        self.assertEqual(
-            runtime._worker_phase,
-            "CROSSING",
+        self.assertEqual(runtime._worker_phase, "CROSSING")
+
+    def test_worker_clears_near_destination_only_when_lane_is_clear(self):
+        worker = mock.Mock()
+        worker.is_alive = True
+        worker.get_location.return_value = SimpleNamespace(x=9.4, y=0.0)
+        runtime = scene_events.EmergencySceneActorRuntime(
+            carla_module=SimpleNamespace(
+                WalkerControl=lambda **values: SimpleNamespace(**values),
+                Vector3D=lambda **values: SimpleNamespace(**values),
+            ),
+            world=mock.Mock(), carla_map=mock.Mock(),
+            traffic_manager=mock.Mock(), traffic_manager_port=8000,
+            actor_sink=[],
         )
+        runtime._worker_phase = "CROSSING"
+        runtime._crossing_worker = worker
+        runtime._crossing_worker_config = {"start_s_m": 3345.0}
+        runtime._crossing_worker_start_location = SimpleNamespace(x=0.0, y=0.0)
+        runtime._crossing_worker_start_elapsed_s = 1.0
+        runtime._crossing_worker_target_location = SimpleNamespace(x=10.0, y=0.0)
+        with mock.patch(
+            "worker_clearance.worker_clear_of_lane", return_value={"clear": True}
+        ) as clearance:
+            runtime._update_worker_crossing(ego_route_s_m=3380.0, elapsed_s=8.0)
+
+        clearance.assert_called_once()
+        self.assertEqual(runtime._worker_phase, "YIELDED_CLEAR")
+        worker.apply_control.assert_called_once()
 
     def test_crossing_worker_rejects_destroyed_actor_identity(self):
         retired = mock.Mock()

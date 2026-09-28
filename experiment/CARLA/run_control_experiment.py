@@ -582,10 +582,8 @@ def parse_args():
         parser.error('--vla-record-sensors requires --decision-source vla_scene_bridge')
     if args.record_multimodal and not args.benchmark_assessment:
         parser.error('--record-multimodal requires --benchmark-assessment for independent truth')
-    if (args.benchmark_speed_limit_guard or args.benchmark_traffic_guard) and (
-        args.decision_source != 'voice_schedule' or not args.benchmark_assessment
-    ):
-        parser.error('benchmark guards require --benchmark-assessment and --decision-source voice_schedule')
+    if (args.benchmark_speed_limit_guard or args.benchmark_traffic_guard) and args.decision_source != 'voice_schedule':
+        parser.error('benchmark guards require --decision-source voice_schedule')
     if args.decision_source == "json_file" and not args.decision_json:
         parser.error("--decision-json is required when --decision-source json_file")
     if args.decision_source == "scene_bridge" and not args.driving_intent_json:
@@ -718,9 +716,11 @@ def main():
         ego = scenario.get_ego_vehicle()
         baseline_traffic_guard=None
         baseline_lane_feedback=None
-        if args.benchmark_assessment and args.decision_source=='voice_schedule':
-            from benchmark.execution_feedback import LaneExecutionFeedback
+        baseline_turn_feedback=None
+        if args.decision_source=='voice_schedule':
+            from benchmark.execution_feedback import LaneExecutionFeedback, TurnExecutionFeedback
             baseline_lane_feedback=LaneExecutionFeedback()
+            baseline_turn_feedback=TurnExecutionFeedback()
         if args.benchmark_traffic_guard:
             from benchmark.traffic_guard import BenchmarkTrafficGuard
             baseline_traffic_guard=BenchmarkTrafficGuard(ego)
@@ -751,6 +751,19 @@ def main():
                 video_fps=args.video_fps,
                 ffmpeg_path=args.ffmpeg,
                 video_overlay=args.video_overlay,
+                camera_attributes=(
+                    {
+                        "gamma": "2.2",
+                        "exposure_mode": "histogram",
+                        "exposure_compensation": "-0.3",
+                        "exposure_speed_up": "3.0",
+                        "exposure_speed_down": "1.0",
+                        "bloom_intensity": "0.15",
+                        "lens_flare_intensity": "0.10",
+                        "motion_blur_intensity": "0.10",
+                    }
+                    if args.scenario == "basic_voice_urban_5km" else None
+                ),
                 camera_pose=camera_pose,
             )
             camera.start()
@@ -962,7 +975,8 @@ def main():
         if args.benchmark_assessment:
             from benchmark.episode import attach_episode
             benchmark_assessment = attach_episode('scene_1',scenario.route_manager.route,world,ego,
-                Path(output_dir)/'benchmark',args.scenario_config or scenario_config_path,
+                Path(output_dir)/'benchmark',
+                args.scenario_config or scenario_config_path or getattr(scenario, 'config_path', None),
                 initial_route_s_m=float(scenario.route_manager.progress_m),
                 task_selector=args.benchmark_task,
                 run_metadata=dict(decision_source=args.decision_source,
@@ -1143,6 +1157,11 @@ def main():
                     controller,
                 )
             scenario_status = call_scenario_method(scenario, "get_status", {})
+            if baseline_turn_feedback is not None:
+                turn_feedback = baseline_turn_feedback.update(normalized_intent, scenario_status)
+                if turn_feedback is not None:
+                    policy.mark_completed(turn_feedback['command_id'])
+                    normalized_intent['baseline_turn_execution_feedback'] = turn_feedback
             scenario_metrics = scenario_status.get("metrics", {})
             events["illegal_lane_invasion_count"] = int(
                 scenario_metrics.get(
@@ -1243,6 +1262,9 @@ def main():
                     "perception": perception_latency_ms,
                 },
             }
+            if (snapshot.frame % 20 == 0 and args.scenario == "basic_voice_urban_5km"
+                    and getattr(scenario, "traffic", None) is not None):
+                record["traffic_actor_probe"] = scenario.traffic.actor_probe(ego)
             if step_feedback is not None:
                 record["step_feedback"] = step_feedback
             if scene_capture_result is not None:

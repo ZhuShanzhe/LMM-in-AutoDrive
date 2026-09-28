@@ -198,7 +198,13 @@
     ]
   },
   "traffic": {
-    "private_vehicle_count": 16,
+    "private_vehicle_count": 18,
+    "following_source_max_actors": 6,
+    "following_source_check_ticks": 20,
+    "following_source_back_m": 105.0,
+    "following_source_spacing_m": 70.0,
+    "following_source_speed_kmh": 30.0,
+    "following_source_exclusion_windows_m": [[1150.0, 1600.0], [2750.0, 3550.0], [4600.0, 5300.0]],
     "work_vehicle_count": 2,
     "maintenance_vehicle_count": 1,
     "worker_count": 2,
@@ -400,7 +406,7 @@
         {
           "role_name": "scene3_crossing_worker",
           "start_lane_id": -4,
-          "start_s_m": 3330.0,
+          "start_s_m": 3345.0,
           "destination_lane_id": -6,
           "high_visibility": true
         },

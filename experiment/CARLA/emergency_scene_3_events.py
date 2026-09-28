@@ -10,6 +10,8 @@ from __future__ import annotations
 import math
 from typing import Any, MutableSequence, Sequence
 
+from scenarios.following_lane_source import LaneTrafficSource
+
 
 CUT_IN_BLUEPRINT_IDS = (
     "vehicle.audi.tt",
@@ -47,21 +49,25 @@ BACKGROUND_VEHICLE_BLUEPRINT_IDS = (
 )
 
 BACKGROUND_TRAFFIC_PLAN = (
-    (-3, 70.0, 28.0),
-    (-1, 90.0, 30.0),
-    (-3, 190.0, 29.0),
-    (-1, 210.0, 27.0),
-    (-1, 2400.0, 23.0),
-    (-1, 2550.0, 27.0),
-    (-1, 2700.0, 24.0),
-    (-1, 2800.0, 28.0),
-    (-1, 3550.0, 22.0),
-    (-2, 3700.0, 26.0),
-    (-1, 3850.0, 23.0),
-    (-2, 4000.0, 27.0),
-    (-1, 4200.0, 24.0),
-    (-2, 4400.0, 25.0),
+    (-3, 40.0, 31.0),
+    (-1, 65.0, 32.0),
+    (-2, 110.0, 28.0),
+    (-3, 150.0, 30.0),
+    (-1, 180.0, 31.0),
+    (-2, 240.0, 30.0),
+    (-3, 450.0, 25.0),
+    (-2, 700.0, 27.0),
+    (-1, 1000.0, 24.0),
+    (-2, 1700.0, 28.0),
+    (-1, 2300.0, 23.0),
+    (-2, 2650.0, 26.0),
+    (-1, 5300.0, 23.0),
+    (-2, 5500.0, 27.0),
+    (-1, 5700.0, 24.0),
+    (-2, 5900.0, 25.0),
 )
+
+BACKGROUND_SPAWN_LEAD_M = 220.0
 
 
 def work_zone_boundary_positions(
@@ -155,10 +161,16 @@ class EmergencySceneActorRuntime:
         self._blocked_lane_change_commanded = False
         self._work_zone_exited = False
         self._background_vehicles: list[Any] = []
+        self._background_retirement_pending: list[Any] = []
         self._background_plan: list[dict[str, Any]] = []
         self._background_spawned_roles: set[str] = set()
         self._gap_control_vehicles: dict[str, Any] = {}
         self._gap_release_commanded = False
+        self._following_source_config: dict[str, Any] = {}
+        self._following_sources: dict[tuple[int, int], LaneTrafficSource] = {}
+        self._following_source_vehicles: list[Any] = []
+        self._following_source_ticks = 0
+        self._following_source_spawns = 0
 
     def ground_truth_actor_bindings(
         self,
@@ -296,7 +308,7 @@ class EmergencySceneActorRuntime:
             # Traffic Manager follower from rear-ending the ego while keeping
             # all construction actors and the later blocked-lane gap traffic.
             retired = self._retire_background_traffic(
-                retire_pending=True,
+                retire_pending_through_s_m=5100.0,
             )
             print(
                 "BACKGROUND TRAFFIC RETIRED | "
@@ -336,7 +348,9 @@ class EmergencySceneActorRuntime:
         elapsed_s: float,
     ) -> None:
         del simulation_frame
+        self._drain_background_retirement()
         self._update_background_traffic(route_s_m)
+        self._update_following_sources(route_s_m)
         self._update_cut_in(
             ego_route_s_m=route_s_m
         )
@@ -375,15 +389,25 @@ class EmergencySceneActorRuntime:
             return
         if event["id"] == "scene3_temporary_pedestrian":
             if self._worker_phase != "YIELDED_CLEAR":
+                remaining_m = None
+                if (
+                    self._crossing_worker is not None
+                    and self._crossing_worker_target_location is not None
+                ):
+                    location = self._crossing_worker.get_location()
+                    target = self._crossing_worker_target_location
+                    remaining_m = math.hypot(
+                        target.x - location.x, target.y - location.y
+                    )
                 raise RuntimeError(
-                    "worker crossing did not clear "
-                    "before event resolution"
+                    "worker crossing did not clear before event resolution: "
+                    f"phase={self._worker_phase}, remaining_m={remaining_m}"
                 )
             self._worker_phase = "RESOLVED"
             return
         if event["id"] == "scene3_work_zone":
             retired = self._retire_background_traffic(
-                retire_pending=True,
+                retire_pending_through_s_m=5100.0,
             )
             print(
                 "BACKGROUND TRAFFIC RETIRED | "
@@ -527,6 +551,7 @@ class EmergencySceneActorRuntime:
             raise RuntimeError(
                 "background traffic was configured twice"
             )
+        self._following_source_config = dict(traffic_config)
         expected_private_count = int(
             traffic_config[
                 "private_vehicle_count"
@@ -571,15 +596,15 @@ class EmergencySceneActorRuntime:
         print(
             "BACKGROUND TRAFFIC ARMED | "
             f"planned={len(self._background_plan)} | "
-            f"early_adjacent_lanes=4 | spawn_behind=80.0 m | reserved_for_gap="
+            f"early_route_vehicles=6 | future_spawn_lead={BACKGROUND_SPAWN_LEAD_M:.1f} m | reserved_for_gap="
             f"{reserved_gap_vehicle_count} | configured={expected_private_count}"
         )
 
-        for plan in self._background_plan[:4]:
+        for plan in self._background_plan[:6]:
             role_name = str(plan["role_name"])
             lane_id = int(plan["lane_id"])
-            self._background_spawned_roles.add(role_name)
             if self._map.get_waypoint_xodr(1, lane_id, float(plan["s_m"])) is None:
+                self._background_spawned_roles.add(role_name)
                 print(f"BACKGROUND EARLY SPAWN SKIPPED | role={role_name} | no adjacent lane")
                 continue
             try:
@@ -595,37 +620,107 @@ class EmergencySceneActorRuntime:
                     maximum_spawn_attempts=4,
                 )
             except RuntimeError as error:
-                print(f"BACKGROUND EARLY SPAWN SKIPPED | role={role_name} | {error}")
+                print(f"BACKGROUND EARLY SPAWN DEFERRED | role={role_name} | {error}")
                 continue
             self._background_vehicles.append(actor)
+            self._background_spawned_roles.add(role_name)
             print(f"BACKGROUND EARLY SPAWNED | role={role_name} | lane={lane_id}")
 
     def _retire_background_traffic(
         self,
         *,
-        retire_pending: bool = False,
+        retire_pending_through_s_m: float | None = None,
     ) -> int:
         retired_count = 0
+        ego_location = None
+        if self._ego_actor is not None:
+            try:
+                ego_location = self._ego_actor.get_location()
+            except RuntimeError:
+                pass
+        retained = []
         for actor in self._background_vehicles:
             try:
                 if actor.is_alive:
+                    if ego_location is not None and self._near_ego(actor, ego_location):
+                        retained.append(actor)
+                        continue
                     actor.set_autopilot(False, self._traffic_manager_port)
                     actor.destroy()
                     retired_count += 1
             except RuntimeError:
                 continue
-        self._background_vehicles.clear()
+        self._background_vehicles = retained
+        self._background_retirement_pending = retained
+        self._following_source_vehicles = [
+            actor for actor in self._following_source_vehicles if actor in retained
+        ]
+        if retained:
+            print(
+                "BACKGROUND TRAFFIC RETIREMENT DEFERRED | "
+                f"nearby={len(retained)} | clearance=160.0 m"
+            )
         # Gap-control vehicles are part of the background fleet.  Keeping
         # their handles after retirement makes the next scheduler tick call
         # get_location() on destroyed CARLA actors near the 5 km recovery
         # event, terminating an otherwise valid 6 km run.
         self._gap_control_vehicles.clear()
-        if retire_pending:
+        if retire_pending_through_s_m is not None:
             self._background_spawned_roles.update(
                 str(plan["role_name"])
                 for plan in self._background_plan
+                if float(plan["s_m"]) <= retire_pending_through_s_m
             )
         return retired_count
+
+    @staticmethod
+    def _near_ego(actor: Any, ego_location: Any) -> bool:
+        try:
+            location = actor.get_location()
+            return math.hypot(
+                float(location.x) - float(ego_location.x),
+                float(location.y) - float(ego_location.y),
+            ) <= 160.0
+        except (RuntimeError, AttributeError, TypeError, ValueError):
+            return True
+
+    def _drain_background_retirement(self) -> None:
+        if not self._background_retirement_pending or self._ego_actor is None:
+            return
+        try:
+            ego_location = self._ego_actor.get_location()
+        except RuntimeError:
+            return
+        pending = []
+        retired_ids = set()
+        for actor in self._background_retirement_pending:
+            try:
+                if not actor.is_alive:
+                    retired_ids.add(id(actor))
+                    continue
+                if self._near_ego(actor, ego_location):
+                    pending.append(actor)
+                    continue
+                actor.set_autopilot(False, self._traffic_manager_port)
+                actor.destroy()
+                retired_ids.add(id(actor))
+            except RuntimeError:
+                retired_ids.add(id(actor))
+                continue
+        self._background_retirement_pending = pending
+        self._background_vehicles = [
+            actor for actor in self._background_vehicles
+            if id(actor) not in retired_ids
+        ]
+        self._following_source_vehicles = [
+            actor for actor in self._following_source_vehicles
+            if id(actor) not in retired_ids
+        ]
+        if retired_ids:
+            print(
+                "BACKGROUND TRAFFIC DEFERRED RETIREMENT | "
+                f"retired={len(retired_ids)} | remaining={len(pending)}"
+            )
 
     def _retire_resolved_cut_in(self) -> bool:
         """Remove the completed cut-in actor before the next event family."""
@@ -656,8 +751,16 @@ class EmergencySceneActorRuntime:
             role_name = str(plan["role_name"])
             if role_name in self._background_spawned_roles:
                 continue
-            distance_behind_m = float(ego_route_s_m) - float(plan["s_m"])
-            if distance_behind_m < 80.0:
+            if ego_route_s_m < plan.get("retry_after_s_m", float("-inf")):
+                continue
+            distance_ahead_m = float(plan["s_m"]) - float(ego_route_s_m)
+            if distance_ahead_m > BACKGROUND_SPAWN_LEAD_M:
+                continue
+            if ego_route_s_m < 5100.0 <= float(plan["s_m"]):
+                continue
+            if distance_ahead_m < 0.0:
+                self._background_spawned_roles.add(role_name)
+                print(f"BACKGROUND SPAWN SKIPPED | role={role_name} | passed")
                 continue
             lane_id = int(plan["lane_id"])
             requested_lane_id = lane_id
@@ -683,23 +786,156 @@ class EmergencySceneActorRuntime:
                     f"requested={requested_lane_id} | "
                     f"actual={lane_id}"
                 )
-            actor = self._spawn_moving_vehicle(
-                actor_config={
-                    "role_name": role_name,
-                    "lane_id": lane_id,
-                    "s_m": float(plan["s_m"]),
-                },
-                blueprint_ids=plan["blueprint_ids"],
-                target_speed_kmh=float(plan["speed_kmh"]),
-                color=str(plan["color"]),
-                maximum_spawn_attempts=20,
-            )
+            try:
+                actor = self._spawn_moving_vehicle(
+                    actor_config={
+                        "role_name": role_name,
+                        "lane_id": lane_id,
+                        "s_m": float(plan["s_m"]),
+                    },
+                    blueprint_ids=plan["blueprint_ids"],
+                    target_speed_kmh=float(plan["speed_kmh"]),
+                    color=str(plan["color"]),
+                    maximum_spawn_attempts=20,
+                )
+            except RuntimeError as error:
+                plan["retry_after_s_m"] = ego_route_s_m + 5.0
+                print(f"BACKGROUND SPAWN DEFERRED | role={role_name} | {error}")
+                continue
             self._background_vehicles.append(actor)
             self._background_spawned_roles.add(role_name)
             print(
                 "BACKGROUND TRAFFIC SPAWNED | "
                 f"role={role_name} | active={len(self._background_vehicles)}"
             )
+
+    def _update_following_sources(self, ego_route_s_m: float) -> None:
+        config = self._following_source_config
+        limit = max(0, int(config.get("following_source_max_actors", 0)))
+        if not limit or self._ego_actor is None:
+            return
+        self._following_source_ticks += 1
+        interval = max(1, int(config.get("following_source_check_ticks", 20)))
+        if self._following_source_ticks % interval:
+            return
+        back_m = max(75.0, float(config.get("following_source_back_m", 105.0)))
+        source_s_m = float(ego_route_s_m) - back_m
+        if source_s_m < 30.0 or ego_route_s_m > 5900.0:
+            return
+        windows = config.get("following_source_exclusion_windows_m", ())
+        if any(
+            float(start) - 25.0 <= value <= float(end) + 25.0
+            for start, end in windows
+            for value in (source_s_m, float(ego_route_s_m))
+        ):
+            return
+        try:
+            ego_location = self._ego_actor.get_location()
+        except RuntimeError:
+            return
+        self._following_source_vehicles = [
+            actor for actor in self._following_source_vehicles if actor.is_alive
+        ]
+        self._background_vehicles = [
+            actor for actor in self._background_vehicles if actor.is_alive
+        ]
+        spacing_m = max(45.0, float(config.get("following_source_spacing_m", 70.0)))
+        candidates = []
+        for lane_id in (-1, -2, -3):
+            waypoint = self._map.get_waypoint_xodr(1, lane_id, source_s_m)
+            if waypoint is None or waypoint.is_junction:
+                continue
+            if any(
+                (nearby := self._map.get_waypoint_xodr(1, lane_id, source_s_m + offset)) is None
+                or nearby.is_junction
+                for offset in (-20.0, 20.0)
+            ):
+                continue
+            location = waypoint.transform.location
+            if math.hypot(location.x - ego_location.x, location.y - ego_location.y) < 75.0:
+                continue
+            key = (int(waypoint.road_id), int(waypoint.lane_id))
+            source = self._following_sources.setdefault(
+                key, LaneTrafficSource(waypoint, source_s_m)
+            )
+            source.waypoint = waypoint
+            source.route_s_m = source_s_m
+            source.actors = [actor for actor in source.actors if actor.is_alive]
+            if ego_route_s_m - source.last_spawn_progress_m < spacing_m:
+                continue
+            forward = waypoint.transform.get_forward_vector()
+            occupancy = 0
+            blocked = False
+            for actor in self._background_vehicles:
+                actor_location = actor.get_location()
+                if abs(actor_location.z - location.z) > 3.0:
+                    continue
+                dx = actor_location.x - location.x
+                dy = actor_location.y - location.y
+                along = dx * forward.x + dy * forward.y
+                across = abs(dx * forward.y - dy * forward.x)
+                if across < 2.5:
+                    blocked |= -spacing_m / 2.0 < along < spacing_m
+                    occupancy += int(-50.0 < along < back_m + 120.0)
+            if not blocked and occupancy < 2:
+                candidates.append((occupancy, lane_id, source))
+        if not candidates:
+            return
+        candidates.sort(key=lambda item: (item[0],
+                                         (abs(item[1]) + self._following_source_spawns) % 3))
+        recyclable = []
+        if len(self._following_source_vehicles) >= limit:
+            recyclable = [
+                actor for actor in self._following_source_vehicles
+                if not self._near_ego(actor, ego_location)
+                and math.hypot(
+                    actor.get_location().x - ego_location.x,
+                    actor.get_location().y - ego_location.y,
+                ) > 250.0
+            ]
+            if not recyclable:
+                return
+        _, lane_id, source = candidates[0]
+        index = self._following_source_spawns
+        blueprint_ids = (
+            BACKGROUND_VEHICLE_BLUEPRINT_IDS[index % len(BACKGROUND_VEHICLE_BLUEPRINT_IDS):]
+            + BACKGROUND_VEHICLE_BLUEPRINT_IDS[:index % len(BACKGROUND_VEHICLE_BLUEPRINT_IDS)]
+        )
+        try:
+            actor = self._spawn_moving_vehicle(
+                actor_config={
+                    "role_name": f"scene3_follow_source_{index:05d}",
+                    "lane_id": lane_id,
+                    "s_m": source_s_m,
+                },
+                blueprint_ids=blueprint_ids,
+                target_speed_kmh=float(config.get("following_source_speed_kmh", 30.0)),
+                color=("35,55,80", "210,210,210", "120,40,40")[index % 3],
+            )
+        except RuntimeError:
+            return
+        if recyclable:
+            oldest = max(recyclable, key=lambda old: math.hypot(
+                old.get_location().x - ego_location.x,
+                old.get_location().y - ego_location.y,
+            ))
+            oldest.set_autopilot(False, self._traffic_manager_port)
+            oldest.destroy()
+            self._following_source_vehicles.remove(oldest)
+            self._background_vehicles.remove(oldest)
+            for previous_source in self._following_sources.values():
+                if oldest in previous_source.actors:
+                    previous_source.actors.remove(oldest)
+        self._background_vehicles.append(actor)
+        self._following_source_vehicles.append(actor)
+        source.actors.append(actor)
+        source.last_spawn_progress_m = ego_route_s_m
+        self._following_source_spawns += 1
+        print(
+            "FOLLOWING SOURCE SPAWNED | "
+            f"route={ego_route_s_m:.1f} m | lane={lane_id} | "
+            f"active={len(self._following_source_vehicles)}"
+        )
 
     def _activate_advance_warning(
         self,
@@ -1430,7 +1666,7 @@ class EmergencySceneActorRuntime:
             )
             if not math.isfinite(crossing_speed_mps) or crossing_speed_mps <= 0:
                 raise RuntimeError('crossing speed must be finite and positive')
-            if distance <= 0.25:
+            if distance <= 0.75:
                 from worker_clearance import worker_clear_of_lane
                 anchor=float(self._crossing_worker_config['start_s_m'])
                 if not hasattr(self._map,'route_waypoint'):
