@@ -1543,6 +1543,30 @@ class SafetyAuditTests(unittest.TestCase):
             0,
         )
 
+    def test_stalled_route_stops_without_claiming_completion(self):
+        scheduler = RecordingScheduler()
+        stop_state = {}
+        fake_carla = SimpleNamespace(LaneType=SimpleNamespace(Driving="driving"))
+        with (
+            mock.patch.object(runner, "carla", fake_carla),
+            mock.patch.object(runner, "set_spectator_view"),
+        ):
+            completed = runner.run_simulation(
+                world=FakeWorld(),
+                carla_map=FakeMap([FakeWaypoint(60.0)] * 20),
+                ego=FakeEgo(),
+                scheduler=scheduler,
+                safety_audit=runner.SafetyAuditState(),
+                finish_s_m=100.0,
+                duration_s=1.0,
+                fixed_delta_seconds=0.05,
+                max_stall_s=0.2,
+                stop_state=stop_state,
+            )
+        self.assertFalse(completed)
+        self.assertEqual(stop_state["reason"], "route_stalled")
+        self.assertEqual(len(scheduler.updates), 5)
+
     def test_route_recovers_stale_ego_handle(self):
         scheduler = RecordingScheduler()
         audit = runner.SafetyAuditState()

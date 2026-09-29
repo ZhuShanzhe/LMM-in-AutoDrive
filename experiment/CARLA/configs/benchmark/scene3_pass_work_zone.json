@@ -1,6 +1,6 @@
 {
   "schema_version":"task_oracle/1.0", "scene_id":"scene_3",
-  "source_sha256":"007c79147004474e15af945092ba428288bbe4afd7be93b7a721d7ea5089438d",
+  "source_sha256":"88d7fbff44150e7aec69048c8dcb8759a6e9f78a961ce0229987e7350b425116",
   "task_id":"scene3_pass_work_zone", "activate_m":3100, "end_route_s_m":3450,
   "timeout_s":150, "max_frame_gap_s":0.15, "violation_budget":0,
   "coverage":{"status":"PARTIAL","missing":["physical_cone_clearance","continuous_open_lane_constraint","all_worker_clearance","first_60m_overlap_with_merge","last_5m_continuity"]},

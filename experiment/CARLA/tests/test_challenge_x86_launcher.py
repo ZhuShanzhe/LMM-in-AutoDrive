@@ -6,6 +6,37 @@ import pytest
 MODULE = runpy.run_path(str(Path(__file__).resolve().parents[1]/'tools/run_challenge_x86.py'))
 
 
+def test_matching_carla_commit_build_is_accepted():
+    compatible=MODULE['compatible_carla_build']
+    assert compatible('edf3e9f5c','edf3e9f5c')
+    assert compatible('0.9.16','edf3e9f5c')
+    assert not compatible('different-build','edf3e9f5c')
+
+
+def test_scene2_can_pass_explicit_ffmpeg(tmp_path):
+    command=MODULE['build_command']('scene2',tmp_path,tmp_path/'runtime.json',
+        tmp_path/'run','localhost',2000,'cuda',60,tmp_path/'ffmpeg.exe')
+    assert command[command.index('--ffmpeg')+1]==str(tmp_path/'ffmpeg.exe')
+
+
+def test_scene2_can_stop_recording_after_route_stall(tmp_path):
+    command=MODULE['build_command']('scene2',tmp_path,tmp_path/'runtime.json',
+        tmp_path/'run','localhost',2000,'cuda',900,stall_timeout_s=90)
+    assert command[command.index('--max-stall-s')+1]=='90'
+
+
+def test_scene1_can_stop_recording_after_route_stall(tmp_path):
+    command=MODULE['build_command']('scene1',tmp_path,tmp_path/'runtime.json',
+        tmp_path/'run','localhost',2000,'cuda',900,stall_timeout_s=120)
+    assert command[command.index('--max-stall-s')+1]=='120'
+
+
+def test_scene3_can_stop_recording_after_route_stall(tmp_path):
+    command=MODULE['build_command']('scene3',tmp_path,tmp_path/'runtime.json',
+        tmp_path/'run','localhost',2000,'cuda',900,stall_timeout_s=120)
+    assert command[command.index('--max-stall-s')+1]=='120'
+
+
 @pytest.mark.parametrize('scene', ['scene1', 'scene2', 'scene3'])
 def test_challenge_command_keeps_model_and_independent_assessment(scene, tmp_path):
     command = MODULE['build_command'](scene, tmp_path/'models', tmp_path/'runtime.json',

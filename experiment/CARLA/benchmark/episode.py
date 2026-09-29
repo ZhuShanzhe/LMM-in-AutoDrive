@@ -244,11 +244,11 @@ class EpisodeAssessment:
                         self.map,self.route,step['from_route_s_m'],self.location_factory,
                         step['until_route_s_m']))
                 elif step['kind']=='speed' and step.get('keep_lane'):
-                    from .lane_continuity import trace_lane_corridor
+                    from .lane_continuity import trace_speed_lane_corridor
                     from .truth_capture import lane_key
                     end=profile.get('end_route_s_m',self.route[-1]['distance_m'])
-                    evidence=trace_lane_corridor(self.map,self.route,profile['activate_m'],
-                                                self.location_factory,end)
+                    evidence=trace_speed_lane_corridor(self.map,self.route,profile['activate_m'],
+                                                       self.location_factory,end)
                     segments=evidence['lane_corridor']
                     current=self.map.get_waypoint(snapshot.find(self.binding.actor_id).get_transform().location)
                     allowed={key for s in segments if s['start_m']<=progress<=s['end_m'] for key in s['lane_keys']}

@@ -81,16 +81,50 @@ def test_speed_corridor_still_enforces_geometric_bounds():
         assert oracle.update(row)['status']=='RUNNING'
 
 
-@pytest.mark.parametrize('second_progress,expected',[(4,'SUCCESS'),(6,'SCENE_INVALID')])
+@pytest.mark.parametrize('second_progress,expected',[(4,'SUCCESS'),(6,'TIMEOUT')])
 def test_unfinished_speed_task_cannot_cross_unverified_corridor(second_progress,expected):
     oracle=TaskOracle(spec(SPEED))
     for t,progress in [(0,0),(1,second_progress)]:
         row=observation(t,route_s_m=progress)
         row['fixture']['steps']['0']={'lane_corridor':[dict(start_m=0,end_m=5,lane_keys=['a'])],
                                     'verified_end_m':5,'requested_end_m':15,
-                                    'stop_reason':'ambiguous forward topology'}
+                                    'stop_reason':'lane corridor has ambiguous forward topology'}
         result=oracle.update(row)
     assert result['status']==expected
+    if second_progress==6:
+        assert result['reason']=='speed_lane_proof_window_closed'
+
+
+def test_speed_bad_corridor_proof_is_scene_invalid():
+    oracle=TaskOracle(spec(SPEED))
+    row=observation(0)
+    row['fixture']['steps']['0']={'lane_corridor':[dict(start_m=0,end_m=5,lane_keys=['a'])],
+                                 'verified_end_m':10,'requested_end_m':15,
+                                 'stop_reason':'lane corridor has ambiguous forward topology'}
+    assert oracle.update(row)['status']=='SCENE_INVALID'
+
+
+def test_lane_position_waits_for_junction_exit_without_claiming_success():
+    step=dict(kind='lane_position',lane_side='RIGHT',lane_ordinal=1,hold_s=1,
+              max_lateral_error_m=.35,max_heading_error_deg=5)
+    oracle=TaskOracle(spec(step))
+    for t in (0,1):
+        row=observation(t,in_junction=True)
+        row['ego']['lane_position']=dict(valid=False,reason='junction_has_no_stable_lane_ordinal')
+        assert oracle.update(row)['status']=='RUNNING'
+    for t in (2,3):
+        row=observation(t)
+        row['ego']['lane_position']=dict(valid=True,index_from_left=1,index_from_right=1,lane_count=1)
+        result=oracle.update(row)
+    assert result['status']=='SUCCESS'
+
+
+def test_lane_position_missing_map_metadata_is_scene_invalid():
+    step=dict(kind='lane_position',lane_side='RIGHT',lane_ordinal=1,hold_s=1,
+              max_lateral_error_m=.35,max_heading_error_deg=5)
+    row=observation(0)
+    row['ego']['lane_position']=dict(valid=False,reason='incomplete_map_lane_metadata')
+    assert TaskOracle(spec(step)).update(row)['status']=='SCENE_INVALID'
 
 
 @pytest.mark.parametrize('field,value',[('lateral_error_m',.6),('heading_error_deg',8)])

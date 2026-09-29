@@ -142,7 +142,7 @@ class Town05Scene3ContractTests(unittest.TestCase):
         self.assertEqual(attributes["exposure_mode"], "manual")
         self.assertEqual(attributes["exposure_compensation"], "0.0")
         self.assertEqual(attributes["shutter_speed"], "100.0")
-        self.assertEqual(attributes["iso"], "800.0")
+        self.assertEqual(attributes["iso"], "100.0")
         self.assertEqual(attributes["fstop"], "2.0")
         self.assertEqual(attributes["gamma"], "2.2")
         self.assertEqual(attributes["bloom_intensity"], "0.1")

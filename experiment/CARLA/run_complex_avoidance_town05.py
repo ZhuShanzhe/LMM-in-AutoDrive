@@ -99,6 +99,13 @@ def lane_invasion_is_restricted(event: Mapping[str, Any]) -> bool:
     )
 
 
+def route_stalled(progress_m: float, best_progress_m: float,
+                  simulation_time_s: float, last_advance_s: float,
+                  timeout_s: float) -> bool:
+    return timeout_s > 0 and progress_m < best_progress_m + 2.0 \
+        and simulation_time_s - last_advance_s >= timeout_s
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
@@ -139,6 +146,8 @@ def parse_args() -> argparse.Namespace:
         default=90.0,
         help="Simulation seconds; 0 runs until 8 km route completion.",
     )
+    parser.add_argument("--max-stall-s", type=float, default=0.0,
+                        help="End with route_stalled after this many simulation seconds without 2 m progress; 0 disables.")
     parser.add_argument(
         "--fixed-delta-seconds",
         type=float,
@@ -1204,6 +1213,29 @@ def main() -> int:
             route,
             route_distances,
         )
+        from benchmark.catalog import load_episode_catalog
+        from benchmark.scene2_preflight import audit_task_geometry
+        from benchmark.turn_fixture import waypoint_route
+
+        catalog = load_episode_catalog('scene_2', args.config, world.get_map())
+        geometry_audit = audit_task_geometry(
+            waypoint_route([waypoint for waypoint, _ in route]),
+            world.get_map(), carla.Location, catalog,
+        )
+        route_command_audit['task_geometry'] = geometry_audit
+        route_command_audit['route_option_mismatch_count'] = route_command_audit['mismatch_count']
+        geometry_by_task = {row['task_id']: row for row in geometry_audit['rows']}
+        for record in route_command_audit['records']:
+            row = geometry_by_task[record['command_id']]
+            record['route_option_matched'] = record['matched']
+            record['geometry_status'] = row['status']
+            record['geometry_reason'] = row.get('reason')
+            record['matched'] = record['route_option_matched'] and row['status'] in {
+                'BOUND', 'NO_JUNCTION_REQUIREMENT'}
+        route_command_audit['mismatch_count'] = sum(
+            not record['matched'] for record in route_command_audit['records'])
+        route_command_audit['competition_ready'] = route_command_audit['mismatch_count'] == 0
+        route_command_audit['readiness_basis'] = 'route_options_and_independent_task_geometry'
         (output_dir / "route_command_audit.json").write_text(
             json.dumps(
                 route_command_audit,
@@ -1481,6 +1513,9 @@ def main() -> int:
         start_time = float(start_snapshot.timestamp.elapsed_seconds)
         frame_counter = 0
         progress_m = 0.0
+        best_progress_m = start_progress_m
+        last_advance_s = 0.0
+        stop_reason = 'duration_limit'
         turn_centering_active = False
         while True:
             snapshot = world.get_snapshot()
@@ -1491,6 +1526,9 @@ def main() -> int:
                 safety.simulation_time_s = simulation_time_s
 
             progress_m = tracker.update(ego.get_location())
+            if progress_m >= best_progress_m + 2.0:
+                best_progress_m = progress_m
+                last_advance_s = simulation_time_s
             for command in ready_commands_in_order(
                 runtime_commands,
                 announced,
@@ -1735,6 +1773,12 @@ def main() -> int:
 
             if progress_m >= float(config["route"]["target_length_m"]):
                 print("Town05 Scene 2 route completed")
+                stop_reason = 'route_completed'
+                break
+            if route_stalled(progress_m,best_progress_m,simulation_time_s,
+                             last_advance_s,args.max_stall_s):
+                print("Town05 Scene 2 route stalled")
+                stop_reason = 'route_stalled'
                 break
             if (
                 args.duration > 0.0
@@ -1754,6 +1798,8 @@ def main() -> int:
             "route_length_m": route_length_m,
             "route_curvature_degrees": curvature_degrees,
             "route_progress_m": progress_m,
+            "stop_reason": stop_reason,
+            "max_stall_s": args.max_stall_s,
             "route_completed": progress_m
             >= float(config["route"]["target_length_m"]),
             "route_command_audit": route_command_audit,

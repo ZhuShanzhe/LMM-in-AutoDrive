@@ -29,7 +29,15 @@ from run_complex_avoidance_town05 import (
     route_aware_preview_speed_kmh,
     planned_turn_window_active,
     route_centering_steer_correction,
+    route_stalled,
 )
+
+
+def test_stall_boundary_needs_elapsed_time_and_insufficient_progress():
+    assert not route_stalled(380,380,89,0,90)
+    assert route_stalled(380,380,90,0,90)
+    assert not route_stalled(383,380,90,0,90)
+    assert not route_stalled(380,380,900,0,0)
 from evaluation.multimodal import (
     ExactFrameSensorSuite,
     REQUIRED_SENSOR_NAMES,

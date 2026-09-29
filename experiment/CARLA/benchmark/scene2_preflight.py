@@ -11,6 +11,34 @@ from .truth_capture import prepare_lane_fixture
 from .turn_fixture import waypoint_route
 
 
+def audit_task_geometry(route, world_map, location_factory, catalog):
+    """Use the same junction binder as the independent episode assessment."""
+    from .task_oracle import load_profile
+    from .turn_fixture import bind_junction_sequence
+
+    rows = []
+    for index, task in enumerate(catalog.tasks):
+        profile = load_profile(catalog, task)
+        if profile is None:
+            rows.append(dict(task_id=task.task_id, status='PROFILE_MISSING'))
+            continue
+        if not any(step['kind'] in {'turn', 'straight_junction'} for step in profile['steps']):
+            rows.append(dict(task_id=task.task_id, status='NO_JUNCTION_REQUIREMENT'))
+            continue
+        later = [item.activate_m for item in catalog.tasks if item.activate_m > task.activate_m]
+        end = profile.get('end_route_s_m', min(later) if later else route[-1]['distance_m'])
+        try:
+            evidence = bind_junction_sequence(route, world_map, location_factory,
+                                              profile['steps'], task.activate_m, end)
+        except ConfigError as error:
+            rows.append(dict(task_id=task.task_id, status='MISMATCH',
+                             activate_m=task.activate_m, end_m=end, reason=str(error)))
+        else:
+            rows.append(dict(task_id=task.task_id, status='BOUND', evidence=evidence))
+    return dict(schema_version='scene_2_task_geometry_audit/v1', rows=rows,
+                mismatch_count=sum(row['status'] in {'MISMATCH', 'PROFILE_MISSING'} for row in rows))
+
+
 def preflight_scene2(output, host='127.0.0.1', port=2000):
     from carla_bootstrap import setup_carla_api
     setup_carla_api()

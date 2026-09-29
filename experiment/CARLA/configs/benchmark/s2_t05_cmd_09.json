@@ -1,7 +1,7 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_2",
-  "source_sha256": "90205e049b1b2e924b998852e88e3f42a13f44f012cb1a99eeb0ece554c2195b",
+  "source_sha256": "72c5b4a81b7e5df0308d610a7a35ec4b4201185428a9347140643de54aa8a766",
   "task_id": "s2_t05_cmd_09",
   "activate_m": 1950,
   "end_route_s_m": 2500,

@@ -335,7 +335,21 @@ class TaskOracle:
                     raise ConfigError('invalid lane observation')
                 evidence=obs.get('fixture',{}).get('steps',{}).get(str(self.index),{})
                 if 'lane_corridor' in evidence:
-                    corridor=self._fixture(obs)['lane_corridor']
+                    fixture=self._fixture(obs)
+                    corridor=fixture['lane_corridor']
+                    if not isinstance(corridor,list) or not corridor:
+                        raise ConfigError('invalid speed lane corridor')
+                    if 'verified_end_m' in fixture:
+                        verified=number(fixture['verified_end_m'],'verified_end_m')
+                        requested=number(fixture['requested_end_m'],'requested_end_m')
+                        reason=fixture.get('stop_reason')
+                        if (abs(verified-number(corridor[-1]['end_m'],'corridor end'))>1e-3
+                                or verified>requested or reason not in
+                                {None,'lane corridor has ambiguous forward topology'}):
+                            raise ConfigError('invalid speed lane corridor proof')
+                        if progress>verified+1e-3 and reason is not None:
+                            self.finish('TIMEOUT','speed_lane_proof_window_closed',obs['frame'])
+                            return False
                     segments=[s for s in corridor if s['start_m']<=progress<=s['end_m']]
                     if not segments:
                         raise ConfigError('speed lane corridor does not cover current progress')

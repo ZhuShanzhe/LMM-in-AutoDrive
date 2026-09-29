@@ -48,6 +48,8 @@ def lane_position(waypoint):
 
 def matches(position, side, index):
     from .catalog import ConfigError
+    if isinstance(position, dict) and position.get('reason') == 'junction_has_no_stable_lane_ordinal':
+        return False
     if not isinstance(position, dict) or position.get('valid') is not True:
         raise ConfigError('lane ordinal unavailable in current map observation')
     left, right, count = (position.get(key) for key in ('index_from_left','index_from_right','lane_count'))

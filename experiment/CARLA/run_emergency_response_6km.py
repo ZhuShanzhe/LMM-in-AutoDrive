@@ -1262,6 +1262,12 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--max-stall-s",
+        type=float,
+        default=0.0,
+        help="Stop a bounded run after this many simulated seconds without 2 m of route progress",
+    )
+    parser.add_argument(
         "--fixed-delta-seconds",
         type=float,
         default=0.05,
@@ -1551,6 +1557,8 @@ def validate_args(
         raise ValueError(
             "--duration must be non-negative"
         )
+    if not math.isfinite(args.max_stall_s) or args.max_stall_s < 0.0:
+        raise ValueError("--max-stall-s must be finite and non-negative")
     if args.ground_truth_every_n < 1:
         raise ValueError(
             "--ground-truth-every-n must be at least 1"
@@ -2218,6 +2226,8 @@ def run_simulation(
     ego_controller: Any | None = None,
     ego_route_plan: Sequence[tuple[Any, Any]] | None = None,
     benchmark_assessment: Any | None = None,
+    max_stall_s: float = 0.0,
+    stop_state: dict[str, str] | None = None,
 ) -> bool:
     tick_count: int | None = None
     if duration_s > 0.0:
@@ -2230,6 +2240,8 @@ def run_simulation(
 
     index = 0
     last_route_s_m: float | None = None
+    progress_anchor_m: float | None = None
+    progress_anchor_time_s = 0.0
     spectator_warning_printed = False
     while (
         tick_count is None
@@ -2321,6 +2333,10 @@ def run_simulation(
                 route_progress_m=route_progress_m,
             )
         last_route_s_m = route_progress_m
+        elapsed_s = (index + 1) * fixed_delta_seconds
+        if progress_anchor_m is None or route_progress_m >= progress_anchor_m + 2.0:
+            progress_anchor_m = route_progress_m
+            progress_anchor_time_s = elapsed_s
         scheduler.update(
             route_s_m=last_route_s_m,
             simulation_frame=int(frame),
@@ -2406,6 +2422,11 @@ def run_simulation(
                 f"s={last_route_s_m:.1f} m"
             )
             return True
+        if max_stall_s > 0.0 and elapsed_s - progress_anchor_time_s >= max_stall_s:
+            if stop_state is not None:
+                stop_state["reason"] = "route_stalled"
+            print(f"ROUTE STALLED | s={last_route_s_m:.1f} m | elapsed={elapsed_s:.1f} s")
+            return False
         index += 1
 
     return False
@@ -2853,6 +2874,7 @@ def main(
                 output_dir/'benchmark',runtime_config_path,task_selector=args.benchmark_task,
                 run_metadata=dict(traffic_seed=args.seed,controller=args.ego_controller,
                                   sensor_recording=bool(args.vla_record_sensors)))
+        stop_state: dict[str, str] = {}
         route_completed = run_simulation(
             world=world,
             carla_map=route_context.adapter,
@@ -2877,6 +2899,8 @@ def main(
             ego_controller=ego_controller,
             ego_route_plan=ego_plan,
             benchmark_assessment=benchmark_assessment,
+            max_stall_s=args.max_stall_s,
+            stop_state=stop_state,
         )
 
         vehicle_state_recorder.close()
@@ -3027,6 +3051,7 @@ def main(
                     "route_completed": (
                         route_completed
                     ),
+                    "stop_reason": stop_state.get("reason", "route_completed" if route_completed else "duration_exhausted"),
                     "event_states": event_summary,
                     "safety": safety_summary,
                     "rgb_frame_counts": counts,
