@@ -2,7 +2,64 @@
 import math
 
 from .catalog import ConfigError
-from .truth_capture import lane_key, angle_delta
+from .truth_capture import lane_key, angle_delta, prepare_lane_fixture
+
+
+def trace_lane_change_keys(world_map, route, start_m, end_m, direction,
+                           location_factory, entry_fixture):
+    """Bind road-spanning lane IDs to one route-verified lane-change pair."""
+    if not start_m < end_m <= route[-1]['distance_m']:
+        raise ConfigError('lane-change corridor outside recorded route')
+    entries = [entry_fixture['entry_lane_key']]
+    targets = [entry_fixture['target_lane_key']]
+    checked = 0
+    verified_waypoint = None
+    verified_distance = None
+    for point in route:
+        distance = point['distance_m']
+        if not start_m <= distance <= end_m:
+            continue
+        location = location_factory(**{key:point[key] for key in ('x','y','z')})
+        waypoint = world_map.get_waypoint(location)
+        if waypoint is None:
+            raise ConfigError('lane-change route waypoint missing')
+        expected = f"{point['road_id']}:{point['section_id']}:{point['lane_id']}"
+        if lane_key(waypoint) != expected:
+            # Town junction connectors can occupy exactly the same coordinates.
+            # They are not legal lane-change sites, so do not bind either lane
+            # from a nearest-waypoint tie at such a point.
+            if waypoint.is_junction:
+                continue
+            delta = distance - verified_distance if verified_distance is not None else 0
+            successor = getattr(verified_waypoint, 'next', None)
+            if not callable(successor) or not 0 < delta <= 15:
+                raise ConfigError('lane-change route/map mismatch')
+            candidates = []
+            for adjustment in (0, .25, .5, -.25, -.5):
+                options = successor(max(.05, delta + adjustment))
+                if len(options) > 1:
+                    raise ConfigError('lane-change route/map mismatch')
+                candidates.extend(options)
+            matching = [item for item in candidates if lane_key(item) == expected
+                        and item.transform.location.distance(location) <= .75]
+            if not matching:
+                raise ConfigError('lane-change route/map mismatch')
+            waypoint = min(matching, key=lambda item: item.transform.location.distance(location))
+        verified_waypoint = waypoint
+        verified_distance = distance
+        if waypoint.is_junction:
+            continue
+        checked += 1
+        try:
+            pair = prepare_lane_fixture(world_map, location, direction, entry_waypoint=waypoint)
+        except ConfigError:
+            continue
+        for key, values in (('entry_lane_key', entries), ('target_lane_key', targets)):
+            if pair[key] not in values:
+                values.append(pair[key])
+    if not checked or set(entries) & set(targets):
+        raise ConfigError('invalid lane-change corridor')
+    return dict(entry_lane_keys=entries, target_lane_keys=targets)
 
 
 def build_lane_corridor(world_map,route,start_m,location_factory,end_m=None):
@@ -39,40 +96,45 @@ def trace_lane_corridor(world_map,route,start_m,location_factory,end_m=None):
         location=location_factory(**{k:point[k] for k in ('x','y','z')})
         nearest=world_map.get_waypoint(location)
         wp=nearest
+        expected=f"{point['road_id']}:{point['section_id']}:{point['lane_id']}"
         if waypoints:
             distance=point['distance_m']-points[offset-1]['distance_m']
-            if not math.isfinite(distance) or not 0<distance<=10:
+            if not math.isfinite(distance) or not 0<distance<=15:
                 raise ConfigError('lane corridor samples too sparse or unordered')
             successors=waypoints[-1].next(distance)
-            expected=f"{point['road_id']}:{point['section_id']}:{point['lane_id']}"
             if len(successors)>1 and (nearest is None or lane_key(nearest)!=expected):
                 matching=[candidate for candidate in successors
                           if lane_key(candidate)==expected
                           and candidate.transform.location.distance(location)<=.75]
                 if len(matching)==1:
                     successors=matching
-            if len(successors)!=1:
+            if len(successors)>1:
                 stop_reason='lane corridor has ambiguous forward topology'
                 break
-            wp=successors[0]
-        if wp is None or str(wp.lane_type)!='Driving':
-            raise ConfigError('lane corridor has no driving waypoint')
-        expected=f"{point['road_id']}:{point['section_id']}:{point['lane_id']}"
-        if (waypoints and nearest is not None and lane_key(nearest)==expected
-                and (lane_key(wp)!=expected or wp.transform.location.distance(location)>.75)):
-            for adjusted_distance in (distance-.5,distance+.5):
-                if adjusted_distance<=0:
-                    continue
-                adjusted=waypoints[-1].next(adjusted_distance)
-                if len(adjusted)>1:
-                    stop_reason='lane corridor has ambiguous forward topology'
-                    break
-                if len(adjusted)==1 and lane_key(adjusted[0])==expected \
-                        and adjusted[0].transform.location.distance(location)<=.75:
-                    wp=adjusted[0]
-                    break
+            candidates=list(successors)
+            # GRP and CARLA waypoint sampling can straddle a road boundary by
+            # a few decimeters. Search only immediate topological successors.
+            if not any(lane_key(item)==expected and item.transform.location.distance(location)<=.75
+                       for item in candidates):
+                for adjustment in (.25,.5,.75,-.25,-.5):
+                    adjusted=waypoints[-1].next(max(.05,distance+adjustment))
+                    if len(adjusted)>1:
+                        stop_reason='lane corridor has ambiguous forward topology'
+                        break
+                    candidates.extend(adjusted)
             if stop_reason is not None:
                 break
+            matching=[item for item in candidates if lane_key(item)==expected
+                      and item.transform.location.distance(location)<=.75]
+            if matching:
+                wp=min(matching,key=lambda item:item.transform.location.distance(location))
+            elif len(successors)==1:
+                wp=successors[0]
+            else:
+                stop_reason='lane corridor has ambiguous forward topology'
+                break
+        if wp is None or str(wp.lane_type)!='Driving':
+            raise ConfigError('lane corridor has no driving waypoint')
         if lane_key(wp)!=expected or wp.transform.location.distance(location)>.75:
             stop_reason='lane corridor route/map mismatch'
             break

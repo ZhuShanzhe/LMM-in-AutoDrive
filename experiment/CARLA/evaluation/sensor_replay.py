@@ -37,6 +37,7 @@ class ReplayFrame:
     driving_intent_request_id: str | None
     driving_intent: Mapping[str, Any] | None = None
     sensor_calibration: Mapping[str, Any] | None = None
+    command_context: Mapping[str, Any] | None = None
 
 
 def policy_vehicle_state(state: Mapping[str, Any]) -> dict[str, Any]:
@@ -172,7 +173,39 @@ class SynchronizedReplayDataset:
                 if request_id in self._intents:
                     raise DatasetValidationError("duplicate intent request_id: " + request_id)
                 self._intents[request_id] = record
+        command_path = self.root / "command_context.jsonl"
+        self._commands = (
+            self._index_unique(_load_jsonl(command_path), "simulation_frame", "command")
+            if command_path.is_file() else {}
+        )
         self._frames = self._build_frames(bundles)
+        if command_path.is_file() and set(self._commands) != {
+            frame.simulation_frame for frame in self._frames
+        }:
+            raise DatasetValidationError("command context frames do not match bundles")
+
+    def _command_context(self, frame: int, timestamp: float) -> dict[str, Any] | None:
+        if not self._commands:
+            return None
+        record = self._commands.get(frame)
+        if record is None:
+            raise DatasetValidationError(f"missing command context for frame {frame}")
+        command_time = _finite_number(record.get("timestamp_s"), "command timestamp")
+        if not math.isclose(command_time, timestamp, rel_tol=0.0, abs_tol=1e-6):
+            raise DatasetValidationError("command and bundle timestamps disagree")
+        if record.get("source") != "scene_schedule_not_model_parse":
+            raise DatasetValidationError("unsupported command context source")
+        commands = record.get("commands")
+        if not isinstance(commands, list) or any(
+            not isinstance(item, dict)
+            or not isinstance(item.get("id"), str) or not item["id"].strip()
+            or not isinstance(item.get("text"), str) or not item["text"].strip()
+            for item in commands
+        ):
+            raise DatasetValidationError("invalid command context list")
+        return {"source": record["source"], "commands": [
+            {"id": item["id"], "text": item["text"]} for item in commands
+        ]}
 
     def _resolve_intent(self, request_id: Any, frame: int, timestamp: float) -> dict[str, Any] | None:
         if request_id is None:
@@ -207,7 +240,9 @@ class SynchronizedReplayDataset:
                 raise DatasetValidationError(
                     "{0} record has no {1}".format(label, key)
                 )
-            value = int(record[key])
+            value = record[key]
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise DatasetValidationError(f"invalid {label} {key}")
             if value in indexed:
                 raise DatasetValidationError(
                     "duplicate {0} frame: {1}".format(label, value)
@@ -292,6 +327,7 @@ class SynchronizedReplayDataset:
                         bundle.get("driving_intent_request_id"), frame, timestamp
                     ),
                     sensor_calibration=self.calibration,
+                    command_context=self._command_context(frame, timestamp),
                 )
             )
             seen.add(frame)
@@ -351,6 +387,8 @@ class SynchronizedReplayDataset:
             "vehicle_state_contract": "ego_telemetry_allowlist/1.0",
             "evaluation_truth_in_policy_payload": False,
             "frames_with_instruction": sum(frame.driving_intent is not None for frame in self._frames),
+            "frames_with_scheduled_text": sum(bool(frame.command_context and frame.command_context["commands"])
+                                              for frame in self._frames),
             "sensor_calibration_available": self.calibration is not None,
             "frames_with_raw_lidar": sum("lidar_raw" in frame.artifacts for frame in self._frames),
         }
@@ -398,7 +436,8 @@ class SynchronizedReplayDataset:
             ).hexdigest()
             dataset_digest.update(state_digest.encode("ascii"))
             instruction_digest = hashlib.sha256(json.dumps(
-                [frame.simulation_frame, frame.timestamp_s, frame.scene_id, frame.driving_intent],
+                [frame.simulation_frame, frame.timestamp_s, frame.scene_id,
+                 frame.driving_intent, frame.command_context],
                 sort_keys=True, separators=(",", ":"),
             ).encode("utf-8")).hexdigest()
             dataset_digest.update(instruction_digest.encode("ascii"))
@@ -412,7 +451,7 @@ class SynchronizedReplayDataset:
                 }
             )
         return {
-            "schema_version": "carla_same_source_manifest/1.3",
+            "schema_version": "carla_same_source_manifest/1.4",
             "sensor_calibration_sha256": calibration_digest,
             "dataset_sha256": dataset_digest.hexdigest(),
             "summary": self.summary(),
@@ -439,6 +478,7 @@ def _write_replay_log(path: Path, dataset: SynchronizedReplayDataset, speed: flo
                             frame.driving_intent_request_id
                         ),
                         "driving_intent": frame.driving_intent,
+                        "command_context": frame.command_context,
                         "sensor_calibration": frame.sensor_calibration,
                     },
                     ensure_ascii=False,

@@ -1,26 +1,56 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_2",
-  "source_sha256": "72c5b4a81b7e5df0308d610a7a35ec4b4201185428a9347140643de54aa8a766",
+  "source_sha256": "7de7a38e6c00e4e0ef0b5ec3921686de629cf3f0784f0b7cba7fbe0beda8166a",
   "task_id": "s2_t05_cmd_04",
   "activate_m": 980,
   "end_route_s_m": 1180,
   "timeout_s": 90,
   "max_frame_gap_s": 0.15,
   "violation_budget": 0,
-  "requires_task_success": ["s2_t05_cmd_03"],
+  "requires_task_success": [
+    "s2_t05_cmd_03"
+  ],
   "coverage": {
     "status": "PARTIAL",
-    "missing": ["dynamic_return_lane_gap_checks", "overlapping_next_command_arbitration", "crosswalk_actor_lifetime_validation"]
+    "missing": [
+      "dynamic_return_lane_gap_checks",
+      "overlapping_next_command_arbitration",
+      "crosswalk_actor_lifetime_validation"
+    ]
   },
   "steps": [
-    {"kind": "wait_clear", "target_roles": ["scene2_crosswalk_pedestrian"],
-     "require_stop": false, "require_observed_conflict": false,
-     "stopped_kmh": 0.5, "stop_hold_s": 0.5, "clear_hold_s": 0.5},
-    {"kind": "lane_change", "direction": "RIGHT", "hold_s": 1,
-     "max_lateral_error_m": 0.35, "max_heading_error_deg": 5},
-    {"kind": "lane_position", "lane_side": "RIGHT", "lane_ordinal": 1,
-     "hold_s": 1, "max_lateral_error_m": 0.35, "max_heading_error_deg": 5},
-    {"kind": "speed", "target_kmh": 45, "tolerance_kmh": 2, "hold_s": 2}
+    {
+      "kind": "wait_clear",
+      "target_roles": [
+        "scene2_crosswalk_pedestrian"
+      ],
+      "require_stop": false,
+      "require_observed_conflict": false,
+      "stopped_kmh": 0.5,
+      "stop_hold_s": 0.5,
+      "clear_hold_s": 0.5
+    },
+    {
+      "kind": "lane_change",
+      "direction": "RIGHT",
+      "hold_s": 1,
+      "max_lateral_error_m": 0.35,
+      "max_heading_error_deg": 5
+    },
+    {
+      "kind": "lane_position",
+      "lane_side": "RIGHT",
+      "lane_ordinal": 1,
+      "hold_s": 1,
+      "max_lateral_error_m": 0.35,
+      "max_heading_error_deg": 5
+    },
+    {
+      "kind": "speed",
+      "target_kmh": 45,
+      "tolerance_kmh": 2,
+      "hold_s": 2
+    }
   ]
 }

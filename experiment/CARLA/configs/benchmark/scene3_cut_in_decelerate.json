@@ -1,7 +1,7 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_3",
-  "source_sha256": "88d7fbff44150e7aec69048c8dcb8759a6e9f78a961ce0229987e7350b425116",
+  "source_sha256": "1be172dfd0042057e32901e3a544164e1505826a9d593466c2a386c5b06a7b61",
   "task_id": "scene3_cut_in_decelerate",
   "activate_m": 1250,
   "end_route_s_m": 1550,
@@ -9,8 +9,16 @@
   "max_frame_gap_s": 0.15,
   "violation_budget": 0,
   "steps": [
-    {"kind": "yield_cut_in", "target_role": "scene3_cut_in_vehicle",
-     "min_speed_drop_kmh": 5, "min_gap_m": 6, "min_ttc_s": 2.5,
-     "hold_s": 1, "max_lateral_error_m": 0.35, "max_heading_error_deg": 5, "stopped_kmh": 0.5}
+    {
+      "kind": "yield_cut_in",
+      "target_role": "scene3_cut_in_vehicle",
+      "min_speed_drop_kmh": 5,
+      "min_gap_m": 6,
+      "min_ttc_s": 2.5,
+      "hold_s": 1,
+      "max_lateral_error_m": 0.35,
+      "max_heading_error_deg": 5,
+      "stopped_kmh": 0.5
+    }
   ]
 }

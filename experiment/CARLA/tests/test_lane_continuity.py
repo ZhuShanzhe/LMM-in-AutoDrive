@@ -3,7 +3,8 @@ from types import SimpleNamespace as NS
 import pytest
 
 from benchmark.catalog import ConfigError
-from benchmark.lane_continuity import build_lane_corridor, trace_lane_corridor, trace_speed_lane_corridor
+from benchmark.lane_continuity import (build_lane_corridor, trace_lane_corridor,
+                                       trace_lane_change_keys, trace_speed_lane_corridor)
 
 
 class Location:
@@ -26,6 +27,22 @@ def test_lane_continuity_allows_connected_road_id_change():
     result=build_lane_corridor(world_map,route,2,Location)
     assert result[1]['lane_keys']==['1:0:-1','2:0:-1']
     assert result[-1]['end_m']==15
+
+
+def test_verified_twelve_meter_sample_gap_is_accepted():
+    route=[dict(x=x,y=0,z=0,distance_m=x,road_id=1,section_id=0,lane_id=-1)
+           for x in (0,12,24)]
+    waypoints=[NS(road_id=1,section_id=0,lane_id=-1,lane_type='Driving',
+                  transform=NS(location=Location(x),rotation=NS(yaw=0)))
+               for x in (0,12,24)]
+    for index,waypoint in enumerate(waypoints):
+        waypoint.next=lambda distance,index=index:waypoints[index+1:index+2]
+    world_map=NS(get_waypoint=lambda location:waypoints[int(location.x/12)])
+
+    assert build_lane_corridor(world_map,route,0,Location)[-1]['end_m']==24
+    route[2]['distance_m']=30
+    with pytest.raises(ConfigError,match='samples too sparse'):
+        build_lane_corridor(world_map,route,0,Location)
 
 
 def test_bounded_corridor_does_not_validate_later_unrelated_turn():
@@ -56,6 +73,15 @@ def test_branch_resolves_only_when_nearest_connector_is_wrong():
     result=trace_speed_lane_corridor(world_map,route,0,Location,15)
     assert result['stop_reason'] is None
     assert result['verified_end_m']==15
+
+
+def test_road_boundary_accepts_nearby_connected_successor():
+    route,wps,world_map=setup()
+    wrong=NS(road_id=1,section_id=0,lane_id=-1,lane_type='Driving',
+             transform=NS(location=Location(9.7),rotation=NS(yaw=0)))
+    wps[1].next=lambda distance:[wrong] if distance<=5 else [wps[2]]
+    corridor=build_lane_corridor(world_map,route,0,Location)
+    assert corridor[-1]['end_m']==15
 
 
 def test_ambiguous_initial_anchor_is_not_overridden_by_route_label():
@@ -143,3 +169,69 @@ def test_invalid_lane_corridors_are_rejected(fault):
         wps[1].next=lambda distance:[successor]
     elif fault=='sparse': route[-1]['distance_m']=100
     with pytest.raises(ConfigError): build_lane_corridor(world_map,route,0,Location)
+
+
+def test_lane_change_target_identity_continues_after_junction():
+    route = [dict(x=i*5, y=0, z=0, distance_m=i*5,
+                  road_id=(1 if i == 0 else 99 if i == 1 else 2),
+                  section_id=0, lane_id=6) for i in range(4)]
+    entries = []
+    for point in route:
+        road = point['road_id']
+        target = NS(road_id=road, section_id=0, lane_id=5,
+                    lane_type='Driving', is_junction=False,
+                    transform=NS(rotation=NS(yaw=0)))
+        entry = NS(road_id=road, section_id=0, lane_id=6,
+                   lane_type='Driving', is_junction=road == 99,
+                   lane_change='Left',
+                   transform=NS(location=Location(point['x']), rotation=NS(yaw=0)),
+                   get_left_lane=lambda target=target: target)
+        entries.append(entry)
+    world_map = NS(get_waypoint=lambda location: entries[int(location.x/5)])
+    fixture = dict(entry_lane_key='1:0:6', target_lane_key='1:0:5')
+
+    keys = trace_lane_change_keys(world_map, route, 0, 15, 'LEFT', Location, fixture)
+
+    assert keys['entry_lane_keys'] == ['1:0:6', '2:0:6']
+    assert keys['target_lane_keys'] == ['1:0:5', '2:0:5']
+    route[2]['lane_id'] = 7
+    with pytest.raises(ConfigError, match='route/map mismatch'):
+        trace_lane_change_keys(world_map, route, 0, 15, 'LEFT', Location, fixture)
+
+
+def test_lane_change_skips_overlapping_junction_connector():
+    route, wps, world_map = setup()
+    for wp in wps:
+        wp.is_junction = False
+        wp.lane_change = 'Left'
+        wp.get_left_lane = lambda wp=wp: NS(
+            road_id=wp.road_id, section_id=0, lane_id=-2,
+            lane_type='Driving', is_junction=False,
+            transform=NS(rotation=NS(yaw=0)))
+    overlap = NS(road_id=99, section_id=0, lane_id=-1,
+                 lane_type='Driving', is_junction=True)
+    world_map.get_waypoint = lambda loc: overlap if loc.x == 5 else wps[int(loc.x/5)]
+    fixture = dict(entry_lane_key='1:0:-1', target_lane_key='1:0:-2')
+    keys = trace_lane_change_keys(world_map, route, 0, 15, 'LEFT', Location, fixture)
+    assert keys['entry_lane_keys'] == ['1:0:-1', '2:0:-1']
+    assert keys['target_lane_keys'] == ['1:0:-2', '2:0:-2']
+
+
+def test_lane_change_uses_connected_successor_at_road_boundary():
+    route, wps, world_map = setup()
+    for wp in wps:
+        wp.is_junction = False
+        wp.lane_change = 'Left'
+        wp.get_left_lane = lambda wp=wp: NS(
+            road_id=wp.road_id, section_id=0, lane_id=-2,
+            lane_type='Driving', is_junction=False,
+            transform=NS(rotation=NS(yaw=0)))
+    wrong = NS(road_id=1, section_id=0, lane_id=-1, is_junction=False)
+    world_map.get_waypoint = lambda loc: wrong if loc.x == 10 else wps[int(loc.x/5)]
+    fixture = dict(entry_lane_key='1:0:-1', target_lane_key='1:0:-2')
+
+    keys = trace_lane_change_keys(world_map, route, 0, 15, 'LEFT', Location, fixture)
+    assert keys['entry_lane_keys'] == ['1:0:-1', '2:0:-1']
+    wps[1].next = lambda distance: []
+    with pytest.raises(ConfigError, match='route/map mismatch'):
+        trace_lane_change_keys(world_map, route, 0, 15, 'LEFT', Location, fixture)

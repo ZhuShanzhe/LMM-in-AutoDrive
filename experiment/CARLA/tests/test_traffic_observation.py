@@ -1,5 +1,6 @@
 from types import SimpleNamespace as NS
 from benchmark.traffic_observation import observe_traffic, TrafficDensitySummary
+from benchmark.truth_capture import RouteProjector
 
 
 def actor(x,y,yaw=0):
@@ -19,3 +20,21 @@ def test_front_cone_counts_distinguish_directions_and_ego_lane():
     summary=TrafficDensitySummary()
     summary.update(row)
     assert summary.result()['below_three_front_actor_fraction']==0
+
+
+def test_route_lane_survives_road_id_boundary_without_counting_adjacent_lane():
+    actors={1:actor(0,0),2:actor(20,0),3:actor(30,4)}
+    snapshot=NS(frame=11,find=actors.get)
+    world_map=NS(get_waypoint=lambda p:NS(road_id=1 if p.x<10 else 2,
+                                         section_id=0,lane_id=-1 if p.y==0 else -2))
+    route=RouteProjector([dict(x=x,y=0,z=0,distance_m=x) for x in (0,10,20,30,40)])
+
+    row=observe_traffic(snapshot,1,[2,3],world_map,
+                        route_projector=route,route_hint_m=0)
+
+    assert row['counts']['ego_lane']==0
+    assert row['counts']['route_lane']==1
+    summary=TrafficDensitySummary()
+    summary.update(row)
+    assert summary.result()['empty_route_lane_fraction']==0
+    assert summary.result()['empty_ego_lane_fraction']==1

@@ -127,6 +127,13 @@ def test_lane_position_missing_map_metadata_is_scene_invalid():
     assert TaskOracle(spec(step)).update(row)['status']=='SCENE_INVALID'
 
 
+def test_speed_corridor_missing_at_task_entry_is_scene_invalid():
+    oracle=TaskOracle(spec(SPEED))
+    row=observation(0,route_s_m=6)
+    row['fixture']['steps']['0']={'lane_corridor':[dict(start_m=0,end_m=5,lane_keys=['a'])]}
+    assert oracle.update(row)['status']=='SCENE_INVALID'
+
+
 @pytest.mark.parametrize('field,value',[('lateral_error_m',.6),('heading_error_deg',8)])
 def test_speed_with_lane_constraint_rejects_off_center_vehicle(field,value):
     step=dict(SPEED,max_lateral_error_m=.35,max_heading_error_deg=5)

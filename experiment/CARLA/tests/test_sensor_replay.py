@@ -220,6 +220,53 @@ def test_no_command_frame_does_not_inherit_last_instruction(tmp_path):
     assert list(SynchronizedReplayDataset(root))[1].driving_intent is None
 
 
+def test_scheduled_text_is_frame_local_and_hashed(tmp_path):
+    root = _dataset(tmp_path)
+    path = root / "command_context.jsonl"
+    rows = [
+        {"simulation_frame": 10, "timestamp_s": 1.0,
+         "source": "scene_schedule_not_model_parse",
+         "commands": [{"id": "c01", "text": "Slow down."}],
+         "route_s_m": 700},
+        {"simulation_frame": 14, "timestamp_s": 1.2,
+         "source": "scene_schedule_not_model_parse", "commands": []},
+    ]
+    _write_jsonl(path, rows)
+    dataset = SynchronizedReplayDataset(root)
+    frames = list(dataset)
+    assert frames[0].command_context == {
+        "source": "scene_schedule_not_model_parse",
+        "commands": [{"id": "c01", "text": "Slow down."}],
+    }
+    assert frames[1].command_context["commands"] == []
+    assert dataset.summary()["frames_with_scheduled_text"] == 1
+    before = dataset.integrity_manifest()["dataset_sha256"]
+    rows[0]["commands"][0]["text"] = "Stop."
+    _write_jsonl(path, rows)
+    assert SynchronizedReplayDataset(root).integrity_manifest()["dataset_sha256"] != before
+
+
+@pytest.mark.parametrize("fault", ["missing", "duplicate", "future_time", "bad_source"])
+def test_replay_rejects_invalid_scheduled_text(tmp_path, fault):
+    root = _dataset(tmp_path)
+    rows = [
+        {"simulation_frame": frame, "timestamp_s": timestamp,
+         "source": "scene_schedule_not_model_parse", "commands": []}
+        for frame, timestamp in [(10, 1.0), (14, 1.2)]
+    ]
+    if fault == "missing":
+        rows.pop()
+    elif fault == "duplicate":
+        rows.append(rows[0])
+    elif fault == "future_time":
+        rows[0]["timestamp_s"] = 1.1
+    else:
+        rows[0]["source"] = "parsed_model"
+    _write_jsonl(root / "command_context.jsonl", rows)
+    with pytest.raises(DatasetValidationError):
+        SynchronizedReplayDataset(root)
+
+
 def test_missing_calibration_is_explicit_and_can_be_required(tmp_path):
     root = _dataset(tmp_path)
     assert not SynchronizedReplayDataset(root).summary()["sensor_calibration_available"]

@@ -1,12 +1,38 @@
 {
-  "schema_version":"task_oracle/1.0", "scene_id":"scene_3",
-  "source_sha256":"88d7fbff44150e7aec69048c8dcb8759a6e9f78a961ce0229987e7350b425116",
-  "task_id":"scene3_pass_work_zone", "activate_m":3100, "end_route_s_m":3450,
-  "timeout_s":150, "max_frame_gap_s":0.15, "violation_budget":0,
-  "coverage":{"status":"PARTIAL","missing":["physical_cone_clearance","continuous_open_lane_constraint","all_worker_clearance","first_60m_overlap_with_merge","last_5m_continuity"]},
-  "threshold_notes":{"max_speed_kmh":"Source wet-road limit=32; permit lower speeds and stops. Interval begins after the configured taper ends, without asserting that merge or pedestrian yielding succeeded."},
-  "steps":[
-    {"kind":"speed_ceiling","max_speed_kmh":32,"hold_s":1},
-    {"kind":"maintain_interval","from_route_s_m":3160,"until_route_s_m":3445,"max_sample_distance_m":5,"max_speed_kmh":32}
+  "schema_version": "task_oracle/1.0",
+  "scene_id": "scene_3",
+  "source_sha256": "1be172dfd0042057e32901e3a544164e1505826a9d593466c2a386c5b06a7b61",
+  "task_id": "scene3_pass_work_zone",
+  "activate_m": 3100,
+  "end_route_s_m": 3450,
+  "timeout_s": 150,
+  "max_frame_gap_s": 0.15,
+  "violation_budget": 0,
+  "coverage": {
+    "status": "PARTIAL",
+    "missing": [
+      "physical_cone_clearance",
+      "continuous_open_lane_constraint",
+      "all_worker_clearance",
+      "first_60m_overlap_with_merge",
+      "last_5m_continuity"
+    ]
+  },
+  "threshold_notes": {
+    "max_speed_kmh": "Source wet-road limit=32; permit lower speeds and stops. Interval begins after the configured taper ends, without asserting that merge or pedestrian yielding succeeded."
+  },
+  "steps": [
+    {
+      "kind": "speed_ceiling",
+      "max_speed_kmh": 32,
+      "hold_s": 1
+    },
+    {
+      "kind": "maintain_interval",
+      "from_route_s_m": 3160,
+      "until_route_s_m": 3445,
+      "max_sample_distance_m": 5,
+      "max_speed_kmh": 32
+    }
   ]
 }

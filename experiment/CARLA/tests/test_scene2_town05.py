@@ -539,9 +539,9 @@ class Scene2Town05Tests(unittest.TestCase):
             config["traffic"]["ego_spawn_exclusion_m"],
             35.0,
         )
-        self.assertGreaterEqual(
+        self.assertEqual(
             config["traffic"]["startup_corridor_length_m"],
-            400.0,
+            150.0,
         )
         self.assertGreaterEqual(
             config["traffic"]["startup_corridor_radius_m"],
@@ -650,6 +650,19 @@ class Scene2Town05Tests(unittest.TestCase):
         )
         self.assertEqual(audit["mismatch_count"], 1)
         self.assertFalse(audit["competition_ready"])
+
+    def test_route_command_audit_cannot_skip_wrong_next_junction(self):
+        route = [
+            (Waypoint(Transform(Location(0.0, 0.0))), "RoadOption.LANEFOLLOW"),
+            (Waypoint(Transform(Location(10.0, 0.0))), "RoadOption.RIGHT"),
+            (Waypoint(Transform(Location(20.0, 0.0))), "RoadOption.STRAIGHT"),
+        ]
+        audit = audit_command_route_alignment(
+            [{"id": "next-junction-straight", "announce_at_m": 0.0,
+              "steps": ["PROCEED:STRAIGHT_THROUGH_JUNCTION"]}],
+            route, [0.0, 10.0, 20.0], default_horizon_m=30.0,
+        )
+        self.assertEqual(audit["mismatch_count"], 1)
 
     def test_route_command_audit_deduplicates_and_checks_order(self):
         options = (

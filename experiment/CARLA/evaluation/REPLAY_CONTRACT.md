@@ -24,7 +24,12 @@ intent 结构及 parse_result 来源。无请求 ID 时为 null，不自动沿�
 competition_schedule 表示脚本构造，不能计为解析模型的正确预测。
 指令顶层的 route_s_m 等额外字段不传递；input、intent 和 parse_result 属于
 上游指令接口内容，此处保留其语义，不代替上游完整 schema 或可信来源校验。
-同源 manifest 1.3 覆盖各帧指令、时间、场景上下文、标定及声明的原始LiDAR文件；不可与旧版哈希直接比较。
+场景一、三的新标准采集另有逐帧 `command_context.jsonl`，只记录当帧有效的
+场景预设文本；`source=scene_schedule_not_model_parse`，不代表 ModernBERT 已解析，
+也不代表控制器必然执行了该指令。空 `commands` 表示该帧没有当前指令，不能沿用上一条。
+回放仅暴露 id/text，不传递进度等评测字段，要求帧号和时间戳与传感器 bundle 匹配。
+同源 manifest 1.4 覆盖该文本、各帧指令、时间、场景上下文、标定及原始LiDAR；
+不可与旧版哈希直接比较。
 
 新采集由 ExactFrameSensorSuite 写出 sensor_calibration.json，包括实际传感器属性、
 sensor_to_ego 齐次矩阵、相机光学坐标变换及理想针孔内参。镜头畸变及后处理属性
@@ -163,3 +168,31 @@ capture_summary记录成功不代表已经完成完整模型离线重放；仍�
 输入哈希跨轮变化、初始化失败或推理失败会停止后续轮次。每轮包含首帧推理，不隐式预热。
 汇总提供逐轮P50/P95与预测JSON精确一致性；预测中若含自身计时字段，也会参与精确比较。
 精确一致不代表语义正确或闭环成功。同一进程多轮并非冷进程/GPU冷启动性能测试。
+
+## 三场景同源抽样对比
+
+模型原生格式在三个正式运行目录均有`model_inputs/`和`benchmark/`后，运行
+`python -m evaluation.challenge_capture_audit --scene-1 <场景一目录> --scene-2 <场景二目录> --scene-3 <场景三目录> --frames 1000 --output <新索引文件>`。
+审计核对四视角与LiDAR来自同一传感器帧，并与各自独立评测日志按决策帧、时间戳关联。
+不足指定帧数、缺模态、评测未收尾或真值缺帧均拒绝生成索引。索引记录各场景输入和真值
+指纹及覆盖每项任务距离区间的评测帧，再均匀补齐数量；不包含真值内容，也不证明
+特殊事件真的发生或任务已经完成。
+
+场景一、三另支持不依赖VLA权重的`--record-multimodal --benchmark-assessment`；
+与场景二原有标准采集一起，可通过上述审计加`--format synchronized`生成三场景
+标准传感器索引。该格式使用独立的四视角/LiDAR采集rig与车辆状态，
+不等价于团队VLA实际消费的模型rig，也不包含未实际产出的DrivingIntent；
+默认每10个仿真帧采样一次。标准格式回放使用`--format synchronized`和相同的
+`--selection`、`--scene`参数，仍需适配器提供模型真实预处理。
+
+模型回放时对每个场景分别执行：
+
+```powershell
+python -m evaluation.replay_benchmark <场景目录>/model_inputs --format model-rig --selection <索引文件> --scene scene_1 --adapter team_adapter:create --config <模型配置.json> --output <新结果目录>
+```
+
+上述`team_adapter:create`是组员在模型环境中提供的工厂接口，不是仓库内置模型。
+回放先依次推理该场景采集的**所有**决策帧，再只对索引所列帧单独汇总延时；
+`predictions.jsonl`为每帧标注`selected_for_evaluation`。这能维持有状态模型的历史输入，
+不等价于动作改变环境后的闭环。回放前会复核整段模型输入、场景配置与独立真值指纹；
+目录搬迁不影响按内容验证。没有真实模型权重或未采集三个场景时不能生成正式对比结果。

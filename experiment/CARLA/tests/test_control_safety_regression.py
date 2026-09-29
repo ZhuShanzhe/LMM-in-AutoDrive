@@ -412,6 +412,22 @@ class ControlSafetyRegressionTests(unittest.TestCase):
             self.assertFalse(controller.get_execution_state()["lane_change_completed"])
         self.assertTrue(controller.get_execution_state()["lane_change_completed"])
 
+    def test_lane_change_tracks_target_center_after_entering_target_lane(self):
+        vehicle = FakeVehicle()
+        vehicle.current_transform = transform(x=0.0, y=-4.2, yaw=0.0)
+        target_next = FakeWaypoint(transform(x=12.0, y=-3.5), lane_id=2)
+        target = FakeWaypoint(transform(x=0.0, y=-3.5), target_next,
+                              lane_id=2)
+        controller = EgoPIDController(vehicle, FakeMap(target))
+        controller._lane_change_command_id = "left-1"
+        controller._lane_change_target_lane_id = 2
+
+        controller._lateral_control({"action": "lane_change_left",
+                                     "command_id": "left-1"}, .05)
+
+        self.assertEqual(controller._last_lateral_debug["mode"], "stanley_route")
+        self.assertGreater(controller._last_lateral_debug["cross_track_term"], 0.0)
+
     def test_lane_change_keeps_lateral_guidance_during_settle_period(self):
         vehicle = FakeVehicle()
         controller = EgoPIDController(vehicle, FakeMap(FakeWaypoint(transform())))

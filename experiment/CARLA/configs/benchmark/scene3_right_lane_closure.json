@@ -1,7 +1,7 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_3",
-  "source_sha256": "88d7fbff44150e7aec69048c8dcb8759a6e9f78a961ce0229987e7350b425116",
+  "source_sha256": "1be172dfd0042057e32901e3a544164e1505826a9d593466c2a386c5b06a7b61",
   "task_id": "scene3_right_lane_closure",
   "activate_m": 2975,
   "end_route_s_m": 3150,
@@ -10,13 +10,28 @@
   "violation_budget": 0,
   "coverage": {
     "status": "PARTIAL",
-    "missing": ["cone_taper_footprint_clearance", "dynamic_target_lane_gap_checks", "continuous_speed_during_merge", "physical_closure_geometry_binding"]
+    "missing": [
+      "cone_taper_footprint_clearance",
+      "dynamic_target_lane_gap_checks",
+      "continuous_speed_during_merge",
+      "physical_closure_geometry_binding"
+    ]
   },
   "threshold_notes": {
     "max_speed_kmh": "Source wet_speed_limit_kmh=32 is an upper bound, not a target. Already-slow entries need not brake again; continuous merge-speed safety is not yet covered."
   },
   "steps": [
-    {"kind": "speed_ceiling", "max_speed_kmh": 32, "hold_s": 0.5},
-    {"kind": "lane_change", "direction": "LEFT", "hold_s": 1, "max_lateral_error_m": 0.35, "max_heading_error_deg": 5}
+    {
+      "kind": "speed_ceiling",
+      "max_speed_kmh": 32,
+      "hold_s": 0.5
+    },
+    {
+      "kind": "lane_change",
+      "direction": "LEFT",
+      "hold_s": 1,
+      "max_lateral_error_m": 0.35,
+      "max_heading_error_deg": 5
+    }
   ]
 }

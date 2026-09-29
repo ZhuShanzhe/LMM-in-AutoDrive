@@ -1,7 +1,7 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_3",
-  "source_sha256": "88d7fbff44150e7aec69048c8dcb8759a6e9f78a961ce0229987e7350b425116",
+  "source_sha256": "1be172dfd0042057e32901e3a544164e1505826a9d593466c2a386c5b06a7b61",
   "task_id": "scene3_worker_crossing",
   "activate_m": 3250,
   "end_route_s_m": 3425,
@@ -9,7 +9,13 @@
   "max_frame_gap_s": 0.15,
   "violation_budget": 0,
   "steps": [
-    {"kind": "yield_pedestrian", "target_role": "scene3_crossing_worker", "require_stop": true,
-     "stop_hold_s": 0.5, "stopped_kmh": 0.5, "clear_hold_s": 0.5}
+    {
+      "kind": "yield_pedestrian",
+      "target_role": "scene3_crossing_worker",
+      "require_stop": true,
+      "stop_hold_s": 0.5,
+      "stopped_kmh": 0.5,
+      "clear_hold_s": 0.5
+    }
   ]
 }

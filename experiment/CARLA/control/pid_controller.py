@@ -503,7 +503,13 @@ class EgoPIDController:
         if waypoint is None:
             return 0.0
 
-        local_lane_hold = (
+        lane_change_target_hold = (
+            intent["action"] in ("lane_change_left", "lane_change_right")
+            and (intent.get("command_id") or intent["action"]) == self._lane_change_command_id
+            and self._lane_change_target_lane_id is not None
+            and waypoint.lane_id == self._lane_change_target_lane_id
+        )
+        local_lane_hold = lane_change_target_hold or (
             intent["action"] in ("keep_lane", "accelerate", "decelerate")
             and not bool(intent.get("route_target_trusted", False))
         )

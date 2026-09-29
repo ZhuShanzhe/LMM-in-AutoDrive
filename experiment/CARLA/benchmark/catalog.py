@@ -20,6 +20,11 @@ class ConfigError(ValueError):
     pass
 
 
+def source_fingerprint(payload: bytes) -> str:
+    """Bind scene content while ignoring only Git's CRLF checkout conversion."""
+    return hashlib.sha256(payload.replace(b'\r\n', b'\n')).hexdigest()
+
+
 def number(value: Any, label: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ConfigError(f'{label}: expected a finite number')
@@ -134,8 +139,9 @@ def load_catalog(scene: str, config_root: Path = CONFIG_ROOT, *, source_path=Non
         tasks.append(Task(key, 0, index, text, announce, activate, end, dependencies, linked, command))
     tasks.sort(key=lambda t: (t.activate_m, t.source_order))
     tasks = tuple(Task(**{**asdict(t), 'order': i}) for i, t in enumerate(tasks, 1))
+    source_hash = source_fingerprint(payload)
     return Catalog('benchmark_catalog/1.0', scene, raw.get('scene_id', raw.get('scenario_id', scene)),
-                   path.name, hashlib.sha256(payload).hexdigest(), map_name, length, tasks, tuple(events),
+                   path.name, source_hash, map_name, length, tasks, tuple(events),
                    raw.get('geometry_binding'))
 
 
@@ -143,7 +149,7 @@ def load_episode_catalog(scene, source_path, world_map):
     """Accept exact registered configs or a provenance-checked geometry binding."""
     registered = load_catalog(scene)
     payload = Path(source_path).read_bytes()
-    if hashlib.sha256(payload).hexdigest() == registered.source_sha256:
+    if source_fingerprint(payload) == registered.source_sha256:
         return registered
     raw = json.loads(payload)
     binding = raw.get('geometry_binding', {})

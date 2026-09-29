@@ -1,7 +1,7 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_3",
-  "source_sha256": "88d7fbff44150e7aec69048c8dcb8759a6e9f78a961ce0229987e7350b425116",
+  "source_sha256": "1be172dfd0042057e32901e3a544164e1505826a9d593466c2a386c5b06a7b61",
   "task_id": "scene3_blocked_lane_change_left",
   "activate_m": 4700,
   "end_route_s_m": 5000,
@@ -15,7 +15,11 @@
       "front_role": "scene3_gap_front_vehicle",
       "rear_role": "scene3_gap_rear_vehicle",
       "obstacle_role": "scene3_maintenance_vehicle",
-      "target_roles": ["scene3_gap_front_vehicle", "scene3_gap_rear_vehicle", "scene3_maintenance_vehicle"],
+      "target_roles": [
+        "scene3_gap_front_vehicle",
+        "scene3_gap_rear_vehicle",
+        "scene3_maintenance_vehicle"
+      ],
       "min_front_gap_m": 30,
       "min_rear_gap_m": 25,
       "min_ttc_s": 2.5,

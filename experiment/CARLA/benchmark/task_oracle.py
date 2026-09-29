@@ -352,7 +352,12 @@ class TaskOracle:
                             return False
                     segments=[s for s in corridor if s['start_m']<=progress<=s['end_m']]
                     if not segments:
+                        if (state.get('speed_corridor_seen')
+                                and progress>max(s['end_m'] for s in corridor)):
+                            self.finish('TIMEOUT','speed_lane_window_closed',obs['frame'])
+                            return False
                         raise ConfigError('speed lane corridor does not cover current progress')
+                    state['speed_corridor_seen']=True
                     allowed={key for s in segments for key in s['lane_keys']}
                     condition &= ego['lane_key'] in allowed
                 else:

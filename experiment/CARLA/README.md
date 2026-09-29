@@ -1,4 +1,4 @@
-# CARLA 自动驾驶场景仿真平台
+# CARLA 仿真控制与统一评测
 
 ## 挑战赛道统一入口
 
@@ -6,504 +6,111 @@
 
 当前合并版尚未完成三场景物理闭环验证；以下历史环境与场景记录不作为本轮验收结论。
 
-## 背景车流持续维护
+运行环境：Linux、CARLA 0.9.16、Python 3.12.13。下列单项基线与传感器采集命令不代表 VLA 完整闭环验收通过。
 
-`FixedRouteTraffic` 新增可选的 `route_density` 模式：按测试路线前方的距离和同向车道检查缺口，
-优先回收远处背景车辆，备用容量不足时在安全位置补车。近处车辆与任务专用减速车辆不参与回收。
-路口内不补车，候选位置检查车间距离；每个维护周期最多处理两辆车，重复回收有冷却时间。
+## 已实现功能
 
-`configs/basic_voice_traffic_preview.json` 是独立的基础路线交通扩展配置，保留原基础场景配置不变。
-当前初始化96个车辆候选位，总量上限128；目标巡航速度42–50 km/h，仍遵守信号灯和跟车规则。
-前方400–800米为补车检查区，350米以内禁止生命周期生成/回收操作。
-该距离保护用于减少近处突现，不等价于所有相机视角中的严格遮挡证明。
+- **场景管理**：统一基础操纵、复杂避障、应急驾驶三个场景，配置38项指令任务，支持按场景和任务编号选择、生成运行计划。
+- **交通与事件**：支持背景车辆生成、补充和回收，以及行人横穿、慢车、骑行者、公交站乘客和施工事件。
+- **任务分段**：保留完整场景运行入口，提供调速、变道、转弯、行人避让和部分组合任务的独立运行入口。
+- **多模态采集**：同步记录多视角图像、LiDAR和车辆状态，提供传感器标定及模型输入帧关联。
+- **同源回放**：支持录制数据的离线回放和重复运行，记录随机种子与运行配置。
+- **控制与反馈**：对接车辆控制接口，记录控制指令、执行反馈及异常状态。
+- **任务评价**：根据仿真数据判断速度调整、车道保持、变道、转弯、行人避让、超车及组合动作顺序，输出成功、失败、超时等状态。
+- **日志与报告**：记录演员轨迹、交通分布、碰撞及实线违规事件，统计运行延迟和资源占用，输出JSON与Markdown报告。
+- **运行管理**：支持中断数据保留、磁盘容量保护，以及传感器、车辆和仿真设置的清理恢复。
 
-```bash
-python tools/build_basic_traffic_preview.py
-python tools/preview_route_traffic.py --output outputs/traffic_preview --ffmpeg ffmpeg --speed-kmh 50
-python tools/summarize_route_traffic.py outputs/traffic_preview/traffic.jsonl
-```
+## 使用方式
 
-巡览工具沿路线移动相机，输出1080p视频、路线与配置快照、逐帧车流日志。
-汇总包括各公里区间车辆数、同向车辆数、空档时长及至少三辆车的覆盖率。
-这些是前向几何区域计数，不等同于无遮挡可见车辆数，也不代表模型闭环驾驶通过。
-路口信号灯造成的正常成队与疏散不应通过关闭交通规则消除。
-
-## 同源数据采集与回放
-
-场景运行可按同一个 CARLA `simulation_frame` 采集四路 RGB、LiDAR 和
-动态车辆状态。完整帧不允许使用相邻时刻的数据补齐。采集结果无需启动
-CARLA 即可校验和回放：
+在已有CARLA Python环境中执行，工作目录为：
 
 ```bash
-python -m evaluation.sensor_replay outputs/scene2_run \
-  --output outputs/scene2_run/replay.jsonl \
-  --integrity-manifest outputs/scene2_run/same_source_manifest.json
-```
-
-清单包含每个传感器文件和车辆状态记录的 SHA-256。原版与优化版测试只有
-引用相同的 `dataset_sha256` 才视为同源。`--speed 1` 按记录时间回放，较大
-数值用于加速回放，默认 `0` 表示不等待的离线评测。
-
-## 挑战赛道运行范围
-
-本分支保留该模块可复用的运行接口、配置和回归代码。当前联合基准以根目录 README 和轻量 VLA 模块 README 为准；下文历史性能不是新版挑战模型成绩。
-
-## 当前集成版本
-
-- 场景代码由组员 CARLA 分支持续集成；当前 `main` 副本作为第一阶段统一控制和场景接口。
-- CARLA 服务端与 Python API：统一使用 `0.9.16`，二者版本必须一致。
-- 推荐 Python：`3.12.13`；当前 AutoDL 环境已验证 PyTorch 可识别 RTX 5090 的 `sm_120`。
-- 默认 CARLA 路径：`$CARLA_ROOT`，也可通过 `CARLA_ROOT` 覆盖。
-- 统一集成环境：Linux（当前验证系统为 Ubuntu 22.04）。
-
-Linux 环境优先直接安装 CARLA 0.9.16 自带的 wheel；`carla_bootstrap.py` 也会从
-`$CARLA_ROOT/PythonAPI/carla/dist` 查找 `.whl` 或 `.egg`：
-
-```bash
-export CARLA_ROOT=$CARLA_ROOT
-python -m pip install "$CARLA_ROOT"/PythonAPI/carla/dist/carla-0.9.16-*.whl
-python -c "from importlib.metadata import version; import carla; print(version('carla'))"
-```
-
-若只需先安装 Python 客户端，也可以使用官方 PyPI（AutoDL 的默认阿里云源不提供该包）：
-
-```bash
-python -m pip install -i https://pypi.org/simple carla==0.9.16
-```
-
-### AutoDL 服务端验证状态
-
-当前容器已完成以下安装：
-
-```text
-CARLA 服务端：$CARLA_ROOT（约 19 GB）
-CARLA Python API：0.9.16 / CPython 3.12
-```
-
-该容器最初因用户态 EGL/X Server 运行库不完整，`vulkaninfo` 返回
-`ERROR_INCOMPATIBLE_DRIVER`。以下依赖组合已在当前 Ubuntu 22.04 / RTX 5090 容器验证，
-安装后 `vulkaninfo --summary` 可识别 NVIDIA 580.105.08 和 RTX 5090：
-
-```bash
-apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  acl libvulkan1 vulkan-tools mesa-utils libegl1 libgles2 libgbm1 \
-  xserver-xorg-core xserver-xorg-video-dummy
-VK_ICD_FILENAMES=/etc/vulkan/icd.d/nvidia_icd.json vulkaninfo --summary
-```
-
-CARLA 服务端禁止以 root 身份运行，但 root 可以运行 Python 客户端。AutoDL 默认登录
-用户为 root，因此使用专用 `carla` 用户，并只授予其穿过 `/root` 到数据盘的权限：
-
-```bash
-export CARLA_ROOT=$CARLA_ROOT
-export CARLA_CACHE_DIR=/tmp/carla_cache
-id carla >/dev/null 2>&1 || useradd -m -s /bin/bash carla
-setfacl -m u:carla:--x /root
-install -d -o carla -g carla "$CARLA_CACHE_DIR/runtime" "$CARLA_CACHE_DIR/logs"
-chmod 700 "$CARLA_CACHE_DIR/runtime"
-
-runuser -u carla -- env \
-  HOME="$CARLA_CACHE_DIR" XDG_RUNTIME_DIR="$CARLA_CACHE_DIR/runtime" \
-  bash -lc 'cd $CARLA_ROOT && \
-    ./CarlaUE4.sh -RenderOffScreen -nosound -quality-level=Low -carla-rpc-port=2000'
-```
-
-`-RenderOffScreen` 不显示窗口，但 RGB 摄像头仍正常渲染并把图像直接传给 Python 代码，
-适合远程服务器闭环测试。无需安装桌面环境或通过远程桌面查看画面。
-
-## 场景理解数据采集
-
-`run_control_experiment.py` 已接入 `scene_understanding` 的同帧采集桥。它不会让视觉
-模型参与紧急制动或 TTC 控制，只保存场景帧解释、语义对齐和离线评测所需的数据。
-
-先启动 CARLA 0.9.16 服务端，再从仓库根目录执行：
-
-```bash
-export PYTHONPATH="$PWD"
 cd experiment/CARLA
-python run_control_experiment.py emergency_brake \
-  --duration-s 25 \
-  --scene-capture \
-  --scene-capture-every-n 10 \
-  --output-dir outputs/runs/emergency_scene_capture
 ```
 
-同样可将场景名替换为 `straight_driving` 或 `pedestrian_crossing`。采集结果位于：
+### 查看任务与生成计划
 
-```text
-outputs/runs/<run>/scene_understanding/
-├── capture_index.jsonl
-├── sensors/front_rgb/*.png
-├── world_states/*.json
-└── projections/*.json
+无需启动CARLA。场景名称为`scene_1`、`scene_2`、`scene_3`，任务可填写编号、任务ID或`all`。
+
+```powershell
+python -m benchmark list --scene scene_1
+python -m benchmark list --scene scene_2 --task 3
+python -m benchmark plan --scene scene_2 --task 3 --seed 42 --output outputs/scene2_task3_plan.json
 ```
 
-回到仓库根目录生成 Qwen manifest 并先跑 10 帧冒烟测试：
+计划中的`isolated_adapters`列出可用的独立运行入口；生成计划不会启动仿真。
 
-```bash
-cd ../..
-python -m scene_understanding.core.prepare_carla_samples \
-  --capture-index experiment/CARLA/outputs/runs/emergency_scene_capture/scene_understanding/capture_index.jsonl \
-  --prompt scene_understanding/prompts/scene_understanding.txt \
-  --output experiment/CARLA/outputs/runs/emergency_scene_capture/scene_manifest.jsonl
+### 运行单项任务
 
-python -m scene_understanding.core.run_qwen_scene_inference \
-  --manifest experiment/CARLA/outputs/runs/emergency_scene_capture/scene_manifest.jsonl \
-  --model-path $MODEL_ROOT/Qwen2.5-VL-3B-Instruct \
-  --output experiment/CARLA/outputs/runs/emergency_scene_capture/scene_results.jsonl \
-  --limit 10 \
-  --fail-fast
+先启动CARLA 0.9.16，默认连接`127.0.0.1:2000`。使用空闲服务器，每次指定新的输出目录。
+
+```powershell
+python -m benchmark preflight --scene scene_2 --host 127.0.0.1 --output outputs/scene2_route
+python -m benchmark run --scene scene_2 --task s2_t05_cmd_03 --host 127.0.0.1 --route outputs/scene2_route/route.json --traffic-config configs/basic_voice_traffic_preview.json --duration-s 70 --seed 42 --output outputs/scene2_task3
 ```
 
-模型输出通过 `scene_understanding.core.visual_semantic_fusion` 与同帧 Actor 投影框融合，
-再进入现有语义对齐、风险评估和控制决策接口。图片、权重和 `outputs/` 均为运行产物，
-不提交 Git。
+示例使用脚本控制基线和背景车流，运行“行人避让、左变道、超越慢车”。`--duration-s`指定仿真时长，`--seed`指定随机种子。
 
-## 场景理解模块联调
+### 运行完整场景
 
-本目录只说明 CARLA 场景、控制与采集方法。实时检测、异步视觉模型、语义对齐、
-历史模型对比和多轮仿真性能结论统一维护在
-`../../scene_understanding/README.md`，避免把场景构建与感知模型指标混在一起。
+以下使用场景二默认控制入口。`--duration 0`表示运行至8公里路线结束；使用模型时需额外提供模型配置与权重参数。
 
-## 功能特点
-
-- Ego车辆仿真
-- 基于场景的自动驾驶环境构建
-- 动态行人与交通参与者交互
-- Ground Truth 数据生成
-- 摄像头传感器支持
-
-## 当前支持场景
-
-- 直线行驶场景
-- 紧急制动场景
-- 行人横穿场景
-
-### 与 XH-202602 正式工况的覆盖关系
-
-当前三个场景分别提供了基础操控、复杂避障和应急响应的代码入口与最小闭环，
-但仅属于开发验证场景，不能视为已经完整覆盖比赛方案中的正式工况。
-
-| 题目正式工况 | 当前对应场景 | 已覆盖 | 当前边界 |
-| --- | --- | --- | --- |
-| 基础语音操控 | `straight_driving` | 直行、车道保持、速度控制、到达终点、碰撞/压线/超速记录 | 5 km 连续路线、双向 6 车道、启动/停止/加减速/转弯/变道完整指令序列 |
-| 复杂避障 | `pedestrian_crossing` | 行人横穿、减速避让、碰撞检测 | 阴天傍晚、8 km、十字路口和公交站、混合交通流、多视角相机与激光雷达、避让后变道超车 |
-| 极限应急 | `emergency_brake` | 前车突然制动、紧急停车、安全车距 | 雨天夜间、6 km 快速路、施工路段和车道收窄、突发加塞/锥桶/临时横穿行人 |
-
-本目录当前用于模块联调和阶段回归测试。表中的当前边界不计入已完成能力。
-
-### 2026-07-25 控制安全修复与回归
-
-对比上一版，本次只修改影响真实仿真结论的控制和评测逻辑，没有合入其他分支的整套
-连续场景：
-
-- `keep_lane` 从固定出生航向改为跟随当前 CARLA Driving waypoint，分叉时按当前
-  车道航向选择连续分支；
-- 普通闭合速度先输出 `decelerate`，仅在短车距或低 TTC 时锁存
-  `emergency_brake`；
-- 紧急制动场景只接受 `safe_stop_after_front_brake`，不再以到达路线终点替代安全
-  停车；触发时要求主车仍在运动，并记录制动反应时间；
-- `decelerate` 和 `emergency_brake` 过程不再被误判为超速；原始压线事件与非法压线
-  分开统计。
-
-初始对照中，直行 3/3、行人横穿 3/3 成功，紧急制动 0/3，三轮均因固定航向偏离
-道路后碰撞 `static.pole`。修复后在当前 `main` 重新执行严格紧急制动 3 次，结果均为
-`safe_stop_after_front_brake`：触发时速度 `19.384-19.400 km/h`，反应时间
-`0.200 s`，最终速度 `0 km/h`，最小前车距离 `11.661-11.938 m`，碰撞、非法压线
-和超速误报均为 0，`task_completed` 为 3/3。
-
-当前 CARLA 单元回归为 17/17。新增用例固定验证弯道车道保持、紧急动作锁存、普通
-闭合速度不误触发紧急锁存、减速不误报超速以及非法压线判定。
-
-## 系统架构
-
-### Scenario（场景模块）
-
-负责：
-
-- 仿真环境初始化
-- NPC行为控制
-- 交通事件生成
-
-
-### Vehicle（车辆模块）
-
-负责：
-
-- Ego车辆管理
-- NPC车辆管理
-
-
-# 7.20更新
-
-## CARLA 场景框架功能完善
-
-### 更新概述
-
-完成 CARLA 场景框架第一阶段重构。
-
-针对三个基础自动驾驶测试场景：
-
-- `StraightDrivingScenario`
-- `EmergencyBrakeScenario`
-- `PedestrianCrossingScenario`
-
-新增统一的任务目标定义、成功/失败检测、运行状态管理以及日志输出功能。
-
----
-
-# 1. 场景状态统一管理
-
-所有场景现在支持统一状态：
-
-- `RUNNING`：场景运行中
-- `SUCCESS`：任务成功完成
-- `FAILURE`：任务失败
-
-
-场景运行过程中记录：
-
-- 当前状态
-- 结束原因
-- 运行时间
-- 关键指标
-
-
-示例：
-
-```json
-{
-    "status": "SUCCESS",
-    "reason": "ego_reached_goal"
-}
-````
-
-失败示例：
-
-```json
-{
-    "status": "FAILURE",
-    "reason": "collision_with_vehicle"
-}
+```powershell
+python run_complex_avoidance_town05.py --config configs/scene_2_town05_runtime.json --duration 0 --benchmark-assessment --output-dir outputs/scene2_full
 ```
 
----
+添加`--benchmark-task s2_t05_cmd_03`可选择汇总的任务，但不改变完整行驶路线。
 
-# 2. 场景任务目标定义
+### 查看结果与汇总报告
 
-为三个场景增加明确任务目标。
+- 单项结果：`outputs/scene2_task3/run_result.json`。
+- 逐帧运动与演员状态：单项输出目录下的`motion.jsonl`和`actor_snapshots/`。
+- 完整场景任务汇总：`outputs/scene2_full/benchmark/summary.json`。
 
----
-
-## 2.1 StraightDrivingScenario
-
-### 任务目标
-
-自车沿预设直线路线行驶，到达指定目标位置。
-
-### 成功条件
-
-* Ego 到达预设终点。
-
-### 失败条件
-
-* 发生碰撞。
-* 超过最大运行时间。
-
----
-
-## 2.2 EmergencyBrakeScenario
-
-### 任务目标
-
-模拟前车紧急制动场景。
-
-场景包含：
-
-* Ego车辆
-* 前方目标车辆
-* 同车道行驶关系
-
-### 成功条件
-
-* Ego 安全完成场景。
-* 无碰撞。
-
-### 失败条件
-
-* 与前车发生碰撞。
-* 发生道路违规。
-
----
-
-## 2.3 PedestrianCrossingScenario
-
-### 任务目标
-
-模拟行人横穿道路场景。
-
-场景包含：
-
-* Ego车辆
-* 横穿行人
-* 行人运动轨迹
-
-### 成功条件
-
-* 行人完成横穿。
-* Ego 未发生碰撞。
-
-### 失败条件
-
-* 与行人发生碰撞。
-* 超时。
-
----
-
-# 3. 运行状态实时获取
-
-增加场景状态查询接口。
-
-运行过程中可以实时获取：
-
-* 场景信息
-* actor ID
-* 当前状态
-* 任务结果
-* 运行指标
-
-调用：
-
-```python
-scenario.get_status()
+```powershell
+python -m benchmark.report outputs/scene2_full/benchmark/summary.json --output outputs/scene2_report
 ```
 
-示例输出：
+输出`report.md`和`report.json`；可传入多个场景的结果文件进行汇总。
+正式运行记录与报告会区分`VLA_MODEL`、`NON_VLA_CONTROL`和`EXTERNAL`；
+旧记录未声明来源时显示`UNDECLARED`，不自动算作模型结果。
 
-```json
-{
-    "status": "RUNNING",
-    "reason": "",
-    "actors": {
-        "ego": 85,
-        "front_vehicle": 86
-    }
-}
+### 核对三场景同源数据
+
+不依赖模型权重的标准传感器数据可在三个正式入口使用`--record-multimodal`
+与`--benchmark-assessment`录制；场景二原有该开关，场景一、三现在也支持。
+场景一、三的标准传感器文件位于各自运行目录的`multimodal/`，不与演示相机共用`rgb/`。
+其`command_context.jsonl`逐帧记录当前场景指令文本，无指令时为空；这是场景调度
+记录，不是模型解析产物，也不代表执行成功。
+例如场景一：
+
+```powershell
+python run_control_experiment.py basic_voice_urban_5km --scenario-config configs/basic_voice_urban_5km.json --decision-source voice_schedule --benchmark-assessment --record-multimodal --stop-when-goal-reached --output-dir outputs/scene1_full
 ```
 
----
+三个标准采集目录齐备后使用`--format synchronized`生成索引；这只是标准传感器数据，
+不应称作模型实际消费输入，也没有伪造DrivingIntent：
 
-# 4. Actor 管理与编号记录
-
-增加关键 Actor 注册机制。
-
-现在可以直接获取：
-
-* ego_vehicle id
-* front_vehicle id
-* walker id
-* collision sensor id
-
-例如：
-
-```json
-{
-    "ego":85,
-    "front_vehicle":86
-}
+```powershell
+python -m evaluation.challenge_capture_audit --format synchronized --scene-1 outputs/scene1_full --scene-2 outputs/scene2_full --scene-3 outputs/scene3_full --frames 1000 --output outputs/challenge_1000_standard.json
 ```
 
-用于：
+真实VLA运行则分别启用`--vla-record-sensors`和独立任务评测，再对`model_inputs/`
+采集运行原生输入审计：
 
-* 碰撞对象分析
-* 真值数据记录
-* 场景评测
-
----
-
-# 5. 碰撞检测功能
-
-为场景增加 collision sensor。
-
-新增记录：
-
-* 碰撞次数
-* 碰撞对象
-* 失败原因
-
-示例：
-
-```
-[StraightDriving] Collision:
-vehicle.tesla.model3
+```powershell
+python -m evaluation.challenge_capture_audit --format model-rig --scene-1 outputs/scene1_vla --scene-2 outputs/scene2_vla --scene-3 outputs/scene3_vla --frames 1000 --output outputs/challenge_1000_model.json
 ```
 
-最终状态：
+审计要求每场景有足够的同步帧、四视角与 LiDAR，且有对应的独立仿真真值；
+输出三个场景的采集指纹、评测状态及任务区间覆盖加均匀抽样的帧索引。
+某项任务路段没有模型输入帧时会拒绝生成正式索引；未采集到的数据不会补造。
+索引用于指标抽样；有状态模型必须从各自采集的完整原序列回放，不能直接跳帧推理。
+采集真值只供评测，不传入模型适配器。该审计不代替真实闭环或任务成功判定。
 
-```json
-{
-    "status":"FAILURE",
-    "reason":"collision_with_vehicle"
-}
-```
+## 详细说明
 
----
-
-# 6. Ego 外部控制支持
-
-所有场景支持：
-
-```python
-external_control=True
-```
-
-当开启外部控制时：
-
-* 场景不控制 Ego
-* 不调用 Ego 自动驾驶逻辑
-* 仅控制 NPC、行人和环境
-
-用于接入：
-
-* 自动驾驶算法
-* VAD
-* 规划控制模型
-
-提供接口。
-
----
-
-# 7. 场景结束日志输出
-
-场景结束后自动输出运行结果。
-
-示例：
-
-```
-[Scenario] Finished
-
-status: SUCCESS
-
-reason:
-ego_reached_goal
-
-
-metrics:
-
-{
-    "collision_count":0,
-    "simulation_time":12.5
-}
-```
-
-失败示例：
-
-```
-[Scenario] Finished
-
-status: FAILURE
-
-reason:
-collision_with_walker
-```
+- [任务管理与运行参数](benchmark/README.md)
+- [多模态采集与同源回放](evaluation/REPLAY_CONTRACT.md)
+- [指令调度](control/COMMAND_DISPATCH.md)
+- [传感器输入配置](control/SENSOR_CONTRACT.md)

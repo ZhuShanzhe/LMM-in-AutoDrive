@@ -216,7 +216,9 @@ def run_fixture(scene, selector, route_path, traffic_config_path, output, *,
             v=actor_snapshot.get_velocity()
             motion.append(dict(frame=frame,sim_time_s=snapshot.timestamp.elapsed_seconds,
                                route_s_m=hint,speed_kmh=3.6*(v.x*v.x+v.y*v.y+v.z*v.z)**.5))
-            traffic_observation=observe_traffic(snapshot,ego.id,[actor.id for actor in traffic.actors],observation_map)
+            traffic_observation=observe_traffic(snapshot,ego.id,[actor.id for actor in traffic.actors],
+                                                observation_map,route_projector=projector,
+                                                route_hint_m=hint)
             motion[-1]['traffic_observation']=traffic_observation
             traffic_density.update(traffic_observation)
             if kind in {'speed','turn','pedestrian'}:

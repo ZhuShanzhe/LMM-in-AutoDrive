@@ -21,10 +21,12 @@ def turn_evidence(route, direction):
                 legality_scope='directed_map_topology_not_signal_permission')
 
 
-def waypoint_route(waypoints):
+def waypoint_route(waypoints, distances=None):
+    if distances is not None and len(waypoints)!=len(distances):
+        raise ConfigError('route waypoints and distances must align')
     route=[]
     distance=0.
-    for waypoint in waypoints:
+    for index,waypoint in enumerate(waypoints):
         pose=waypoint.transform
         p=dict(x=pose.location.x,y=pose.location.y,z=pose.location.z,yaw=pose.rotation.yaw,
                road_id=waypoint.road_id,section_id=waypoint.section_id,lane_id=waypoint.lane_id,
@@ -34,7 +36,9 @@ def waypoint_route(waypoints):
             if gap<.05:
                 continue
             distance+=gap
-        p['distance_m']=distance
+        p['distance_m']=distance if distances is None else float(distances[index])
+        if route and p['distance_m']<=route[-1]['distance_m']:
+            raise ConfigError('route distances must increase after waypoint deduplication')
         route.append(p)
     return route
 

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace as NS
 
-from .catalog import ConfigError, load_catalog, load_episode_catalog
+from .catalog import ConfigError, load_catalog, load_episode_catalog, source_fingerprint
 from .monitor import TaskMonitor
 from .safety_events import SafetyLedger
 from .task_oracle import load_profile
@@ -90,12 +90,26 @@ def unpack_snapshot(row, location_factory=NS):
     return NS(frame=row['frame'],timestamp=NS(elapsed_seconds=row['sim_time_s']),find=actors.get)
 
 
+def required_task_roles(profile):
+    roles={step['target_role'] for step in profile['steps'] if 'target_role' in step}
+    roles.update(role for step in profile['steps'] for role in step.get('target_roles',[]))
+    return roles
+
+
+def defer_dynamic_role_entry(profile,row,first_seen_s):
+    roles=required_task_roles(profile)
+    if not roles or all(row.get('roles',{}).get(role,{}).get('status')=='BOUND' for role in roles):
+        return False
+    return (row['sim_time_s']-first_seen_s<.25
+            and row['route_s_m']-profile['activate_m']<5.0)
+
+
 class EpisodeAssessment:
     def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
         self.catalog=load_episode_catalog(scene, source_config, world_map)
         from .selection import assessment_selection
         self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
-        if hashlib.sha256(Path(source_config).read_bytes()).hexdigest()!=self.catalog.source_sha256:
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
             raise ConfigError('assessment source configuration differs from registered catalog')
         if world_map.name.split('/')[-1]!=self.catalog.map_name:
             raise ConfigError('assessment map mismatch')
@@ -190,7 +204,8 @@ class EpisodeAssessment:
         live_actors=list(self.actor_provider()) if self.actor_provider is not None else []
         if self.actor_provider is not None:
             vehicle_ids=[a.id for a in live_actors if getattr(a,'type_id','').startswith('vehicle.')]
-            observation=observe_traffic(snapshot,self.binding.actor_id,vehicle_ids,self.map)
+            observation=observe_traffic(snapshot,self.binding.actor_id,vehicle_ids,self.map,
+                                        route_projector=self.projector,route_hint_m=self.hint)
             observation['population']='all_world_vehicles_including_task_actors'
             row['traffic_observation']=observation
             self.traffic_density.update(observation)
@@ -221,8 +236,7 @@ class EpisodeAssessment:
                     source='independent_task_oracle',source_sha256=self.catalog.source_sha256,
                     completion_frame=completion['frame'])
             roles={}
-            required_roles = {step['target_role'] for step in profile['steps'] if 'target_role' in step}
-            required_roles.update(role for step in profile['steps'] for role in step.get('target_roles', []))
+            required_roles = required_task_roles(profile)
             for role in sorted(required_roles):
                 state=(role_states or {}).get(role,{})
                 if state.get('status')!='BOUND':
@@ -274,6 +288,7 @@ class EpisodeAssessment:
                             raise ConfigError('current lane differs from destination route corridor')
                 elif step['kind'] in {'lane_change','guarded_lane_change'}:
                     location=snapshot.find(self.binding.actor_id).get_transform().location
+                    anchor=profile['activate_m']
                     if i>0:
                         previous = fixture['steps'].get(str(i-1), {})
                         if 'start_route_s_m' in step:
@@ -288,7 +303,19 @@ class EpisodeAssessment:
                             raise ConfigError('sequential lane entry outside remaining route')
                         point=min(self.route,key=lambda p:abs(p['distance_m']-anchor))
                         location=self.location_factory(**{k:point[k] for k in ('x','y','z')})
-                    fixture['steps'][str(i)]=prepare_lane_fixture(self.map,location,step['direction'])
+                    lane_fixture=prepare_lane_fixture(self.map,location,step['direction'])
+                    later=[task.activate_m for task in self.catalog.tasks
+                           if task.activate_m>anchor]
+                    corridor_end=min(
+                        self.route[-1]['distance_m'],anchor+350.0,
+                        profile.get('end_route_s_m',self.route[-1]['distance_m']),
+                        min(later) if later else self.route[-1]['distance_m'],
+                    )
+                    from .lane_continuity import trace_lane_change_keys
+                    lane_fixture.update(trace_lane_change_keys(
+                        self.map,self.route,anchor,corridor_end,step['direction'],
+                        self.location_factory,lane_fixture))
+                    fixture['steps'][str(i)]=lane_fixture
                 elif step['kind'] in {'yield_pedestrian','wait_clear'}:
                     from .event_fixture import crosswalk_fixture, route_crossing_fixture
                     target_roles=set(step.get('target_roles',[step.get('target_role')]))
@@ -348,6 +375,7 @@ class EpisodeAssessment:
             raise ConfigError('assessment sensor cleanup failed: '+'; '.join(cleanup_errors))
         self.ledger.seal_after_quiet()
         try:
+            entry_first_seen={}
             with (self.output/'episode_truth.jsonl').open(encoding='utf-8') as stream:
                 for line in stream:
                     row=json.loads(line)
@@ -356,6 +384,9 @@ class EpisodeAssessment:
                         if identity in self.unavailable or row['route_s_m']<profile['activate_m']:
                             continue
                         if identity not in self.monitors:
+                            first_seen=entry_first_seen.setdefault(identity,row['sim_time_s'])
+                            if defer_dynamic_role_entry(profile,row,first_seen):
+                                continue
                             self._prepare(identity,profile,snapshot,row['route_s_m'],row.get('roles'))
                         if identity in self.monitors:
                             needed=self.monitors[identity].collector.bindings.keys()-{'ego'}

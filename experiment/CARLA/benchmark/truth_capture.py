@@ -130,10 +130,12 @@ class ActorBinding:
                             (-self.half_length_m,self.half_width_m)]]
 
 
-def prepare_lane_fixture(world_map, location, direction):
+def prepare_lane_fixture(world_map, location, direction, entry_waypoint=None):
     if direction not in {'LEFT','RIGHT'}:
         raise ConfigError('LEFT or RIGHT required')
-    entry = world_map.get_waypoint(location)
+    entry = entry_waypoint if entry_waypoint is not None else world_map.get_waypoint(location)
+    if entry_waypoint is not None and entry.transform.location.distance(location) > .75:
+        raise ConfigError('verified entry differs from route position')
     if entry is None or entry.is_junction or str(entry.lane_type) != 'Driving':
         raise ConfigError('entry must be a nonjunction driving lane')
     target = entry.get_left_lane() if direction == 'LEFT' else entry.get_right_lane()

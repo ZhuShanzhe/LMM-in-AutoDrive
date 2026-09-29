@@ -7,6 +7,10 @@
     "turnaround_spawn_index": 109,
     "target_length_m": 8000.0,
     "route_sampling_m": 2.0,
+    "strategy": "coverage_greedy_v1",
+    "preserve_event_prefix_m": 1400.0,
+    "coverage_candidate_limit": 32,
+    "coverage_candidate_offset": 2,
     "target_speed_kmh": 45.0,
     "turn_speed_kmh": 12.0,
     "turn_slowdown_approach_m": 70.0,
@@ -19,27 +23,31 @@
   },
   "weather": {
     "preset": "cloudy-evening",
-    "cloudiness": 80.0,
+    "cloudiness": 60.0,
     "precipitation": 0.0,
     "precipitation_deposits": 0.0,
-    "wetness": 10.0,
-    "wind_intensity": 15.0,
-    "sun_azimuth_angle": 280.0,
-    "sun_altitude_angle": 5.0,
-    "fog_density": 20.0,
-    "fog_distance": 200.0,
-    "fog_falloff": 0.2
+    "wetness": 0.0,
+    "wind_intensity": 10.0,
+    "sun_azimuth_angle": -1.0,
+    "sun_altitude_angle": 15.0,
+    "fog_density": 3.0,
+    "fog_distance": 0.75,
+    "fog_falloff": 0.1,
+    "scattering_intensity": 1.0,
+    "mie_scattering_scale": 0.03,
+    "rayleigh_scattering_scale": 0.0331
   },
   "traffic": {
     "seed": 20260730,
     "vehicles": 70,
+    "following_source_actor_reserve": 12,
     "buses": 3,
     "ambient_walkers": 24,
     "global_distance_to_leading_vehicle_m": 3.2,
     "global_speed_difference_pct": 5.0,
     "route_spawn_radius_m": 45.0,
     "ego_spawn_exclusion_m": 35.0,
-    "startup_corridor_length_m": 450.0,
+    "startup_corridor_length_m": 150.0,
     "startup_corridor_radius_m": 12.0,
     "ambient_auto_lane_change": false,
     "random_lane_change_percentage": 3.0,
@@ -93,7 +101,7 @@
       "activate_progress_m": 380.0,
       "resolve_progress_m": 820.0,
       "target_speed_kmh": 20.0,
-      "spawn_lead_distance_m": 45.0,
+      "prestage_before_activation_m": 80.0,
       "ground_truth": {
         "evidence_mode": "observed",
         "max_actor_distance_m": 70.0,
@@ -139,14 +147,30 @@
       "activate_progress_m": 950.0,
       "target_speed_kmh": 20.0,
       "variants": [
-        {"variant_id": "steady_20", "target_speed_kmh": 20.0},
-        {"variant_id": "steady_18", "target_speed_kmh": 18.0}
+        {
+          "variant_id": "steady_20",
+          "target_speed_kmh": 20.0
+        },
+        {
+          "variant_id": "steady_18",
+          "target_speed_kmh": 18.0
+        }
       ],
       "ground_truth": {
         "evidence_mode": "observed",
-        "actor_roles": ["scene2_compound_slow_vehicle"],
-        "allowed_control_actions": ["decelerate", "stop", "keep_lane", "lane_change_left"],
-        "risk_labels": ["slow_lead_vehicle", "overtake_candidate"]
+        "actor_roles": [
+          "scene2_compound_slow_vehicle"
+        ],
+        "allowed_control_actions": [
+          "decelerate",
+          "stop",
+          "keep_lane",
+          "lane_change_left"
+        ],
+        "risk_labels": [
+          "slow_lead_vehicle",
+          "overtake_candidate"
+        ]
       }
     },
     {
@@ -204,9 +228,21 @@
       "kind": "bus_stop",
       "retain_after_completion": true,
       "passengers": [
-        {"role_name": "scene2_bus_passenger_1", "longitudinal_offset_m": -5.0, "lateral_walk_m": 1.5},
-        {"role_name": "scene2_bus_passenger_2", "longitudinal_offset_m": 5.0, "lateral_walk_m": 1.5},
-        {"role_name": "scene2_bus_passenger_3", "longitudinal_offset_m": 8.0, "lateral_walk_m": 1.5}
+        {
+          "role_name": "scene2_bus_passenger_1",
+          "longitudinal_offset_m": -5.0,
+          "lateral_walk_m": 1.5
+        },
+        {
+          "role_name": "scene2_bus_passenger_2",
+          "longitudinal_offset_m": 5.0,
+          "lateral_walk_m": 1.5
+        },
+        {
+          "role_name": "scene2_bus_passenger_3",
+          "longitudinal_offset_m": 8.0,
+          "lateral_walk_m": 1.5
+        }
       ],
       "anchor_progress_m": 1045.0,
       "activate_progress_m": 990.0,
@@ -255,9 +291,9 @@
       "id": "slow_cyclist",
       "kind": "cyclist",
       "retain_after_completion": true,
-      "anchor_progress_m": 1575.0,
+      "anchor_progress_m": 1640.0,
       "activate_progress_m": 1500.0,
-      "resolve_progress_m": 1725.0,
+      "resolve_progress_m": 1900.0,
       "target_speed_kmh": 14.0,
       "ground_truth": {
         "evidence_mode": "observed",
@@ -311,7 +347,7 @@
     },
     {
       "id": "s2_t05_cmd_02",
-      "announce_at_m": 350.0,
+      "announce_at_m": 370.0,
       "text": "确认前方道路安全，保持右侧车道，并恢复到50公里每小时继续行驶。",
       "spoken_text": "确认前方道路安全，保持右侧车道，并恢复到50公里每小时继续行驶。",
       "category": "NAVIGATION",
@@ -389,7 +425,7 @@
     },
     {
       "id": "s2_t05_cmd_07",
-      "announce_at_m": 1500.0,
+      "announce_at_m": 1560.0,
       "text": "右侧有自行车，减速并向左避让，超过后回到右侧车道。",
       "spoken_text": "右侧有自行车，减速并向左避让，超过后回到右侧车道。",
       "category": "COMPLEX_OBSTACLE_AVOIDANCE",
@@ -406,7 +442,7 @@
     },
     {
       "id": "s2_t05_cmd_08",
-      "announce_at_m": 1775.0,
+      "announce_at_m": 1850.0,
       "text": "确认已安全超过自行车并返回右侧车道，保持安全车距继续行驶。",
       "spoken_text": "确认已安全超过自行车并返回右侧车道，保持安全车距继续行驶。",
       "category": "NAVIGATION",
@@ -423,7 +459,7 @@
     },
     {
       "id": "s2_t05_cmd_09",
-      "announce_at_m": 1950.0,
+      "announce_at_m": 2250.0,
       "text": "前方十字路口直行，通过后安全进入左侧车道并保持40公里每小时。",
       "spoken_text": "前方十字路口直行，通过后安全进入左侧车道并保持40公里每小时。",
       "category": "NAVIGATION",
@@ -451,7 +487,7 @@
     },
     {
       "id": "s2_t05_cmd_11",
-      "announce_at_m": 3900.0,
+      "announce_at_m": 4300.0,
       "text": "前方路口右转前减速至30公里每小时，右转后保持当前车道。",
       "spoken_text": "前方路口右转前减速至30公里每小时，右转后保持当前车道。",
       "category": "NAVIGATION",
@@ -478,16 +514,15 @@
     },
     {
       "id": "s2_t05_cmd_13",
-      "announce_at_m": 5100.0,
+      "announce_at_m": 5200.0,
       "route_alignment_horizon_m": 600.0,
-      "text": "保持安全车距，前方先右转，连续直行通过两个路口，再次右转后恢复到45公里每小时。",
-      "spoken_text": "保持安全车距，前方先右转，连续直行通过两个路口，再次右转后恢复到45公里每小时。",
+      "text": "保持安全车距，前方先右转，随后直行通过路口，再次右转后恢复到45公里每小时。",
+      "spoken_text": "保持安全车距，前方先右转，随后直行通过路口，再次右转后恢复到45公里每小时。",
       "category": "COMPLEX_OBSTACLE_AVOIDANCE",
       "urgency": "NORMAL",
       "steps": [
         "KEEP_SAFE_DISTANCE",
         "TURN:RIGHT",
-        "PROCEED:STRAIGHT_THROUGH_JUNCTION",
         "PROCEED:STRAIGHT_THROUGH_JUNCTION",
         "TURN:RIGHT",
         "SET_SPEED:12.50mps"
@@ -495,16 +530,16 @@
     },
     {
       "id": "s2_t05_cmd_14",
-      "announce_at_m": 5585.0,
+      "announce_at_m": 6050.0,
       "route_alignment_horizon_m": 400.0,
-      "text": "减速至30公里每小时，确认横道及路口安全后直行通过并保持当前车道。",
-      "spoken_text": "减速至30公里每小时，确认横道及路口安全后直行通过并保持当前车道。",
+      "text": "减速至30公里每小时，确认横道及路口安全后右转并保持当前车道。",
+      "spoken_text": "减速至30公里每小时，确认横道及路口安全后右转并保持当前车道。",
       "category": "COMPLEX_OBSTACLE_AVOIDANCE",
       "urgency": "URGENT",
       "steps": [
         "SET_SPEED:8.33mps",
         "CHECK:CROSSWALK_CLEAR",
-        "PROCEED:STRAIGHT_THROUGH_JUNCTION",
+        "TURN:RIGHT",
         "KEEP_LANE"
       ]
     },

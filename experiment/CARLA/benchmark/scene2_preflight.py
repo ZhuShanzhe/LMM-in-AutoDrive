@@ -1,9 +1,8 @@
 """Read-only actor-free geometry audit for the existing Scene 2 event setup."""
-import hashlib
 import json
 from pathlib import Path
 
-from .catalog import CONFIG_ROOT, ConfigError, load_catalog
+from .catalog import CONFIG_ROOT, ConfigError, load_catalog, source_fingerprint
 from .event_fixture import crosswalk_fixture, crosswalk_candidates
 from .planning import build_plan
 from .route_audit import audit_route
@@ -68,7 +67,7 @@ def preflight_scene2(output, host='127.0.0.1', port=2000):
     geometry=audit_route(route)
     plan=build_plan(catalog,'s2_t05_cmd_03')
     crossing=next(e for e in config['special_events'] if e['kind']=='crossing_pedestrian')
-    report=dict(source_sha256=hashlib.sha256(raw).hexdigest(),map_name=catalog.map_name,
+    report=dict(source_sha256=source_fingerprint(raw),map_name=catalog.map_name,
                 route_geometry=geometry,event_dependency_audits=plan['event_dependency_audits'],
                 scope='scene2_actor_free_preflight_not_runtime_acceptance',ready=False)
     try:

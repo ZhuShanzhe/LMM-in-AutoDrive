@@ -1,10 +1,9 @@
 """Actor-free geometry preflight using the formal scene-three route adapter."""
-import hashlib
 import json
 import math
 from pathlib import Path
 
-from .catalog import CONFIG_ROOT, ConfigError, load_catalog
+from .catalog import CONFIG_ROOT, ConfigError, load_catalog, source_fingerprint
 from .route_audit import audit_route
 from .turn_fixture import waypoint_route
 
@@ -75,7 +74,7 @@ def preflight_scene3(output, host='127.0.0.1', port=2000, map_snapshot=None):
         except (ValueError,RuntimeError,KeyError) as error:
             row.update(valid=False,reason=str(error))
         events.append(row)
-    report=dict(source_sha256=hashlib.sha256(raw).hexdigest(),map_name=catalog.map_name,
+    report=dict(source_sha256=source_fingerprint(raw),map_name=catalog.map_name,
         route_geometry=geometry,events=events,
         ready=not geometry['suspicious_gaps'] and all(event['valid'] for event in events),
         scope='actor_free_geometry_preflight_only; not runtime acceptance',

@@ -35,8 +35,8 @@ from scenarios.complex.town05_scene2 import (
     DeterministicSceneEvents,
     RouteProgressTracker,
     TownTrafficFlow,
-    build_repeated_route,
-    choose_curved_route_destination,
+    build_configured_route,
+    route_spatial_audit,
     route_curvature_degrees,
     speed_kmh,
 )
@@ -104,6 +104,110 @@ def route_stalled(progress_m: float, best_progress_m: float,
                   timeout_s: float) -> bool:
     return timeout_s > 0 and progress_m < best_progress_m + 2.0 \
         and simulation_time_s - last_advance_s >= timeout_s
+
+
+def traffic_diagnostics(world: Any, ego: Any) -> dict[str, Any]:
+    """Record nearby causes of a stop without changing the driving policy."""
+
+    transform = ego.get_transform()
+    origin = transform.location
+    forward = transform.get_forward_vector()
+    nearest = None
+    for actor in world.get_actors().filter("vehicle.*"):
+        if actor.id == ego.id or not actor.is_alive:
+            continue
+        location = actor.get_location()
+        dx, dy = location.x - origin.x, location.y - origin.y
+        along = dx * forward.x + dy * forward.y
+        lateral = abs(dx * forward.y - dy * forward.x)
+        if not 0.0 < along < 60.0 or lateral > 2.5:
+            continue
+        if nearest is None or along < nearest[0]:
+            nearest = (along, actor)
+
+    at_light = bool(ego.is_at_traffic_light())
+    light = ego.get_traffic_light() if at_light else None
+    control = ego.get_control()
+    lead = nearest[1] if nearest else None
+    lead_control = lead.get_control() if lead is not None else None
+    lead_location = lead.get_location() if lead is not None else None
+    lead_blocker = None
+    if lead is not None:
+        lead_forward = lead.get_transform().get_forward_vector()
+        for actor in world.get_actors():
+            if actor.id in (ego.id, lead.id) or not actor.is_alive:
+                continue
+            if not actor.type_id.startswith(("vehicle.", "walker.pedestrian.")):
+                continue
+            point = actor.get_location()
+            dx, dy = point.x - lead_location.x, point.y - lead_location.y
+            along = dx * lead_forward.x + dy * lead_forward.y
+            lateral = abs(dx * lead_forward.y - dy * lead_forward.x)
+            if not 0.0 < along < 35.0 or lateral > 3.0:
+                continue
+            if lead_blocker is None or along < lead_blocker[0]:
+                lead_blocker = (along, actor)
+    return {
+        "commanded_brake": round(float(control.brake), 3),
+        "commanded_throttle": round(float(control.throttle), 3),
+        "at_traffic_light": at_light,
+        "traffic_light_state": str(light.get_state()).rsplit(".", 1)[-1]
+        if light is not None else None,
+        "lead_vehicle_id": nearest[1].id if nearest else None,
+        "lead_vehicle_type": nearest[1].type_id if nearest else None,
+        "lead_vehicle_role": nearest[1].attributes.get("role_name")
+        if nearest else None,
+        "lead_distance_m": round(nearest[0], 2) if nearest else None,
+        "lead_speed_kmh": round(speed_kmh(nearest[1]), 2) if nearest else None,
+        "lead_at_traffic_light": bool(nearest[1].is_at_traffic_light())
+        if nearest else None,
+        "ego_half_length_m": float(ego.bounding_box.extent.x),
+        "lead_half_length_m": float(lead.bounding_box.extent.x)
+        if lead is not None else None,
+        "lead_location_m": {
+            "x": round(float(lead_location.x), 2),
+            "y": round(float(lead_location.y), 2),
+        } if lead_location is not None else None,
+        "lead_control": {
+            "throttle": round(float(lead_control.throttle), 3),
+            "brake": round(float(lead_control.brake), 3),
+        } if lead_control is not None else None,
+        "lead_blocker": {
+            "actor_id": lead_blocker[1].id,
+            "role": lead_blocker[1].attributes.get("role_name"),
+            "type": lead_blocker[1].type_id,
+            "distance_m": round(lead_blocker[0], 2),
+            "speed_kmh": round(speed_kmh(lead_blocker[1]), 2),
+        } if lead_blocker is not None else None,
+    }
+
+
+def baseline_following_guard(control: Any, ego_speed_kmh: float,
+                             observation: Mapping[str, Any]) -> dict[str, Any]:
+    """Keep the non-model preview driver from pushing a stopped NPC."""
+
+    lead_distance = observation.get("lead_distance_m")
+    if lead_distance is None:
+        return {"scope": "non_model_preview_only", "applied": False}
+    closing_mps = max(
+        0.0, (float(ego_speed_kmh) - float(observation["lead_speed_kmh"])) / 3.6,
+    )
+    clearance_m = (
+        float(observation["ego_half_length_m"])
+        + float(observation["lead_half_length_m"])
+        + 2.5 + 1.5 * closing_mps
+    )
+    applied = float(lead_distance) < clearance_m
+    if applied:
+        control.throttle = 0.0
+        control.brake = max(float(control.brake), 0.65)
+    return {
+        "scope": "non_model_preview_only",
+        "applied": applied,
+        "lead_actor_id": observation.get("lead_vehicle_id"),
+        "center_distance_m": float(lead_distance),
+        "minimum_center_distance_m": round(clearance_m, 2),
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -367,6 +471,12 @@ def load_config(path: Path) -> dict[str, Any]:
         raise ValueError("Scene 2 route must be at least 8 km")
     if float(route.get("minimum_curvature_degrees", 0.0)) < 180.0:
         raise ValueError("Scene 2 route must require visible curved driving")
+    if route.get("strategy", "repeated") not in ("repeated", "coverage_greedy_v1"):
+        raise ValueError("unsupported Scene 2 route strategy")
+    if route.get("strategy") == "coverage_greedy_v1" and not 1400.0 <= float(
+        route.get("preserve_event_prefix_m", 0.0)
+    ) < float(route["target_length_m"]):
+        raise ValueError("coverage route must preserve the staged event region")
     if len(payload.get("commands", [])) != 15:
         raise ValueError("Scene 2 requires exactly 15 demonstration commands")
     for command in payload["commands"]:
@@ -430,8 +540,8 @@ def load_config(path: Path) -> dict[str, Any]:
     weather = payload["weather"]
     if (
         weather.get("preset") != "cloudy-evening"
-        or float(weather["cloudiness"]) < 70.0
-        or float(weather["sun_altitude_angle"]) > 10.0
+        or float(weather["cloudiness"]) < 50.0
+        or float(weather["sun_altitude_angle"]) > 20.0
     ):
         raise ValueError(
             "Scene 2 competition weather must be cloudy evening/low light"
@@ -585,11 +695,13 @@ def audit_command_route_alignment(
         encountered = [
             maneuver["route_option"] for maneuver in maneuvers
         ]
-        cursor = iter(encountered)
-        matched = all(
-            any(actual == expected for actual in cursor)
-            for expected in required
-        )
+        matched = not required or bool(encountered) and encountered[0] == required[0]
+        if matched and required:
+            cursor = iter(encountered[1:])
+            matched = all(
+                any(actual == expected for actual in cursor)
+                for expected in required[1:]
+            )
         records.append(
             {
                 "command_id": str(command["id"]),
@@ -780,6 +892,9 @@ def apply_weather(world: Any, config: Mapping[str, Any]) -> None:
             fog_distance=float(config["fog_distance"]),
             fog_falloff=float(config["fog_falloff"]),
             wetness=float(config["wetness"]),
+            scattering_intensity=float(config["scattering_intensity"]),
+            mie_scattering_scale=float(config["mie_scattering_scale"]),
+            rayleigh_scattering_scale=float(config["rayleigh_scattering_scale"]),
         )
     )
 
@@ -1174,32 +1289,12 @@ def main() -> int:
                 "sensor tick must be an integer multiple of fixed delta"
             )
 
-        destination = config["route"]["turnaround_spawn_index"]
-        if destination == "auto":
-            destination, leg_length, leg_curvature = (
-                choose_curved_route_destination(
-                    world.get_map(),
-                    int(config["route"]["start_spawn_index"]),
-                    float(config["route"]["route_sampling_m"]),
-                )
-            )
-            print(
-                "Auto-selected Town05 destination: index={0}, leg={1:.1f} "
-                "m, curvature={2:.1f} deg".format(
-                    destination,
-                    leg_length,
-                    leg_curvature,
-                )
-            )
-        route, route_distances = build_repeated_route(
-            world.get_map(),
-            int(config["route"]["start_spawn_index"]),
-            int(destination),
-            float(config["route"]["target_length_m"]),
-            float(config["route"]["route_sampling_m"]),
+        route, route_distances, coverage_legs, destination = build_configured_route(
+            world.get_map(), config["route"]
         )
         route_length_m = float(route_distances[-1])
         curvature_degrees = route_curvature_degrees(route)
+        spatial_audit = route_spatial_audit(route, route_distances)
         if curvature_degrees < float(
             config["route"]["minimum_curvature_degrees"]
         ):
@@ -1210,6 +1305,13 @@ def main() -> int:
         print(
             "Town05 route geometry: {0:.1f} m, accumulated curvature "
             "{1:.1f} deg".format(route_length_m, curvature_degrees)
+        )
+        print(
+            "Route spatial audit: repeated cells={0:.1%}, "
+            "junction entries={1}".format(
+                spatial_audit["repeated_cell_fraction"],
+                spatial_audit["junction_entries"],
+            )
         )
         route_command_audit = audit_command_route_alignment(
             config["commands"],
@@ -1239,6 +1341,11 @@ def main() -> int:
             not record['matched'] for record in route_command_audit['records'])
         route_command_audit['competition_ready'] = route_command_audit['mismatch_count'] == 0
         route_command_audit['readiness_basis'] = 'route_options_and_independent_task_geometry'
+        route_command_audit["route_spatial_audit"] = spatial_audit
+        route_command_audit["route_strategy"] = config["route"].get(
+            "strategy", "repeated"
+        )
+        route_command_audit["coverage_legs"] = coverage_legs
         (output_dir / "route_command_audit.json").write_text(
             json.dumps(
                 route_command_audit,
@@ -1286,8 +1393,13 @@ def main() -> int:
             config["special_events"],
             int(config["traffic"]["seed"]),
             episode_index=args.variant_index,
+            ego=ego,
         )
         events.spawn()
+        skipped_event_ids = (
+            events.skip_events_before(start_progress_m)
+            if start_progress_m > 0.0 else []
+        )
         print(
             "Scene 2 variants: "
             + json.dumps(events.selected_variants, ensure_ascii=False)
@@ -1312,7 +1424,11 @@ def main() -> int:
             route,
             config["traffic"],
         )
-        traffic.spawn(events.reserved_locations, ego.get_location())
+        traffic.spawn(
+            events.reserved_locations,
+            route[start_route_index][0].transform.location,
+            start_progress_m,
+        )
         safety = SafetyMonitor(world, ego, registry)
         safety.start()
         if args.record_ground_truth:
@@ -1510,7 +1626,11 @@ def main() -> int:
             from benchmark.episode import attach_episode
             benchmark_assessment = attach_episode('scene_2',route,world,ego,output_dir/'benchmark',args.config,
                 initial_route_s_m=start_progress_m,task_selector=args.benchmark_task,
-                run_metadata=dict(traffic_seed=int(config['traffic']['seed']),vla_enabled=bool(vla_enabled),
+                run_metadata=dict(traffic_seed=int(config['traffic']['seed']),
+                                  traffic_replenishment_settings=dict(traffic.replenishment_settings),
+                                  vla_enabled=bool(vla_enabled),
+                                  policy_source=('EXTERNAL' if args.external_ego_control else
+                                                 'VLA_MODEL' if vla_enabled else 'NON_VLA_CONTROL'),
                                   external_ego_control=bool(args.external_ego_control),
                                   sensor_recording=bool(args.vla_record_sensors)))
         start_time = float(start_snapshot.timestamp.elapsed_seconds)
@@ -1532,6 +1652,7 @@ def main() -> int:
             if progress_m >= best_progress_m + 2.0:
                 best_progress_m = progress_m
                 last_advance_s = simulation_time_s
+            traffic.maintain(ego, progress_m)
             for command in ready_commands_in_order(
                 runtime_commands,
                 announced,
@@ -1579,6 +1700,7 @@ def main() -> int:
                     )
                 )
 
+            baseline_guard = None
             if unified_vla is not None:
                 control = unified_vla.run_step()
                 unified_vla.apply_control(control)
@@ -1672,6 +1794,9 @@ def main() -> int:
                     )
                     turn_centering_active = centering_now
                 control.manual_gear_shift = False
+                baseline_guard = baseline_following_guard(
+                    control, speed_kmh(ego), traffic_diagnostics(world, ego),
+                )
                 if compound_driver is not None:
                     compound_driver.record_control(snapshot,control)
                 ego.apply_control(control)
@@ -1747,6 +1872,10 @@ def main() -> int:
                         raise RuntimeError(message)
                     print("WARNING | " + message)
             if frame_counter % 20 == 0:
+                front_120m, same_120m, same_350m = (
+                    traffic._nearby_traffic_counts(ego, traffic.vehicles)
+                )
+                route_120m, route_350m = traffic._route_ahead_counts(progress_m)
                 runtime_log.write(
                     {
                         "frame": int(frame),
@@ -1754,7 +1883,14 @@ def main() -> int:
                         "route_progress_m": progress_m,
                         "route_length_m": route_length_m,
                         "ego_speed_kmh": speed_kmh(ego),
+                        "traffic_diagnostics": traffic_diagnostics(world, ego),
+                        "baseline_following_guard": baseline_guard,
                         "nearby_vehicles_85m": nearby["vehicles"],
+                        "front_vehicles_120m": front_120m,
+                        "same_direction_vehicles_120m": same_120m,
+                        "same_direction_vehicles_350m": same_350m,
+                        "route_vehicles_120m": route_120m,
+                        "route_vehicles_350m": route_350m,
                         "nearby_walkers_85m": nearby["walkers"],
                         "event_states": dict(events.states),
                         "selected_variants": dict(
@@ -1800,6 +1936,7 @@ def main() -> int:
             "route_turnaround_spawn_index": int(destination),
             "route_length_m": route_length_m,
             "route_curvature_degrees": curvature_degrees,
+            "route_spatial_audit": spatial_audit,
             "route_progress_m": progress_m,
             "stop_reason": stop_reason,
             "max_stall_s": args.max_stall_s,
@@ -1814,8 +1951,14 @@ def main() -> int:
                 "skipped_before_start_ids": skipped_command_ids,
                 "announced_ids": [str(c['id']) for c in runtime_commands if str(c['id']) in announced],
                 "restores_previous_instruction_state": False,
+                "skipped_event_ids": skipped_event_ids,
             },
             "traffic_vehicles_spawned": len(traffic.vehicles),
+            "traffic_initial_route_actors_spawned": traffic._initial_route_spawned,
+            "traffic_initial_route_spawns": list(traffic.initial_route_spawns),
+            "traffic_replenishment_settings": dict(traffic.replenishment_settings),
+            "traffic_replenishment_count": len(traffic.replenishment_events),
+            "traffic_replenishment_events": list(traffic.replenishment_events),
             "ambient_walkers_spawned": len(traffic.walkers),
             "traffic_hybrid_physics": {
                 "enabled": bool(args.traffic_hybrid_physics),

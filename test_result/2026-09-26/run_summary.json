@@ -1,0 +1,66 @@
+{
+  "scene2_smoke_003": {
+    "decision_frames": 200,
+    "first_frame": 426182,
+    "last_frame": 426381,
+    "max_observed_speed_kmh": 5.42,
+    "proposal_actions": {
+      "accelerate": 199,
+      "keep_lane": 1
+    },
+    "final_actions": {
+      "accelerate": 14,
+      "stop": 186
+    },
+    "final_reasons": {
+      "vla_accepted_phase-recovery-epoch_06": 14,
+      "active_plan_not_ready": 186
+    },
+    "raw_risk": {
+      "low": 199,
+      "high": 1
+    },
+    "fused_risk": {
+      "low": 199,
+      "high": 1
+    },
+    "model_output_applied": {
+      "True": 14,
+      "False": 186
+    },
+    "final_route_s_m": 0.39721821423958303
+  },
+  "scene3_smoke_003": {
+    "decision_frames": 400,
+    "first_frame": 318142,
+    "last_frame": 318541,
+    "max_observed_speed_kmh": 8.82,
+    "proposal_actions": {
+      "accelerate": 5,
+      "keep_lane": 12,
+      "decelerate": 1,
+      "stop": 382
+    },
+    "final_actions": {
+      "accelerate": 5,
+      "decelerate": 395
+    },
+    "final_reasons": {
+      "vla_accepted_phase-recovery-epoch_06": 6,
+      "generic_text_envelope": 12,
+      "unconfirmed_stop_crawl_floor": 382
+    },
+    "raw_risk": {
+      "low": 400
+    },
+    "fused_risk": {
+      "low": 5,
+      "medium": 395
+    },
+    "model_output_applied": {
+      "True": 5,
+      "False": 395
+    },
+    "final_route_s_m": 1.4182886936107906
+  }
+}
