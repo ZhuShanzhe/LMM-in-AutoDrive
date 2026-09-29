@@ -48,12 +48,12 @@ def _scene2_step_contract(
     elif action == "ADJUST_SPEED":
         parameters["change"] = parameter or "HOLD"
     elif action in {"CHANGE_LANE", "TURN", "PULL_OVER"}:
-        direction = parameter
         if parameter == "RETURN_WHEN_SAFE":
-            direction = "RIGHT"
+            parameters["return_to"] = "ORIGINAL_LANE"
         elif parameter.endswith("_WHEN_SAFE"):
-            direction = parameter.removesuffix("_WHEN_SAFE")
-        parameters["direction"] = direction
+            parameters["direction"] = parameter.removesuffix("_WHEN_SAFE")
+        else:
+            parameters["direction"] = parameter
     elif action == "KEEP_LANE" and parameter:
         parameters["direction"] = parameter
     elif parameter:

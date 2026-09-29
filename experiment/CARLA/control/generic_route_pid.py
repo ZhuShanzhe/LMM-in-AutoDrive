@@ -51,6 +51,8 @@ class GenericRoutePID:
         self._emergency = False
         self._sequence_command = {}
         self._sequence_expiry = None
+        self._requested_decision_speed_kmh = float(target_speed_kmh)
+        self._speed_constraint_codes: list[str] = []
         self._pid = EgoPIDController(
             ego,
             world.get_map(),
@@ -84,11 +86,15 @@ class GenericRoutePID:
             speed = float(decision.get("target_speed_kmh", 0.0))
         except (TypeError, ValueError):
             speed = 0.0
-        self._target_speed = max(
-            0.0, min(self.set_cruise_target_kmh(None), speed)
-        )
+        self._requested_decision_speed_kmh = max(0.0, speed)
+        cruise_cap = self.set_cruise_target_kmh(None)
+        self._target_speed = max(0.0, min(cruise_cap, speed))
+        self._speed_constraint_codes = []
+        if self._target_speed < self._requested_decision_speed_kmh - 1e-6:
+            self._speed_constraint_codes.append("road_speed_limit")
         if self._action in {"stop", "emergency_brake"}:
             self._target_speed = 0.0
+            self._speed_constraint_codes = ["stop_requested"]
         self._target_lane = decision.get("target_lane")
         self._emergency = bool(decision.get("emergency", False))
         self._sequence_command = {}
@@ -582,6 +588,12 @@ class GenericRoutePID:
             "allow_positive_acceleration": getattr(self,'_allow_positive_acceleration',True),
             "longitudinal_control_mode": getattr(self,'_longitudinal_control_mode','ABSOLUTE_SPEED'),
             "command_id": getattr(self,'_command_id',self._action),
+            "requested_step_speed_kmh": getattr(
+                self, '_requested_decision_speed_kmh', self._target_speed
+            ),
+            "speed_constraint_codes": list(
+                getattr(self, '_speed_constraint_codes', [])
+            ),
         }
         if self._junction_or_road_transition_ahead():
             # Sharpness-aware junction ceiling: the cap falls with the actual
@@ -599,6 +611,12 @@ class GenericRoutePID:
                 float(intent["target_speed_kmh"]),
                 junction_cap,
             )
+            if (
+                intent["target_speed_kmh"]
+                < float(intent["requested_step_speed_kmh"]) - 1e-6
+                and "junction_speed_cap" not in intent["speed_constraint_codes"]
+            ):
+                intent["speed_constraint_codes"].append("junction_speed_cap")
         if self._lane_transition_ahead():
             # Speed-adaptive lane-transition ceiling: faster approaches get a
             # lower cap so the lateral manoeuvre stays stable and cannot clip
@@ -613,6 +631,14 @@ class GenericRoutePID:
                 float(intent["target_speed_kmh"]),
                 transition_cap,
             )
+            if (
+                intent["target_speed_kmh"]
+                < float(intent["requested_step_speed_kmh"]) - 1e-6
+                and "lane_transition_speed_cap" not in intent["speed_constraint_codes"]
+            ):
+                intent["speed_constraint_codes"].append(
+                    "lane_transition_speed_cap"
+                )
         route_target = self._route_target()
         if route_target is not None:
             intent["target_location"] = route_target
@@ -634,6 +660,7 @@ class GenericRoutePID:
         return control
 
     def execution_state(self) -> dict[str, Any]:
+        pid_state = self._pid.get_execution_state()
         return {
             "source_step_id": getattr(self,'_source_step_id',None),
             "action": self._action,
@@ -641,5 +668,18 @@ class GenericRoutePID:
             "target_lane": self._target_lane,
             "speed_kmh": round(self._current_speed_kmh(), 3),
             "progress_m": round(self.progress_m(), 3),
-            "pid": self._pid.get_execution_state(),
+            "requested_target_speed_kmh": getattr(
+                self, '_requested_decision_speed_kmh', self._target_speed
+            ),
+            "effective_target_speed_kmh": pid_state.get(
+                "effective_target_speed_kmh", self._target_speed
+            ),
+            "speed_target_status": pid_state.get(
+                "speed_target_status", "UNKNOWN"
+            ),
+            "speed_constraint_codes": pid_state.get(
+                "speed_constraint_codes",
+                list(getattr(self, '_speed_constraint_codes', [])),
+            ),
+            "pid": pid_state,
         }

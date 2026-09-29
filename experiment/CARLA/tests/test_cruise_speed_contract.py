@@ -32,6 +32,21 @@ def test_cruise_goal_does_not_replace_model_stop_or_lower_speed():
     assert value._target_speed==0.
 
 
+def test_road_limited_setpoint_is_reported_as_an_explicit_constraint():
+    value=controller(30.)
+    value._pid=SimpleNamespace(get_execution_state=lambda: {
+        'effective_target_speed_kmh':30.,'speed_target_status':'CONSTRAINED',
+        'speed_constraint_codes':['road_speed_limit']})
+    value._current_speed_kmh=lambda:30.
+    value.progress_m=lambda:1.
+    value.set_high_level_decision(dict(action='accelerate',target_speed_kmh=45.,source_step_id='speed'))
+    state=value.execution_state()
+    assert state['requested_target_speed_kmh']==45.
+    assert state['effective_target_speed_kmh']==30.
+    assert state['speed_target_status']=='CONSTRAINED'
+    assert state['speed_constraint_codes']==['road_speed_limit']
+
+
 @pytest.mark.parametrize('limit',[0.,float('nan'),float('inf')])
 def test_unknown_road_limit_retains_conservative_default(limit):
     assert controller(limit).set_cruise_target_kmh(80.)==45.

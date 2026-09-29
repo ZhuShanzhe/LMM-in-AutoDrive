@@ -261,6 +261,8 @@ class GenericInstructionFSM:
             }.get(change, intent)
         direction = str(structured.get("direction", "")).upper()
         if intent == "CHANGE_LANE_LEFT":
+            if direction not in {"LEFT", "RIGHT"}:
+                return parsed
             intent = (
                 "CHANGE_LANE_RIGHT"
                 if direction == "RIGHT"

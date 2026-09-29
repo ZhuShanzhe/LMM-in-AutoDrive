@@ -292,6 +292,19 @@ class Scene2Town05Tests(unittest.TestCase):
             ["LANE_CHANGE_COMPLETED", "JUNCTION_EXITED", "JUNCTION_EXITED"],
         )
 
+    def test_return_when_safe_preserves_original_lane_semantics(self):
+        command = {
+            "id": "return",
+            "category": "NAVIGATION",
+            "urgency": "NORMAL",
+            "spoken_text": "return to the original lane",
+            "steps": ["CHANGE_LANE:RETURN_WHEN_SAFE"],
+        }
+        intent = build_scheduled_driving_intent(command, 1, 0.0, 0.0)
+        parameters = intent["intent"]["steps"][0]["parameters"]
+        self.assertEqual(parameters, {"return_to": "ORIGINAL_LANE"})
+        self.assertNotIn("direction", parameters)
+
     def test_scripted_walker_restores_hidden_staging_on_start(self):
         class FakeActor:
             is_alive = True

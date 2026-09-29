@@ -1011,7 +1011,9 @@ class UniversalVLAController:
                 ego_heading_deg=float(self.ego.get_transform().rotation.yaw))
             step=self.driving_plan.prepare(plan_document,frame_id=f'carla_{frame}',
                 timestamp_s=float(self.world.get_snapshot().timestamp.elapsed_seconds),
-                speed_mps=_speed_mps(self.ego),execution_state=observed_execution)
+                speed_mps=_speed_mps(self.ego),execution_state=observed_execution,
+                alignment=command.get('semantic_alignment'),
+                readiness=command.get('step_readiness'))
             step=step or plan_document['intent']['steps'][-1]
             plan_step_id=step['step_id']
             parsed=self.fsm.parsed_step(step,parsed.source_text)

@@ -51,6 +51,15 @@ class EgoPIDController:
 
     def run_step(self, intent, dt):
         risk_speed_cap=isinstance(intent,dict) and not intent.get('allow_positive_acceleration',True)
+        requested_step_speed = float(
+            intent.get('requested_step_speed_kmh', intent.get('target_speed_kmh', 0.0))
+        ) if isinstance(intent, dict) else 0.0
+        speed_constraint_codes = list(
+            intent.get('speed_constraint_codes') or []
+        ) if isinstance(intent, dict) else []
+        controller_requested_speed = float(
+            intent.get('target_speed_kmh', 0.0)
+        ) if isinstance(intent, dict) else 0.0
         self._sequence_debug = {'active': False}
         sequence_acceleration = None
         if isinstance(intent, dict) and intent.get('longitudinal_sequence_schema') == 'longitudinal_sequence/1.0':
@@ -85,12 +94,18 @@ class EgoPIDController:
             return control, intent
 
         target_speed = self._resolve_target_speed(intent)
-        target_speed = min(target_speed, self._curvature_speed_cap(intent))
+        curvature_cap = self._curvature_speed_cap(intent)
+        if curvature_cap < target_speed - 1e-6:
+            speed_constraint_codes.append('curvature_speed_cap')
+        target_speed = min(target_speed, curvature_cap)
         if self._turn_unsafe_frames > 0:
+            if self._turn_unsafe_speed_cap_kmh < target_speed - 1e-6:
+                speed_constraint_codes.append('trajectory_stability_speed_cap')
             target_speed = min(target_speed, self._turn_unsafe_speed_cap_kmh)
             self._turn_unsafe_frames -= 1
         current_speed = self._get_speed_kmh()
         if risk_speed_cap:
+            speed_constraint_codes.append('risk_speed_cap')
             target_speed=min(target_speed,current_speed)
             self._speed_integral=min(self._speed_integral,0.)
             if sequence_acceleration is not None:sequence_acceleration=min(sequence_acceleration,0.)
@@ -117,6 +132,12 @@ class EgoPIDController:
         )
         if risk_speed_cap:control.throttle=0.
         self._last_control = control
+        self._last_requested_step_speed_kmh = requested_step_speed
+        self._last_controller_requested_speed_kmh = controller_requested_speed
+        self._last_effective_target_speed_kmh = target_speed
+        self._last_speed_constraint_codes = list(dict.fromkeys(
+            speed_constraint_codes
+        ))
         return control, intent
 
     def _resolve_target_speed(self, intent):
@@ -1083,6 +1104,26 @@ class EgoPIDController:
             lane_type=carla.LaneType.Driving,
         )
         current_lane_id = getattr(waypoint, "lane_id", None)
+        def lane_ref(candidate):
+            if candidate is None:return None
+            return {
+                "road_id": getattr(candidate, "road_id", None),
+                "section_id": getattr(candidate, "section_id", None),
+                "lane_id": getattr(candidate, "lane_id", None),
+            }
+        try:
+            left_lane = (
+                self._adjacent_driving_lane(waypoint, "lane_change_left")
+                if waypoint is not None else None
+            )
+            right_lane = (
+                self._adjacent_driving_lane(waypoint, "lane_change_right")
+                if waypoint is not None else None
+            )
+        except (RuntimeError,AttributeError,TypeError):
+            left_lane=right_lane=None
+        try:lane_permission=int(waypoint.lane_change) if waypoint is not None else 0
+        except (TypeError,ValueError,AttributeError):lane_permission=0
         pose = self.vehicle.get_transform()
         lateral_error = heading_error = None
         if waypoint is not None:
@@ -1103,6 +1144,11 @@ class EgoPIDController:
         return {
             "speed_kmh": self._get_speed_kmh(),
             "current_lane_id": current_lane_id,
+            "current_lane_ref": lane_ref(waypoint),
+            "left_lane_ref": lane_ref(left_lane),
+            "right_lane_ref": lane_ref(right_lane),
+            "left_lane_change_allowed": bool(lane_permission & 1),
+            "right_lane_change_allowed": bool(lane_permission & 2),
             "lane_change_command_id": self._lane_change_command_id,
             "in_junction": bool(waypoint.is_junction) if waypoint is not None else None,
             "lateral_error_m": lateral_error,
@@ -1116,6 +1162,25 @@ class EgoPIDController:
                 and self._lane_change_stable_frames >= 10
             ),
             "emergency_latched": self._emergency_latched,
+            "requested_target_speed_kmh": getattr(
+                self, '_last_requested_step_speed_kmh', None
+            ),
+            "controller_target_speed_kmh": getattr(
+                self, '_last_controller_requested_speed_kmh', None
+            ),
+            "effective_target_speed_kmh": getattr(
+                self, '_last_effective_target_speed_kmh', None
+            ),
+            "speed_target_status": (
+                "CONSTRAINED"
+                if getattr(self, '_last_speed_constraint_codes', [])
+                and getattr(self, '_last_effective_target_speed_kmh', 0.0)
+                < getattr(self, '_last_requested_step_speed_kmh', 0.0) - 1e-6
+                else "REACHABLE"
+            ),
+            "speed_constraint_codes": list(
+                getattr(self, '_last_speed_constraint_codes', [])
+            ),
         }
 
     def _forward_waypoint(self, waypoint, distance_m):
