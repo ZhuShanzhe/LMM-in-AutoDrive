@@ -13,7 +13,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-SCENES = {'scene1': 'Town04', 'scene2': 'Town05', 'scene3': 'Town05'}
+SCENES = {'scene1': 'Town05', 'scene2': 'Town05', 'scene3': 'Town05'}
 
 
 def compatible_carla_build(server_version, client_version):
@@ -77,7 +77,7 @@ def build_command(scene, model_root, config, output, host, port, device, seconds
     parser_model = str(model_root/'modernbert-drive-command-compositional')
     if scene == 'scene1':
         runner = 'run_control_experiment.py'
-        options = ['basic_voice_urban_5km', '--map', 'Town04_Opt', '--bind-task-geometry', '--scenario-config',
+        options = ['basic_voice_urban_5km', '--map', SCENES[scene] + '_Opt', '--bind-task-geometry', '--scenario-config',
                    str(ROOT/'experiment/CARLA/configs/basic_voice_urban_5km.json'),
                    '--duration-s', str(seconds), '--decision-source', 'vla_scene_bridge',
                    '--command-parser-model', parser_model, '--command-parser-device', device]

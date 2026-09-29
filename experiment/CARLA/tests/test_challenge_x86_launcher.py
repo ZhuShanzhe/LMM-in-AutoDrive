@@ -56,3 +56,12 @@ def test_challenge_command_keeps_model_and_independent_assessment(scene, tmp_pat
 def test_invalid_duration_rejected(seconds, tmp_path):
     with pytest.raises(ValueError):
         MODULE['build_command']('scene1', tmp_path, tmp_path, tmp_path, 'localhost', 2000, 'cpu', seconds)
+def test_scene1_launcher_and_signal_map_match_registered_scene(tmp_path):
+    import runpy
+    from pathlib import Path
+    from benchmark.catalog import load_catalog
+    module = runpy.run_path(str(Path(__file__).resolve().parents[1] / 'tools/run_challenge_x86.py'))
+    command = module['build_command']('scene1', tmp_path, tmp_path, tmp_path, 'localhost', 2000, 'cpu', 20)
+    expected = load_catalog('scene_1').map_name
+    assert command[command.index('--map') + 1] == expected
+    assert module['SCENES']['scene1'] + '_Opt' == expected
