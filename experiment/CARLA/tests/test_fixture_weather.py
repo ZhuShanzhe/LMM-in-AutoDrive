@@ -19,7 +19,7 @@ class World:
         return self.weather
 
 
-@pytest.mark.parametrize('scene,sun,rain', [('scene_1',75,0),('scene_2',5,0),('scene_3',-15,80)])
+@pytest.mark.parametrize('scene,sun,rain', [('scene_1',75,0),('scene_2',15,0),('scene_3',-15,80)])
 def test_registered_source_weather_preserved(scene,sun,rain):
     catalog=load_catalog(scene)
     source=json.loads((CONFIG_ROOT/catalog.source_file).read_text(encoding='utf-8'))

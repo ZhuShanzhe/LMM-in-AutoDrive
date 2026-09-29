@@ -53,11 +53,11 @@ def test_scene1_turn_schedule_and_profile_bindings():
     from benchmark.task_oracle import load_profile
     catalog = load_catalog('scene_1')
     tasks = {task.task_id: task for task in catalog.tasks}
-    turn = tasks['c07_turn_left']
+    turn = tasks['c07_turn_right']
     assert turn.activate_m == turn.source_command['route_directive']['distance_m']
     assert tasks['c11_accelerate_50'].announce_m < tasks['c09_reduce_for_turn'].announce_m
     assert tasks['c09_reduce_for_turn'].announce_m < turn.announce_m < turn.activate_m
-    assert turn.activate_m < tasks['c10_keep_35'].announce_m < tasks['c12_keep_50'].announce_m
+    assert turn.activate_m < tasks['c10_keep_30'].announce_m < tasks['c12_keep_30'].announce_m
     for task in catalog.tasks:
         profile = load_profile(catalog, task)
         assert profile['activate_m'] == task.activate_m
@@ -83,11 +83,12 @@ def test_scene1_uses_validated_background_traffic_without_preview_commands():
     assert flow == preview['traffic']
     assert flow['enabled'] and flow['maintenance_mode'] == 'route_density'
     assert len(flow['vehicles']) == 96
-    assert flow['density_max_actors'] == 128
+    assert flow['density_max_actors'] == 24
     assert flow['density_ahead_start_m'] > flow['lifecycle_protected_radius_m']
     assert not flow['ignore_traffic_lights'] and not flow['ignore_traffic_signs']
     assert len(raw['commands']) == 15
-    assert raw['route']['start_spawn_index'] == 323
+    assert raw['map'] == 'Town05_Opt'
+    assert raw['route']['start_location_xyz'] == [36.6, -56.6, 0.0]
 
 
 def test_scene3_links_and_overlap_are_not_silently_dropped():

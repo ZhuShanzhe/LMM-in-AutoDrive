@@ -3,7 +3,7 @@
   "scene_id": "scene_1",
   "source_sha256": "0f786ffb5a1ce2a33de7de007121cd2835ea3f0792c4473c1992ba4188732197",
   "task_id": "c08_keep_50",
-  "activate_m": 1220,
+  "activate_m": 1050,
   "end_route_s_m": 1260,
   "timeout_s": 45,
   "max_frame_gap_s": 0.15,

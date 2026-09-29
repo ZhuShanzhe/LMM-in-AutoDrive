@@ -1,9 +1,9 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_3",
-  "source_sha256": "1be172dfd0042057e32901e3a544164e1505826a9d593466c2a386c5b06a7b61",
+  "source_sha256": "e5c9e8816dde8911f56914f441e570c5b7b0eb7a81682f0e7f289d62f2392294",
   "task_id": "scene3_pass_work_zone",
-  "activate_m": 3100,
+  "activate_m": 3100.0,
   "end_route_s_m": 3450,
   "timeout_s": 150,
   "max_frame_gap_s": 0.15,

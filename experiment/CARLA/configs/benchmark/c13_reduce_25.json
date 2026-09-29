@@ -2,24 +2,19 @@
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_1",
   "source_sha256": "0f786ffb5a1ce2a33de7de007121cd2835ea3f0792c4473c1992ba4188732197",
-  "task_id": "c10_keep_35",
-  "activate_m": 3300,
-  "end_route_s_m": 3500,
+  "task_id": "c13_reduce_25",
+  "activate_m": 3700,
+  "end_route_s_m": 4100,
   "timeout_s": 45,
   "max_frame_gap_s": 0.15,
   "violation_budget": 0,
-  "requires_task_success": [
-    "c07_turn_left"
-  ],
   "steps": [
     {
       "kind": "speed",
-      "target_kmh": 35,
+      "target_kmh": 25,
       "tolerance_kmh": 2,
       "hold_s": 2,
-      "keep_lane": true,
-      "max_lateral_error_m": 0.35,
-      "max_heading_error_deg": 5
+      "keep_lane": false
     }
   ]
 }

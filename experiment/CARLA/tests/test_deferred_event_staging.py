@@ -30,6 +30,11 @@ def test_future_actor_not_staged_on_earlier_pass_and_released_normally(monkeypat
     manager.traffic_manager=Mock()
     manager._set_desired_speed=Mock()
     manager.cyclist=None
+    manager._cyclist_placed=False
+    def prestage(config, progress):
+        if manager.cyclist is not None:
+            manager._cyclist_placed=True
+    manager._prestage_cyclist=Mock(side_effect=prestage)
     actor=Mock(is_alive=True)
     def stage(config,progress):
         if manager.cyclist is None:

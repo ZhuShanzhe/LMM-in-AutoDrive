@@ -11,7 +11,7 @@ from benchmark.truth_capture import ActorBinding
 
 
 class Map:
-    name='Town04_Opt'
+    name='Town05_Opt'
     def get_waypoint(self,location):
         position=NS(x=location.x,y=0,z=0)
         position.distance=lambda other: ((position.x-other.x)**2+other.y**2+other.z**2)**.5
@@ -22,7 +22,7 @@ class Map:
 
 def snapshot(frame,x):
     pose=NS(location=NS(x=x,y=0,z=0),rotation=NS(yaw=0))
-    actor=NS(get_transform=lambda:pose,get_velocity=lambda:NS(x=12.5,y=0,z=0))
+    actor=NS(get_transform=lambda:pose,get_velocity=lambda:NS(x=30/3.6,y=0,z=0))
     return NS(frame=frame,timestamp=NS(elapsed_seconds=frame*.05),find=lambda identity:actor if identity==1 else None)
 
 
@@ -37,7 +37,7 @@ def test_snapshot_journal_reconstructs_kinematics():
     row=dict(frame=10,sim_time_s=.5,actors={'1':pack_actor(snap.find(1))})
     restored=unpack_snapshot(json.loads(json.dumps(row)))
     assert restored.find(1).get_transform().location.x==5
-    assert restored.find(1).get_velocity().x==12.5
+    assert restored.find(1).get_velocity().x==30/3.6
     assert restored.find(2) is None
 
 
@@ -100,20 +100,20 @@ def test_unconfigured_traffic_provider_is_not_empty_traffic_evidence(tmp_path):
 @pytest.mark.parametrize('status',['SUCCESS','RUNNING','FAILURE'])
 def test_episode_prepares_followup_only_from_independent_success(tmp_path,status):
     recorder=episode(tmp_path)
-    profile=dict(recorder.profiles['c01_depart_45'],requires_task_success=['prior'])
+    profile=dict(recorder.profiles['c01_depart_30'],requires_task_success=['prior'])
     prior_result={'status':status,'evidence':[{'event':'SUCCESS','frame':1}] if status=='SUCCESS' else []}
     recorder.monitors['prior']=NS(oracle=NS(result=lambda:prior_result))
     try:
-        recorder._prepare('c01_depart_45',profile,snapshot(2,.625),.625)
+        recorder._prepare('c01_depart_30',profile,snapshot(2,.625),.625)
         if status=='SUCCESS':
-            monitor=recorder.monitors['c01_depart_45']
+            monitor=recorder.monitors['c01_depart_30']
             proof=monitor.collector.fixture['prerequisites']['prior']
             assert proof['completion_frame']==1
             assert proof['source']=='independent_task_oracle'
             monitor.close()
         else:
-            assert 'prerequisite' in recorder.unavailable['c01_depart_45']
-            assert 'c01_depart_45' not in recorder.monitors
+            assert 'prerequisite' in recorder.unavailable['c01_depart_30']
+            assert 'c01_depart_30' not in recorder.monitors
     finally:
         recorder.stream.close()
 
@@ -122,16 +122,16 @@ def test_episode_prepares_followup_only_from_independent_success(tmp_path,status
 def test_episode_destination_binds_actual_end_and_rejects_short_route(tmp_path,required_length,expected):
     recorder=episode(tmp_path)
     recorder.catalog=replace(recorder.catalog,route_length_m=required_length)
-    profile=dict(recorder.profiles['c01_depart_45'])
+    profile=dict(recorder.profiles['c01_depart_30'])
     profile.pop('end_route_s_m',None)
     profile['steps']=[dict(kind='destination',max_distance_m=3,max_remaining_m=3)]
-    recorder.profiles={'c01_depart_45':profile}
+    recorder.profiles={'c01_depart_30':profile}
     for frame in range(1,321):
         recorder.observe(snapshot(frame,(frame-1)*.625))
     result=recorder.close()
-    assert result['tasks']['c01_depart_45']['status']==expected
+    assert result['tasks']['c01_depart_30']['status']==expected
     if expected=='SUCCESS':
-        fixture=json.loads((recorder.output/'tasks/c01_depart_45/fixture.json').read_text())
+        fixture=json.loads((recorder.output/'tasks/c01_depart_30/fixture.json').read_text())
         assert fixture['steps']['0']['position_m']=={'x':200,'y':0,'z':0}
 
 
@@ -140,7 +140,7 @@ def test_segment_uses_explicit_origin_and_does_not_replay_earlier_tasks(tmp_path
     recorder.observe(snapshot(1,190))
     result=recorder.close()
     assert result['final_route_s_m']==190
-    assert result['tasks']['c01_depart_45']['status']=='NOT_RUN'
+    assert result['tasks']['c01_depart_30']['status']=='NOT_RUN'
     assert result['tasks']['c02_cruise_60']['status']=='NOT_RUN'
     assert result['assessed_tasks']==0
 
@@ -160,7 +160,7 @@ def test_replay_preserves_native_location_type_for_map_calls(tmp_path):
         snap.find(1).get_transform().location=NativeLocation((frame-1)*.625,0,0)
         recorder.observe(snap)
     result=recorder.close()
-    assert result['tasks']['c01_depart_45']['status']=='SUCCESS'
+    assert result['tasks']['c01_depart_30']['status']=='SUCCESS'
 
 
 def test_formal_episode_does_not_hide_unsupported_or_unreached_tasks(tmp_path):
@@ -168,14 +168,14 @@ def test_formal_episode_does_not_hide_unsupported_or_unreached_tasks(tmp_path):
     for frame in range(1,51):
         recorder.observe(snapshot(frame,(frame-1)*.625))
     result=recorder.close()
-    assert result['tasks']['c01_depart_45']['status']=='SUCCESS'
+    assert result['tasks']['c01_depart_30']['status']=='SUCCESS'
     assert result['tasks']['c04_change_left']['status']=='NOT_REACHED'
     assert result['tasks']['c02_cruise_60']['status']=='NOT_REACHED'
-    assert result['tasks']['c10_keep_35']['status']=='NOT_REACHED'
+    assert result['tasks']['c10_keep_30']['status']=='NOT_REACHED'
     assert result['tasks']['c15_keep_to_goal']['status']=='NOT_REACHED'
     assert result['recorded_criteria_pass_rate']==pytest.approx(1/15)
     assert result['verified_completion_rate_lower_bound']==0
-    assert result['tasks']['c01_depart_45']['instruction_status']=='UNVERIFIED'
+    assert result['tasks']['c01_depart_30']['instruction_status']=='UNVERIFIED'
     assert not result['benchmark_ready']
     assert recorder.close()==result
     assert len((tmp_path/'capture/episode_truth.jsonl').read_text().splitlines())==50
@@ -187,7 +187,7 @@ def test_episode_safety_can_fail_after_task_success(tmp_path):
         recorder.observe(snapshot(frame,(frame-1)*.625))
     recorder.ledger.record('collision',49,other_actor_id=20)
     result=recorder.close()
-    assert result['tasks']['c01_depart_45']['status']=='SUCCESS'
+    assert result['tasks']['c01_depart_30']['status']=='SUCCESS'
     assert result['episode_safety']['status']=='FAILURE'
 
 
@@ -236,7 +236,7 @@ def test_formal_scene2_journals_task_roles_and_missing_actor(tmp_path):
 
 def test_formal_role_task_uses_exact_source_crosswalk(tmp_path,monkeypatch):
     recorder=episode(tmp_path)
-    profile=dict(recorder.profiles['c01_depart_45'])
+    profile=dict(recorder.profiles['c01_depart_30'])
     profile['steps']=[dict(kind='yield_pedestrian',target_role='ped',require_stop=False,
         min_speed_drop_kmh=5,stop_hold_s=.5,stopped_kmh=.5,clear_hold_s=.5)]
     recorder.catalog=replace(recorder.catalog,events=(dict(kind='crossing_pedestrian',
@@ -249,9 +249,9 @@ def test_formal_role_task_uses_exact_source_crosswalk(tmp_path,monkeypatch):
     base=snapshot(1,0)
     snap=NS(frame=1,timestamp=base.timestamp,find=lambda identity:base.find(1) if identity in (1,2) else None)
     role={'ped':dict(status='BOUND',binding=asdict(ActorBinding(2,.3,.3,40)))}
-    recorder._prepare('c01_depart_45',profile,snap,0,role)
+    recorder._prepare('c01_depart_30',profile,snap,0,role)
     assert calls==[(2,40)]
-    monitor=recorder.monitors['c01_depart_45']
+    monitor=recorder.monitors['c01_depart_30']
     assert monitor.collector.bindings['ped'].actor_id==2
     assert monitor.collector.fixture['steps']['0']['stop_line_route_s_m']==35
     recorder.close()
@@ -259,13 +259,13 @@ def test_formal_role_task_uses_exact_source_crosswalk(tmp_path,monkeypatch):
 
 def test_missing_role_at_activation_is_scene_invalid_not_unsupported(tmp_path):
     recorder=episode(tmp_path)
-    profile=dict(recorder.profiles['c01_depart_45'])
+    profile=dict(recorder.profiles['c01_depart_30'])
     profile['steps']=[dict(kind='overtake',target_role='slow',rear_clearance_m=8,hold_s=1)]
-    recorder._prepare('c01_depart_45',profile,snapshot(1,0),0,
+    recorder._prepare('c01_depart_30',profile,snapshot(1,0),0,
                       {'slow':dict(status='INVALID',reason='actor_identity_changed')})
     result=recorder.close()
-    assert result['tasks']['c01_depart_45']['status']=='SCENE_INVALID'
-    assert 'actor_identity_changed' in result['tasks']['c01_depart_45']['reason']
+    assert result['tasks']['c01_depart_30']['status']=='SCENE_INVALID'
+    assert 'actor_identity_changed' in result['tasks']['c01_depart_30']['reason']
 
 
 def test_full_episode_diagnostic_preserves_original_results(tmp_path):
@@ -275,17 +275,17 @@ def test_full_episode_diagnostic_preserves_original_results(tmp_path):
         recorder.observe(snapshot(frame,(frame-1)*.625))
     recorder.close()
     original={p:p.read_bytes() for p in recorder.output.rglob('*') if p.is_file()}
-    result=reassess(recorder.output,'c01_depart_45',tmp_path/'diagnostic',Map(),NS,60)
+    result=reassess(recorder.output,'c01_depart_30',tmp_path/'diagnostic',Map(),NS,60)
     assert result['diagnostic_result']['status']=='SUCCESS'
     assert result['scope']=='diagnostic_only_not_formal_acceptance'
     assert not result['benchmark_ready']
     assert result['diagnostic_timeout_s']==60
     assert all(p.read_bytes()==data for p,data in original.items())
     with pytest.raises(ConfigError,match='outside'):
-        reassess(recorder.output,'c01_depart_45',recorder.output/'nested',Map(),NS)
-    (recorder.output/'tasks/c01_depart_45/spec.json').write_text('{}')
+        reassess(recorder.output,'c01_depart_30',recorder.output/'nested',Map(),NS)
+    (recorder.output/'tasks/c01_depart_30/spec.json').write_text('{}')
     with pytest.raises(ConfigError,match='hash mismatch'):
-        reassess(recorder.output,'c01_depart_45',tmp_path/'tampered',Map(),NS)
+        reassess(recorder.output,'c01_depart_30',tmp_path/'tampered',Map(),NS)
 
 
 def test_map_geometry_is_captured_and_checked_before_replay(tmp_path,monkeypatch):
@@ -298,17 +298,17 @@ def test_map_geometry_is_captured_and_checked_before_replay(tmp_path,monkeypatch
     summary=recorder.close()
     captured=recorder.output/'map.xodr'
     assert hashlib.sha256(captured.read_bytes()).hexdigest()==summary['map_geometry_sha256']
-    result=reassess(recorder.output,'c01_depart_45',tmp_path/'matching',Map(),NS)
+    result=reassess(recorder.output,'c01_depart_30',tmp_path/'matching',Map(),NS)
     assert result['original_map_geometry_hash_available']
     assert 'original_capture_has_no_map_geometry_hash' not in result['limitations']
     monkeypatch.setattr(Map,'to_opendrive',lambda self:'<OpenDRIVE>changed</OpenDRIVE>')
     with pytest.raises(ConfigError,match='geometry mismatch'):
-        reassess(recorder.output,'c01_depart_45',tmp_path/'wrong_map',Map(),NS)
+        reassess(recorder.output,'c01_depart_30',tmp_path/'wrong_map',Map(),NS)
     assert not (tmp_path/'wrong_map').exists()
     monkeypatch.setattr(Map,'to_opendrive',lambda self:'<OpenDRIVE>original</OpenDRIVE>')
     captured.write_text('tampered')
     with pytest.raises(ConfigError,match='missing or changed'):
-        reassess(recorder.output,'c01_depart_45',tmp_path/'wrong_file',Map(),NS)
+        reassess(recorder.output,'c01_depart_30',tmp_path/'wrong_file',Map(),NS)
 
 
 def test_lane_diagnostic_resets_stability_on_error_and_gap():

@@ -578,7 +578,7 @@ class EmergencyRoadContractTests(unittest.TestCase):
             locations,
         )
 
-    def test_fixture_route_uses_open_lane_only_during_work_zone(self):
+    def test_route_does_not_preselect_work_zone_avoidance(self):
         distances = [0.0, 2800.0, 2900.0, 3100.0, 3400.0, 5200.0, 5300.0, 5400.0]
         route = [
             (SimpleNamespace(is_junction=False), None)
@@ -592,22 +592,15 @@ class EmergencyRoadContractTests(unittest.TestCase):
         events = runner.load_runtime_config(CONFIG_PATH)["events"]
 
         default = runner.build_ego_route_plan(context, events)
-        fixture = runner.build_ego_route_plan(
-            context, events, scenario_fixture_route=True,
-        )
-
         self.assertEqual([point.lane_id for point, _ in default], [-2] * len(distances))
-        self.assertEqual(
-            [point.lane_id for point, _ in fixture],
-            [-2, -2, -1, -1, -1, -1, -2, -2],
-        )
+        self.assertEqual(default, runner.build_ego_route_plan(context, []))
 
     def test_fixture_route_rejects_vla_controller(self):
-        args = runner.build_parser().parse_args([
-            "--scenario-fixture-route", "--ego-controller", "vla-route-pid",
-        ])
-        with self.assertRaisesRegex(ValueError, "non-VLA controller"):
-            runner.validate_args(args)
+        with self.assertRaises(SystemExit) as caught:
+            runner.build_parser().parse_args([
+                "--scenario-fixture-route", "--ego-controller", "vla-route-pid",
+            ])
+        self.assertEqual(caught.exception.code, 2)
 
     def test_crossing_worker_does_not_share_cone_position(self):
         config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))

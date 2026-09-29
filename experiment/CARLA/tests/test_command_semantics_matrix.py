@@ -48,12 +48,12 @@ def test_negation_does_not_trigger_positive_stop():
     assert parsed.parsed_intent == "KEEP_LANE"
     assert parsed.target_speed_kmh is None
 
-def test_return_to_original_lane_contract_points_right_and_waits():
+def test_return_to_original_lane_contract_uses_recorded_lane_and_waits():
     action, parameters, on_blocked, completion = _scene2_step_contract(
         "CHANGE_LANE:RETURN_WHEN_SAFE"
     )
     assert action == "CHANGE_LANE"
-    assert parameters["direction"] == "RIGHT"
+    assert parameters == {"return_to": "ORIGINAL_LANE"}
     assert on_blocked == "WAIT_FOR_SAFE"
     assert completion == {"type": "LANE_CHANGE_COMPLETED"}
 

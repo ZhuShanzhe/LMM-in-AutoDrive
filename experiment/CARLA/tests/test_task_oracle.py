@@ -231,8 +231,8 @@ def test_independent_prerequisite_allows_followup():
 
 
 def test_isolated_followup_plan_exposes_missing_prior_task():
-    plan=build_plan(load_catalog('scene_1'),'c10_keep_35')
-    assert plan['missing_selected_prerequisites']==['c07_turn_left']
+    plan=build_plan(load_catalog('scene_1'),'c10_keep_30')
+    assert plan['missing_selected_prerequisites']==['c07_turn_right']
     assert 'prior_task_evidence_required' in plan['blockers']
     full=build_plan(load_catalog('scene_1'),'all')
     assert full['missing_selected_prerequisites']==[]
@@ -508,7 +508,7 @@ def test_complete_three_step_sequence():
 
 def test_plan_binds_only_matching_explicit_profiles():
     plan=build_plan(load_catalog('scene_1'),'1')
-    assert list(plan['oracle_profiles'])==['c01_depart_45']
+    assert list(plan['oracle_profiles'])==['c01_depart_30']
     assert not plan['missing_oracle_profiles']
     assert not plan['execution_supported']
 

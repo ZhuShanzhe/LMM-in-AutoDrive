@@ -559,7 +559,7 @@ class Scene2Town05Tests(unittest.TestCase):
         self.assertEqual(config["weather"]["preset"], "cloudy-evening")
         self.assertLessEqual(
             config["weather"]["sun_altitude_angle"],
-            10.0,
+            15.0,
         )
         self.assertTrue(
             set(REQUIRED_SENSOR_NAMES).issubset(

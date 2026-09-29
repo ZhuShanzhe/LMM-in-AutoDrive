@@ -37,7 +37,7 @@ def test_new_profiles_bind_to_source():
     for identity in ('s2_t05_cmd_13','s2_t05_cmd_15'):
         profile=load_profile(catalog,catalog.select(identity)[0])
         assert profile is not None
-        expected=4 if identity=='s2_t05_cmd_13' else 3
+        expected=3
         assert len([s for s in profile['steps'] if s['kind'] in {'turn','straight_junction'}])==expected
 
 

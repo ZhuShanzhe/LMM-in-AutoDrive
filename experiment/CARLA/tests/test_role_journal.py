@@ -94,7 +94,7 @@ def test_guarded_lane_roles_registered_as_vehicles():
 def test_scene3_static_roles_use_their_actual_configured_route_anchor():
     from benchmark.catalog import load_catalog
     anchors=configured_role_anchors(load_catalog('scene_3').events)
-    assert anchors['scene3_crossing_worker']==3330
+    assert anchors['scene3_crossing_worker']==3345
     assert anchors['scene3_maintenance_vehicle']==4850
     # These actors are spawned relative to ego, not at the static obstacle.
     assert 'scene3_gap_front_vehicle' not in anchors

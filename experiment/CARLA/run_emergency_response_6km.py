@@ -26,6 +26,7 @@ from typing import Any, Mapping, Sequence
 from carla_bootstrap import setup_carla_api
 from emergency_scene_3_events import (
     EmergencySceneActorRuntime,
+    work_zone_boundary_positions,
 )
 from evaluation.camera import ExperimentCamera
 from evaluation.ground_truth import (
@@ -1147,9 +1148,23 @@ def load_runtime_config(
 
     validate_event_ground_truth_contracts(events)
 
+    zones = [event['zone'] for event in events if 'zone' in event]
+    for event in events:
+        for worker in event.get('workers', []):
+            start = worker.get('start_s_m')
+            if start is None:
+                continue
+            for zone in zones:
+                positions = work_zone_boundary_positions(
+                    zone['start_s_m'], zone['end_s_m'],
+                    zone.get('boundary_cone_spacing_m', 30.0),
+                )
+                if any(abs(float(start) - position) < 5.0 for position in positions):
+                    raise ValueError('worker crossing overlaps a work-zone cone')
+
     traffic = data.get("traffic")
     expected_counts = {
-        "private_vehicle_count": 16,
+        "private_vehicle_count": 18,
         "work_vehicle_count": 2,
         "maintenance_vehicle_count": 1,
         "worker_count": 2,
