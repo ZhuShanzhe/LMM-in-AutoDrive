@@ -84,3 +84,46 @@ def test_ground_filter_does_not_disable_physical_safety(height,distance,expected
         filtered,ego_speed_kmh=0.)
     assert risk['risk_level']==expected
     if expected=='high':assert risk['recommended_action']=='emergency_brake'
+
+
+def test_forward_radar_evidence_marks_only_fresh_physical_returns_confirmed():
+    from universal_vla_controller import fuse_forward_radar_risk
+
+    learned = dict(risk_level='low', recommended_action='keep_lane', reason_codes=[])
+    confirmed = fuse_forward_radar_risk(
+        learned,
+        dict(sensor_frame=80, measurement_timestamp_s=10., obstacle_candidate_count=1,
+             nearest_distance_m=5.),
+        ego_speed_kmh=0., decision_timestamp_s=10.1,
+    )
+    stale = fuse_forward_radar_risk(
+        learned,
+        dict(sensor_frame=79, measurement_timestamp_s=9., obstacle_candidate_count=1,
+             nearest_distance_m=5.),
+        ego_speed_kmh=0., decision_timestamp_s=10.1,
+    )
+
+    assert confirmed['risk_evidence']['status'] == 'CONFIRMED_HAZARD'
+    assert confirmed['risk_evidence']['is_fresh'] is True
+    assert confirmed['risk_evidence']['valid_until_s'] == pytest.approx(10.25)
+    assert stale['risk_evidence']['status'] == 'INSUFFICIENT_EVIDENCE'
+    assert stale['risk_evidence']['is_fresh'] is False
+    # Evidence expiry must not quietly clear a potentially hazardous brake.
+    assert stale['recommended_action'] == 'emergency_brake'
+
+
+def test_forward_radar_empty_snapshot_is_not_a_clearance_claim():
+    from universal_vla_controller import fuse_forward_radar_risk
+
+    fused = fuse_forward_radar_risk(
+        dict(risk_level='high', recommended_action='decelerate',
+             reason_codes=['learned_visual_risk_high'], source='event_memory_vla'),
+        dict(sensor_frame=90, measurement_timestamp_s=12., obstacle_candidate_count=0,
+             nearest_distance_m=None),
+        ego_speed_kmh=20., decision_timestamp_s=12.05,
+    )
+
+    assert fused['risk_evidence']['status'] == 'MODEL_ONLY'
+    assert fused['risk_evidence']['is_fresh'] is True
+    assert fused['risk_level'] == 'high'
+    assert fused['recommended_action'] == 'decelerate'

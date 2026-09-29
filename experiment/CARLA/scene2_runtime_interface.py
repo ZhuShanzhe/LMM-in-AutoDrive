@@ -6,6 +6,8 @@ from typing import Any, Mapping, Sequence
 
 
 DRIVING_INTENT_SCHEMA = "1.2.0"
+PARSE_SOURCE_CONFIGURED = "competition_schedule"
+PARSE_SOURCE_TEXT_MODEL = "structured_command_parser"
 WORLD_STATE_SCHEMA = "1.0.0"
 MULTIMODAL_BUNDLE_SCHEMA = "1.0.0"
 VLA_PROPOSAL_SCHEMA = "1.0.0"
@@ -121,7 +123,9 @@ def build_scheduled_driving_intent(
         "parse_result": {
             "status": "VALID",
             "confidence": 1.0,
-            "source": "competition_schedule",
+            "source": PARSE_SOURCE_CONFIGURED,
+            "source_kind": "CONFIGURED_PLAN",
+            "model_prediction": False,
         },
         "intent": {
             "category": command["category"],

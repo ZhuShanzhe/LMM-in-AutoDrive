@@ -196,6 +196,8 @@ def fuse_forward_radar_risk(
     radar_observation: Mapping[str, Any],
     *,
     ego_speed_kmh: float,
+    decision_timestamp_s: float | None = None,
+    max_observation_age_s: float = 0.25,
 ) -> dict[str, Any]:
     """Fuse a physical forward-radar safety envelope with learned risk.
 
@@ -232,6 +234,58 @@ def fuse_forward_radar_risk(
     # Without the thresholds and sensor frame, a learned visual false positive
     # cannot be cleared even after multiple physical empty-road frames.
     distance_value = radar_observation.get("nearest_distance_m")
+    observed_at_s = radar_observation.get("measurement_timestamp_s")
+    observation_age_s = None
+    observation_fresh = False
+    if isinstance(observed_at_s, (int, float)) and math.isfinite(float(observed_at_s)):
+        observed_at_s = float(observed_at_s)
+        if (
+            isinstance(decision_timestamp_s, (int, float))
+            and math.isfinite(float(decision_timestamp_s))
+        ):
+            observation_age_s = float(decision_timestamp_s) - observed_at_s
+            observation_fresh = 0.0 <= observation_age_s <= max_observation_age_s
+
+    has_physical_candidate = (
+        isinstance(distance_value, (int, float))
+        and math.isfinite(float(distance_value))
+        and float(distance_value) > 0.0
+    )
+    learned_level = str(result.get("risk_level", "low")).lower()
+    if has_physical_candidate and observation_fresh:
+        evidence_status = "CONFIRMED_HAZARD"
+    elif learned_level in {"medium", "high", "critical"}:
+        evidence_status = "MODEL_ONLY"
+    else:
+        # A missing, empty, or stale radar snapshot cannot establish that the
+        # path is clear. It only records insufficient physical evidence.
+        evidence_status = "INSUFFICIENT_EVIDENCE"
+    result["risk_evidence"] = {
+        "schema_version": "risk_evidence/1.0",
+        "status": evidence_status,
+        "sensor": "forward_radar",
+        "sensor_frame": radar_observation.get("sensor_frame"),
+        "observed_at_s": observed_at_s,
+        "decision_timestamp_s": decision_timestamp_s,
+        "age_s": round(observation_age_s, 6) if observation_age_s is not None else None,
+        "valid_until_s": (
+            round(observed_at_s + max_observation_age_s, 6)
+            if observed_at_s is not None
+            else None
+        ),
+        "is_fresh": observation_fresh,
+        "physical_candidate_count": int(
+            radar_observation.get("obstacle_candidate_count", radar_observation.get("candidate_count", 0))
+            or 0
+        ),
+        "nearest_distance_m": round(float(distance_value), 3)
+        if has_physical_candidate
+        else None,
+        "fusion_sources": [
+            str(result.get("source", "learned_visual_risk")),
+            "physical_forward_radar",
+        ],
+    }
     if not isinstance(distance_value, (int, float)):
         return result
     distance_m = float(distance_value)
@@ -252,7 +306,6 @@ def fuse_forward_radar_risk(
         )
         return result
 
-    learned_level = str(result.get("risk_level", "low")).lower()
     if distance_m <= caution_distance_m and learned_level == "low":
         reasons.append("physical_forward_radar_caution_distance")
         result.update(
@@ -1204,6 +1257,7 @@ class UniversalVLAController:
             learned_risk,
             forward_radar,
             ego_speed_kmh=ego_speed_kmh,
+            decision_timestamp_s=timestamp_s,
         )
         risk["frame_id"] = frame_id
         risk["sensor_frame_id"] = f"carla_{sensor_frame}"

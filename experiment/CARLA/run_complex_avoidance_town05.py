@@ -858,6 +858,9 @@ def overlay_payload(
             else "WAITING"
         ),
         "parse_status": "PRESET_TEXT",
+        "parse_mode": "CONFIGURED_PLAN",
+        "intent_source": "competition_schedule",
+        "model_prediction": False,
         "risk_level": (
             "MEDIUM"
             if any(state == "ACTIVE" for state in event_states.values())

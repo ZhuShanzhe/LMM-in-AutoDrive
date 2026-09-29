@@ -1,6 +1,7 @@
 """Route-scheduled DrivingIntent execution through the JSON decision boundary."""
 
 import copy
+import math
 
 from control.scene_understanding_json_policy import SceneUnderstandingJsonPolicy
 
@@ -194,12 +195,42 @@ class ScheduledSceneBridgePolicy:
         """
         if not isinstance(target_location, dict):
             return driving_intent
+        try:
+            x = float(target_location["x"])
+            y = float(target_location["y"])
+        except (KeyError, TypeError, ValueError):
+            # Keep the intent untouched.  The decision layer will then retain
+            # its explicit safe wait/reject behaviour for a turn without a
+            # topology-resolved destination.
+            return driving_intent
+        if not all(math.isfinite(value) for value in (x, y)):
+            return driving_intent
+
+        resolved_target = {"x": x, "y": y, "z": 0.0}
+        for key in ("z", "yaw"):
+            if key not in target_location:
+                continue
+            try:
+                value = float(target_location[key])
+            except (TypeError, ValueError):
+                return driving_intent
+            if not math.isfinite(value):
+                return driving_intent
+            resolved_target[key] = value
+        reference = target_location.get("reference")
+        if isinstance(reference, dict):
+            resolved_target["reference"] = copy.deepcopy(reference)
+
         result = copy.deepcopy(driving_intent)
         for step in result.get("intent", {}).get("steps", []):
             if str(step.get("action", "")).upper() not in {"TURN", "U_TURN"}:
                 continue
-            step.pop("target", None)
-            step.pop("target_ref", None)
+            parameters = step.setdefault("parameters", {})
+            # A route target refers to the next turn only.  Do not reuse it
+            # for a later turn in a multi-step command, and never overwrite a
+            # more specific target supplied by the upstream planner.
+            parameters.setdefault("target_location", resolved_target)
+            break
         return result
 
     def _preserve_lane_change_during_settle(self, scheduled, decision):
