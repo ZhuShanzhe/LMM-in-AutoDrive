@@ -1,0 +1,1758 @@
+................F...............F......F...........F.................... [  4%]
+....................................................x................... [  8%]
+................................................................... [ 12%]
+.....................................................................FFFFFFFFFFFFF..FFFF.......................................... [ 20%]
+........................................................................ [ 25%]
+........................................................................ [ 29%]
+........................................................................ [ 34%]
+............................................................F........... [ 38%]
+...........................................F...F........................ [ 43%]
+........................................................................ [ 47%]
+..........F........................F.....F.............................. [ 51%]
+........................................................................ [ 56%]
+..................................................................... [ 60%]
+........................................................................ [ 65%]
+........................................................................ [ 69%]
+........................................................................ [ 73%]
+........................................................ [ 77%]
+................................................................................................................................... [ 85%]
+..............................................................................................................................................................................................................................................                                       [100%]
+=================================== FAILURES ===================================
+_________________ test_default_keeps_full_catalog[scene_1-15] __________________
+
+scene = 'scene_1', count = 15
+
+    @pytest.mark.parametrize('scene,count',[('scene_1',15),('scene_2',15),('scene_3',8)])
+    def test_default_keeps_full_catalog(scene,count):
+>       selected,evidence=assessment_selection(load_catalog(scene))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_assessment_selection.py:15: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+____________________ test_existing_configs[scene_1-15-5000] ____________________
+
+scene = 'scene_1', count = 15, length = 5000
+
+    @pytest.mark.parametrize('scene,count,length', [('scene_1', 15, 5000), ('scene_2', 15, 8000), ('scene_3', 8, 6000)])
+    def test_existing_configs(scene, count, length):
+        catalog = load_catalog(scene)
+        assert len(catalog.tasks) == count
+        assert catalog.route_length_m == length
+        assert catalog.map_name.startswith('Town')
+        assert len(catalog.source_sha256) == 64
+>       assert validate_catalog(catalog)['config_valid']
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_benchmark_catalog.py:26: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/benchmark/catalog.py:190: in validate_catalog
+    if load_profile(catalog, task) is None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+________________ test_scene1_turn_schedule_and_profile_bindings ________________
+
+    def test_scene1_turn_schedule_and_profile_bindings():
+        from benchmark.task_oracle import load_profile
+        catalog = load_catalog('scene_1')
+        tasks = {task.task_id: task for task in catalog.tasks}
+        turn = tasks['c07_turn_right']
+        assert turn.activate_m == turn.source_command['route_directive']['distance_m']
+        assert tasks['c11_accelerate_50'].announce_m < tasks['c09_reduce_for_turn'].announce_m
+        assert tasks['c09_reduce_for_turn'].announce_m < turn.announce_m < turn.activate_m
+        assert turn.activate_m < tasks['c10_keep_30'].announce_m < tasks['c12_keep_30'].announce_m
+        for task in catalog.tasks:
+>           profile = load_profile(catalog, task)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_benchmark_catalog.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+____________ test_cli_exports_selection_without_claiming_execution _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_cli_exports_selection_wit0')
+
+    def test_cli_exports_selection_without_claiming_execution(tmp_path):
+        output = tmp_path / 'manifest.json'
+        assert main(['manifest', '--scene', 'scene_2', '--task', '3', '--output', str(output)]) == 0
+        result = json.loads(output.read_text(encoding='utf-8'))
+        assert len(result['tasks']) == 1
+        assert result['tasks'][0]['task_id'] == 's2_t05_cmd_03'
+        assert not result['execution_supported']
+>       assert main(['validate', '--scene', 'scene_1', '--require-ready', '--output', str(output)]) == 1
+E       AssertionError: assert 2 == 1
+E        +  where 2 = main(['validate', '--scene', 'scene_1', '--require-ready', '--output', '/tmp/pytest-of-root/pytest-205/test_cli_exports_selection_wit0/manifest.json'])
+
+experiment/CARLA/tests/test_benchmark_catalog.py:133: AssertionError
+----------------------------- Captured stderr call -----------------------------
+task prerequisites must refer to earlier tasks in the same scene
+___________ test_manifest_records_route_and_bound_profile_identities ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_manifest_records_route_an0')
+
+    def test_manifest_records_route_and_bound_profile_identities(tmp_path):
+        import hashlib
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+____________ test_formal_traffic_uses_snapshot_and_excludes_walkers ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_formal_traffic_uses_snaps0')
+
+    def test_formal_traffic_uses_snapshot_and_excludes_walkers(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+_______ test_unconfigured_traffic_provider_is_not_empty_traffic_evidence _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_unconfigured_traffic_prov0')
+
+    def test_unconfigured_traffic_provider_is_not_empty_traffic_evidence(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+____ test_episode_prepares_followup_only_from_independent_success[SUCCESS] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_episode_prepares_followup0')
+status = 'SUCCESS'
+
+    @pytest.mark.parametrize('status',['SUCCESS','RUNNING','FAILURE'])
+    def test_episode_prepares_followup_only_from_independent_success(tmp_path,status):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+____ test_episode_prepares_followup_only_from_independent_success[RUNNING] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_episode_prepares_followup1')
+status = 'RUNNING'
+
+    @pytest.mark.parametrize('status',['SUCCESS','RUNNING','FAILURE'])
+    def test_episode_prepares_followup_only_from_independent_success(tmp_path,status):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+____ test_episode_prepares_followup_only_from_independent_success[FAILURE] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_episode_prepares_followup2')
+status = 'FAILURE'
+
+    @pytest.mark.parametrize('status',['SUCCESS','RUNNING','FAILURE'])
+    def test_episode_prepares_followup_only_from_independent_success(tmp_path,status):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+_ test_episode_destination_binds_actual_end_and_rejects_short_route[200-SUCCESS] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_episode_destination_binds0')
+required_length = 200, expected = 'SUCCESS'
+
+    @pytest.mark.parametrize('required_length,expected',[(200,'SUCCESS'),(5000,'SCENE_INVALID')])
+    def test_episode_destination_binds_actual_end_and_rejects_short_route(tmp_path,required_length,expected):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:123: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+_ test_episode_destination_binds_actual_end_and_rejects_short_route[5000-SCENE_INVALID] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_episode_destination_binds1')
+required_length = 5000, expected = 'SCENE_INVALID'
+
+    @pytest.mark.parametrize('required_length,expected',[(200,'SUCCESS'),(5000,'SCENE_INVALID')])
+    def test_episode_destination_binds_actual_end_and_rejects_short_route(tmp_path,required_length,expected):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:123: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+_____ test_segment_uses_explicit_origin_and_does_not_replay_earlier_tasks ______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_segment_uses_explicit_ori0')
+
+    def test_segment_uses_explicit_origin_and_does_not_replay_earlier_tasks(tmp_path):
+>       recorder=episode(tmp_path,190)
+                 ^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:139: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+___________ test_replay_preserves_native_location_type_for_map_calls ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_replay_preserves_native_l0')
+
+    def test_replay_preserves_native_location_type_for_map_calls(tmp_path):
+        class NativeLocation:
+            def __init__(self,x,y,z):
+                self.x,self.y,self.z=x,y,z
+        class StrictMap(Map):
+            def get_waypoint(self,location):
+                assert isinstance(location,NativeLocation)
+                return super().get_waypoint(location)
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+_______ test_formal_episode_does_not_hide_unsupported_or_unreached_tasks _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_formal_episode_does_not_h0')
+
+    def test_formal_episode_does_not_hide_unsupported_or_unreached_tasks(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:167: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+_______________ test_episode_safety_can_fail_after_task_success ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_episode_safety_can_fail_a0')
+
+    def test_episode_safety_can_fail_after_task_success(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:185: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+_____________ test_duplicate_frame_fails_and_teardown_is_available _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_duplicate_frame_fails_and0')
+
+    def test_duplicate_frame_fails_and_teardown_is_available(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:195: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+______________ test_formal_role_task_uses_exact_source_crosswalk _______________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_formal_role_task_uses_exa0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd0a6ce3ef0>
+
+    def test_formal_role_task_uses_exact_source_crosswalk(tmp_path,monkeypatch):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:238: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+_______ test_missing_role_at_activation_is_scene_invalid_not_unsupported _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_missing_role_at_activatio0')
+
+    def test_missing_role_at_activation_is_scene_invalid_not_unsupported(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+___________ test_full_episode_diagnostic_preserves_original_results ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_full_episode_diagnostic_p0')
+
+    def test_full_episode_diagnostic_preserves_original_results(tmp_path):
+        from benchmark.episode_diagnostic import reassess
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:273: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+___________ test_map_geometry_is_captured_and_checked_before_replay ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_map_geometry_is_captured_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd0a6e166c0>
+
+    def test_map_geometry_is_captured_and_checked_before_replay(tmp_path,monkeypatch):
+        import hashlib
+        from benchmark.episode_diagnostic import reassess
+        monkeypatch.setattr(Map,'to_opendrive',lambda self:'<OpenDRIVE>original</OpenDRIVE>',raising=False)
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:295: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/episode.py:111: in __init__
+    self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+experiment/CARLA/benchmark/selection.py:33: in assessment_selection
+    visit(identity)
+experiment/CARLA/benchmark/selection.py:27: in visit
+    profile = load_profile(catalog, by_id[identity])
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+_________ test_scene2_first_instruction_and_oracle_request_right_turn __________
+
+    def test_scene2_first_instruction_and_oracle_request_right_turn():
+        catalog = load_catalog('scene_2')
+        task = catalog.select('s2_t05_cmd_01')[0]
+        command = task.source_command
+        assert '右转' in command['text']
+        assert command['spoken_text'] == command['text']
+>       assert command['steps'] == ['KEEP_LANE', 'SET_SPEED:12.50mps', 'TURN:RIGHT', 'KEEP_LANE']
+E       AssertionError: assert ['KEEP_LANE',... 'TURN:RIGHT'] == ['KEEP_LANE',..., 'KEEP_LANE']
+E         
+E         Right contains one more item: 'KEEP_LANE'
+E         Use -v to get more diff
+
+experiment/CARLA/tests/test_scene2_first_task_contract.py:12: AssertionError
+_______________ test_all_formal_tasks_have_source_bound_profiles _______________
+
+    def test_all_formal_tasks_have_source_bound_profiles():
+        for scene, count in (("scene_1",15),("scene_2",15),("scene_3",8)):
+            catalog=load_catalog(scene)
+            assert len(catalog.tasks)==count
+>           assert build_plan(catalog,'all')['missing_oracle_profiles']==[]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_scene3_profile_bindings.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/benchmark/planning.py:17: in build_plan
+    profile = load_profile(catalog, task)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+___ Town05Scene3ContractTests.test_low_signal_values_reach_camera_attributes ___
+
+self = <experiment.CARLA.tests.test_scene3_town05_rebuild.Town05Scene3ContractTests testMethod=test_low_signal_values_reach_camera_attributes>
+
+    def test_low_signal_values_reach_camera_attributes(self):
+        config = json.loads(CONFIG.read_text(encoding="utf-8"))
+        attributes = runner.camera_sensor_attributes(
+            camera_name="front_rgb",
+            image_width=1280,
+            image_height=720,
+            fov=90.0,
+            camera_tick=0.2,
+            low_signal_config=config["sensors"]["low_signal_rgb"],
+        )
+        self.assertEqual(attributes["exposure_mode"], "manual")
+        self.assertEqual(attributes["exposure_compensation"], "0.0")
+        self.assertEqual(attributes["shutter_speed"], "100.0")
+>       self.assertEqual(attributes["iso"], "100.0")
+E       AssertionError: '800.0' != '100.0'
+E       - 800.0
+E       ? ^
+E       + 100.0
+E       ? ^
+
+experiment/CARLA/tests/test_scene3_town05_rebuild.py:145: AssertionError
+____ test_assessment_binding_keeps_thresholds_and_rejects_semantic_changes _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-205/test_assessment_binding_keeps_0')
+
+    def test_assessment_binding_keeps_thresholds_and_rejects_semantic_changes(tmp_path):
+        import hashlib
+        import json
+        from types import SimpleNamespace
+        from benchmark.catalog import CONFIG_ROOT, ConfigError, load_catalog, load_episode_catalog
+        from benchmark.task_oracle import load_profile
+        original = load_catalog('scene_1')
+        source = json.loads((CONFIG_ROOT/original.source_file).read_text())
+        anchors = [[0, 0], [1300, 550], [1450, 700], [3085, 1640], [5000, 5000]]
+        source['commands'] = remap_commands(source['commands'], anchors)
+        source['route'].update(start_spawn_index=40, strict_start_spawn=True, spawn_backoff_m=0.)
+        source['geometry_binding'] = dict(source_sha256=original.source_sha256,
+            map_sha256=hashlib.sha256(b'map').hexdigest(), distance_anchors=anchors)
+        path = tmp_path/'bound.json'
+        path.write_text(json.dumps(source))
+        world_map = SimpleNamespace(to_opendrive=lambda:'map')
+        bound = load_episode_catalog('scene_1', path, world_map)
+        assert len(bound.tasks) == len(original.tasks) == 15
+        for task in bound.tasks:
+>           profile = load_profile(bound, task)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_task_geometry_binding.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/benchmark/task_oracle.py:26: in load_profile
+    profile = load_profile(original, original_task)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+_________ test_speed_profiles_match_source_speed_and_next_announcement _________
+
+    def test_speed_profiles_match_source_speed_and_next_announcement():
+        from benchmark.task_oracle import load_profile
+        catalog=load_catalog('scene_1')
+        seen=[]
+        for task in catalog.tasks:
+>           profile=load_profile(catalog,task)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_task_oracle.py:199: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+____________ test_isolated_followup_plan_exposes_missing_prior_task ____________
+
+    def test_isolated_followup_plan_exposes_missing_prior_task():
+>       plan=build_plan(load_catalog('scene_1'),'c10_keep_30')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_task_oracle.py:234: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/benchmark/planning.py:17: in build_plan
+    profile = load_profile(catalog, task)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+catalog = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+task = Task(task_id='c10_keep_30', order=11, source_order=10, instruction='完成右转后，保持当前车道，以30公里每小时行驶。', announce_m=3300.0, acti...right turn, keep the current lane at 30 km/h.', 'structured_command': {'action': 'KEEP_LANE', 'target_speed_kmh': 30}})
+
+    def load_profile(catalog, task):
+        if getattr(catalog, 'geometry_binding', None):
+            from .catalog import load_catalog
+            from continuous.task_geometry_binding import remap_commands
+            original = load_catalog(catalog.scene_id)
+            original_task = original.select(task.task_id)[0]
+            profile = load_profile(original, original_task)
+            if profile is None:
+                return None
+            anchors = catalog.geometry_binding['distance_anchors']
+    
+            def bind_distances(value):
+                if isinstance(value, list):
+                    return [bind_distances(item) for item in value]
+                if not isinstance(value, dict):
+                    return value
+                result = {}
+                for key, item in value.items():
+                    if key in {'activate_m', 'end_route_s_m', 'start_route_s_m', 'from_route_s_m'}:
+                        item = remap_commands([dict(announce_at_m=item)], anchors)[0]['announce_at_m']
+                    else:
+                        item = bind_distances(item)
+                    result[key] = item
+                return result
+    
+            profile = bind_distances(profile)
+            profile['source_sha256'] = catalog.source_sha256
+            return validate_spec(profile)
+        path = CONFIG_ROOT / 'benchmark' / f'{task.task_id}.json'
+        if not path.is_file():
+            return None
+        profile = validate_spec(json.loads(path.read_text(encoding='utf-8')))
+        if (profile.get('source_sha256') != catalog.source_sha256
+                or profile.get('scene_id') != catalog.scene_id
+                or profile['task_id'] != task.task_id
+                or profile['activate_m'] != task.activate_m):
+            return None
+        earlier={t.task_id for t in catalog.tasks if t.activate_m<task.activate_m}
+        if not set(profile.get('requires_task_success',[]))<=earlier:
+>           raise ConfigError('task prerequisites must refer to earlier tasks in the same scene')
+E           benchmark.catalog.ConfigError: task prerequisites must refer to earlier tasks in the same scene
+
+experiment/CARLA/benchmark/task_oracle.py:59: ConfigError
+=========================== short test summary info ============================
+FAILED experiment/CARLA/tests/test_assessment_selection.py::test_default_keeps_full_catalog[scene_1-15]
+FAILED experiment/CARLA/tests/test_benchmark_catalog.py::test_existing_configs[scene_1-15-5000]
+FAILED experiment/CARLA/tests/test_benchmark_catalog.py::test_scene1_turn_schedule_and_profile_bindings
+FAILED experiment/CARLA/tests/test_benchmark_catalog.py::test_cli_exports_selection_without_claiming_execution
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_manifest_records_route_and_bound_profile_identities
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_formal_traffic_uses_snapshot_and_excludes_walkers
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_unconfigured_traffic_provider_is_not_empty_traffic_evidence
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_prepares_followup_only_from_independent_success[SUCCESS]
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_prepares_followup_only_from_independent_success[RUNNING]
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_prepares_followup_only_from_independent_success[FAILURE]
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_destination_binds_actual_end_and_rejects_short_route[200-SUCCESS]
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_destination_binds_actual_end_and_rejects_short_route[5000-SCENE_INVALID]
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_segment_uses_explicit_origin_and_does_not_replay_earlier_tasks
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_replay_preserves_native_location_type_for_map_calls
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_formal_episode_does_not_hide_unsupported_or_unreached_tasks
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_safety_can_fail_after_task_success
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_duplicate_frame_fails_and_teardown_is_available
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_formal_role_task_uses_exact_source_crosswalk
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_missing_role_at_activation_is_scene_invalid_not_unsupported
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_full_episode_diagnostic_preserves_original_results
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_map_geometry_is_captured_and_checked_before_replay
+FAILED experiment/CARLA/tests/test_scene2_first_task_contract.py::test_scene2_first_instruction_and_oracle_request_right_turn
+FAILED experiment/CARLA/tests/test_scene3_profile_bindings.py::test_all_formal_tasks_have_source_bound_profiles
+FAILED experiment/CARLA/tests/test_scene3_town05_rebuild.py::Town05Scene3ContractTests::test_low_signal_values_reach_camera_attributes
+FAILED experiment/CARLA/tests/test_task_geometry_binding.py::test_assessment_binding_keeps_thresholds_and_rejects_semantic_changes
+FAILED experiment/CARLA/tests/test_task_oracle.py::test_speed_profiles_match_source_speed_and_next_announcement
+FAILED experiment/CARLA/tests/test_task_oracle.py::test_isolated_followup_plan_exposes_missing_prior_task
+27 failed, 1599 passed, 1 xfailed, 207 subtests passed in 34.63s

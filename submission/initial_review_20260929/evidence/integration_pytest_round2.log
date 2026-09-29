@@ -1,0 +1,270 @@
+........................................................................ [  4%]
+...............................................F....x................... [  8%]
+................................................................... [ 12%]
+..F............F...........FFF.................................................................................................... [ 20%]
+........................................................................ [ 25%]
+........................................................................ [ 29%]
+........................................................................ [ 34%]
+........................................................................ [ 38%]
+................F....................................................... [ 43%]
+........................................................................ [ 47%]
+........................................................................ [ 51%]
+........................................................................ [ 56%]
+..................................................................... [ 60%]
+........................................................................ [ 65%]
+........................................................................ [ 69%]
+........................................................................ [ 73%]
+........................................................ [ 77%]
+................................................................................................................................... [ 85%]
+..............................................................................................................................................................................................................................................                                       [100%]
+=================================== FAILURES ===================================
+_________ test_return_to_original_lane_contract_points_right_and_waits _________
+
+    def test_return_to_original_lane_contract_points_right_and_waits():
+        action, parameters, on_blocked, completion = _scene2_step_contract(
+            "CHANGE_LANE:RETURN_WHEN_SAFE"
+        )
+        assert action == "CHANGE_LANE"
+>       assert parameters["direction"] == "RIGHT"
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'direction'
+
+experiment/CARLA/tests/test_command_semantics_matrix.py:56: KeyError
+______ test_future_actor_not_staged_on_earlier_pass_and_released_normally ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2560f28ce0>
+
+    def test_future_actor_not_staged_on_earlier_pass_and_released_normally(monkeypatch):
+        manager=object.__new__(DeterministicSceneEvents)
+        event=dict(id='cycle_event',kind='cyclist',activate_progress_m=500,
+                   anchor_progress_m=600,staging_lead_m=100,target_speed_kmh=14)
+        manager.events=[event]
+        manager.states={'cycle_event':'STAGED','bus_stop_passengers':'STAGED'}
+        manager.selected_variants={'cycle_event':'v'}
+        manager.scripted_walkers={}
+        manager.traffic_manager=Mock()
+        manager._set_desired_speed=Mock()
+        manager.cyclist=None
+        actor=Mock(is_alive=True)
+        def stage(config,progress):
+            if manager.cyclist is None:
+                manager.cyclist=actor
+                manager.cyclist_transform=object()
+        manager._stage_cyclist=Mock(side_effect=stage)
+        monkeypatch.setitem(sys.modules,'carla',SimpleNamespace(VehicleControl=lambda:object()))
+>       manager.update(100)
+
+experiment/CARLA/tests/test_deferred_event_staging.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/scenarios/complex/town05_scene2.py:2522: in update
+    self._prestage_cyclist(cyclist_event, progress_m)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <scenarios.complex.town05_scene2.DeterministicSceneEvents object at 0x7f2560f28b00>
+event = {'id': 'cycle_event', 'kind': 'cyclist', 'activate_progress_m': 500, 'anchor_progress_m': 600, ...}
+progress_m = 100
+
+    def _prestage_cyclist(self, event: Mapping[str, Any], progress_m: float) -> None:
+        """Place the parked cyclist only after the earlier route overlap is passed."""
+>       if self._cyclist_placed or self.cyclist is None:
+           ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'DeterministicSceneEvents' object has no attribute '_cyclist_placed'
+
+experiment/CARLA/scenarios/complex/town05_scene2.py:2473: AttributeError
+_____ EmergencyRuntimeConfigTests.test_config_declares_exact_actor_counts ______
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRuntimeConfigTests testMethod=test_config_declares_exact_actor_counts>
+
+    def test_config_declares_exact_actor_counts(self):
+        config = runner.load_runtime_config(
+            CONFIG_PATH
+        )
+    
+>       self.assertEqual(
+            {key: config["traffic"][key] for key in (
+                "private_vehicle_count", "work_vehicle_count",
+                "maintenance_vehicle_count", "worker_count",
+                "minimum_ego_spawn_clearance_m",
+            )},
+            {
+                "private_vehicle_count": 18,
+                "work_vehicle_count": 2,
+                "maintenance_vehicle_count": 1,
+                "worker_count": 2,
+                "minimum_ego_spawn_clearance_m": 35.0,
+            },
+        )
+E       AssertionError: {'pri[17 chars]t': 16, 'work_vehicle_count': 2, 'maintenance_[71 chars]35.0} != {'pri[17 chars]t': 18, 'work_vehicle_count': 2, 'maintenance_[71 chars]35.0}
+E         {'maintenance_vehicle_count': 1,
+E          'minimum_ego_spawn_clearance_m': 35.0,
+E       -  'private_vehicle_count': 16,
+E       ?                            ^
+E       
+E       +  'private_vehicle_count': 18,
+E       ?                            ^
+E       
+E          'work_vehicle_count': 2,
+E          'worker_count': 2}
+
+experiment/CARLA/tests/test_emergency_response_6km.py:195: AssertionError
+_ EmergencyRoadContractTests.test_crossing_worker_does_not_share_cone_position _
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRoadContractTests testMethod=test_crossing_worker_does_not_share_cone_position>
+
+    def test_crossing_worker_does_not_share_cone_position(self):
+        config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        zone = next(
+            event["zone"] for event in config["events"]
+            if event["id"] == "scene3_work_zone"
+        )
+        worker = next(
+            event["workers"][0] for event in config["events"]
+            if event["id"] == "scene3_temporary_pedestrian"
+        )
+>       self.assertGreaterEqual(
+            min(
+                abs(worker["start_s_m"] - position)
+                for position in scene_events.work_zone_boundary_positions(
+                    zone["start_s_m"], zone["end_s_m"],
+                    zone.get("boundary_cone_spacing_m", 30.0),
+                )
+            ),
+            5.0,
+        )
+E       AssertionError: 0.0 not greater than or equal to 5.0
+
+experiment/CARLA/tests/test_emergency_response_6km.py:622: AssertionError
+_____ EmergencyRoadContractTests.test_fixture_route_rejects_vla_controller _____
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRoadContractTests testMethod=test_fixture_route_rejects_vla_controller>
+
+    def test_fixture_route_rejects_vla_controller(self):
+>       args = runner.build_parser().parse_args([
+            "--scenario-fixture-route", "--ego-controller", "vla-route-pid",
+        ])
+
+experiment/CARLA/tests/test_emergency_response_6km.py:606: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../conda_envs/command_parser/lib/python3.12/argparse.py:1908: in parse_args
+    self.error(msg)
+../../conda_envs/command_parser/lib/python3.12/argparse.py:2650: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ArgumentParser(prog='__main__.py', usage=None, description='Run the 6 km emergency-response scene on official CARLA To...gency event controllers.\n', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = '__main__.py: error: unrecognized arguments: --scenario-fixture-route\n'
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+../../conda_envs/command_parser/lib/python3.12/argparse.py:2637: SystemExit
+----------------------------- Captured stderr call -----------------------------
+usage: __main__.py [-h] [--host HOST] [--port PORT]
+                   [--traffic-manager-port TRAFFIC_MANAGER_PORT]
+                   [--runtime-config RUNTIME_CONFIG] [--output-dir OUTPUT_DIR]
+                   [--duration DURATION] [--max-stall-s MAX_STALL_S]
+                   [--fixed-delta-seconds FIXED_DELTA_SECONDS]
+                   [--camera-tick CAMERA_TICK]
+                   [--camera-mode {four-view,chase-only,four-view-plus-chase}]
+                   [--skip-audit-cameras]
+                   [--presentation-lighting {official-rainy-night,rainy-daylight,clear-daylight}]
+                   [--draw-presentation-lane-markings]
+                   [--image-width IMAGE_WIDTH] [--image-height IMAGE_HEIGHT]
+                   [--fov FOV] [--record-images] [--record-ground-truth]
+                   [--ground-truth-every-n GROUND_TRUTH_EVERY_N]
+                   [--record-every-n RECORD_EVERY_N]
+                   [--camera-width CAMERA_WIDTH]
+                   [--camera-height CAMERA_HEIGHT]
+                   [--video-output VIDEO_OUTPUT] [--video-fps VIDEO_FPS]
+                   [--ffmpeg FFMPEG] [--video-overlay]
+                   [--terminal-hold-s TERMINAL_HOLD_S]
+                   [--ego-speed-kmh EGO_SPEED_KMH]
+                   [--ego-controller {route-pid,vla-route-pid,behavior-agent,external}]
+                   [--vla-checkpoint VLA_CHECKPOINT] [--vla-config VLA_CONFIG]
+                   [--vla-parser-model VLA_PARSER_MODEL]
+                   [--vla-device VLA_DEVICE]
+                   [--vla-precision {fp32,fp16,bf16}]
+                   [--vla-decision-every-n VLA_DECISION_EVERY_N]
+                   [--vla-record-training-data VLA_RECORD_TRAINING_DATA]
+                   [--stationary-ego] [--seed SEED]
+                   [--event-variant EVENT_VARIANT] [--validate-config-only]
+                   [--require-complete-scene]
+__main__.py: error: unrecognized arguments: --scenario-fixture-route
+_ EmergencyRoadContractTests.test_fixture_route_uses_open_lane_only_during_work_zone _
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRoadContractTests testMethod=test_fixture_route_uses_open_lane_only_during_work_zone>
+
+    def test_fixture_route_uses_open_lane_only_during_work_zone(self):
+        distances = [0.0, 2800.0, 2900.0, 3100.0, 3400.0, 5200.0, 5300.0, 5400.0]
+        route = [
+            (SimpleNamespace(is_junction=False), None)
+            for _ in distances
+        ]
+        adapter = mock.Mock()
+        adapter.logical_waypoint.side_effect = lambda lane, progress: (
+            SimpleNamespace(lane_id=lane)
+        )
+        context = SimpleNamespace(route=route, distances_m=distances, adapter=adapter)
+        events = runner.load_runtime_config(CONFIG_PATH)["events"]
+    
+        default = runner.build_ego_route_plan(context, events)
+>       fixture = runner.build_ego_route_plan(
+            context, events, scenario_fixture_route=True,
+        )
+E       TypeError: build_ego_route_plan() got an unexpected keyword argument 'scenario_fixture_route'
+
+experiment/CARLA/tests/test_emergency_response_6km.py:595: TypeError
+__________ Scene2Town05Tests.test_runtime_contract_has_required_scope __________
+
+self = <experiment.CARLA.tests.test_scene2_town05.Scene2Town05Tests testMethod=test_runtime_contract_has_required_scope>
+
+    def test_runtime_contract_has_required_scope(self):
+        config = load_config(
+            ROOT / "configs" / "scene_2_town05_runtime.json"
+        )
+        self.assertEqual(config["map"], "Town05_Opt")
+        self.assertEqual(len(config["commands"]), 15)
+        self.assertGreaterEqual(
+            config["route"]["target_length_m"],
+            8000.0,
+        )
+        self.assertEqual(
+            config["route"]["turnaround_spawn_index"],
+            109,
+        )
+        self.assertGreaterEqual(
+            config["route"]["minimum_curvature_degrees"],
+            180.0,
+        )
+        self.assertGreaterEqual(config["traffic"]["vehicles"], 55)
+        self.assertFalse(config["traffic"]["hybrid_physics"])
+        self.assertFalse(
+            config["traffic"]["respawn_dormant_vehicles"]
+        )
+        self.assertFalse(
+            config["traffic"]["ambient_auto_lane_change"]
+        )
+        self.assertGreaterEqual(
+            config["traffic"]["ego_spawn_exclusion_m"],
+            35.0,
+        )
+>       self.assertEqual(
+            config["traffic"]["startup_corridor_length_m"],
+            150.0,
+        )
+E       AssertionError: 450.0 != 150.0
+
+experiment/CARLA/tests/test_scene2_town05.py:542: AssertionError
+=========================== short test summary info ============================
+FAILED experiment/CARLA/tests/test_command_semantics_matrix.py::test_return_to_original_lane_contract_points_right_and_waits
+FAILED experiment/CARLA/tests/test_deferred_event_staging.py::test_future_actor_not_staged_on_earlier_pass_and_released_normally
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRuntimeConfigTests::test_config_declares_exact_actor_counts
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRoadContractTests::test_crossing_worker_does_not_share_cone_position
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRoadContractTests::test_fixture_route_rejects_vla_controller
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRoadContractTests::test_fixture_route_uses_open_lane_only_during_work_zone
+FAILED experiment/CARLA/tests/test_scene2_town05.py::Scene2Town05Tests::test_runtime_contract_has_required_scope
+7 failed, 1619 passed, 1 xfailed, 207 subtests passed in 41.69s

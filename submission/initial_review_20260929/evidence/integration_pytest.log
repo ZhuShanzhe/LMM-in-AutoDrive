@@ -1,0 +1,3504 @@
+.............................F.........F.F...............F.............. [  4%]
+...............................................F....x................... [  8%]
+................................................................... [ 12%]
+..F..........F.FF...FF.F.F.FFFF...F.......F..........................FFFFFFFFFFFFF..FFFF.....F.................................... [ 20%]
+...............F.F.................................................F.... [ 25%]
+........................................................................ [ 29%]
+........................................................................ [ 34%]
+.F...........................................................F.......... [ 38%]
+................F..........................FF...F..F.................... [ 43%]
+........................................................................ [ 47%]
+..........F........................F.....F.............................. [ 51%]
+...F..F................................................................. [ 56%]
+..................................................................... [ 60%]
+........................................................................ [ 65%]
+........................................................................ [ 69%]
+........................................................................ [ 73%]
+........................................................ [ 77%]
+................................................................................................................................... [ 85%]
+..............................................................................................................................................................................................................................................                                       [100%]
+=================================== FAILURES ===================================
+_______ test_plan_describes_existing_adapter_without_claiming_readiness ________
+
+    def test_plan_describes_existing_adapter_without_claiming_readiness():
+        plan=build_plan(load_catalog('scene_2'),'s2_t05_cmd_07')
+        adapter=plan['isolated_adapters']['s2_t05_cmd_07']
+>       assert adapter['adapter_available']
+E       assert False
+
+experiment/CARLA/tests/test_benchmark_capabilities.py:9: AssertionError
+________________ test_scene1_turn_schedule_and_profile_bindings ________________
+
+    def test_scene1_turn_schedule_and_profile_bindings():
+        from benchmark.task_oracle import load_profile
+        catalog = load_catalog('scene_1')
+        tasks = {task.task_id: task for task in catalog.tasks}
+>       turn = tasks['c07_turn_left']
+               ^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'c07_turn_left'
+
+experiment/CARLA/tests/test_benchmark_catalog.py:56: KeyError
+____ test_scene1_uses_validated_background_traffic_without_preview_commands ____
+
+    def test_scene1_uses_validated_background_traffic_without_preview_commands():
+        raw = json.loads((CONFIG_ROOT / SCENES['scene_1'][0]).read_text(encoding='utf-8'))
+        preview = json.loads((CONFIG_ROOT / 'basic_voice_traffic_preview.json').read_text(encoding='utf-8'))
+        flow = raw['traffic']
+        assert flow == preview['traffic']
+        assert flow['enabled'] and flow['maintenance_mode'] == 'route_density'
+        assert len(flow['vehicles']) == 96
+>       assert flow['density_max_actors'] == 128
+E       assert 24 == 128
+
+experiment/CARLA/tests/test_benchmark_catalog.py:86: AssertionError
+__ test_all_existing_scene2_profiles_remain_bound_after_configuration_update ___
+
+    def test_all_existing_scene2_profiles_remain_bound_after_configuration_update():
+        catalog=load_catalog('scene_2')
+        expected={f's2_t05_cmd_{n:02d}' for n in range(1,16)}
+        actual={t.task_id for t in catalog.tasks if load_profile(catalog,t) is not None}
+>       assert expected==actual
+E       AssertionError: assert {'s2_t05_cmd_..._cmd_06', ...} == {'s2_t05_cmd_..._cmd_06', ...}
+E         
+E         Extra items in the left set:
+E         's2_t05_cmd_11'
+E         's2_t05_cmd_08'
+E         's2_t05_cmd_07'
+E         's2_t05_cmd_14'
+E         's2_t05_cmd_09'
+E         Use -v to get more diff
+
+experiment/CARLA/tests/test_bus_passenger_manifest.py:22: AssertionError
+_________ test_return_to_original_lane_contract_points_right_and_waits _________
+
+    def test_return_to_original_lane_contract_points_right_and_waits():
+        action, parameters, on_blocked, completion = _scene2_step_contract(
+            "CHANGE_LANE:RETURN_WHEN_SAFE"
+        )
+        assert action == "CHANGE_LANE"
+>       assert parameters["direction"] == "RIGHT"
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'direction'
+
+experiment/CARLA/tests/test_command_semantics_matrix.py:56: KeyError
+______ test_future_actor_not_staged_on_earlier_pass_and_released_normally ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5929ceb8f0>
+
+    def test_future_actor_not_staged_on_earlier_pass_and_released_normally(monkeypatch):
+        manager=object.__new__(DeterministicSceneEvents)
+        event=dict(id='cycle_event',kind='cyclist',activate_progress_m=500,
+                   anchor_progress_m=600,staging_lead_m=100,target_speed_kmh=14)
+        manager.events=[event]
+        manager.states={'cycle_event':'STAGED','bus_stop_passengers':'STAGED'}
+        manager.selected_variants={'cycle_event':'v'}
+        manager.scripted_walkers={}
+        manager.traffic_manager=Mock()
+        manager._set_desired_speed=Mock()
+        manager.cyclist=None
+        actor=Mock(is_alive=True)
+        def stage(config,progress):
+            if manager.cyclist is None:
+                manager.cyclist=actor
+                manager.cyclist_transform=object()
+        manager._stage_cyclist=Mock(side_effect=stage)
+        monkeypatch.setitem(sys.modules,'carla',SimpleNamespace(VehicleControl=lambda:object()))
+>       manager.update(100)
+
+experiment/CARLA/tests/test_deferred_event_staging.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/scenarios/complex/town05_scene2.py:2522: in update
+    self._prestage_cyclist(cyclist_event, progress_m)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <scenarios.complex.town05_scene2.DeterministicSceneEvents object at 0x7f5929ce8f50>
+event = {'id': 'cycle_event', 'kind': 'cyclist', 'activate_progress_m': 500, 'anchor_progress_m': 600, ...}
+progress_m = 100
+
+    def _prestage_cyclist(self, event: Mapping[str, Any], progress_m: float) -> None:
+        """Place the parked cyclist only after the earlier route overlap is passed."""
+>       if self._cyclist_placed or self.cyclist is None:
+           ^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'DeterministicSceneEvents' object has no attribute '_cyclist_placed'
+
+experiment/CARLA/scenarios/complex/town05_scene2.py:2473: AttributeError
+_________ EmergencyRuntimeConfigTests.test_checked_in_config_is_valid __________
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRuntimeConfigTests testMethod=test_checked_in_config_is_valid>
+
+    def test_checked_in_config_is_valid(self):
+>       config = runner.load_runtime_config(
+            CONFIG_PATH
+        )
+
+experiment/CARLA/tests/test_emergency_response_6km.py:170: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+_____ EmergencyRuntimeConfigTests.test_config_declares_exact_actor_counts ______
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRuntimeConfigTests testMethod=test_config_declares_exact_actor_counts>
+
+    def test_config_declares_exact_actor_counts(self):
+>       config = runner.load_runtime_config(
+            CONFIG_PATH
+        )
+
+experiment/CARLA/tests/test_emergency_response_6km.py:191: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+_______ EmergencyRuntimeConfigTests.test_config_requires_four_rgb_views ________
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRuntimeConfigTests testMethod=test_config_requires_four_rgb_views>
+
+    def test_config_requires_four_rgb_views(self):
+>       config = runner.load_runtime_config(
+            CONFIG_PATH
+        )
+
+experiment/CARLA/tests/test_emergency_response_6km.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+_________ EmergencyRuntimeConfigTests.test_rejects_duplicate_event_id __________
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRuntimeConfigTests testMethod=test_rejects_duplicate_event_id>
+
+    def test_rejects_duplicate_event_id(self):
+>       config = runner.load_runtime_config(
+            CONFIG_PATH
+        )
+
+experiment/CARLA/tests/test_emergency_response_6km.py:511: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+_________ EmergencyRuntimeConfigTests.test_rejects_unrecoverable_event _________
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRuntimeConfigTests testMethod=test_rejects_unrecoverable_event>
+
+    def test_rejects_unrecoverable_event(self):
+>       config = runner.load_runtime_config(
+            CONFIG_PATH
+        )
+
+experiment/CARLA/tests/test_emergency_response_6km.py:532: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+_ EmergencyRuntimeConfigTests.test_three_deterministic_variants_cover_every_event _
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRuntimeConfigTests testMethod=test_three_deterministic_variants_cover_every_event>
+
+    def test_three_deterministic_variants_cover_every_event(self):
+        selected = [
+>           runner.load_runtime_config(
+                CONFIG_PATH, event_variant="auto", seed=seed
+            )
+            for seed in range(3)
+        ]
+
+experiment/CARLA/tests/test_emergency_response_6km.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'auto', seed = 0
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+_ EmergencyRoadContractTests.test_behavior_agent_plan_preserves_junction_topology _
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRoadContractTests testMethod=test_behavior_agent_plan_preserves_junction_topology>
+
+    def test_behavior_agent_plan_preserves_junction_topology(
+        self,
+    ):
+        locations = [object() for _ in range(4)]
+        route_context = SimpleNamespace(
+            route=[
+                (
+                    SimpleNamespace(
+                        transform=SimpleNamespace(location=location),
+                        is_junction=True,
+                    ),
+                    None,
+                )
+                for location in locations
+            ],
+            distances_m=[0.0, 2.0, 5.0, 10.0],
+        )
+        plan = runner.build_ego_route_plan(
+            route_context,
+>           runner.load_runtime_config(CONFIG_PATH)["events"],
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        )
+
+experiment/CARLA/tests/test_emergency_response_6km.py:573: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+_ EmergencyRoadContractTests.test_crossing_worker_does_not_share_cone_position _
+ValueError: runtime config traffic.private_vehicle_count must be 16
+
+During handling of the above exception, another exception occurred:
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRoadContractTests testMethod=test_crossing_worker_does_not_share_cone_position>
+
+    def test_crossing_worker_does_not_share_cone_position(self):
+        config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        zone = next(
+            event["zone"] for event in config["events"]
+            if event["id"] == "scene3_work_zone"
+        )
+        worker = next(
+            event["workers"][0] for event in config["events"]
+            if event["id"] == "scene3_temporary_pedestrian"
+        )
+        self.assertGreaterEqual(
+            min(
+                abs(worker["start_s_m"] - position)
+                for position in scene_events.work_zone_boundary_positions(
+                    zone["start_s_m"], zone["end_s_m"],
+                    zone.get("boundary_cone_spacing_m", 30.0),
+                )
+            ),
+            5.0,
+        )
+        worker["start_s_m"] = 3330.0
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "blocked_worker.json"
+            path.write_text(json.dumps(config), encoding="utf-8")
+>           with self.assertRaisesRegex(ValueError, "overlaps a work-zone cone"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: "overlaps a work-zone cone" does not match "runtime config traffic.private_vehicle_count must be 16"
+
+experiment/CARLA/tests/test_emergency_response_6km.py:636: AssertionError
+_____ EmergencyRoadContractTests.test_fixture_route_rejects_vla_controller _____
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRoadContractTests testMethod=test_fixture_route_rejects_vla_controller>
+
+    def test_fixture_route_rejects_vla_controller(self):
+>       args = runner.build_parser().parse_args([
+            "--scenario-fixture-route", "--ego-controller", "vla-route-pid",
+        ])
+
+experiment/CARLA/tests/test_emergency_response_6km.py:606: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../conda_envs/command_parser/lib/python3.12/argparse.py:1908: in parse_args
+    self.error(msg)
+../../conda_envs/command_parser/lib/python3.12/argparse.py:2650: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ArgumentParser(prog='__main__.py', usage=None, description='Run the 6 km emergency-response scene on official CARLA To...gency event controllers.\n', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = '__main__.py: error: unrecognized arguments: --scenario-fixture-route\n'
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+../../conda_envs/command_parser/lib/python3.12/argparse.py:2637: SystemExit
+----------------------------- Captured stderr call -----------------------------
+usage: __main__.py [-h] [--host HOST] [--port PORT]
+                   [--traffic-manager-port TRAFFIC_MANAGER_PORT]
+                   [--runtime-config RUNTIME_CONFIG] [--output-dir OUTPUT_DIR]
+                   [--duration DURATION] [--max-stall-s MAX_STALL_S]
+                   [--fixed-delta-seconds FIXED_DELTA_SECONDS]
+                   [--camera-tick CAMERA_TICK]
+                   [--camera-mode {four-view,chase-only,four-view-plus-chase}]
+                   [--skip-audit-cameras]
+                   [--presentation-lighting {official-rainy-night,rainy-daylight,clear-daylight}]
+                   [--draw-presentation-lane-markings]
+                   [--image-width IMAGE_WIDTH] [--image-height IMAGE_HEIGHT]
+                   [--fov FOV] [--record-images] [--record-ground-truth]
+                   [--ground-truth-every-n GROUND_TRUTH_EVERY_N]
+                   [--record-every-n RECORD_EVERY_N]
+                   [--camera-width CAMERA_WIDTH]
+                   [--camera-height CAMERA_HEIGHT]
+                   [--video-output VIDEO_OUTPUT] [--video-fps VIDEO_FPS]
+                   [--ffmpeg FFMPEG] [--video-overlay]
+                   [--terminal-hold-s TERMINAL_HOLD_S]
+                   [--ego-speed-kmh EGO_SPEED_KMH]
+                   [--ego-controller {route-pid,vla-route-pid,behavior-agent,external}]
+                   [--vla-checkpoint VLA_CHECKPOINT] [--vla-config VLA_CONFIG]
+                   [--vla-parser-model VLA_PARSER_MODEL]
+                   [--vla-device VLA_DEVICE]
+                   [--vla-precision {fp32,fp16,bf16}]
+                   [--vla-decision-every-n VLA_DECISION_EVERY_N]
+                   [--vla-record-training-data VLA_RECORD_TRAINING_DATA]
+                   [--stationary-ego] [--seed SEED]
+                   [--event-variant EVENT_VARIANT] [--validate-config-only]
+                   [--require-complete-scene]
+__main__.py: error: unrecognized arguments: --scenario-fixture-route
+_ EmergencyRoadContractTests.test_fixture_route_uses_open_lane_only_during_work_zone _
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRoadContractTests testMethod=test_fixture_route_uses_open_lane_only_during_work_zone>
+
+    def test_fixture_route_uses_open_lane_only_during_work_zone(self):
+        distances = [0.0, 2800.0, 2900.0, 3100.0, 3400.0, 5200.0, 5300.0, 5400.0]
+        route = [
+            (SimpleNamespace(is_junction=False), None)
+            for _ in distances
+        ]
+        adapter = mock.Mock()
+        adapter.logical_waypoint.side_effect = lambda lane, progress: (
+            SimpleNamespace(lane_id=lane)
+        )
+        context = SimpleNamespace(route=route, distances_m=distances, adapter=adapter)
+>       events = runner.load_runtime_config(CONFIG_PATH)["events"]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_emergency_response_6km.py:592: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+______ EmergencyRoadContractTests.test_physical_road_has_terminal_runoff _______
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyRoadContractTests testMethod=test_physical_road_has_terminal_runoff>
+
+    def test_physical_road_has_terminal_runoff(self):
+        root = ET.parse(XODR_PATH).getroot()
+        road = root.find("road")
+        self.assertIsNotNone(road)
+        assert road is not None
+        physical_length_m = float(
+            road.get("length", "nan")
+        )
+>       config = runner.load_runtime_config(
+            CONFIG_PATH
+        )
+
+experiment/CARLA/tests/test_emergency_response_6km.py:656: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+___ EmergencyEventSchedulerTests.test_all_seven_events_activate_and_resolve ____
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyEventSchedulerTests testMethod=test_all_seven_events_activate_and_resolve>
+
+    def test_all_seven_events_activate_and_resolve(self):
+>       config = runner.load_runtime_config(
+            CONFIG_PATH
+        )
+
+experiment/CARLA/tests/test_emergency_response_6km.py:758: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+____ EmergencyActorRuntimeTests.test_cut_in_actor_is_staged_before_trigger _____
+
+self = <experiment.CARLA.tests.test_emergency_response_6km.EmergencyActorRuntimeTests testMethod=test_cut_in_actor_is_staged_before_trigger>
+
+    def test_cut_in_actor_is_staged_before_trigger(self):
+>       config = runner.load_runtime_config(
+            CONFIG_PATH
+        )
+
+experiment/CARLA/tests/test_emergency_response_6km.py:1406: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+___________ test_manifest_records_route_and_bound_profile_identities ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_manifest_records_route_an0')
+
+    def test_manifest_records_route_and_bound_profile_identities(tmp_path):
+        import hashlib
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f59304a7f20>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f59304a4680>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_manifest_records_route_an0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+____________ test_formal_traffic_uses_snapshot_and_excludes_walkers ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_formal_traffic_uses_snaps0')
+
+    def test_formal_traffic_uses_snapshot_and_excludes_walkers(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f592af27a10>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5930fbd460>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_formal_traffic_uses_snaps0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+_______ test_unconfigured_traffic_provider_is_not_empty_traffic_evidence _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_unconfigured_traffic_prov0')
+
+    def test_unconfigured_traffic_provider_is_not_empty_traffic_evidence(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929cc13a0>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929cc2cf0>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_unconfigured_traffic_prov0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+____ test_episode_prepares_followup_only_from_independent_success[SUCCESS] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_prepares_followup0')
+status = 'SUCCESS'
+
+    @pytest.mark.parametrize('status',['SUCCESS','RUNNING','FAILURE'])
+    def test_episode_prepares_followup_only_from_independent_success(tmp_path,status):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929cc2b70>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929cc1fd0>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_prepares_followup0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+____ test_episode_prepares_followup_only_from_independent_success[RUNNING] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_prepares_followup1')
+status = 'RUNNING'
+
+    @pytest.mark.parametrize('status',['SUCCESS','RUNNING','FAILURE'])
+    def test_episode_prepares_followup_only_from_independent_success(tmp_path,status):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929b3c0e0>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929b3fb90>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_prepares_followup1/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+____ test_episode_prepares_followup_only_from_independent_success[FAILURE] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_prepares_followup2')
+status = 'FAILURE'
+
+    @pytest.mark.parametrize('status',['SUCCESS','RUNNING','FAILURE'])
+    def test_episode_prepares_followup_only_from_independent_success(tmp_path,status):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929b3c260>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929b3c530>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_prepares_followup2/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+_ test_episode_destination_binds_actual_end_and_rejects_short_route[200-SUCCESS] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_destination_binds0')
+required_length = 200, expected = 'SUCCESS'
+
+    @pytest.mark.parametrize('required_length,expected',[(200,'SUCCESS'),(5000,'SCENE_INVALID')])
+    def test_episode_destination_binds_actual_end_and_rejects_short_route(tmp_path,required_length,expected):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:123: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929b44b90>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929b462d0>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_destination_binds0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+_ test_episode_destination_binds_actual_end_and_rejects_short_route[5000-SCENE_INVALID] _
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_destination_binds1')
+required_length = 5000, expected = 'SCENE_INVALID'
+
+    @pytest.mark.parametrize('required_length,expected',[(200,'SUCCESS'),(5000,'SCENE_INVALID')])
+    def test_episode_destination_binds_actual_end_and_rejects_short_route(tmp_path,required_length,expected):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:123: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929b3e7e0>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929b3dc10>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_destination_binds1/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+_____ test_segment_uses_explicit_origin_and_does_not_replay_earlier_tasks ______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_segment_uses_explicit_ori0')
+
+    def test_segment_uses_explicit_origin_and_does_not_replay_earlier_tasks(tmp_path):
+>       recorder=episode(tmp_path,190)
+                 ^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:139: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929b3e420>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929b3d850>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_segment_uses_explicit_ori0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 190, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+___________ test_replay_preserves_native_location_type_for_map_calls ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_replay_preserves_native_l0')
+
+    def test_replay_preserves_native_location_type_for_map_calls(tmp_path):
+        class NativeLocation:
+            def __init__(self,x,y,z):
+                self.x,self.y,self.z=x,y,z
+        class StrictMap(Map):
+            def get_waypoint(self,location):
+                assert isinstance(location,NativeLocation)
+                return super().get_waypoint(location)
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929cc11c0>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929cc3800>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_replay_preserves_native_l0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+_______ test_formal_episode_does_not_hide_unsupported_or_unreached_tasks _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_formal_episode_does_not_h0')
+
+    def test_formal_episode_does_not_hide_unsupported_or_unreached_tasks(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:167: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929cc0c80>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929cc2b40>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_formal_episode_does_not_h0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+_______________ test_episode_safety_can_fail_after_task_success ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_safety_can_fail_a0')
+
+    def test_episode_safety_can_fail_after_task_success(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:185: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929b44200>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929b44e30>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_episode_safety_can_fail_a0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+_____________ test_duplicate_frame_fails_and_teardown_is_available _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_duplicate_frame_fails_and0')
+
+    def test_duplicate_frame_fails_and_teardown_is_available(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:195: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929b47680>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929b460c0>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_duplicate_frame_fails_and0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+______________ test_formal_role_task_uses_exact_source_crosswalk _______________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_formal_role_task_uses_exa0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5929b3d940>
+
+    def test_formal_role_task_uses_exact_source_crosswalk(tmp_path,monkeypatch):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:238: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929b3f800>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929b3c740>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_formal_role_task_uses_exa0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+_______ test_missing_role_at_activation_is_scene_invalid_not_unsupported _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_missing_role_at_activatio0')
+
+    def test_missing_role_at_activation_is_scene_invalid_not_unsupported(tmp_path):
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:261: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929cc1490>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929cc2960>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_missing_role_at_activatio0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+___________ test_full_episode_diagnostic_preserves_original_results ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_full_episode_diagnostic_p0')
+
+    def test_full_episode_diagnostic_preserves_original_results(tmp_path):
+        from benchmark.episode_diagnostic import reassess
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:273: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929cc14f0>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929cc20c0>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_full_episode_diagnostic_p0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+___________ test_map_geometry_is_captured_and_checked_before_replay ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_map_geometry_is_captured_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5929c73fb0>
+
+    def test_map_geometry_is_captured_and_checked_before_replay(tmp_path,monkeypatch):
+        import hashlib
+        from benchmark.episode_diagnostic import reassess
+        monkeypatch.setattr(Map,'to_opendrive',lambda self:'<OpenDRIVE>original</OpenDRIVE>',raising=False)
+>       recorder=episode(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_episode_assessment.py:295: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/tests/test_episode_assessment.py:32: in episode
+    return EpisodeAssessment('scene_1',route,Map(),ego,tmp_path/'capture',CONFIG_ROOT/'basic_voice_urban_5km.json',initial)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <benchmark.episode.EpisodeAssessment object at 0x7f5929b67170>
+scene = 'scene_1'
+route = [{'x': 0, 'y': 0, 'z': 0, 'distance_m': 0, ...}, {'x': 5, 'y': 0, 'z': 0, 'distance_m': 5, ...}, {'x': 10, 'y': 0, 'z'..._m': 15, ...}, {'x': 20, 'y': 0, 'z': 0, 'distance_m': 20, ...}, {'x': 25, 'y': 0, 'z': 0, 'distance_m': 25, ...}, ...]
+world_map = <experiment.CARLA.tests.test_episode_assessment.Map object at 0x7f5929c71df0>
+ego = namespace(id=1, bounding_box=namespace(extent=namespace(x=2, y=1), location=namespace(x=0, y=0), rotation=namespace(yaw=0)))
+output = PosixPath('/tmp/pytest-of-root/pytest-203/test_map_geometry_is_captured_0/capture')
+source_config = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/basic_voice_urban_5km.json')
+initial_route_s_m = 0, task_selector = 'all', run_metadata = None
+
+    def __init__(self,scene,route,world_map,ego,output,source_config,initial_route_s_m=0,task_selector='all',run_metadata=None):
+        self.catalog=load_episode_catalog(scene, source_config, world_map)
+        from .selection import assessment_selection
+        self.selected_tasks,self.assessment_tasks=assessment_selection(self.catalog,task_selector)
+        if source_fingerprint(Path(source_config).read_bytes())!=self.catalog.source_sha256:
+            raise ConfigError('assessment source configuration differs from registered catalog')
+        if world_map.name.split('/')[-1]!=self.catalog.map_name:
+>           raise ConfigError('assessment map mismatch')
+E           benchmark.catalog.ConfigError: assessment map mismatch
+
+experiment/CARLA/benchmark/episode.py:115: ConfigError
+____________ test_retained_cyclist_available_to_followup_assessment ____________
+
+    def test_retained_cyclist_available_to_followup_assessment():
+        plan=build_plan(load_catalog('scene_2'),'s2_t05_cmd_08')
+>       audit=plan['event_dependency_audits']['s2_t05_cmd_08']
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 's2_t05_cmd_08'
+
+experiment/CARLA/tests/test_event_dependencies.py:35: KeyError
+________________ test_scene2_new_profiles_match_current_source _________________
+
+    def test_scene2_new_profiles_match_current_source():
+        from benchmark.catalog import load_catalog
+        from benchmark.task_oracle import load_profile
+        catalog=load_catalog('scene_2')
+        for task_id in ('s2_t05_cmd_01','s2_t05_cmd_09','s2_t05_cmd_11'):
+            profile=load_profile(catalog,catalog.select(task_id)[0])
+>           assert profile is not None
+E           assert None is not None
+
+experiment/CARLA/tests/test_extended_criteria.py:179: AssertionError
+____________ test_registered_source_weather_preserved[scene_2-5-0] _____________
+
+scene = 'scene_2', sun = 5, rain = 0
+
+    @pytest.mark.parametrize('scene,sun,rain', [('scene_1',75,0),('scene_2',5,0),('scene_3',-15,80)])
+    def test_registered_source_weather_preserved(scene,sun,rain):
+        catalog=load_catalog(scene)
+        source=json.loads((CONFIG_ROOT/catalog.source_file).read_text(encoding='utf-8'))
+        result=apply_source_weather(World(),source,Weather)
+>       assert result['applied']['sun_altitude_angle']==sun
+E       assert 15.0 == 5
+
+experiment/CARLA/tests/test_fixture_weather.py:27: AssertionError
+_______________________ test_new_profiles_bind_to_source _______________________
+
+    def test_new_profiles_bind_to_source():
+        catalog=load_catalog('scene_2')
+        for identity in ('s2_t05_cmd_13','s2_t05_cmd_15'):
+            profile=load_profile(catalog,catalog.select(identity)[0])
+            assert profile is not None
+            expected=4 if identity=='s2_t05_cmd_13' else 3
+>           assert len([s for s in profile['steps'] if s['kind'] in {'turn','straight_junction'}])==expected
+E           AssertionError: assert 3 == 4
+E            +  where 3 = len([{'kind': 'turn', 'direction': 'RIGHT', 'min_heading_change_deg': 45, 'max_lateral_error_m': 0.5, ...}, {'kind': 'stra...5, 'hold_s': 1}, {'kind': 'turn', 'direction': 'RIGHT', 'min_heading_change_deg': 45, 'max_lateral_error_m': 0.5, ...}])
+
+experiment/CARLA/tests/test_junction_sequence.py:41: AssertionError
+______ test_scene3_static_roles_use_their_actual_configured_route_anchor _______
+
+    def test_scene3_static_roles_use_their_actual_configured_route_anchor():
+        from benchmark.catalog import load_catalog
+        anchors=configured_role_anchors(load_catalog('scene_3').events)
+>       assert anchors['scene3_crossing_worker']==3330
+E       assert 3345.0 == 3330
+
+experiment/CARLA/tests/test_role_journal.py:97: AssertionError
+___________ test_all_scene2_profiles_remain_bound_to_current_config ____________
+
+    def test_all_scene2_profiles_remain_bound_to_current_config():
+        catalog = load_catalog('scene_2')
+        assert len(catalog.tasks) == 15
+>       assert all(load_profile(catalog, task) is not None for task in catalog.tasks)
+E       assert False
+E        +  where False = all(<generator object test_all_scene2_profiles_remain_bound_to_current_config.<locals>.<genexpr> at 0x7f5929c97bc0>)
+
+experiment/CARLA/tests/test_scene2_first_task_contract.py:25: AssertionError
+__________ Scene2Town05Tests.test_runtime_contract_has_required_scope __________
+
+self = <experiment.CARLA.tests.test_scene2_town05.Scene2Town05Tests testMethod=test_runtime_contract_has_required_scope>
+
+    def test_runtime_contract_has_required_scope(self):
+        config = load_config(
+            ROOT / "configs" / "scene_2_town05_runtime.json"
+        )
+        self.assertEqual(config["map"], "Town05_Opt")
+        self.assertEqual(len(config["commands"]), 15)
+        self.assertGreaterEqual(
+            config["route"]["target_length_m"],
+            8000.0,
+        )
+        self.assertEqual(
+            config["route"]["turnaround_spawn_index"],
+            109,
+        )
+        self.assertGreaterEqual(
+            config["route"]["minimum_curvature_degrees"],
+            180.0,
+        )
+        self.assertGreaterEqual(config["traffic"]["vehicles"], 55)
+        self.assertFalse(config["traffic"]["hybrid_physics"])
+        self.assertFalse(
+            config["traffic"]["respawn_dormant_vehicles"]
+        )
+        self.assertFalse(
+            config["traffic"]["ambient_auto_lane_change"]
+        )
+        self.assertGreaterEqual(
+            config["traffic"]["ego_spawn_exclusion_m"],
+            35.0,
+        )
+        self.assertEqual(
+            config["traffic"]["startup_corridor_length_m"],
+            150.0,
+        )
+        self.assertGreaterEqual(
+            config["traffic"]["startup_corridor_radius_m"],
+            10.0,
+        )
+        self.assertLess(
+            config["traffic"]["startup_corridor_length_m"],
+            min(
+                event["anchor_progress_m"]
+                for event in config["special_events"]
+            ),
+        )
+        for event in config["special_events"]:
+            self.assertGreaterEqual(len(event["variants"]), 2)
+        self.assertEqual(config["weather"]["preset"], "cloudy-evening")
+>       self.assertLessEqual(
+            config["weather"]["sun_altitude_angle"],
+            10.0,
+        )
+E       AssertionError: 15.0 not less than or equal to 10.0
+
+experiment/CARLA/tests/test_scene2_town05.py:560: AssertionError
+_______________ test_all_formal_tasks_have_source_bound_profiles _______________
+
+    def test_all_formal_tasks_have_source_bound_profiles():
+        for scene, count in (("scene_1",15),("scene_2",15),("scene_3",8)):
+            catalog=load_catalog(scene)
+            assert len(catalog.tasks)==count
+>           assert build_plan(catalog,'all')['missing_oracle_profiles']==[]
+E           AssertionError: assert ['c01_depart_...keep_30', ...] == []
+E             
+E             Left contains 8 more items, first extra item: 'c01_depart_30'
+E             Use -v to get more diff
+
+experiment/CARLA/tests/test_scene3_profile_bindings.py:25: AssertionError
+___ Town05Scene3ContractTests.test_config_uses_official_map_and_exact_six_km ___
+
+self = <experiment.CARLA.tests.test_scene3_town05_rebuild.Town05Scene3ContractTests testMethod=test_config_uses_official_map_and_exact_six_km>
+
+    def test_config_uses_official_map_and_exact_six_km(self):
+>       config = runner.load_runtime_config(CONFIG)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_scene3_town05_rebuild.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+_____ Town05Scene3ContractTests.test_preview_validation_runs_without_carla _____
+
+self = <experiment.CARLA.tests.test_scene3_town05_rebuild.Town05Scene3ContractTests testMethod=test_preview_validation_runs_without_carla>
+
+    def test_preview_validation_runs_without_carla(self):
+        result = preview.main(
+            [
+                "--validate-only",
+                "--no-ground-truth",
+                "--no-strict-completion",
+            ]
+        )
+>       self.assertEqual(result, 0)
+E       AssertionError: 1 != 0
+
+experiment/CARLA/tests/test_scene3_town05_rebuild.py:211: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{
+  "preview": "Town05_Opt Scene 3 complete 6 km",
+  "four_view_output": "/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/outputs/scene3_town05_preview/rgb",
+  "h264_output": "/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/outputs/scene3_town05_preview/scene3_town05_complete_preview.mp4",
+  "strict_completion": false
+}
+----------------------------- Captured stderr call -----------------------------
+ERROR: runtime config traffic.private_vehicle_count must be 16
+_______ Town05Scene3ContractTests.test_voice_and_competition_thresholds ________
+
+self = <experiment.CARLA.tests.test_scene3_town05_rebuild.Town05Scene3ContractTests testMethod=test_voice_and_competition_thresholds>
+
+    def test_voice_and_competition_thresholds(self):
+>       config = runner.load_runtime_config(CONFIG)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_scene3_town05_rebuild.py:153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/root/autodl-tmp/worktrees/closed-loop-recovery-20260927/experiment/CARLA/configs/scene_3_emergency_6km_runtime.json')
+event_variant = 'baseline', seed = 20260729
+
+    def load_runtime_config(
+        path: Path,
+        *,
+        event_variant: str = "baseline",
+        seed: int = 20260729,
+    ) -> dict[str, Any]:
+        try:
+            data = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except OSError as error:
+            raise ValueError(
+                f"cannot read runtime config: {path}"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                "runtime config is not valid JSON: "
+                f"{error}"
+            ) from error
+    
+        if not isinstance(data, dict):
+            raise ValueError(
+                "runtime config must be a JSON object"
+            )
+        if (
+            data.get("schema_version")
+            != "emergency_response_town05_runtime/v2"
+        ):
+            raise ValueError(
+                "unsupported runtime config schema"
+            )
+        data = apply_event_variant(data, event_variant, seed=seed)
+    
+        map_config = data.get("map")
+        if not isinstance(map_config, dict):
+            raise ValueError(
+                "runtime config map must be an object"
+            )
+        expected_map_values = {
+            "name": MAP_NAME,
+            "asset_path": MAP_ASSET_PATH,
+            "official_carla_asset": True,
+            "target_length_m": 6000.0,
+            "finish_progress_m": 6000.0,
+        }
+        for key, expected in expected_map_values.items():
+            if map_config.get(key) != expected:
+                raise ValueError(
+                    f"runtime config map.{key} must be "
+                    f"{expected!r}"
+                )
+    
+        route_config = map_config.get("route")
+        if not isinstance(route_config, dict):
+            raise ValueError("runtime config map.route must be an object")
+        if float(route_config.get("target_length_m", 0.0)) != 6000.0:
+            raise ValueError("Town05 Scene 3 route must be exactly 6 km")
+        for key in ("start_spawn_index", "turnaround_spawn_index"):
+            value = route_config.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"runtime config map.route.{key} is invalid")
+    
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValueError(
+                "runtime config events must be an array"
+            )
+        if len(events) != 7:
+            raise ValueError(
+                "runtime config must declare 7 events"
+            )
+    
+        event_ids: set[str] = set()
+        previous_distance = -math.inf
+        for index, event in enumerate(events, start=1):
+            if not isinstance(event, dict):
+                raise ValueError(
+                    f"event {index} must be an object"
+                )
+            event_id = event.get("id")
+            if (
+                not isinstance(event_id, str)
+                or not event_id
+                or event_id in event_ids
+            ):
+                raise ValueError(
+                    f"event {index} has an invalid or "
+                    "duplicate id"
+                )
+            event_ids.add(event_id)
+            if event.get("order") != index:
+                raise ValueError(
+                    f"event {event_id} order must be "
+                    f"{index}"
+                )
+            for key in (
+                "distance_m",
+                "activate_at_m",
+                "resolve_after_m",
+            ):
+                value = event.get(key)
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(
+                        value,
+                        (int, float),
+                    )
+                ):
+                    raise ValueError(
+                        f"event {event_id}.{key} must "
+                        "be numeric"
+                    )
+            distance = float(event["distance_m"])
+            if distance <= previous_distance:
+                raise ValueError(
+                    "event distances must be strictly "
+                    "increasing"
+                )
+            if not (
+                0.0
+                <= float(event["activate_at_m"])
+                < distance
+                < float(event["resolve_after_m"])
+                <= float(map_config["target_length_m"])
+            ):
+                raise ValueError(
+                    f"event {event_id} has an invalid "
+                    "activation or resolution window"
+                )
+            safety = event.get("safety")
+            if (
+                not isinstance(safety, dict)
+                or safety.get("recoverable") is not True
+            ):
+                raise ValueError(
+                    f"event {event_id} must be "
+                    "recoverable"
+                )
+            previous_distance = distance
+    
+        validate_event_ground_truth_contracts(events)
+    
+        traffic = data.get("traffic")
+        expected_counts = {
+            "private_vehicle_count": 16,
+            "work_vehicle_count": 2,
+            "maintenance_vehicle_count": 1,
+            "worker_count": 2,
+        }
+        if not isinstance(traffic, dict):
+            raise ValueError(
+                "runtime config traffic must be an object"
+            )
+        for key, expected in expected_counts.items():
+            if traffic.get(key) != expected:
+>               raise ValueError(
+                    f"runtime config traffic.{key} "
+                    f"must be {expected}"
+                )
+E               ValueError: runtime config traffic.private_vehicle_count must be 16
+
+experiment/CARLA/run_emergency_response_6km.py:1163: ValueError
+____ test_assessment_binding_keeps_thresholds_and_rejects_semantic_changes _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-203/test_assessment_binding_keeps_0')
+
+    def test_assessment_binding_keeps_thresholds_and_rejects_semantic_changes(tmp_path):
+        import hashlib
+        import json
+        from types import SimpleNamespace
+        from benchmark.catalog import CONFIG_ROOT, ConfigError, load_catalog, load_episode_catalog
+        from benchmark.task_oracle import load_profile
+        original = load_catalog('scene_1')
+        source = json.loads((CONFIG_ROOT/original.source_file).read_text())
+        anchors = [[0, 0], [1300, 550], [1450, 700], [3085, 1640], [5000, 5000]]
+        source['commands'] = remap_commands(source['commands'], anchors)
+        source['route'].update(start_spawn_index=40, strict_start_spawn=True, spawn_backoff_m=0.)
+        source['geometry_binding'] = dict(source_sha256=original.source_sha256,
+            map_sha256=hashlib.sha256(b'map').hexdigest(), distance_anchors=anchors)
+        path = tmp_path/'bound.json'
+        path.write_text(json.dumps(source))
+        world_map = SimpleNamespace(to_opendrive=lambda:'map')
+        bound = load_episode_catalog('scene_1', path, world_map)
+        assert len(bound.tasks) == len(original.tasks) == 15
+        for task in bound.tasks:
+            profile = load_profile(bound, task)
+            previous = load_profile(original, original.select(task.task_id)[0])
+>           assert profile is not None
+E           assert None is not None
+
+experiment/CARLA/tests/test_task_geometry_binding.py:55: AssertionError
+_________ test_speed_profiles_match_source_speed_and_next_announcement _________
+
+    def test_speed_profiles_match_source_speed_and_next_announcement():
+        from benchmark.task_oracle import load_profile
+        catalog=load_catalog('scene_1')
+        seen=[]
+        for task in catalog.tasks:
+            profile=load_profile(catalog,task)
+            if profile is None or profile['steps'][0]['kind']!='speed':
+                continue
+            step=profile['steps'][0]
+            assert step['target_kmh']==task.source_command['target_speed_kmh']
+            later=[t.announce_m for t in catalog.tasks if t.announce_m>task.activate_m]
+>           assert profile['end_route_s_m']==min(later)
+E           assert 1220 == 1050.0
+E            +  where 1050.0 = min([1050.0, 1260.0, 1420.0, 1800.0, 2600.0, 2900.0, ...])
+
+experiment/CARLA/tests/test_task_oracle.py:205: AssertionError
+____________ test_isolated_followup_plan_exposes_missing_prior_task ____________
+
+    def test_isolated_followup_plan_exposes_missing_prior_task():
+>       plan=build_plan(load_catalog('scene_1'),'c10_keep_35')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_task_oracle.py:234: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+experiment/CARLA/benchmark/planning.py:12: in build_plan
+    tasks = catalog.select(selector)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+selector = 'c10_keep_35'
+
+    def select(self, selector: str) -> tuple[Task, ...]:
+        if selector == 'all':
+            return self.tasks
+        for task in self.tasks:
+            if selector == task.task_id or selector == str(task.order):
+                return (task,)
+>       raise ConfigError(f'unknown task {selector!r} in {self.scene_id}')
+E       benchmark.catalog.ConfigError: unknown task 'c10_keep_35' in scene_1
+
+experiment/CARLA/benchmark/catalog.py:85: ConfigError
+________________ test_registered_profiles_match_current_catalog ________________
+
+    def test_registered_profiles_match_current_catalog():
+        from benchmark.catalog import CONFIG_ROOT
+        for path in (CONFIG_ROOT/'benchmark').glob('*.json'):
+            profile=json.loads(path.read_text(encoding='utf-8'))
+            TaskOracle(profile)
+            catalog=load_catalog(profile['scene_id'])
+            assert profile['source_sha256']==catalog.source_sha256
+>           assert catalog.select(profile['task_id'])[0].activate_m==profile['activate_m']
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+experiment/CARLA/tests/test_task_oracle.py:481: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = Catalog(schema_version='benchmark_catalog/1.0', scene_id='scene_1', source_scene_id='basic_voice_urban_5km', source_fi... and continue to the destination.', 'structured_command': {'action': 'KEEP_LANE'}})), events=(), geometry_binding=None)
+selector = 'c01_depart_45'
+
+    def select(self, selector: str) -> tuple[Task, ...]:
+        if selector == 'all':
+            return self.tasks
+        for task in self.tasks:
+            if selector == task.task_id or selector == str(task.order):
+                return (task,)
+>       raise ConfigError(f'unknown task {selector!r} in {self.scene_id}')
+E       benchmark.catalog.ConfigError: unknown task 'c01_depart_45' in scene_1
+
+experiment/CARLA/benchmark/catalog.py:85: ConfigError
+_______________ test_plan_binds_only_matching_explicit_profiles ________________
+
+    def test_plan_binds_only_matching_explicit_profiles():
+        plan=build_plan(load_catalog('scene_1'),'1')
+>       assert list(plan['oracle_profiles'])==['c01_depart_45']
+E       AssertionError: assert [] == ['c01_depart_45']
+E         
+E         Right contains one more item: 'c01_depart_45'
+E         Use -v to get more diff
+
+experiment/CARLA/tests/test_task_oracle.py:511: AssertionError
+=========================== short test summary info ============================
+FAILED experiment/CARLA/tests/test_benchmark_capabilities.py::test_plan_describes_existing_adapter_without_claiming_readiness
+FAILED experiment/CARLA/tests/test_benchmark_catalog.py::test_scene1_turn_schedule_and_profile_bindings
+FAILED experiment/CARLA/tests/test_benchmark_catalog.py::test_scene1_uses_validated_background_traffic_without_preview_commands
+FAILED experiment/CARLA/tests/test_bus_passenger_manifest.py::test_all_existing_scene2_profiles_remain_bound_after_configuration_update
+FAILED experiment/CARLA/tests/test_command_semantics_matrix.py::test_return_to_original_lane_contract_points_right_and_waits
+FAILED experiment/CARLA/tests/test_deferred_event_staging.py::test_future_actor_not_staged_on_earlier_pass_and_released_normally
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRuntimeConfigTests::test_checked_in_config_is_valid
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRuntimeConfigTests::test_config_declares_exact_actor_counts
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRuntimeConfigTests::test_config_requires_four_rgb_views
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRuntimeConfigTests::test_rejects_duplicate_event_id
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRuntimeConfigTests::test_rejects_unrecoverable_event
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRuntimeConfigTests::test_three_deterministic_variants_cover_every_event
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRoadContractTests::test_behavior_agent_plan_preserves_junction_topology
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRoadContractTests::test_crossing_worker_does_not_share_cone_position
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRoadContractTests::test_fixture_route_rejects_vla_controller
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRoadContractTests::test_fixture_route_uses_open_lane_only_during_work_zone
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyRoadContractTests::test_physical_road_has_terminal_runoff
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyEventSchedulerTests::test_all_seven_events_activate_and_resolve
+FAILED experiment/CARLA/tests/test_emergency_response_6km.py::EmergencyActorRuntimeTests::test_cut_in_actor_is_staged_before_trigger
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_manifest_records_route_and_bound_profile_identities
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_formal_traffic_uses_snapshot_and_excludes_walkers
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_unconfigured_traffic_provider_is_not_empty_traffic_evidence
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_prepares_followup_only_from_independent_success[SUCCESS]
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_prepares_followup_only_from_independent_success[RUNNING]
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_prepares_followup_only_from_independent_success[FAILURE]
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_destination_binds_actual_end_and_rejects_short_route[200-SUCCESS]
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_destination_binds_actual_end_and_rejects_short_route[5000-SCENE_INVALID]
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_segment_uses_explicit_origin_and_does_not_replay_earlier_tasks
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_replay_preserves_native_location_type_for_map_calls
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_formal_episode_does_not_hide_unsupported_or_unreached_tasks
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_episode_safety_can_fail_after_task_success
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_duplicate_frame_fails_and_teardown_is_available
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_formal_role_task_uses_exact_source_crosswalk
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_missing_role_at_activation_is_scene_invalid_not_unsupported
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_full_episode_diagnostic_preserves_original_results
+FAILED experiment/CARLA/tests/test_episode_assessment.py::test_map_geometry_is_captured_and_checked_before_replay
+FAILED experiment/CARLA/tests/test_event_dependencies.py::test_retained_cyclist_available_to_followup_assessment
+FAILED experiment/CARLA/tests/test_extended_criteria.py::test_scene2_new_profiles_match_current_source
+FAILED experiment/CARLA/tests/test_fixture_weather.py::test_registered_source_weather_preserved[scene_2-5-0]
+FAILED experiment/CARLA/tests/test_junction_sequence.py::test_new_profiles_bind_to_source
+FAILED experiment/CARLA/tests/test_role_journal.py::test_scene3_static_roles_use_their_actual_configured_route_anchor
+FAILED experiment/CARLA/tests/test_scene2_first_task_contract.py::test_all_scene2_profiles_remain_bound_to_current_config
+FAILED experiment/CARLA/tests/test_scene2_town05.py::Scene2Town05Tests::test_runtime_contract_has_required_scope
+FAILED experiment/CARLA/tests/test_scene3_profile_bindings.py::test_all_formal_tasks_have_source_bound_profiles
+FAILED experiment/CARLA/tests/test_scene3_town05_rebuild.py::Town05Scene3ContractTests::test_config_uses_official_map_and_exact_six_km
+FAILED experiment/CARLA/tests/test_scene3_town05_rebuild.py::Town05Scene3ContractTests::test_preview_validation_runs_without_carla
+FAILED experiment/CARLA/tests/test_scene3_town05_rebuild.py::Town05Scene3ContractTests::test_voice_and_competition_thresholds
+FAILED experiment/CARLA/tests/test_task_geometry_binding.py::test_assessment_binding_keeps_thresholds_and_rejects_semantic_changes
+FAILED experiment/CARLA/tests/test_task_oracle.py::test_speed_profiles_match_source_speed_and_next_announcement
+FAILED experiment/CARLA/tests/test_task_oracle.py::test_isolated_followup_plan_exposes_missing_prior_task
+FAILED experiment/CARLA/tests/test_task_oracle.py::test_registered_profiles_match_current_catalog
+FAILED experiment/CARLA/tests/test_task_oracle.py::test_plan_binds_only_matching_explicit_profiles
+52 failed, 1574 passed, 1 xfailed, 207 subtests passed in 37.18s

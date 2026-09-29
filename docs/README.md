@@ -23,3 +23,6 @@
 - [语音模块](../automatic_speech_recognition/README.md)
 
 基础赛道提交报告与独立调研材料在 `main` 或 Git 历史查阅，不作为新版挑战模型的测试成绩。已有题目、总体计划和任务规划 PDF 保持原位置。
+# 0929 初审材料入口
+
+[材料清单与缺项](../submission/initial_review_20260929/README.md) · [评分与测量口径](../submission/initial_review_20260929/SCORING.md) · [分支整合与回归](../submission/initial_review_20260929/INTEGRATION.md)。地图采用刘旭的新配置，旧地图测量不作为当前地图验收结果。

@@ -1,0 +1,33 @@
+{
+  "code_revision": "6d0b0bde78ec8cb8344a2117ae0ee66f94cb7660",
+  "python": "3.12.13",
+  "platform": "Linux-5.15.0-94-generic-x86_64-with-glibc2.35",
+  "scope": "unit_and_interface_regression_not_official_deployment_or_closed_loop",
+  "scene_configs": {
+    "basic_voice_urban_5km.json": "0f786ffb5a1ce2a33de7de007121cd2835ea3f0792c4473c1992ba4188732197",
+    "scene_2_town05_runtime.json": "7de7a38e6c00e4e0ef0b5ec3921686de629cf3f0784f0b7cba7fbe0beda8166a",
+    "scene_3_emergency_6km_runtime.json": "e5c9e8816dde8911f56914f441e570c5b7b0eb7a81682f0e7f289d62f2392294"
+  },
+  "logs": {
+    "clean_final_integration.log": {
+      "sha256": "d2b94d58743e64c9e70536e838899a2585cfcb25615b3062ef97833d4d4a9d64",
+      "summary": "1619 passed, 1 xfailed, 207 subtests passed in 42.67s"
+    },
+    "integration_new_maps.log": {
+      "sha256": "b046c8634a9e816bc0e79947027203d56fd5702f05724adebb1ce52b824b24bc",
+      "summary": "27 failed, 1599 passed, 1 xfailed, 207 subtests passed in 34.63s"
+    },
+    "integration_new_maps_round2.log": {
+      "sha256": "a2593c2a34b182ebe859ae145868358b8ca2e3f797ebbde1d07a5c7636a0b9cb",
+      "summary": "1626 passed, 1 xfailed, 207 subtests passed in 41.53s"
+    },
+    "integration_pytest.log": {
+      "sha256": "765f3a9cf66ddd2911f3ed6cd053bed67b08d2cb80ff8a9eff51364744e88ad2",
+      "summary": "52 failed, 1574 passed, 1 xfailed, 207 subtests passed in 37.18s"
+    },
+    "integration_pytest_round2.log": {
+      "sha256": "a5f9e6f9cfb810931f72e2584a6baf1487c26fbf16aa424030b0ee8a6e417f03",
+      "summary": "7 failed, 1619 passed, 1 xfailed, 207 subtests passed in 41.69s"
+    }
+  }
+}
