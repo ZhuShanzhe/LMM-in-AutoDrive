@@ -77,10 +77,10 @@ def test_missing_direction_is_not_silently_resolved():
     parsed = fsm.parse(dict(id="amb1", text="Switch to another lane."))
     assert parsed.requested_lane_direction is None
 
-@pytest.mark.xfail(
-    reason="规则解析器把复合顺序/指代折叠为首个关键词；交 朱善哲 定位",
-    strict=False,
-)
-def test_compound_order_reference_is_not_collapsed():
-    parsed = GenericInstructionFSM().parse(dict(text="先右转，然后直行通过路口，再次右转。"))
-    assert parsed.semantic_goal == ("TURN_RIGHT", "PROCEED_STRAIGHT", "TURN_RIGHT")
+def test_compound_without_parser_is_not_silently_reduced_to_first_action():
+    fsm = GenericInstructionFSM()
+    command = dict(text="先右转，然后直行通过路口，再次右转。")
+    parsed = fsm.parse(command)
+    assert parsed.parse_status == 'NEEDS_CLARIFICATION'
+    assert parsed.parsed_intent == 'STOP'
+    assert fsm.driving_intent(command) is None

@@ -1464,6 +1464,9 @@ class UniversalVLAController:
         if self.driving_plan is not None:
             final_decision,plan_blocked=self.driving_plan.enforce_execution(final_decision,canonical)
             if plan_blocked:sequence_accepted=False
+        final_decision, parse_blocked = self.fsm.enforce_parse_status(final_decision, parsed)
+        if parse_blocked:
+            sequence_accepted = False
         self.supervisor.record_decision(
             frame=frame, risk_level=str(risk.get('risk_level','high')),
             action=str(final_decision['action']),

@@ -189,6 +189,23 @@ class GenericInstructionFSM:
             for item in command.get("semantic_goal", [])
             if isinstance(item, str)
         )
+        if not isinstance(command.get('driving_intent'), Mapping) and self._requires_plan(source_text):
+            result = self._parser_result(source_text, command) if use_parser_model and self.parser is not None else {}
+            intent = result.get('intent')
+            steps = intent.get('steps') or [] if isinstance(intent, Mapping) else []
+            separators = re.findall(r'然后|随后|再次|接着|\bthen\b', source_text, re.IGNORECASE)
+            valid = result.get('status') == 'VALID' and self._ordered_steps(steps)
+            valid = valid and len(steps) >= max(2, len(separators) + 1)
+            if not valid:
+                # Never leave a partial cached plan available to the executor.
+                self._parse_cache.pop(self._parse_key(command, source_text), None)
+                return ParsedInstruction(parsed_intent='STOP', target_speed_kmh=0.,
+                    source_text=source_text, parse_status='NEEDS_CLARIFICATION',
+                    parse_source='compound_plan_unresolved', confidence=0.)
+            parsed = self._merge_parser_result(ParsedInstruction(), result)
+            parsed.source_text = source_text
+            parsed.semantic_goal = tuple(self._step_goal(step) for step in steps)
+            return parsed
         goal_intent, goal_direction, goal_speed = _intent_from_goals(
             semantic_goal
         )
@@ -232,6 +249,70 @@ class GenericInstructionFSM:
         parsed.source_text = source_text
         parsed.semantic_goal = semantic_goal
         return parsed
+
+    @staticmethod
+    def _parse_key(command, text):
+        return (str(command.get('id') or ''), text, str(command.get('parser_text_en') or ''))
+
+    @staticmethod
+    def _requires_plan(text: str) -> bool:
+        return bool(re.search(
+            r'然后|随后|再次|接着|再(?:向|左转|右转|直行|停车)|先.+(?:后|再)|'
+            r'\b(?:then|after that|and then)\b|'
+            r'(?:slow down|accelerate|turn|overtake|change).+\b(?:and|before|after)\b',
+            text, re.IGNORECASE))
+
+    @staticmethod
+    def _step_goal(step):
+        action = str(step.get('action', '')).upper()
+        parameters = step.get('parameters') or {}
+        if action in {'TURN', 'CHANGE_LANE'}:
+            return action + '_' + str(parameters.get('direction', '')).upper()
+        if action == 'PROCEED' and (parameters.get('condition') == 'STRAIGHT_THROUGH_JUNCTION'
+                                    or parameters.get('direction') == 'STRAIGHT'):
+            return 'PROCEED_STRAIGHT'
+        return action
+
+    @staticmethod
+    def _ordered_steps(steps) -> bool:
+        if not isinstance(steps, list) or len(steps) < 2:
+            return False
+        seen = set()
+        previous = None
+        for step in steps:
+            if not isinstance(step, Mapping):
+                return False
+            identity = step.get('step_id')
+            dependencies = step.get('depends_on', [])
+            trigger = step.get('trigger') or {}
+            parameters = step.get('parameters') or {}
+            if not isinstance(identity, str) or not identity or identity in seen:
+                return False
+            if not isinstance(dependencies, list) or not all(isinstance(d, str) and d in seen for d in dependencies):
+                return False
+            if not isinstance(parameters, Mapping) or not isinstance(trigger, Mapping):
+                return False
+            if previous is not None and previous not in dependencies:
+                return False
+            if trigger.get('type') == 'AFTER_STEP' and trigger.get('step_id') not in dependencies:
+                return False
+            if not isinstance(step.get('action'), str):
+                return False
+            if step.get('action') in {'TURN', 'CHANGE_LANE'} and parameters.get('direction') not in {'LEFT', 'RIGHT'}:
+                return False
+            if not step.get('action'):
+                return False
+            seen.add(identity)
+            previous = identity
+        return True
+
+    @staticmethod
+    def enforce_parse_status(decision, parsed):
+        if parsed.parse_status == 'VALID':
+            return decision, False
+        return dict(action='stop', target_speed_kmh=0.,
+                    reason='instruction_requires_clarification',
+                    parse_status=parsed.parse_status), True
 
     @staticmethod
     def _merge_structured_command(
@@ -402,16 +483,18 @@ class GenericInstructionFSM:
         """Retain a supplied plan or a multi-step result already parsed this frame."""
         if isinstance(command.get('driving_intent'),Mapping):
             return copy.deepcopy(command['driving_intent'])
-        text=str(command.get('text') or command.get('source_text') or '')
-        cached=self._parse_cache.get((str(command.get('id') or ''),text)) or {}
+        text=str(command.get('text') or command.get('source_text') or command.get('voice_text')
+                 or command.get('normalized_text') or command.get('parser_text_en') or '')
+        cached=self._parse_cache.get(self._parse_key(command, text)) or {}
         intent=cached.get('intent') or {}
-        if len(intent.get('steps') or [])<2:return None
+        if cached.get('status') != 'VALID' or len(intent.get('steps') or [])<2:return None
         result=copy.deepcopy(cached);result.pop('intent',None)
+        normalized_text = result.pop('_normalized_text', text)
         result.setdefault('source','structured_command_parser')
         result['source_kind']='TEXT_MODEL_PARSE'
         result['model_prediction']=True
         return dict(schema_version='1.2.0',request_id=str(command.get('id') or 'plan-'+hashlib.sha256(text.encode()).hexdigest()[:16]),
-            input=dict(modality='TEXT',language='en-US',raw_text=text,normalized_text=text),
+            input=dict(modality='TEXT',language='zh-CN' if re.search(r'[\u4e00-\u9fff]',text) else 'en-US',raw_text=text,normalized_text=normalized_text),
             intent=copy.deepcopy(intent),parse_result=result)
 
     def parsed_step(self,step,source_text):
@@ -493,13 +576,14 @@ class GenericInstructionFSM:
         source_text: str,
         command: Mapping[str, Any],
     ) -> dict[str, Any]:
-        key = (str(command.get("id") or ""), source_text)
+        key = self._parse_key(command, source_text)
         if key in self._parse_cache:
             self._parse_cache.move_to_end(key)
             return self._parse_cache[key]
         try:
+            model_text = command.get('parser_text_en') or source_text
             result = self.parser.parse_text(
-                source_text,
+                model_text,
                 request_id=f"fsm-{command.get('id') or source_text}",
                 modality="TEXT",
                 source_text=source_text,
@@ -508,7 +592,10 @@ class GenericInstructionFSM:
         except Exception:
             # Transient inference failure must not poison subsequent retries.
             return {}
+        if not isinstance(result, Mapping) or not isinstance(result.get('parse_result'), Mapping):
+            return {}
         parse_result = dict(result.get("parse_result") or {})
+        parse_result['_normalized_text'] = model_text
         # DrivingIntent keeps intent beside parse_result, not inside it.
         if isinstance(result.get("intent"),Mapping):
             parse_result["intent"] = result["intent"]
