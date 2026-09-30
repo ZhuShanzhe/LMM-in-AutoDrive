@@ -1,0 +1,1441 @@
+{
+  "run": "scene3_local_10hz_video_001",
+  "video_duration_s": 376.3,
+  "video_frames": 7526,
+  "valid_decisions": 3743,
+  "counts": {
+    "errors": {
+      "no synchronized RGB/LiDAR frame is available": 1
+    },
+    "final_reason": {
+      "vla_accepted_phase-recovery-epoch_06": 1631,
+      "generic_text_envelope": 185,
+      "temporal_risk_confirmation_hold_crawl": 6,
+      "stationary_high_risk_radar_guarded_crawl": 1843,
+      "unconfirmed_stop_crawl_floor": 52,
+      "stationary_high_risk_liveness": 26
+    },
+    "final_action": {
+      "accelerate": 591,
+      "stop": 111,
+      "emergency_brake": 171,
+      "decelerate": 2011,
+      "keep_lane": 859
+    },
+    "risk": {
+      "low": 1631,
+      "high": 2046,
+      "medium": 66
+    },
+    "blocked_reason": {
+      "vla_overridden_by_emergency_risk": 171,
+      "vla_overridden_by_deceleration_risk": 14
+    },
+    "raw_action": {
+      "accelerate": 2714,
+      "stop": 40,
+      "keep_lane": 668,
+      "decelerate": 321
+    },
+    "sensor_lag": {
+      "1": 1,
+      "3": 1,
+      "2": 3739,
+      "0": 2
+    },
+    "input_mode": {
+      "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment": 3743
+    },
+    "signal": {
+      "no_route_associated_signal": 1538,
+      "wait_for_observed_green": 1770,
+      "observed_green_release": 435
+    },
+    "diagnostic": {
+      "green_high_risk_zero_target": 375
+    }
+  },
+  "decisions_without_explicit_false_truth_access": 0,
+  "full_decision_latency_ms": {
+    "mean": 36.7577678332888,
+    "p50": 35.566,
+    "p95": 46.214,
+    "maximum": 210.983
+  },
+  "max_observed_speed_kmh": 31.661333562744694,
+  "first_by_reason": {
+    "vla_accepted_phase-recovery-epoch_06": {
+      "simulation_frame": 81377,
+      "video_time_s": 0,
+      "route_s_m": 0.0,
+      "source_text": "Continue driving safely in the current lane.",
+      "sensor_frame": 81376,
+      "sensor_frame_lag": 1,
+      "policy_truth_access": false,
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "full_decision_latency_ms": 115.13,
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 81377,
+        "previous_decision_frame": -1000000000000,
+        "speed_kmh": 3.5280002832412722,
+        "acceleration_xyz_mps2": [
+          0.0,
+          0.0,
+          -9.800002098083496
+        ],
+        "throttle": 0.0,
+        "brake": 0.5302583575248718
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-81377",
+        "frame_id": "carla_81377",
+        "action": "accelerate",
+        "target_speed_kmh": 4.106291,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.902162,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 108.9487
+      },
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-81377",
+        "frame_id": "carla_81377",
+        "decision_status": "READY",
+        "action": "accelerate",
+        "target_speed_kmh": 4.052263,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "vla_accepted_phase-recovery-epoch_06",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": [],
+        "longitudinal_control_mode": "ABSOLUTE_SPEED",
+        "allow_positive_acceleration": true,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 1.4562849402427673,
+        "sequence_valid_until_s": 3.700714263319969,
+        "control_valid_until_s": 3.700714263319969,
+        "command_id": "Continue driving safely in the current lane."
+      },
+      "raw_network_output": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-81377",
+        "frame_id": "carla_81377",
+        "action": "accelerate",
+        "target_speed_kmh": 4.1062912940979,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.902162,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 108.9487,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 1.6063642501831055
+      },
+      "canonical_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-81377",
+        "frame_id": "carla_81377",
+        "decision_status": "READY",
+        "action": "keep_lane",
+        "target_speed_kmh": 32.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "generic_text_envelope",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": []
+      },
+      "risk": {
+        "risk_level": "low",
+        "source": "event_memory_vla",
+        "reason_codes": [],
+        "probabilities": {
+          "low": 0.999627,
+          "medium": 0.000355,
+          "high": 1.9e-05
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "keep_lane",
+            "target_speed_kmh": 21.27809715270996,
+            "risk_probabilities": [
+              0.02315777726471424,
+              0.8121449947357178,
+              0.16469727456569672
+            ]
+          },
+          "effective": {
+            "action": "accelerate",
+            "target_speed_kmh": 4.1062912940979,
+            "risk_probabilities": [
+              0.999626636505127,
+              0.00035454321186989546,
+              1.8860973796108738e-05
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        }
+      },
+      "target_lane_contract": null,
+      "traffic_control_contract": {
+        "status": "no_route_associated_signal",
+        "active": false,
+        "changed": false
+      },
+      "signal_observation": {
+        "state": "UNKNOWN",
+        "source": "rgb_static_opendrive"
+      },
+      "longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "ABSOLUTE_SPEED",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 4.052263,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 4.052263,
+        "reference_ego_speed_kmh": 3.5280002832412722,
+        "speed_clamped": false,
+        "risk_constraint_active": false,
+        "policy_safety_credit": false
+      }
+    },
+    "generic_text_envelope": {
+      "simulation_frame": 81409,
+      "video_time_s": 1.55,
+      "route_s_m": 0.0,
+      "source_text": "Continue driving safely in the current lane.",
+      "sensor_frame": 81409,
+      "sensor_frame_lag": 0,
+      "policy_truth_access": false,
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "full_decision_latency_ms": 21.112,
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 81409,
+        "previous_decision_frame": 81407,
+        "speed_kmh": 5.588011253073624,
+        "acceleration_xyz_mps2": [
+          -3.0207180976867676,
+          0.007926644757390022,
+          0.024818796664476395
+        ],
+        "throttle": 0.7136988043785095,
+        "brake": 0.0
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-81409",
+        "frame_id": "carla_81409",
+        "action": "keep_lane",
+        "target_speed_kmh": 5.574161,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.911037,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 14.5054
+      },
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-81409",
+        "frame_id": "carla_81409",
+        "decision_status": "READY",
+        "action": "emergency_brake",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": true,
+        "reason": "generic_text_envelope",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "high",
+        "risk_reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "blocked_reason_codes": [
+          "vla_overridden_by_emergency_risk"
+        ],
+        "longitudinal_control_mode": "STOP",
+        "allow_positive_acceleration": false,
+        "control_valid_until_s": 5.300714287161827,
+        "command_id": "Continue driving safely in the current lane."
+      },
+      "raw_network_output": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-81409",
+        "frame_id": "carla_81409",
+        "action": "keep_lane",
+        "target_speed_kmh": 5.574160575866699,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.911037,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 14.5054,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": -0.03847360610961914
+      },
+      "canonical_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-81409",
+        "frame_id": "carla_81409",
+        "decision_status": "READY",
+        "action": "emergency_brake",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": true,
+        "reason": "generic_text_envelope",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "high",
+        "risk_reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "blocked_reason_codes": []
+      },
+      "risk": {
+        "risk_level": "high",
+        "source": "event_memory_vla",
+        "reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "probabilities": {
+          "low": 0.000194,
+          "medium": 0.008025,
+          "high": 0.991781
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "keep_lane",
+            "target_speed_kmh": 21.262392044067383,
+            "risk_probabilities": [
+              0.6460237503051758,
+              0.08314436674118042,
+              0.2708318829536438
+            ]
+          },
+          "effective": {
+            "action": "keep_lane",
+            "target_speed_kmh": 5.574160575866699,
+            "risk_probabilities": [
+              0.00019436501315794885,
+              0.00802490022033453,
+              0.991780698299408
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        }
+      },
+      "target_lane_contract": null,
+      "traffic_control_contract": {
+        "status": "no_route_associated_signal",
+        "active": false,
+        "changed": false
+      },
+      "signal_observation": {
+        "state": "UNKNOWN",
+        "source": "rgb_static_opendrive"
+      },
+      "longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "STOP",
+        "input_action": "emergency_brake",
+        "input_target_speed_kmh": 0.0,
+        "issued_action": "emergency_brake",
+        "issued_target_speed_kmh": 0.0,
+        "reference_ego_speed_kmh": 5.588011253073624,
+        "speed_clamped": false,
+        "risk_constraint_active": true,
+        "policy_safety_credit": false
+      }
+    },
+    "temporal_risk_confirmation_hold_crawl": {
+      "simulation_frame": 82469,
+      "video_time_s": 54.55,
+      "route_s_m": 51.771,
+      "source_text": "Continue driving safely in the current lane.",
+      "sensor_frame": 82467,
+      "sensor_frame_lag": 2,
+      "policy_truth_access": false,
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "full_decision_latency_ms": 33.224,
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 82469,
+        "previous_decision_frame": 82467,
+        "speed_kmh": 25.17898769637292,
+        "acceleration_xyz_mps2": [
+          -7.722597122192383,
+          -0.03371700644493103,
+          0.976492166519165
+        ],
+        "throttle": 0.6399999856948853,
+        "brake": 0.0
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-82469",
+        "frame_id": "carla_82469",
+        "action": "accelerate",
+        "target_speed_kmh": 26.258986,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.912472,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 17.0772
+      },
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-82469",
+        "frame_id": "carla_82469",
+        "decision_status": "READY",
+        "action": "decelerate",
+        "target_speed_kmh": 15.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "temporal_risk_confirmation_hold_crawl",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "high",
+        "risk_reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "blocked_reason_codes": [],
+        "longitudinal_control_mode": "RISK_SPEED_CAP",
+        "allow_positive_acceleration": false,
+        "control_valid_until_s": 58.30071507692337,
+        "command_id": "Continue driving safely in the current lane."
+      },
+      "raw_network_output": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-82469",
+        "frame_id": "carla_82469",
+        "action": "accelerate",
+        "target_speed_kmh": 26.25898551940918,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.912472,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 17.0772,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 3.000001907348633
+      },
+      "canonical_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-82469",
+        "frame_id": "carla_82469",
+        "decision_status": "READY",
+        "action": "emergency_brake",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": true,
+        "reason": "generic_text_envelope",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "high",
+        "risk_reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "blocked_reason_codes": []
+      },
+      "risk": {
+        "risk_level": "high",
+        "source": "event_memory_vla",
+        "reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "probabilities": {
+          "low": 0.356059,
+          "medium": 0.041216,
+          "high": 0.602725
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "keep_lane",
+            "target_speed_kmh": 20.273540496826172,
+            "risk_probabilities": [
+              0.772549033164978,
+              0.053722504526376724,
+              0.17372839152812958
+            ]
+          },
+          "effective": {
+            "action": "accelerate",
+            "target_speed_kmh": 26.25898551940918,
+            "risk_probabilities": [
+              0.3560587763786316,
+              0.04121619090437889,
+              0.6027250289916992
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        }
+      },
+      "target_lane_contract": null,
+      "traffic_control_contract": {
+        "status": "no_route_associated_signal",
+        "active": false,
+        "changed": false
+      },
+      "signal_observation": {
+        "state": "UNKNOWN",
+        "source": "rgb_static_opendrive"
+      },
+      "longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "RISK_SPEED_CAP",
+        "input_action": "decelerate",
+        "input_target_speed_kmh": 15.0,
+        "issued_action": "decelerate",
+        "issued_target_speed_kmh": 15.0,
+        "reference_ego_speed_kmh": 25.17898769637292,
+        "speed_clamped": false,
+        "risk_constraint_active": true,
+        "policy_safety_credit": false
+      }
+    },
+    "stationary_high_risk_radar_guarded_crawl": {
+      "simulation_frame": 84535,
+      "video_time_s": 157.85,
+      "route_s_m": 767.267,
+      "source_text": "Continue driving safely in the current lane.",
+      "sensor_frame": 84533,
+      "sensor_frame_lag": 2,
+      "policy_truth_access": false,
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "full_decision_latency_ms": 41.091,
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 84535,
+        "previous_decision_frame": 84533,
+        "speed_kmh": 0.0,
+        "acceleration_xyz_mps2": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "throttle": 0.0,
+        "brake": 1.0
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84535",
+        "frame_id": "carla_84535",
+        "action": "accelerate",
+        "target_speed_kmh": 1.039819,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.9235,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 16.2349
+      },
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84535",
+        "frame_id": "carla_84535",
+        "decision_status": "READY",
+        "action": "decelerate",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "stationary_high_risk_radar_guarded_crawl",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "high",
+        "risk_reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "blocked_reason_codes": [],
+        "longitudinal_control_mode": "RISK_SPEED_CAP",
+        "allow_positive_acceleration": false,
+        "control_valid_until_s": 161.60071661621333,
+        "command_id": "Continue driving safely in the current lane."
+      },
+      "raw_network_output": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84535",
+        "frame_id": "carla_84535",
+        "action": "accelerate",
+        "target_speed_kmh": 1.0398191213607788,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.9235,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 16.2349,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 2.8883864879608154
+      },
+      "canonical_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84535",
+        "frame_id": "carla_84535",
+        "decision_status": "READY",
+        "action": "emergency_brake",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": true,
+        "reason": "generic_text_envelope",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "high",
+        "risk_reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "blocked_reason_codes": []
+      },
+      "risk": {
+        "risk_level": "high",
+        "source": "event_memory_vla",
+        "reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "probabilities": {
+          "low": 0.0,
+          "medium": 1e-06,
+          "high": 0.999999
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "keep_lane",
+            "target_speed_kmh": 23.779691696166992,
+            "risk_probabilities": [
+              0.9681498408317566,
+              0.00393286906182766,
+              0.027917243540287018
+            ]
+          },
+          "effective": {
+            "action": "accelerate",
+            "target_speed_kmh": 1.0398191213607788,
+            "risk_probabilities": [
+              1.941995231291571e-09,
+              5.726281528950494e-07,
+              0.9999994039535522
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        }
+      },
+      "target_lane_contract": null,
+      "traffic_control_contract": {
+        "status": "wait_for_observed_green",
+        "active": true,
+        "changed": false
+      },
+      "signal_observation": {
+        "state": "RED",
+        "confidence": 0.9907846450805664,
+        "stop_distance_m": 49.89621113572823,
+        "source": "rgb_lamp_net_static_head",
+        "truth_state_access": false
+      },
+      "longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "RISK_SPEED_CAP",
+        "input_action": "decelerate",
+        "input_target_speed_kmh": 6.0,
+        "issued_action": "decelerate",
+        "issued_target_speed_kmh": 0.0,
+        "reference_ego_speed_kmh": 0.0,
+        "speed_clamped": true,
+        "risk_constraint_active": true,
+        "policy_safety_credit": false
+      }
+    },
+    "unconfirmed_stop_crawl_floor": {
+      "simulation_frame": 84583,
+      "video_time_s": 160.25,
+      "route_s_m": 767.267,
+      "source_text": "Continue driving safely in the current lane.",
+      "sensor_frame": 84581,
+      "sensor_frame_lag": 2,
+      "policy_truth_access": false,
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "full_decision_latency_ms": 34.274,
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 84583,
+        "previous_decision_frame": 84581,
+        "speed_kmh": 0.0,
+        "acceleration_xyz_mps2": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "throttle": 0.0,
+        "brake": 0.0
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84583",
+        "frame_id": "carla_84583",
+        "action": "accelerate",
+        "target_speed_kmh": 0.232016,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.885516,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 15.2701
+      },
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84583",
+        "frame_id": "carla_84583",
+        "decision_status": "READY",
+        "action": "decelerate",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "unconfirmed_stop_crawl_floor",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "medium",
+        "risk_reason_codes": [
+          "learned_visual_risk_medium"
+        ],
+        "blocked_reason_codes": [],
+        "longitudinal_control_mode": "RISK_SPEED_CAP",
+        "allow_positive_acceleration": false,
+        "control_valid_until_s": 164.00071665197612,
+        "command_id": "Continue driving safely in the current lane."
+      },
+      "raw_network_output": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84583",
+        "frame_id": "carla_84583",
+        "action": "accelerate",
+        "target_speed_kmh": 0.2320157140493393,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.885516,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 15.2701,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 0.6444880962371826
+      },
+      "canonical_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84583",
+        "frame_id": "carla_84583",
+        "decision_status": "READY",
+        "action": "decelerate",
+        "target_speed_kmh": 15.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "generic_text_envelope",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "medium",
+        "risk_reason_codes": [
+          "learned_visual_risk_medium"
+        ],
+        "blocked_reason_codes": []
+      },
+      "risk": {
+        "risk_level": "medium",
+        "source": "event_memory_vla",
+        "reason_codes": [
+          "learned_visual_risk_medium"
+        ],
+        "probabilities": {
+          "low": 0.306845,
+          "medium": 0.184202,
+          "high": 0.508953
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "keep_lane",
+            "target_speed_kmh": 24.601593017578125,
+            "risk_probabilities": [
+              0.6321813464164734,
+              0.03782902657985687,
+              0.32998961210250854
+            ]
+          },
+          "effective": {
+            "action": "accelerate",
+            "target_speed_kmh": 0.2320157140493393,
+            "risk_probabilities": [
+              0.30684521794319153,
+              0.18420171737670898,
+              0.5089530348777771
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        }
+      },
+      "target_lane_contract": null,
+      "traffic_control_contract": {
+        "status": "wait_for_observed_green",
+        "active": true,
+        "changed": false
+      },
+      "signal_observation": {
+        "state": "RED",
+        "confidence": 0.9944149255752563,
+        "stop_distance_m": 49.89621113572823,
+        "source": "rgb_lamp_net_static_head",
+        "truth_state_access": false
+      },
+      "longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "RISK_SPEED_CAP",
+        "input_action": "decelerate",
+        "input_target_speed_kmh": 15.0,
+        "issued_action": "decelerate",
+        "issued_target_speed_kmh": 0.0,
+        "reference_ego_speed_kmh": 0.0,
+        "speed_clamped": true,
+        "risk_constraint_active": true,
+        "policy_safety_credit": false
+      }
+    },
+    "stationary_high_risk_liveness": {
+      "simulation_frame": 84657,
+      "video_time_s": 163.95,
+      "route_s_m": 767.267,
+      "source_text": "Continue driving safely in the current lane.",
+      "sensor_frame": 84655,
+      "sensor_frame_lag": 2,
+      "policy_truth_access": false,
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "full_decision_latency_ms": 40.378,
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 84657,
+        "previous_decision_frame": 84655,
+        "speed_kmh": 0.0,
+        "acceleration_xyz_mps2": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "throttle": 0.0,
+        "brake": 0.0
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84657",
+        "frame_id": "carla_84657",
+        "action": "accelerate",
+        "target_speed_kmh": 0.865065,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.878795,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 19.8551
+      },
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84657",
+        "frame_id": "carla_84657",
+        "decision_status": "READY",
+        "action": "decelerate",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "stationary_high_risk_liveness",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "high",
+        "risk_reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "blocked_reason_codes": [],
+        "longitudinal_control_mode": "RISK_SPEED_CAP",
+        "allow_positive_acceleration": false,
+        "control_valid_until_s": 167.70071670711042,
+        "command_id": "Continue driving safely in the current lane."
+      },
+      "raw_network_output": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84657",
+        "frame_id": "carla_84657",
+        "action": "accelerate",
+        "target_speed_kmh": 0.8650652766227722,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.878795,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 19.8551,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 2.402959108352661
+      },
+      "canonical_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-84657",
+        "frame_id": "carla_84657",
+        "decision_status": "READY",
+        "action": "emergency_brake",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": true,
+        "reason": "generic_text_envelope",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "high",
+        "risk_reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "blocked_reason_codes": []
+      },
+      "risk": {
+        "risk_level": "high",
+        "source": "event_memory_vla",
+        "reason_codes": [
+          "learned_visual_risk_high"
+        ],
+        "probabilities": {
+          "low": 0.203919,
+          "medium": 0.154123,
+          "high": 0.641959
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "keep_lane",
+            "target_speed_kmh": 24.746492385864258,
+            "risk_probabilities": [
+              0.6515567302703857,
+              0.05090366303920746,
+              0.2975395619869232
+            ]
+          },
+          "effective": {
+            "action": "accelerate",
+            "target_speed_kmh": 0.8650652766227722,
+            "risk_probabilities": [
+              0.20391851663589478,
+              0.15412287414073944,
+              0.6419585943222046
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        }
+      },
+      "target_lane_contract": null,
+      "traffic_control_contract": {
+        "status": "wait_for_observed_green",
+        "active": true,
+        "changed": false
+      },
+      "signal_observation": {
+        "state": "RED",
+        "confidence": 0.9920561909675598,
+        "stop_distance_m": 49.89621113572823,
+        "source": "rgb_lamp_net_static_head",
+        "truth_state_access": false
+      },
+      "longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "RISK_SPEED_CAP",
+        "input_action": "decelerate",
+        "input_target_speed_kmh": 12.0,
+        "issued_action": "decelerate",
+        "issued_target_speed_kmh": 0.0,
+        "reference_ego_speed_kmh": 0.0,
+        "speed_clamped": true,
+        "risk_constraint_active": true,
+        "policy_safety_credit": false
+      }
+    }
+  },
+  "first_by_error": {
+    "no synchronized RGB/LiDAR frame is available": {
+      "simulation_frame": 81376,
+      "video_time_s": 0,
+      "status": "sensor_warmup_safe_hold",
+      "error": "no synchronized RGB/LiDAR frame is available",
+      "error_type": "RuntimeError",
+      "decision_trace": {
+        "schema_version": "decision_trace/1.0",
+        "simulation_frame": 81376,
+        "stage": "sensor_acquisition",
+        "stage_wall_ms": {
+          "command_parse": 3.224,
+          "plan_prepare": 0.056,
+          "language_encoding": 22.65,
+          "sensor_acquisition": 56.607
+        },
+        "total_wall_ms": 82.537,
+        "timing_scope": "host wall time including waits; not isolated GPU kernel latency",
+        "stages": {
+          "command": {
+            "text": "Continue driving safely in the current lane."
+          },
+          "parsed_instruction": {
+            "parsed_intent": "KEEP_LANE",
+            "requested_lane_direction": null,
+            "target_speed_kmh": null,
+            "confidence": 1.0,
+            "source_text": "Continue driving safely in the current lane.",
+            "semantic_goal": [],
+            "speed_change": null,
+            "speed_delta_kmh": null,
+            "speed_reference_kmh": null,
+            "parse_status": "VALID",
+            "parse_source": null
+          },
+          "driving_intent": null,
+          "plan_before": null
+        }
+      }
+    }
+  },
+  "last_valid_decision": {
+    "simulation_frame": 88861,
+    "video_time_s": 374.15,
+    "route_s_m": 775.267,
+    "source_text": "Continue driving safely in the current lane.",
+    "sensor_frame": 88859,
+    "sensor_frame_lag": 2,
+    "policy_truth_access": false,
+    "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+    "modality_mask": {
+      "text": true,
+      "front_rgb": true,
+      "left_rgb": true,
+      "right_rgb": true,
+      "rear_rgb": true,
+      "lidar_bev": true,
+      "vehicle_state": true,
+      "environment_state": true
+    },
+    "camera_view_mask": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "full_decision_latency_ms": 43.747,
+    "execution_feedback": {
+      "scope": "observed_before_current_command; previous_physics_step",
+      "frame": 88861,
+      "previous_decision_frame": 88859,
+      "speed_kmh": 0.0,
+      "acceleration_xyz_mps2": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "throttle": 0.0,
+      "brake": 0.0
+    },
+    "network_proposal_before_execution": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-88861",
+      "frame_id": "carla_88861",
+      "action": "accelerate",
+      "target_speed_kmh": 1.08,
+      "target_lane": null,
+      "target_location": null,
+      "target_entity_id": null,
+      "confidence": 0.899109,
+      "model": "phase-recovery-epoch_06",
+      "latency_ms": 24.7913
+    },
+    "control_decision": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-88861",
+      "frame_id": "carla_88861",
+      "decision_status": "READY",
+      "action": "decelerate",
+      "target_speed_kmh": 0.0,
+      "target_lane": null,
+      "target_location": null,
+      "emergency": false,
+      "reason": "stationary_high_risk_radar_guarded_crawl",
+      "parse_status": "VALID",
+      "parse_confidence": 1.0,
+      "source_step_id": "step_1",
+      "source_step_action": "KEEP_LANE",
+      "source_step_count": 1,
+      "matched_entity_id": null,
+      "risk_level": "high",
+      "risk_reason_codes": [
+        "learned_visual_risk_high"
+      ],
+      "blocked_reason_codes": [],
+      "longitudinal_control_mode": "RISK_SPEED_CAP",
+      "allow_positive_acceleration": false,
+      "control_valid_until_s": 377.9007198393345,
+      "command_id": "Continue driving safely in the current lane."
+    },
+    "raw_network_output": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-88861",
+      "frame_id": "carla_88861",
+      "action": "accelerate",
+      "target_speed_kmh": 1.0800000429153442,
+      "target_lane": null,
+      "target_location": null,
+      "target_entity_id": null,
+      "confidence": 0.899109,
+      "model": "phase-recovery-epoch_06",
+      "latency_ms": 24.7913,
+      "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+      "target_acceleration_mps2": 3.0
+    },
+    "canonical_decision": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-88861",
+      "frame_id": "carla_88861",
+      "decision_status": "READY",
+      "action": "emergency_brake",
+      "target_speed_kmh": 0.0,
+      "target_lane": null,
+      "target_location": null,
+      "emergency": true,
+      "reason": "generic_text_envelope",
+      "parse_status": "VALID",
+      "parse_confidence": 1.0,
+      "source_step_id": "step_1",
+      "source_step_action": "KEEP_LANE",
+      "source_step_count": 1,
+      "matched_entity_id": null,
+      "risk_level": "high",
+      "risk_reason_codes": [
+        "learned_visual_risk_high"
+      ],
+      "blocked_reason_codes": []
+    },
+    "risk": {
+      "risk_level": "high",
+      "source": "event_memory_vla",
+      "reason_codes": [
+        "learned_visual_risk_high"
+      ],
+      "probabilities": {
+        "low": 0.020528,
+        "medium": 0.018506,
+        "high": 0.960966
+      },
+      "prediction_provenance": {
+        "schema_version": "vla_prediction_provenance/1.0",
+        "base": {
+          "action": "keep_lane",
+          "target_speed_kmh": 15.278848648071289,
+          "risk_probabilities": [
+            0.14529915153980255,
+            0.07962530851364136,
+            0.7750755548477173
+          ]
+        },
+        "effective": {
+          "action": "accelerate",
+          "target_speed_kmh": 1.0800000429153442,
+          "risk_probabilities": [
+            0.020527934655547142,
+            0.01850607618689537,
+            0.9609659314155579
+          ]
+        },
+        "residual_present": true,
+        "residual_applied": true,
+        "effective_action_source": "sequence_first_sample_encoding",
+        "scope": "model stages before execution and safety gates; not ground-truth correctness"
+      }
+    },
+    "target_lane_contract": null,
+    "traffic_control_contract": {
+      "status": "wait_for_observed_green",
+      "active": true,
+      "changed": false
+    },
+    "signal_observation": {
+      "state": "YELLOW",
+      "confidence": 0.9998561143875122,
+      "stop_distance_m": 42.86815209234823,
+      "source": "rgb_lamp_net_static_head",
+      "truth_state_access": false
+    },
+    "longitudinal_contract": {
+      "schema_version": "longitudinal_control_contract/1.0",
+      "mode": "RISK_SPEED_CAP",
+      "input_action": "decelerate",
+      "input_target_speed_kmh": 6.0,
+      "issued_action": "decelerate",
+      "issued_target_speed_kmh": 0.0,
+      "reference_ego_speed_kmh": 0.0,
+      "speed_clamped": true,
+      "risk_constraint_active": true,
+      "policy_safety_credit": false
+    }
+  },
+  "commands": [
+    {
+      "simulation_frame": 81377,
+      "video_time_s": 0,
+      "command": {
+        "text": "Continue driving safely in the current lane."
+      },
+      "driving_intent": null
+    }
+  ],
+  "runner_summary_file": "scene_summary.json",
+  "runner_summary": {
+    "route": {
+      "target_length_m": 6000.0,
+      "generated_length_m": 6000.41,
+      "finish_progress_m": 6000.0,
+      "last_progress_m": 775.267
+    },
+    "stop_reason": "route_stalled",
+    "route_completed": false,
+    "event_states": {
+      "PENDING": 7,
+      "ACTIVE": 0,
+      "RESOLVED": 0
+    },
+    "safety": {
+      "collision_count": 0,
+      "collision_frames": [],
+      "collision_events": [],
+      "lane_invasion_event_count": 4,
+      "lane_invasion_frames": [
+        81699,
+        81763,
+        81775,
+        81803
+      ],
+      "lane_invasion_events": [
+        {
+          "frame": 81699,
+          "markings": [
+            "Broken"
+          ],
+          "restricted": false
+        },
+        {
+          "frame": 81763,
+          "markings": [
+            "Broken"
+          ],
+          "restricted": false
+        },
+        {
+          "frame": 81775,
+          "markings": [
+            "Broken"
+          ],
+          "restricted": false
+        },
+        {
+          "frame": 81803,
+          "markings": [
+            "Broken"
+          ],
+          "restricted": false
+        }
+      ],
+      "restricted_lane_invasion_event_count": 0,
+      "restricted_lane_invasion_frames": [],
+      "invalid_lane_samples": 0
+    },
+    "complete_scene_success": false
+  },
+  "indexed_video_frames": 7486,
+  "recording": {
+    "written_frames": 7526,
+    "encoder_dropped_frames": 0,
+    "unmatched_sensor_frames": 1,
+    "fps": 20.0,
+    "width": 1920,
+    "height": 1080
+  }
+}

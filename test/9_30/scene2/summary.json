@@ -1,0 +1,931 @@
+{
+  "run": "scene2_local_10hz_video_002",
+  "video_duration_s": 206.05,
+  "video_frames": 4121,
+  "valid_decisions": 1200,
+  "counts": {
+    "final_reason": {
+      "vla_accepted_phase-recovery-epoch_06": 12,
+      "active_instruction_speed_setpoint": 240,
+      "active_plan_not_ready": 948
+    },
+    "final_action": {
+      "accelerate": 177,
+      "keep_lane": 75,
+      "stop": 168,
+      "emergency_brake": 780
+    },
+    "risk": {
+      "low": 420,
+      "high": 780
+    },
+    "blocked_reason": {
+      "turn_target_location_missing": 948,
+      "safe_stop": 948
+    },
+    "raw_action": {
+      "accelerate": 1069,
+      "keep_lane": 82,
+      "decelerate": 47,
+      "turn_right": 1,
+      "stop": 1
+    },
+    "sensor_lag": {
+      "0": 255,
+      "2": 945
+    },
+    "input_mode": {
+      "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment": 1200
+    },
+    "signal": {
+      "no_route_associated_signal": 1200
+    },
+    "errors": {
+      "command dispatch halted: TIMEOUT": 1721
+    }
+  },
+  "decisions_without_explicit_false_truth_access": 0,
+  "full_decision_latency_ms": {
+    "mean": 26.474006666666668,
+    "p50": 25.378500000000003,
+    "p95": 33.921,
+    "maximum": 185.302
+  },
+  "max_observed_speed_kmh": 44.933687731629426,
+  "first_by_reason": {
+    "vla_accepted_phase-recovery-epoch_06": {
+      "simulation_frame": 27501,
+      "video_time_s": 0,
+      "route_s_m": 0.0,
+      "source_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+      "sensor_frame": 27501,
+      "sensor_frame_lag": 0,
+      "policy_truth_access": false,
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "full_decision_latency_ms": 157.613,
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 27501,
+        "previous_decision_frame": -1000000000000,
+        "speed_kmh": 0.0,
+        "acceleration_xyz_mps2": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "throttle": 0.0,
+        "brake": 1.0
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-27501",
+        "frame_id": "carla_27501",
+        "action": "accelerate",
+        "target_speed_kmh": 1.08,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.910613,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 147.3911
+      },
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "s2_t05_cmd_01-configured",
+        "frame_id": "carla_27501",
+        "decision_status": "READY",
+        "action": "accelerate",
+        "target_speed_kmh": 1.08,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "vla_accepted_phase-recovery-epoch_06",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "s2_t05_cmd_01_step_01",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 4,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": [],
+        "longitudinal_control_mode": "ABSOLUTE_SPEED",
+        "allow_positive_acceleration": true,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 2.999999761581421,
+        "sequence_valid_until_s": 5.486705064028501,
+        "control_valid_until_s": 5.486705064028501,
+        "command_id": "s2_t05_cmd_01-configured:s2_t05_cmd_01_step_01"
+      },
+      "raw_network_output": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-27501",
+        "frame_id": "carla_27501",
+        "action": "accelerate",
+        "target_speed_kmh": 1.0800000429153442,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.910613,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 147.3911,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 3.0
+      },
+      "canonical_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "s2_t05_cmd_01-configured",
+        "frame_id": "carla_27501",
+        "decision_status": "READY",
+        "action": "keep_lane",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "driving_intent_keep_lane",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "s2_t05_cmd_01_step_01",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 4,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": []
+      },
+      "risk": {
+        "risk_level": "low",
+        "source": "event_memory_vla",
+        "reason_codes": [],
+        "probabilities": {
+          "low": 1.0,
+          "medium": 0.0,
+          "high": 0.0
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "keep_lane",
+            "target_speed_kmh": 23.716840744018555,
+            "risk_probabilities": [
+              0.7783181667327881,
+              0.18676355481147766,
+              0.03491834178566933
+            ]
+          },
+          "effective": {
+            "action": "accelerate",
+            "target_speed_kmh": 1.0800000429153442,
+            "risk_probabilities": [
+              1.0,
+              8.304488173516145e-12,
+              6.922511609080972e-14
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        }
+      },
+      "target_lane_contract": null
+    },
+    "active_instruction_speed_setpoint": {
+      "simulation_frame": 27525,
+      "video_time_s": 1.15,
+      "route_s_m": 2.0,
+      "source_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+      "sensor_frame": 27525,
+      "sensor_frame_lag": 0,
+      "policy_truth_access": false,
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "full_decision_latency_ms": 23.391,
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 27525,
+        "previous_decision_frame": 27523,
+        "speed_kmh": 9.44878745378096,
+        "acceleration_xyz_mps2": [
+          0.04770468920469284,
+          4.072918891906738,
+          -0.0005855560302734375
+        ],
+        "throttle": 0.8997706174850464,
+        "brake": 0.0
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-27525",
+        "frame_id": "carla_27525",
+        "action": "accelerate",
+        "target_speed_kmh": 10.371855,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.960822,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 18.2615
+      },
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "s2_t05_cmd_01-configured",
+        "frame_id": "carla_27525",
+        "decision_status": "READY",
+        "action": "accelerate",
+        "target_speed_kmh": 45.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "active_instruction_speed_setpoint",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "s2_t05_cmd_01_step_02",
+        "source_step_action": "SET_SPEED",
+        "source_step_count": 4,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": [],
+        "longitudinal_control_mode": "ABSOLUTE_SPEED",
+        "allow_positive_acceleration": true,
+        "control_valid_until_s": 6.686705081909895,
+        "command_id": "s2_t05_cmd_01-configured:s2_t05_cmd_01_step_02"
+      },
+      "raw_network_output": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-27525",
+        "frame_id": "carla_27525",
+        "action": "accelerate",
+        "target_speed_kmh": 10.371854782104492,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.960822,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 18.2615,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 2.564077377319336
+      },
+      "canonical_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "s2_t05_cmd_01-configured",
+        "frame_id": "carla_27525",
+        "decision_status": "READY",
+        "action": "keep_lane",
+        "target_speed_kmh": 45.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "driving_intent_set_speed",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "s2_t05_cmd_01_step_02",
+        "source_step_action": "SET_SPEED",
+        "source_step_count": 4,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": []
+      },
+      "risk": {
+        "risk_level": "low",
+        "source": "event_memory_vla",
+        "reason_codes": [],
+        "probabilities": {
+          "low": 1.0,
+          "medium": 0.0,
+          "high": 0.0
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "accelerate",
+            "target_speed_kmh": 29.462966918945312,
+            "risk_probabilities": [
+              0.9757689833641052,
+              0.004771954845637083,
+              0.01945910044014454
+            ]
+          },
+          "effective": {
+            "action": "accelerate",
+            "target_speed_kmh": 10.371854782104492,
+            "risk_probabilities": [
+              1.0,
+              3.683847116242589e-10,
+              5.097804773798731e-13
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        }
+      },
+      "target_lane_contract": null
+    },
+    "active_plan_not_ready": {
+      "simulation_frame": 28005,
+      "video_time_s": 25.15,
+      "route_s_m": 179.271,
+      "source_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+      "sensor_frame": 28005,
+      "sensor_frame_lag": 0,
+      "policy_truth_access": false,
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "full_decision_latency_ms": 23.432,
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 28005,
+        "previous_decision_frame": 28003,
+        "speed_kmh": 44.06969143502841,
+        "acceleration_xyz_mps2": [
+          -1.5194892883300781,
+          -1.4679336547851562,
+          4.1198727558366954e-05
+        ],
+        "throttle": 0.5743861794471741,
+        "brake": 0.0
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-28005",
+        "frame_id": "carla_28005",
+        "action": "turn_right",
+        "target_speed_kmh": 22.938158,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.994653,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 14.9796
+      },
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "s2_t05_cmd_01-configured",
+        "frame_id": "carla_28005",
+        "decision_status": "BLOCKED",
+        "action": "stop",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "active_plan_not_ready",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "s2_t05_cmd_01_step_03",
+        "source_step_action": "TURN",
+        "source_step_count": 4,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": [
+          "turn_target_location_missing",
+          "safe_stop"
+        ],
+        "longitudinal_control_mode": "STOP",
+        "allow_positive_acceleration": false,
+        "control_valid_until_s": 30.686705439537764,
+        "command_id": "s2_t05_cmd_01-configured:s2_t05_cmd_01_step_03"
+      },
+      "raw_network_output": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-28005",
+        "frame_id": "carla_28005",
+        "action": "turn_right",
+        "target_speed_kmh": 22.93815803527832,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.994653,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 14.9796
+      },
+      "canonical_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "s2_t05_cmd_01-configured",
+        "frame_id": "carla_28005",
+        "decision_status": "BLOCKED",
+        "action": "stop",
+        "target_speed_kmh": 0.0,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "plan_blocked_safe_stop",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "s2_t05_cmd_01_step_03",
+        "source_step_action": "TURN",
+        "source_step_count": 4,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": [
+          "turn_target_location_missing",
+          "safe_stop"
+        ]
+      },
+      "risk": {
+        "risk_level": "low",
+        "source": "learned_raw_camera_visual_risk_head",
+        "reason_codes": [],
+        "probabilities": {
+          "low": 0.988592,
+          "medium": 0.005932,
+          "high": 0.005476
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "turn_right",
+            "target_speed_kmh": 22.93815803527832,
+            "risk_probabilities": [
+              0.988591730594635,
+              0.005931790452450514,
+              0.005476427264511585
+            ]
+          },
+          "effective": {
+            "action": "turn_right",
+            "target_speed_kmh": 22.93815803527832,
+            "risk_probabilities": [
+              0.988591730594635,
+              0.005931790452450514,
+              0.005476427264511585
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": false,
+          "effective_action_source": "effective_action_logits",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        }
+      },
+      "target_lane_contract": null
+    }
+  },
+  "first_by_error": {
+    "command dispatch halted: TIMEOUT": {
+      "simulation_frame": 29901,
+      "video_time_s": 119.95,
+      "status": "fallback_safe_stop",
+      "error": "command dispatch halted: TIMEOUT",
+      "error_type": "ValueError",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\universal_vla_controller.py\", line 1681, in run_step\n    self._decide(frame)\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\universal_vla_controller.py\", line 1007, in _decide\n    command = self.command_queue.select(progress_m,\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\control\\command_dispatch.py\", line 107, in select\n    raise ValueError('command dispatch halted: '+self.failed)\nValueError: command dispatch halted: TIMEOUT\n",
+      "decision_trace": {
+        "schema_version": "decision_trace/1.0",
+        "simulation_frame": 29901,
+        "stage": "command_parse",
+        "stage_wall_ms": {
+          "command_parse": 0.073
+        },
+        "total_wall_ms": 0.073,
+        "timing_scope": "host wall time including waits; not isolated GPU kernel latency",
+        "stages": {}
+      }
+    }
+  },
+  "last_valid_decision": {
+    "simulation_frame": 29899,
+    "video_time_s": 119.85,
+    "route_s_m": 189.818,
+    "source_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+    "sensor_frame": 29897,
+    "sensor_frame_lag": 2,
+    "policy_truth_access": false,
+    "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+    "modality_mask": {
+      "text": true,
+      "front_rgb": true,
+      "left_rgb": true,
+      "right_rgb": true,
+      "rear_rgb": true,
+      "lidar_bev": true,
+      "vehicle_state": true,
+      "environment_state": true
+    },
+    "camera_view_mask": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "full_decision_latency_ms": 33.722,
+    "execution_feedback": {
+      "scope": "observed_before_current_command; previous_physics_step",
+      "frame": 29899,
+      "previous_decision_frame": 29897,
+      "speed_kmh": 4.6770667684869595e-06,
+      "acceleration_xyz_mps2": [
+        2.6866923690249678e-06,
+        1.627417077543214e-06,
+        -1.640319896978326e-05
+      ],
+      "throttle": 0.0,
+      "brake": 1.0
+    },
+    "network_proposal_before_execution": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-29899",
+      "frame_id": "carla_29899",
+      "action": "accelerate",
+      "target_speed_kmh": 1.037041,
+      "target_lane": null,
+      "target_location": null,
+      "target_entity_id": null,
+      "confidence": 0.89901,
+      "model": "phase-recovery-epoch_06",
+      "latency_ms": 21.2242
+    },
+    "control_decision": {
+      "schema_version": "1.0.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "frame_id": "carla_29899",
+      "decision_status": "BLOCKED",
+      "action": "emergency_brake",
+      "target_speed_kmh": 0.0,
+      "target_lane": null,
+      "target_location": null,
+      "emergency": true,
+      "reason": "active_plan_not_ready",
+      "parse_status": "VALID",
+      "parse_confidence": 1.0,
+      "source_step_id": "s2_t05_cmd_01_step_03",
+      "source_step_action": "TURN",
+      "source_step_count": 4,
+      "matched_entity_id": null,
+      "risk_level": "high",
+      "risk_reason_codes": [
+        "learned_visual_risk_high"
+      ],
+      "blocked_reason_codes": [
+        "turn_target_location_missing",
+        "safe_stop"
+      ],
+      "longitudinal_control_mode": "RISK_SPEED_CAP",
+      "allow_positive_acceleration": false,
+      "control_valid_until_s": 125.38670685067773,
+      "command_id": "s2_t05_cmd_01-configured:s2_t05_cmd_01_step_04"
+    },
+    "raw_network_output": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-29899",
+      "frame_id": "carla_29899",
+      "action": "accelerate",
+      "target_speed_kmh": 1.0370409488677979,
+      "target_lane": null,
+      "target_location": null,
+      "target_entity_id": null,
+      "confidence": 0.89901,
+      "model": "phase-recovery-epoch_06",
+      "latency_ms": 21.2242,
+      "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+      "target_acceleration_mps2": 2.8806562423706055
+    },
+    "canonical_decision": {
+      "schema_version": "1.0.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "frame_id": "carla_29899",
+      "decision_status": "BLOCKED",
+      "action": "emergency_brake",
+      "target_speed_kmh": 0.0,
+      "target_lane": null,
+      "target_location": null,
+      "emergency": true,
+      "reason": "plan_blocked",
+      "parse_status": "VALID",
+      "parse_confidence": 1.0,
+      "source_step_id": "s2_t05_cmd_01_step_03",
+      "source_step_action": "TURN",
+      "source_step_count": 4,
+      "matched_entity_id": null,
+      "risk_level": "high",
+      "risk_reason_codes": [
+        "learned_visual_risk_high"
+      ],
+      "blocked_reason_codes": [
+        "turn_target_location_missing",
+        "safe_stop"
+      ]
+    },
+    "risk": {
+      "risk_level": "high",
+      "source": "event_memory_vla",
+      "reason_codes": [
+        "learned_visual_risk_high"
+      ],
+      "probabilities": {
+        "low": 0.101211,
+        "medium": 0.011153,
+        "high": 0.887637
+      },
+      "prediction_provenance": {
+        "schema_version": "vla_prediction_provenance/1.0",
+        "base": {
+          "action": "keep_lane",
+          "target_speed_kmh": 32.00125503540039,
+          "risk_probabilities": [
+            0.5499222874641418,
+            0.42540737986564636,
+            0.024670302867889404
+          ]
+        },
+        "effective": {
+          "action": "accelerate",
+          "target_speed_kmh": 1.0370409488677979,
+          "risk_probabilities": [
+            0.10121079534292221,
+            0.011152760125696659,
+            0.8876365423202515
+          ]
+        },
+        "residual_present": true,
+        "residual_applied": true,
+        "effective_action_source": "sequence_first_sample_encoding",
+        "scope": "model stages before execution and safety gates; not ground-truth correctness"
+      }
+    },
+    "target_lane_contract": null
+  },
+  "commands": [
+    {
+      "simulation_frame": 27501,
+      "video_time_s": 0,
+      "command": {
+        "id": "s2_t05_cmd_01",
+        "announce_at_m": 0.0,
+        "activate_at_m": 0.0,
+        "voice_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+        "target_speed_kmh": 45.0,
+        "action": "keep_lane",
+        "driving_intent": {
+          "schema_version": "1.2.0",
+          "request_id": "s2_t05_cmd_01-configured",
+          "simulation_frame": 0,
+          "route_s_m": 0.0,
+          "timestamp_s": 0.0,
+          "input": {
+            "modality": "TEXT",
+            "language": "zh-CN",
+            "raw_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+            "normalized_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+          },
+          "parse_result": {
+            "status": "VALID",
+            "confidence": 1.0,
+            "source": "competition_schedule",
+            "source_kind": "CONFIGURED_PLAN",
+            "model_prediction": false
+          },
+          "intent": {
+            "category": "NAVIGATION",
+            "urgency": "NORMAL",
+            "steps": [
+              {
+                "step_id": "s2_t05_cmd_01_step_01",
+                "action": "KEEP_LANE",
+                "parameters": {},
+                "depends_on": [],
+                "on_blocked": "SAFE_STOP",
+                "trigger": {
+                  "type": "IMMEDIATE"
+                },
+                "preconditions": [],
+                "completion": {
+                  "type": "ACTION_REACHED"
+                },
+                "status": "PENDING"
+              },
+              {
+                "step_id": "s2_t05_cmd_01_step_02",
+                "action": "SET_SPEED",
+                "parameters": {
+                  "target_speed_mps": 12.5
+                },
+                "depends_on": [
+                  "s2_t05_cmd_01_step_01"
+                ],
+                "on_blocked": "SAFE_STOP",
+                "trigger": {
+                  "type": "IMMEDIATE"
+                },
+                "preconditions": [],
+                "completion": {
+                  "type": "TARGET_SPEED_REACHED"
+                },
+                "status": "PENDING"
+              },
+              {
+                "step_id": "s2_t05_cmd_01_step_03",
+                "action": "TURN",
+                "parameters": {
+                  "direction": "RIGHT"
+                },
+                "depends_on": [
+                  "s2_t05_cmd_01_step_02"
+                ],
+                "on_blocked": "SAFE_STOP",
+                "trigger": {
+                  "type": "IMMEDIATE"
+                },
+                "preconditions": [],
+                "completion": {
+                  "type": "JUNCTION_EXITED"
+                },
+                "status": "PENDING"
+              },
+              {
+                "step_id": "s2_t05_cmd_01_step_04",
+                "action": "KEEP_LANE",
+                "parameters": {},
+                "depends_on": [
+                  "s2_t05_cmd_01_step_03"
+                ],
+                "on_blocked": "SAFE_STOP",
+                "trigger": {
+                  "type": "IMMEDIATE"
+                },
+                "preconditions": [],
+                "completion": {
+                  "type": "ACTION_REACHED"
+                },
+                "status": "PENDING"
+              }
+            ]
+          },
+          "voice_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+        }
+      },
+      "driving_intent": {
+        "schema_version": "1.2.0",
+        "request_id": "s2_t05_cmd_01-configured",
+        "simulation_frame": 0,
+        "route_s_m": 0.0,
+        "timestamp_s": 0.0,
+        "input": {
+          "modality": "TEXT",
+          "language": "zh-CN",
+          "raw_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+          "normalized_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+        },
+        "parse_result": {
+          "status": "VALID",
+          "confidence": 1.0,
+          "source": "competition_schedule",
+          "source_kind": "CONFIGURED_PLAN",
+          "model_prediction": false
+        },
+        "intent": {
+          "category": "NAVIGATION",
+          "urgency": "NORMAL",
+          "steps": [
+            {
+              "step_id": "s2_t05_cmd_01_step_01",
+              "action": "KEEP_LANE",
+              "parameters": {},
+              "depends_on": [],
+              "on_blocked": "SAFE_STOP",
+              "trigger": {
+                "type": "IMMEDIATE"
+              },
+              "preconditions": [],
+              "completion": {
+                "type": "ACTION_REACHED"
+              },
+              "status": "PENDING"
+            },
+            {
+              "step_id": "s2_t05_cmd_01_step_02",
+              "action": "SET_SPEED",
+              "parameters": {
+                "target_speed_mps": 12.5
+              },
+              "depends_on": [
+                "s2_t05_cmd_01_step_01"
+              ],
+              "on_blocked": "SAFE_STOP",
+              "trigger": {
+                "type": "IMMEDIATE"
+              },
+              "preconditions": [],
+              "completion": {
+                "type": "TARGET_SPEED_REACHED"
+              },
+              "status": "PENDING"
+            },
+            {
+              "step_id": "s2_t05_cmd_01_step_03",
+              "action": "TURN",
+              "parameters": {
+                "direction": "RIGHT"
+              },
+              "depends_on": [
+                "s2_t05_cmd_01_step_02"
+              ],
+              "on_blocked": "SAFE_STOP",
+              "trigger": {
+                "type": "IMMEDIATE"
+              },
+              "preconditions": [],
+              "completion": {
+                "type": "JUNCTION_EXITED"
+              },
+              "status": "PENDING"
+            },
+            {
+              "step_id": "s2_t05_cmd_01_step_04",
+              "action": "KEEP_LANE",
+              "parameters": {},
+              "depends_on": [
+                "s2_t05_cmd_01_step_03"
+              ],
+              "on_blocked": "SAFE_STOP",
+              "trigger": {
+                "type": "IMMEDIATE"
+              },
+              "preconditions": [],
+              "completion": {
+                "type": "ACTION_REACHED"
+              },
+              "status": "PENDING"
+            }
+          ]
+        },
+        "voice_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+      }
+    }
+  ],
+  "runner_summary_file": "summary.json",
+  "runner_summary": {
+    "route_progress_m": 189.8181374974044,
+    "route_length_m": 8000.602435215494,
+    "stop_reason": "route_stalled",
+    "route_completed": false,
+    "collision_count": 0,
+    "lane_invasion_count": 0,
+    "commands_announced": 1,
+    "event_states": {
+      "slow_vehicle": "STAGED",
+      "compound_slow_vehicle": "STAGED",
+      "crosswalk_pedestrian": "STAGED",
+      "bus_stop_passengers": "STAGED",
+      "slow_cyclist": "STAGED"
+    }
+  },
+  "indexed_video_frames": 4121,
+  "recording": {
+    "written_frames": 4121,
+    "encoder_dropped_frames": 0,
+    "unmatched_sensor_frames": 0,
+    "fps": 20.0,
+    "width": 1920,
+    "height": 1080
+  }
+}

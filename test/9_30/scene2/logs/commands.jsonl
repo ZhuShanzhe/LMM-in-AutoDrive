@@ -1,0 +1,1 @@
+{"announce_at_m": 0.0, "category": "NAVIGATION", "frame": 27501, "id": "s2_t05_cmd_01", "route_progress_m": 0.0, "simulation_time_s": 0.0, "spoken_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。", "steps": ["KEEP_LANE", "SET_SPEED:12.50mps", "TURN:RIGHT", "KEEP_LANE"], "text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。", "urgency": "NORMAL"}

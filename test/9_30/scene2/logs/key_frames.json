@@ -1,0 +1,3072 @@
+[
+  {
+    "simulation_frame": 27501,
+    "video_time_s": 0,
+    "route_s_m": 0.0,
+    "source_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+    "sensor_frame": 27501,
+    "sensor_frame_lag": 0,
+    "policy_truth_access": false,
+    "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+    "modality_mask": {
+      "text": true,
+      "front_rgb": true,
+      "left_rgb": true,
+      "right_rgb": true,
+      "rear_rgb": true,
+      "lidar_bev": true,
+      "vehicle_state": true,
+      "environment_state": true
+    },
+    "camera_view_mask": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "full_decision_latency_ms": 157.613,
+    "execution_feedback": {
+      "scope": "observed_before_current_command; previous_physics_step",
+      "frame": 27501,
+      "previous_decision_frame": -1000000000000,
+      "speed_kmh": 0.0,
+      "acceleration_xyz_mps2": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "throttle": 0.0,
+      "brake": 1.0
+    },
+    "network_proposal_before_execution": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-27501",
+      "frame_id": "carla_27501",
+      "action": "accelerate",
+      "target_speed_kmh": 1.08,
+      "target_lane": null,
+      "target_location": null,
+      "target_entity_id": null,
+      "confidence": 0.910613,
+      "model": "phase-recovery-epoch_06",
+      "latency_ms": 147.3911
+    },
+    "control_decision": {
+      "schema_version": "1.0.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "frame_id": "carla_27501",
+      "decision_status": "READY",
+      "action": "accelerate",
+      "target_speed_kmh": 1.08,
+      "target_lane": null,
+      "target_location": null,
+      "emergency": false,
+      "reason": "vla_accepted_phase-recovery-epoch_06",
+      "parse_status": "VALID",
+      "parse_confidence": 1.0,
+      "source_step_id": "s2_t05_cmd_01_step_01",
+      "source_step_action": "KEEP_LANE",
+      "source_step_count": 4,
+      "matched_entity_id": null,
+      "risk_level": "low",
+      "risk_reason_codes": [],
+      "blocked_reason_codes": [],
+      "longitudinal_control_mode": "ABSOLUTE_SPEED",
+      "allow_positive_acceleration": true,
+      "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+      "target_acceleration_mps2": 2.999999761581421,
+      "sequence_valid_until_s": 5.486705064028501,
+      "control_valid_until_s": 5.486705064028501,
+      "command_id": "s2_t05_cmd_01-configured:s2_t05_cmd_01_step_01"
+    },
+    "raw_network_output": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-27501",
+      "frame_id": "carla_27501",
+      "action": "accelerate",
+      "target_speed_kmh": 1.0800000429153442,
+      "target_lane": null,
+      "target_location": null,
+      "target_entity_id": null,
+      "confidence": 0.910613,
+      "model": "phase-recovery-epoch_06",
+      "latency_ms": 147.3911,
+      "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+      "target_acceleration_mps2": 3.0
+    },
+    "canonical_decision": {
+      "schema_version": "1.0.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "frame_id": "carla_27501",
+      "decision_status": "READY",
+      "action": "keep_lane",
+      "target_speed_kmh": 0.0,
+      "target_lane": null,
+      "target_location": null,
+      "emergency": false,
+      "reason": "driving_intent_keep_lane",
+      "parse_status": "VALID",
+      "parse_confidence": 1.0,
+      "source_step_id": "s2_t05_cmd_01_step_01",
+      "source_step_action": "KEEP_LANE",
+      "source_step_count": 4,
+      "matched_entity_id": null,
+      "risk_level": "low",
+      "risk_reason_codes": [],
+      "blocked_reason_codes": []
+    },
+    "risk": {
+      "risk_level": "low",
+      "source": "event_memory_vla",
+      "reason_codes": [],
+      "probabilities": {
+        "low": 1.0,
+        "medium": 0.0,
+        "high": 0.0
+      },
+      "prediction_provenance": {
+        "schema_version": "vla_prediction_provenance/1.0",
+        "base": {
+          "action": "keep_lane",
+          "target_speed_kmh": 23.716840744018555,
+          "risk_probabilities": [
+            0.7783181667327881,
+            0.18676355481147766,
+            0.03491834178566933
+          ]
+        },
+        "effective": {
+          "action": "accelerate",
+          "target_speed_kmh": 1.0800000429153442,
+          "risk_probabilities": [
+            1.0,
+            8.304488173516145e-12,
+            6.922511609080972e-14
+          ]
+        },
+        "residual_present": true,
+        "residual_applied": true,
+        "effective_action_source": "sequence_first_sample_encoding",
+        "scope": "model stages before execution and safety gates; not ground-truth correctness"
+      }
+    },
+    "target_lane_contract": null,
+    "sensor_contract": {
+      "cameras": [
+        "front",
+        "left",
+        "right",
+        "rear"
+      ],
+      "lidar": true,
+      "source": "model_config.sensor_requirements"
+    },
+    "physical_safety_observation": {
+      "forward_radar": {
+        "schema_version": "physical_front_radar/1.0",
+        "direction": "front",
+        "sensor_frame": 27501,
+        "measurement_timestamp_s": 5.1867050640285015,
+        "measurement_pose": {
+          "x": 189.76417541503906,
+          "y": -9.027764320373535,
+          "yaw_deg": 89.33090209960938
+        },
+        "tracking_points": [
+          {
+            "distance_m": 78.67305755615234,
+            "relative_velocity_mps": 6.73169469833374,
+            "azimuth_deg": -1.8671835410017836,
+            "altitude_deg": 0.19895396565150977
+          },
+          {
+            "distance_m": 50.03606033325195,
+            "relative_velocity_mps": 4.548639297485352,
+            "azimuth_deg": 0.3403487532285585,
+            "altitude_deg": 0.034030460379289806
+          },
+          {
+            "distance_m": 37.36271667480469,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": 14.328374255947335,
+            "altitude_deg": 0.5316763857849259
+          },
+          {
+            "distance_m": 78.44261169433594,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -6.452482697118808,
+            "altitude_deg": -0.4654175210594256
+          },
+          {
+            "distance_m": 50.123451232910156,
+            "relative_velocity_mps": 4.548343658447266,
+            "azimuth_deg": 0.1834539585678633,
+            "altitude_deg": 0.24638664122948645
+          },
+          {
+            "distance_m": 49.91444396972656,
+            "relative_velocity_mps": 4.548906326293945,
+            "azimuth_deg": 0.6308706894924921,
+            "altitude_deg": -0.41918733230134136
+          },
+          {
+            "distance_m": 40.20891571044922,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -13.975104919243227,
+            "altitude_deg": -0.6975323219356118
+          },
+          {
+            "distance_m": 77.29596710205078,
+            "relative_velocity_mps": 6.736297607421875,
+            "azimuth_deg": -1.0423015949393437,
+            "altitude_deg": -0.40912683717988285
+          },
+          {
+            "distance_m": 49.02284240722656,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": 11.037260410981384,
+            "altitude_deg": 0.15955603379648786
+          },
+          {
+            "distance_m": 49.91872787475586,
+            "relative_velocity_mps": 4.5492329597473145,
+            "azimuth_deg": 1.220290455016058,
+            "altitude_deg": -0.45817255797989326
+          },
+          {
+            "distance_m": 37.71629333496094,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": 14.199332345731928,
+            "altitude_deg": -0.9801738740837903
+          },
+          {
+            "distance_m": 50.43440628051758,
+            "relative_velocity_mps": 4.548975944519043,
+            "azimuth_deg": 0.7682129337359019,
+            "altitude_deg": 0.3885223709293493
+          },
+          {
+            "distance_m": 65.40990447998047,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": 11.424788269014982,
+            "altitude_deg": 2.577707202903877
+          },
+          {
+            "distance_m": 46.42795944213867,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": 11.624525198460958,
+            "altitude_deg": 0.707586146950459
+          },
+          {
+            "distance_m": 61.96299743652344,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": 8.855211339100947,
+            "altitude_deg": -0.29874508381823234
+          },
+          {
+            "distance_m": 49.932552337646484,
+            "relative_velocity_mps": 4.5491623878479,
+            "azimuth_deg": 1.3532072169249754,
+            "altitude_deg": -0.5871134027399229
+          },
+          {
+            "distance_m": 50.14625549316406,
+            "relative_velocity_mps": 4.548629283905029,
+            "azimuth_deg": 0.38257298267757733,
+            "altitude_deg": 0.26455635848432196
+          },
+          {
+            "distance_m": 49.94546890258789,
+            "relative_velocity_mps": 4.548001766204834,
+            "azimuth_deg": 0.03956468118525214,
+            "altitude_deg": -0.5559784122952428
+          },
+          {
+            "distance_m": 77.71788787841797,
+            "relative_velocity_mps": 6.7365899085998535,
+            "azimuth_deg": -0.9751828200695093,
+            "altitude_deg": -0.4435954401872051
+          },
+          {
+            "distance_m": 48.25959014892578,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -11.43747107653005,
+            "altitude_deg": 0.04117717278843711
+          },
+          {
+            "distance_m": 50.0286750793457,
+            "relative_velocity_mps": 4.5482177734375,
+            "azimuth_deg": 0.07132625143984156,
+            "altitude_deg": -0.0635736999172928
+          },
+          {
+            "distance_m": 39.779380798339844,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": 13.48375477073085,
+            "altitude_deg": 0.4233596440692936
+          },
+          {
+            "distance_m": 50.02925109863281,
+            "relative_velocity_mps": 4.548648834228516,
+            "azimuth_deg": 0.34548425507161473,
+            "altitude_deg": 0.00751059340522238
+          },
+          {
+            "distance_m": 69.00091552734375,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": 8.015941599551876,
+            "altitude_deg": 0.77488133279995
+          },
+          {
+            "distance_m": 65.72572326660156,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": 9.268046755556735,
+            "altitude_deg": 2.448531677112834
+          },
+          {
+            "distance_m": 50.01605224609375,
+            "relative_velocity_mps": 4.548612117767334,
+            "azimuth_deg": 0.3165178496884138,
+            "altitude_deg": -0.04591827122756477
+          },
+          {
+            "distance_m": 50.07292556762695,
+            "relative_velocity_mps": 4.54854679107666,
+            "azimuth_deg": 0.29275223315178084,
+            "altitude_deg": 0.14276562788781144
+          },
+          {
+            "distance_m": 50.20493698120117,
+            "relative_velocity_mps": 4.548632621765137,
+            "azimuth_deg": 0.39762092995574677,
+            "altitude_deg": 0.29884740325365033
+          }
+        ],
+        "tracking_fov_deg": 30.0,
+        "candidate_count": 65,
+        "obstacle_candidate_count": 2,
+        "closing_candidate_count": 0,
+        "height_filter_min_m": -0.65,
+        "height_rejected_count": 48,
+        "height_boundary_candidate_count": 3,
+        "nearest_relative_height_m": -0.3651807537664372,
+        "nearest_altitude_deg": -0.41918733230134136,
+        "azimuth_obstacle_bins": [
+          {
+            "distance_m": 78.44261169433594,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -6.452482697118808,
+            "altitude_deg": -0.4654175210594256,
+            "relative_height_m": -0.6371876723466031,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 78.67305755615234,
+            "relative_velocity_mps": 6.73169469833374,
+            "azimuth_deg": -1.8671835410017836,
+            "altitude_deg": 0.19895396565150977,
+            "relative_height_m": 0.2731839145733781,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 77.29596710205078,
+            "relative_velocity_mps": 6.736297607421875,
+            "azimuth_deg": -1.0423015949393437,
+            "altitude_deg": -0.40912683717988285,
+            "relative_height_m": -0.5519356936142774,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 49.94546890258789,
+            "relative_velocity_mps": 4.548001766204834,
+            "azimuth_deg": 0.03956468118525214,
+            "altitude_deg": -0.5559784122952428,
+            "relative_height_m": -0.4846459364676389,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 49.91444396972656,
+            "relative_velocity_mps": 4.548906326293945,
+            "azimuth_deg": 0.6308706894924921,
+            "altitude_deg": -0.41918733230134136,
+            "relative_height_m": -0.3651807537664372,
+            "closing_speed_mps": 0.0
+          }
+        ],
+        "nearest_distance_m": 49.914,
+        "nearest_relative_velocity_mps": 4.549,
+        "nearest_azimuth_deg": 0.631,
+        "nearest_closing_distance_m": null,
+        "nearest_closing_velocity_mps": null,
+        "ground_filter": {
+          "status": "same_frame_local_plane",
+          "rejected": 0,
+          "examined": 28,
+          "retained_reasons": {
+            "insufficient_support": 28
+          },
+          "history_limit_s": 0.2
+        },
+        "route_corridor_filter_applied": true,
+        "route_corridor_half_width_m": 1.244,
+        "route_corridor_obstacle_bins": [
+          {
+            "distance_m": 49.94546890258789,
+            "relative_velocity_mps": 4.548001766204834,
+            "azimuth_deg": 0.03956468118525214,
+            "altitude_deg": -0.5559784122952428,
+            "relative_height_m": -0.4846459364676389,
+            "closing_speed_mps": 0.0,
+            "route_lateral_distance_m": 0.589
+          },
+          {
+            "distance_m": 49.91444396972656,
+            "relative_velocity_mps": 4.548906326293945,
+            "azimuth_deg": 0.6308706894924921,
+            "altitude_deg": -0.41918733230134136,
+            "relative_height_m": -0.3651807537664372,
+            "closing_speed_mps": 0.0,
+            "route_lateral_distance_m": 0.073
+          }
+        ],
+        "unfiltered_obstacle_candidate_count": 17,
+        "unfiltered_nearest_distance_m": 49.91444396972656,
+        "unfiltered_nearest_azimuth_deg": 0.6308706894924921
+      },
+      "rear_radar": {
+        "schema_version": "physical_rear_radar/1.0",
+        "direction": "rear",
+        "sensor_frame": 27501,
+        "measurement_timestamp_s": 5.1867050640285015,
+        "measurement_pose": {
+          "x": 189.7174835205078,
+          "y": -13.02748966217041,
+          "yaw_deg": -90.66905975341797
+        },
+        "tracking_points": [
+          {
+            "distance_m": 79.59757995605469,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -7.067662467736223,
+            "altitude_deg": 1.4801498044659531
+          },
+          {
+            "distance_m": 70.79096221923828,
+            "relative_velocity_mps": -0.0,
+            "azimuth_deg": -6.452574050898956,
+            "altitude_deg": -0.4654175210594256
+          },
+          {
+            "distance_m": 52.365379333496094,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -8.88822847354879,
+            "altitude_deg": 0.13975949087935957
+          },
+          {
+            "distance_m": 61.11152267456055,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -10.009404025806383,
+            "altitude_deg": 3.3077205961591902
+          },
+          {
+            "distance_m": 34.71583557128906,
+            "relative_velocity_mps": -0.0,
+            "azimuth_deg": -13.975147607925539,
+            "altitude_deg": -0.6975323219356118
+          },
+          {
+            "distance_m": 54.65917205810547,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": 11.037313344947451,
+            "altitude_deg": 0.15955598043563496
+          },
+          {
+            "distance_m": 45.37962341308594,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -10.483420007978914,
+            "altitude_deg": 1.007044051722032
+          },
+          {
+            "distance_m": 67.7249526977539,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": 8.855255735330553,
+            "altitude_deg": -0.2987451104986588
+          },
+          {
+            "distance_m": 60.888572692871094,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -11.919867700814187,
+            "altitude_deg": 2.598030857666073
+          },
+          {
+            "distance_m": 63.01822280883789,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -8.007806844250391,
+            "altitude_deg": 3.279365706150117
+          },
+          {
+            "distance_m": 66.4693603515625,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -6.918094558404461,
+            "altitude_deg": 0.2812007824397026
+          },
+          {
+            "distance_m": 49.85231399536133,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -9.473303331625727,
+            "altitude_deg": 1.418088891398219
+          },
+          {
+            "distance_m": 41.44747543334961,
+            "relative_velocity_mps": -0.0,
+            "azimuth_deg": -11.437488152002974,
+            "altitude_deg": 0.0411771661183305
+          },
+          {
+            "distance_m": 71.3905029296875,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -6.39359451364225,
+            "altitude_deg": 1.139444494018379
+          },
+          {
+            "distance_m": 35.4497184753418,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -13.664952005448471,
+            "altitude_deg": 0.5414495327135679
+          },
+          {
+            "distance_m": 76.59381866455078,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -8.365954643569179,
+            "altitude_deg": 2.2690720852087454
+          },
+          {
+            "distance_m": 77.5928726196289,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -8.068789334481203,
+            "altitude_deg": 2.0772714086915016
+          }
+        ],
+        "tracking_fov_deg": 30.0,
+        "candidate_count": 49,
+        "obstacle_candidate_count": 4,
+        "closing_candidate_count": 0,
+        "height_filter_min_m": -0.65,
+        "height_rejected_count": 45,
+        "height_boundary_candidate_count": 1,
+        "nearest_relative_height_m": 0.3262223022570924,
+        "nearest_altitude_deg": 0.2812007824397026,
+        "azimuth_obstacle_bins": [
+          {
+            "distance_m": 66.4693603515625,
+            "relative_velocity_mps": 0.0,
+            "azimuth_deg": -6.918094558404461,
+            "altitude_deg": 0.2812007824397026,
+            "relative_height_m": 0.3262223022570924,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 70.79096221923828,
+            "relative_velocity_mps": -0.0,
+            "azimuth_deg": -6.452574050898956,
+            "altitude_deg": -0.4654175210594256,
+            "relative_height_m": -0.575033485822984,
+            "closing_speed_mps": 0.0
+          }
+        ],
+        "nearest_distance_m": 66.4693603515625,
+        "nearest_relative_velocity_mps": 0.0,
+        "nearest_azimuth_deg": -6.918094558404461,
+        "nearest_closing_distance_m": null,
+        "nearest_closing_velocity_mps": null,
+        "ground_filter": {
+          "status": "same_frame_local_plane",
+          "rejected": 0,
+          "examined": 17,
+          "retained_reasons": {
+            "insufficient_support": 17
+          },
+          "history_limit_s": 0.2
+        }
+      }
+    },
+    "traffic_control_contract": {
+      "source": "traffic_control_contract/1.0",
+      "observation": {
+        "applicable": false,
+        "state": "UNKNOWN",
+        "timestamp_s": 5.1867050640285015,
+        "source": "rgb_static_opendrive",
+        "image_source": "synchronized_front_capture"
+      },
+      "active": false,
+      "changed": false,
+      "policy_safety_credit": false,
+      "status": "no_route_associated_signal"
+    },
+    "driving_intent": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+        "normalized_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule",
+        "source_kind": "CONFIGURED_PLAN",
+        "model_prediction": false
+      },
+      "intent": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_01_step_01",
+            "action": "KEEP_LANE",
+            "parameters": {},
+            "depends_on": [],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_02",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 12.5
+            },
+            "depends_on": [
+              "s2_t05_cmd_01_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_03",
+            "action": "TURN",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_01_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "JUNCTION_EXITED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_04",
+            "action": "KEEP_LANE",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_01_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+    },
+    "plan_before": null,
+    "plan_after": {
+      "schema_version": "1.1.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "revision": 0,
+      "plan_status": "ACTIVE",
+      "active_step_index": 0,
+      "active_step_id": "s2_t05_cmd_01_step_01",
+      "step_states": [
+        {
+          "step_id": "s2_t05_cmd_01_step_01",
+          "action": "KEEP_LANE",
+          "status": "ACTIVE",
+          "activation_frame_id": "carla_27501",
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_02",
+          "action": "SET_SPEED",
+          "status": "PENDING",
+          "activation_frame_id": null,
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_03",
+          "action": "TURN",
+          "status": "PENDING",
+          "activation_frame_id": null,
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_04",
+          "action": "KEEP_LANE",
+          "status": "PENDING",
+          "activation_frame_id": null,
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        }
+      ],
+      "last_frame_id": "carla_27501",
+      "last_feedback_outcome": "INITIALIZED",
+      "reason_codes": []
+    }
+  },
+  {
+    "simulation_frame": 27525,
+    "video_time_s": 1.15,
+    "route_s_m": 2.0,
+    "source_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+    "sensor_frame": 27525,
+    "sensor_frame_lag": 0,
+    "policy_truth_access": false,
+    "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+    "modality_mask": {
+      "text": true,
+      "front_rgb": true,
+      "left_rgb": true,
+      "right_rgb": true,
+      "rear_rgb": true,
+      "lidar_bev": true,
+      "vehicle_state": true,
+      "environment_state": true
+    },
+    "camera_view_mask": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "full_decision_latency_ms": 23.391,
+    "execution_feedback": {
+      "scope": "observed_before_current_command; previous_physics_step",
+      "frame": 27525,
+      "previous_decision_frame": 27523,
+      "speed_kmh": 9.44878745378096,
+      "acceleration_xyz_mps2": [
+        0.04770468920469284,
+        4.072918891906738,
+        -0.0005855560302734375
+      ],
+      "throttle": 0.8997706174850464,
+      "brake": 0.0
+    },
+    "network_proposal_before_execution": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-27525",
+      "frame_id": "carla_27525",
+      "action": "accelerate",
+      "target_speed_kmh": 10.371855,
+      "target_lane": null,
+      "target_location": null,
+      "target_entity_id": null,
+      "confidence": 0.960822,
+      "model": "phase-recovery-epoch_06",
+      "latency_ms": 18.2615
+    },
+    "control_decision": {
+      "schema_version": "1.0.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "frame_id": "carla_27525",
+      "decision_status": "READY",
+      "action": "accelerate",
+      "target_speed_kmh": 45.0,
+      "target_lane": null,
+      "target_location": null,
+      "emergency": false,
+      "reason": "active_instruction_speed_setpoint",
+      "parse_status": "VALID",
+      "parse_confidence": 1.0,
+      "source_step_id": "s2_t05_cmd_01_step_02",
+      "source_step_action": "SET_SPEED",
+      "source_step_count": 4,
+      "matched_entity_id": null,
+      "risk_level": "low",
+      "risk_reason_codes": [],
+      "blocked_reason_codes": [],
+      "longitudinal_control_mode": "ABSOLUTE_SPEED",
+      "allow_positive_acceleration": true,
+      "control_valid_until_s": 6.686705081909895,
+      "command_id": "s2_t05_cmd_01-configured:s2_t05_cmd_01_step_02"
+    },
+    "raw_network_output": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-27525",
+      "frame_id": "carla_27525",
+      "action": "accelerate",
+      "target_speed_kmh": 10.371854782104492,
+      "target_lane": null,
+      "target_location": null,
+      "target_entity_id": null,
+      "confidence": 0.960822,
+      "model": "phase-recovery-epoch_06",
+      "latency_ms": 18.2615,
+      "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+      "target_acceleration_mps2": 2.564077377319336
+    },
+    "canonical_decision": {
+      "schema_version": "1.0.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "frame_id": "carla_27525",
+      "decision_status": "READY",
+      "action": "keep_lane",
+      "target_speed_kmh": 45.0,
+      "target_lane": null,
+      "target_location": null,
+      "emergency": false,
+      "reason": "driving_intent_set_speed",
+      "parse_status": "VALID",
+      "parse_confidence": 1.0,
+      "source_step_id": "s2_t05_cmd_01_step_02",
+      "source_step_action": "SET_SPEED",
+      "source_step_count": 4,
+      "matched_entity_id": null,
+      "risk_level": "low",
+      "risk_reason_codes": [],
+      "blocked_reason_codes": []
+    },
+    "risk": {
+      "risk_level": "low",
+      "source": "event_memory_vla",
+      "reason_codes": [],
+      "probabilities": {
+        "low": 1.0,
+        "medium": 0.0,
+        "high": 0.0
+      },
+      "prediction_provenance": {
+        "schema_version": "vla_prediction_provenance/1.0",
+        "base": {
+          "action": "accelerate",
+          "target_speed_kmh": 29.462966918945312,
+          "risk_probabilities": [
+            0.9757689833641052,
+            0.004771954845637083,
+            0.01945910044014454
+          ]
+        },
+        "effective": {
+          "action": "accelerate",
+          "target_speed_kmh": 10.371854782104492,
+          "risk_probabilities": [
+            1.0,
+            3.683847116242589e-10,
+            5.097804773798731e-13
+          ]
+        },
+        "residual_present": true,
+        "residual_applied": true,
+        "effective_action_source": "sequence_first_sample_encoding",
+        "scope": "model stages before execution and safety gates; not ground-truth correctness"
+      }
+    },
+    "target_lane_contract": null,
+    "sensor_contract": {
+      "cameras": [
+        "front",
+        "left",
+        "right",
+        "rear"
+      ],
+      "lidar": true,
+      "source": "model_config.sensor_requirements"
+    },
+    "physical_safety_observation": {
+      "forward_radar": {
+        "schema_version": "physical_front_radar/1.0",
+        "direction": "front",
+        "sensor_frame": 27525,
+        "measurement_timestamp_s": 6.386705081909895,
+        "measurement_pose": {
+          "x": 189.77597045898438,
+          "y": -8.024062156677246,
+          "yaw_deg": 89.32844543457031
+        },
+        "tracking_points": [
+          {
+            "distance_m": 57.03384780883789,
+            "relative_velocity_mps": 3.601013660430908,
+            "azimuth_deg": 0.17582935970043992,
+            "altitude_deg": -0.6119562414942873
+          },
+          {
+            "distance_m": 65.59745025634766,
+            "relative_velocity_mps": -4.780411720275879,
+            "azimuth_deg": 10.297169287049128,
+            "altitude_deg": 2.8217739810539393
+          },
+          {
+            "distance_m": 54.723411560058594,
+            "relative_velocity_mps": -4.787762641906738,
+            "azimuth_deg": -9.948249927072673,
+            "altitude_deg": 2.2673446876789667
+          },
+          {
+            "distance_m": 62.67686080932617,
+            "relative_velocity_mps": -4.81162166595459,
+            "azimuth_deg": -8.435870167460722,
+            "altitude_deg": -0.4411728841463926
+          },
+          {
+            "distance_m": 38.02080535888672,
+            "relative_velocity_mps": -4.700992107391357,
+            "azimuth_deg": -14.884389220426806,
+            "altitude_deg": -0.5529453814169341
+          },
+          {
+            "distance_m": 57.44335174560547,
+            "relative_velocity_mps": -4.797788619995117,
+            "azimuth_deg": 9.442024480321654,
+            "altitude_deg": 0.9833603707750128
+          },
+          {
+            "distance_m": 63.08218002319336,
+            "relative_velocity_mps": -4.808599948883057,
+            "azimuth_deg": 8.665670174538509,
+            "altitude_deg": 0.5663450386297355
+          },
+          {
+            "distance_m": 53.28678512573242,
+            "relative_velocity_mps": -4.787782669067383,
+            "azimuth_deg": -10.17150149028371,
+            "altitude_deg": -0.4811777556824069
+          },
+          {
+            "distance_m": 54.02212142944336,
+            "relative_velocity_mps": -4.788900852203369,
+            "azimuth_deg": 10.084145932120185,
+            "altitude_deg": -0.5307486539965678
+          },
+          {
+            "distance_m": 42.544578552246094,
+            "relative_velocity_mps": -4.746089458465576,
+            "azimuth_deg": 12.656412249019912,
+            "altitude_deg": 0.060251193082158434
+          },
+          {
+            "distance_m": 65.36625671386719,
+            "relative_velocity_mps": -4.755169868469238,
+            "azimuth_deg": 12.047551257158405,
+            "altitude_deg": 1.7177184046726888
+          },
+          {
+            "distance_m": 57.16743087768555,
+            "relative_velocity_mps": 3.6023223400115967,
+            "azimuth_deg": 0.7343536583077389,
+            "altitude_deg": -0.0781703144316059
+          },
+          {
+            "distance_m": 42.06182098388672,
+            "relative_velocity_mps": -4.734116077423096,
+            "azimuth_deg": -13.261707028361029,
+            "altitude_deg": -0.8741615474806703
+          },
+          {
+            "distance_m": 61.23432922363281,
+            "relative_velocity_mps": -4.804630279541016,
+            "azimuth_deg": 8.967229856583742,
+            "altitude_deg": 0.6220644412182301
+          },
+          {
+            "distance_m": 43.42563247680664,
+            "relative_velocity_mps": -4.753819942474365,
+            "azimuth_deg": 12.216723943842219,
+            "altitude_deg": 0.7224230253750191
+          },
+          {
+            "distance_m": 38.20172882080078,
+            "relative_velocity_mps": -4.718785762786865,
+            "azimuth_deg": 14.043201905268255,
+            "altitude_deg": 0.45549800531130435
+          },
+          {
+            "distance_m": 56.98146057128906,
+            "relative_velocity_mps": 3.603198528289795,
+            "azimuth_deg": 0.954906122857857,
+            "altitude_deg": -0.543447149602385
+          },
+          {
+            "distance_m": 65.01324462890625,
+            "relative_velocity_mps": -4.784558296203613,
+            "azimuth_deg": 9.908417117606804,
+            "altitude_deg": 3.2027437902672675
+          },
+          {
+            "distance_m": 63.657352447509766,
+            "relative_velocity_mps": -4.809543132781982,
+            "azimuth_deg": 8.574025257576217,
+            "altitude_deg": 0.8099978966439243
+          },
+          {
+            "distance_m": 51.85999298095703,
+            "relative_velocity_mps": -4.783296585083008,
+            "azimuth_deg": 10.389381963486178,
+            "altitude_deg": 1.3758377680793434
+          },
+          {
+            "distance_m": 39.54656219482422,
+            "relative_velocity_mps": -4.728203773498535,
+            "azimuth_deg": 13.58037462672985,
+            "altitude_deg": 0.3891940506651113
+          }
+        ],
+        "tracking_fov_deg": 30.0,
+        "candidate_count": 42,
+        "obstacle_candidate_count": 2,
+        "closing_candidate_count": 0,
+        "height_filter_min_m": -0.65,
+        "height_rejected_count": 39,
+        "height_boundary_candidate_count": 1,
+        "nearest_relative_height_m": -0.5404577489277136,
+        "nearest_altitude_deg": -0.543447149602385,
+        "azimuth_obstacle_bins": [
+          {
+            "distance_m": 57.03384780883789,
+            "relative_velocity_mps": 3.601013660430908,
+            "azimuth_deg": 0.17582935970043992,
+            "altitude_deg": -0.6119562414942873,
+            "relative_height_m": -0.6091470586030857,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 56.98146057128906,
+            "relative_velocity_mps": 3.603198528289795,
+            "azimuth_deg": 0.954906122857857,
+            "altitude_deg": -0.543447149602385,
+            "relative_height_m": -0.5404577489277136,
+            "closing_speed_mps": 0.0
+          }
+        ],
+        "nearest_distance_m": 56.981,
+        "nearest_relative_velocity_mps": 3.603,
+        "nearest_azimuth_deg": 0.955,
+        "nearest_closing_distance_m": null,
+        "nearest_closing_velocity_mps": null,
+        "ground_filter": {
+          "status": "same_frame_local_plane",
+          "rejected": 0,
+          "examined": 21,
+          "retained_reasons": {
+            "insufficient_support": 21
+          },
+          "history_limit_s": 0.2
+        },
+        "route_corridor_filter_applied": true,
+        "route_corridor_half_width_m": 1.244,
+        "route_corridor_obstacle_bins": [
+          {
+            "distance_m": 57.03384780883789,
+            "relative_velocity_mps": 3.601013660430908,
+            "azimuth_deg": 0.17582935970043992,
+            "altitude_deg": -0.6119562414942873,
+            "relative_height_m": -0.6091470586030857,
+            "closing_speed_mps": 0.0,
+            "route_lateral_distance_m": 0.639
+          },
+          {
+            "distance_m": 56.98146057128906,
+            "relative_velocity_mps": 3.603198528289795,
+            "azimuth_deg": 0.954906122857857,
+            "altitude_deg": -0.543447149602385,
+            "relative_height_m": -0.5404577489277136,
+            "closing_speed_mps": 0.0,
+            "route_lateral_distance_m": 0.137
+          }
+        ],
+        "unfiltered_obstacle_candidate_count": 3,
+        "unfiltered_nearest_distance_m": 56.98146057128906,
+        "unfiltered_nearest_azimuth_deg": 0.954906122857857
+      },
+      "rear_radar": {
+        "schema_version": "physical_rear_radar/1.0",
+        "direction": "rear",
+        "sensor_frame": 27525,
+        "measurement_timestamp_s": 6.386705081909895,
+        "measurement_pose": {
+          "x": 189.72909545898438,
+          "y": -12.023707389831543,
+          "yaw_deg": -90.67152404785156
+        },
+        "tracking_points": [
+          {
+            "distance_m": 70.32196044921875,
+            "relative_velocity_mps": 4.83305549621582,
+            "azimuth_deg": -6.454184267995787,
+            "altitude_deg": -0.2247233355750423
+          },
+          {
+            "distance_m": 79.01394653320312,
+            "relative_velocity_mps": 4.819421768188477,
+            "azimuth_deg": -7.6051680464517855,
+            "altitude_deg": 3.0880360992421925
+          },
+          {
+            "distance_m": 57.38542938232422,
+            "relative_velocity_mps": 4.863046169281006,
+            "azimuth_deg": 0.1769387051516116,
+            "altitude_deg": -0.6119424743942414
+          },
+          {
+            "distance_m": 57.592411041259766,
+            "relative_velocity_mps": 4.839308738708496,
+            "azimuth_deg": -5.684168804649237,
+            "altitude_deg": -0.532433736370004
+          },
+          {
+            "distance_m": 63.45478439331055,
+            "relative_velocity_mps": 4.863239288330078,
+            "azimuth_deg": -0.2712420464647066,
+            "altitude_deg": -0.5186425705795433
+          },
+          {
+            "distance_m": 75.9754638671875,
+            "relative_velocity_mps": 4.8061347007751465,
+            "azimuth_deg": -8.87550980754058,
+            "altitude_deg": 2.1108983509661785
+          },
+          {
+            "distance_m": 47.753265380859375,
+            "relative_velocity_mps": 4.790994167327881,
+            "azimuth_deg": -9.948289200660401,
+            "altitude_deg": 2.2673581346138953
+          },
+          {
+            "distance_m": 43.520931243896484,
+            "relative_velocity_mps": 4.775729179382324,
+            "azimuth_deg": -10.983043223123468,
+            "altitude_deg": 1.7486228762328808
+          },
+          {
+            "distance_m": 55.519432067871094,
+            "relative_velocity_mps": 4.810791969299316,
+            "azimuth_deg": -8.43591627123762,
+            "altitude_deg": -0.44115938385061126
+          },
+          {
+            "distance_m": 32.769615173339844,
+            "relative_velocity_mps": 4.699908256530762,
+            "azimuth_deg": -14.884389220426806,
+            "altitude_deg": -0.5529321479254171
+          },
+          {
+            "distance_m": 37.68729019165039,
+            "relative_velocity_mps": 4.7438154220581055,
+            "azimuth_deg": -12.817073666224244,
+            "altitude_deg": 1.4949508243973708
+          },
+          {
+            "distance_m": 38.435909271240234,
+            "relative_velocity_mps": 4.748056411743164,
+            "azimuth_deg": -12.554241156772985,
+            "altitude_deg": 2.136206976605426
+          },
+          {
+            "distance_m": 46.71519470214844,
+            "relative_velocity_mps": 4.786869525909424,
+            "azimuth_deg": -10.17150149028371,
+            "altitude_deg": -0.4811643087474784
+          },
+          {
+            "distance_m": 57.27973556518555,
+            "relative_velocity_mps": 4.859179496765137,
+            "azimuth_deg": 2.294052007994186,
+            "altitude_deg": -0.6140324589194125
+          },
+          {
+            "distance_m": 62.26485824584961,
+            "relative_velocity_mps": 4.860232830047607,
+            "azimuth_deg": -2.0151856294663206,
+            "altitude_deg": -0.5357219388468362
+          },
+          {
+            "distance_m": 58.72532653808594,
+            "relative_velocity_mps": 4.788188934326172,
+            "azimuth_deg": 10.084184351934267,
+            "altitude_deg": -0.5307352604224922
+          },
+          {
+            "distance_m": 62.20989990234375,
+            "relative_velocity_mps": 4.781552791595459,
+            "azimuth_deg": -10.498238103383256,
+            "altitude_deg": 2.817728374631176
+          },
+          {
+            "distance_m": 47.60062789916992,
+            "relative_velocity_mps": 4.746302604675293,
+            "azimuth_deg": 12.656442984871179,
+            "altitude_deg": 0.06026458665623401
+          },
+          {
+            "distance_m": 61.56037139892578,
+            "relative_velocity_mps": 4.768219470977783,
+            "azimuth_deg": -11.341786102673694,
+            "altitude_deg": 2.7258919989287116
+          },
+          {
+            "distance_m": 77.79668426513672,
+            "relative_velocity_mps": 4.795896530151367,
+            "azimuth_deg": -9.411916152686592,
+            "altitude_deg": 3.3614095115734868
+          },
+          {
+            "distance_m": 58.62333297729492,
+            "relative_velocity_mps": 4.831650257110596,
+            "azimuth_deg": 6.5248600773193175,
+            "altitude_deg": -0.5936968513261689
+          },
+          {
+            "distance_m": 36.49942398071289,
+            "relative_velocity_mps": 4.732569694519043,
+            "azimuth_deg": -13.261722396286661,
+            "altitude_deg": -0.8741481005457419
+          },
+          {
+            "distance_m": 31.65215301513672,
+            "relative_velocity_mps": 4.76651668548584,
+            "azimuth_deg": -11.341231149803631,
+            "altitude_deg": -1.1351395538505669
+          },
+          {
+            "distance_m": 76.53584289550781,
+            "relative_velocity_mps": 4.863481044769287,
+            "azimuth_deg": -0.45240734471187355,
+            "altitude_deg": -0.3678796716277196
+          },
+          {
+            "distance_m": 34.09706115722656,
+            "relative_velocity_mps": 4.761445045471191,
+            "azimuth_deg": -11.661060734105002,
+            "altitude_deg": -1.0265583290675815
+          },
+          {
+            "distance_m": 77.29051208496094,
+            "relative_velocity_mps": 4.825586318969727,
+            "azimuth_deg": -7.214009089100679,
+            "altitude_deg": 2.285718536876536
+          },
+          {
+            "distance_m": 43.090126037597656,
+            "relative_velocity_mps": 4.7196125984191895,
+            "azimuth_deg": 14.043243740176921,
+            "altitude_deg": 0.45551123880282124
+          },
+          {
+            "distance_m": 66.19083404541016,
+            "relative_velocity_mps": 4.845981597900391,
+            "azimuth_deg": 4.851634058508621,
+            "altitude_deg": -0.48347654122493927
+          },
+          {
+            "distance_m": 74.87291717529297,
+            "relative_velocity_mps": 4.828825950622559,
+            "azimuth_deg": 6.859068490484034,
+            "altitude_deg": -0.3867132245729422
+          },
+          {
+            "distance_m": 40.720054626464844,
+            "relative_velocity_mps": 4.7619829177856445,
+            "azimuth_deg": -11.79150710196849,
+            "altitude_deg": 0.27361393637569936
+          },
+          {
+            "distance_m": 61.723445892333984,
+            "relative_velocity_mps": 4.8625664710998535,
+            "azimuth_deg": 0.9551110285329574,
+            "altitude_deg": -0.5434334892240451
+          },
+          {
+            "distance_m": 69.27967834472656,
+            "relative_velocity_mps": 4.8327436447143555,
+            "azimuth_deg": -6.61710605092857,
+            "altitude_deg": 1.1387203872446519
+          },
+          {
+            "distance_m": 44.51433181762695,
+            "relative_velocity_mps": 4.7289252281188965,
+            "azimuth_deg": 13.580403655033823,
+            "altitude_deg": 0.3892073108370547
+          }
+        ],
+        "tracking_fov_deg": 30.0,
+        "candidate_count": 60,
+        "obstacle_candidate_count": 14,
+        "closing_candidate_count": 0,
+        "height_filter_min_m": -0.65,
+        "height_rejected_count": 46,
+        "height_boundary_candidate_count": 7,
+        "nearest_relative_height_m": -0.6138487673058224,
+        "nearest_altitude_deg": -0.6140324589194125,
+        "azimuth_obstacle_bins": [
+          {
+            "distance_m": 79.01394653320312,
+            "relative_velocity_mps": 4.819421768188477,
+            "azimuth_deg": -7.6051680464517855,
+            "altitude_deg": 3.0880360992421925,
+            "relative_height_m": 4.2565056285176555,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 69.27967834472656,
+            "relative_velocity_mps": 4.8327436447143555,
+            "azimuth_deg": -6.61710605092857,
+            "altitude_deg": 1.1387203872446519,
+            "relative_height_m": 1.3768027840771355,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 57.592411041259766,
+            "relative_velocity_mps": 4.839308738708496,
+            "azimuth_deg": -5.684168804649237,
+            "altitude_deg": -0.532433736370004,
+            "relative_height_m": -0.5351825479594887,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 62.26485824584961,
+            "relative_velocity_mps": 4.860232830047607,
+            "azimuth_deg": -2.0151856294663206,
+            "altitude_deg": -0.5357219388468362,
+            "relative_height_m": -0.5821748972642449,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 57.38542938232422,
+            "relative_velocity_mps": 4.863046169281006,
+            "azimuth_deg": 0.1769387051516116,
+            "altitude_deg": -0.6119424743942414,
+            "relative_height_m": -0.6128883195408487,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 61.723445892333984,
+            "relative_velocity_mps": 4.8625664710998535,
+            "azimuth_deg": 0.9551110285329574,
+            "altitude_deg": -0.5434334892240451,
+            "relative_height_m": -0.5854198152558003,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 57.27973556518555,
+            "relative_velocity_mps": 4.859179496765137,
+            "azimuth_deg": 2.294052007994186,
+            "altitude_deg": -0.6140324589194125,
+            "relative_height_m": -0.6138487673058224,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 66.19083404541016,
+            "relative_velocity_mps": 4.845981597900391,
+            "azimuth_deg": 4.851634058508621,
+            "altitude_deg": -0.48347654122493927,
+            "relative_height_m": -0.5585286735313105,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 58.62333297729492,
+            "relative_velocity_mps": 4.831650257110596,
+            "azimuth_deg": 6.5248600773193175,
+            "altitude_deg": -0.5936968513261689,
+            "relative_height_m": -0.6074420432681243,
+            "closing_speed_mps": 0.0
+          }
+        ],
+        "nearest_distance_m": 57.27973556518555,
+        "nearest_relative_velocity_mps": 4.859179496765137,
+        "nearest_azimuth_deg": 2.294052007994186,
+        "nearest_closing_distance_m": null,
+        "nearest_closing_velocity_mps": null,
+        "ground_filter": {
+          "status": "same_frame_local_plane",
+          "rejected": 0,
+          "examined": 33,
+          "retained_reasons": {
+            "insufficient_support": 33
+          },
+          "history_limit_s": 0.2
+        }
+      }
+    },
+    "traffic_control_contract": {
+      "source": "traffic_control_contract/1.0",
+      "observation": {
+        "applicable": false,
+        "state": "UNKNOWN",
+        "timestamp_s": 6.386705081909895,
+        "source": "rgb_static_opendrive",
+        "image_source": "synchronized_front_capture"
+      },
+      "active": false,
+      "changed": false,
+      "policy_safety_credit": false,
+      "status": "no_route_associated_signal"
+    },
+    "driving_intent": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+        "normalized_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule",
+        "source_kind": "CONFIGURED_PLAN",
+        "model_prediction": false
+      },
+      "intent": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_01_step_01",
+            "action": "KEEP_LANE",
+            "parameters": {},
+            "depends_on": [],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_02",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 12.5
+            },
+            "depends_on": [
+              "s2_t05_cmd_01_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_03",
+            "action": "TURN",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_01_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "JUNCTION_EXITED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_04",
+            "action": "KEEP_LANE",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_01_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+    },
+    "plan_before": {
+      "schema_version": "1.1.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "revision": 11,
+      "plan_status": "ACTIVE",
+      "active_step_index": 0,
+      "active_step_id": "s2_t05_cmd_01_step_01",
+      "step_states": [
+        {
+          "step_id": "s2_t05_cmd_01_step_01",
+          "action": "KEEP_LANE",
+          "status": "ACTIVE",
+          "activation_frame_id": "carla_27501",
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_02",
+          "action": "SET_SPEED",
+          "status": "PENDING",
+          "activation_frame_id": null,
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_03",
+          "action": "TURN",
+          "status": "PENDING",
+          "activation_frame_id": null,
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_04",
+          "action": "KEEP_LANE",
+          "status": "PENDING",
+          "activation_frame_id": null,
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        }
+      ],
+      "last_frame_id": "carla_27523",
+      "last_feedback_outcome": "CONTINUE",
+      "reason_codes": []
+    },
+    "plan_after": {
+      "schema_version": "1.1.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "revision": 12,
+      "plan_status": "ACTIVE",
+      "active_step_index": 1,
+      "active_step_id": "s2_t05_cmd_01_step_02",
+      "step_states": [
+        {
+          "step_id": "s2_t05_cmd_01_step_01",
+          "action": "KEEP_LANE",
+          "status": "COMPLETED",
+          "activation_frame_id": "carla_27501",
+          "terminal_frame_id": "carla_27525",
+          "reason_codes": [
+            "observed_physical_completion"
+          ],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_02",
+          "action": "SET_SPEED",
+          "status": "ACTIVE",
+          "activation_frame_id": "carla_27525",
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": 9.448787,
+          "resolved_target_speed_kmh": 45.0
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_03",
+          "action": "TURN",
+          "status": "PENDING",
+          "activation_frame_id": null,
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_04",
+          "action": "KEEP_LANE",
+          "status": "PENDING",
+          "activation_frame_id": null,
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        }
+      ],
+      "last_frame_id": "carla_27525",
+      "last_feedback_outcome": "COMPLETED",
+      "reason_codes": []
+    }
+  },
+  {
+    "simulation_frame": 28005,
+    "video_time_s": 25.15,
+    "route_s_m": 179.271,
+    "source_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+    "sensor_frame": 28005,
+    "sensor_frame_lag": 0,
+    "policy_truth_access": false,
+    "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+    "modality_mask": {
+      "text": true,
+      "front_rgb": true,
+      "left_rgb": true,
+      "right_rgb": true,
+      "rear_rgb": true,
+      "lidar_bev": true,
+      "vehicle_state": true,
+      "environment_state": true
+    },
+    "camera_view_mask": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "full_decision_latency_ms": 23.432,
+    "execution_feedback": {
+      "scope": "observed_before_current_command; previous_physics_step",
+      "frame": 28005,
+      "previous_decision_frame": 28003,
+      "speed_kmh": 44.06969143502841,
+      "acceleration_xyz_mps2": [
+        -1.5194892883300781,
+        -1.4679336547851562,
+        4.1198727558366954e-05
+      ],
+      "throttle": 0.5743861794471741,
+      "brake": 0.0
+    },
+    "network_proposal_before_execution": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-28005",
+      "frame_id": "carla_28005",
+      "action": "turn_right",
+      "target_speed_kmh": 22.938158,
+      "target_lane": null,
+      "target_location": null,
+      "target_entity_id": null,
+      "confidence": 0.994653,
+      "model": "phase-recovery-epoch_06",
+      "latency_ms": 14.9796
+    },
+    "control_decision": {
+      "schema_version": "1.0.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "frame_id": "carla_28005",
+      "decision_status": "BLOCKED",
+      "action": "stop",
+      "target_speed_kmh": 0.0,
+      "target_lane": null,
+      "target_location": null,
+      "emergency": false,
+      "reason": "active_plan_not_ready",
+      "parse_status": "VALID",
+      "parse_confidence": 1.0,
+      "source_step_id": "s2_t05_cmd_01_step_03",
+      "source_step_action": "TURN",
+      "source_step_count": 4,
+      "matched_entity_id": null,
+      "risk_level": "low",
+      "risk_reason_codes": [],
+      "blocked_reason_codes": [
+        "turn_target_location_missing",
+        "safe_stop"
+      ],
+      "longitudinal_control_mode": "STOP",
+      "allow_positive_acceleration": false,
+      "control_valid_until_s": 30.686705439537764,
+      "command_id": "s2_t05_cmd_01-configured:s2_t05_cmd_01_step_03"
+    },
+    "raw_network_output": {
+      "schema_version": "1.0.0",
+      "request_id": "unified-28005",
+      "frame_id": "carla_28005",
+      "action": "turn_right",
+      "target_speed_kmh": 22.93815803527832,
+      "target_lane": null,
+      "target_location": null,
+      "target_entity_id": null,
+      "confidence": 0.994653,
+      "model": "phase-recovery-epoch_06",
+      "latency_ms": 14.9796
+    },
+    "canonical_decision": {
+      "schema_version": "1.0.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "frame_id": "carla_28005",
+      "decision_status": "BLOCKED",
+      "action": "stop",
+      "target_speed_kmh": 0.0,
+      "target_lane": null,
+      "target_location": null,
+      "emergency": false,
+      "reason": "plan_blocked_safe_stop",
+      "parse_status": "VALID",
+      "parse_confidence": 1.0,
+      "source_step_id": "s2_t05_cmd_01_step_03",
+      "source_step_action": "TURN",
+      "source_step_count": 4,
+      "matched_entity_id": null,
+      "risk_level": "low",
+      "risk_reason_codes": [],
+      "blocked_reason_codes": [
+        "turn_target_location_missing",
+        "safe_stop"
+      ]
+    },
+    "risk": {
+      "risk_level": "low",
+      "source": "learned_raw_camera_visual_risk_head",
+      "reason_codes": [],
+      "probabilities": {
+        "low": 0.988592,
+        "medium": 0.005932,
+        "high": 0.005476
+      },
+      "prediction_provenance": {
+        "schema_version": "vla_prediction_provenance/1.0",
+        "base": {
+          "action": "turn_right",
+          "target_speed_kmh": 22.93815803527832,
+          "risk_probabilities": [
+            0.988591730594635,
+            0.005931790452450514,
+            0.005476427264511585
+          ]
+        },
+        "effective": {
+          "action": "turn_right",
+          "target_speed_kmh": 22.93815803527832,
+          "risk_probabilities": [
+            0.988591730594635,
+            0.005931790452450514,
+            0.005476427264511585
+          ]
+        },
+        "residual_present": true,
+        "residual_applied": false,
+        "effective_action_source": "effective_action_logits",
+        "scope": "model stages before execution and safety gates; not ground-truth correctness"
+      }
+    },
+    "target_lane_contract": null,
+    "sensor_contract": {
+      "cameras": [
+        "front",
+        "left",
+        "right",
+        "rear"
+      ],
+      "lidar": true,
+      "source": "model_config.sensor_requirements"
+    },
+    "physical_safety_observation": {
+      "forward_radar": {
+        "schema_version": "physical_front_radar/1.0",
+        "direction": "front",
+        "sensor_frame": 28005,
+        "measurement_timestamp_s": 30.386705439537764,
+        "measurement_pose": {
+          "x": 162.06410217285156,
+          "y": 162.87847900390625,
+          "yaw_deg": 134.73838806152344
+        },
+        "tracking_points": [
+          {
+            "distance_m": 74.23578643798828,
+            "relative_velocity_mps": -24.490175247192383,
+            "azimuth_deg": 0.9087061897033619,
+            "altitude_deg": 0.18820519556904022
+          },
+          {
+            "distance_m": 52.60963439941406,
+            "relative_velocity_mps": -24.39704704284668,
+            "azimuth_deg": 6.1022318771410236,
+            "altitude_deg": -0.0920771398707072
+          },
+          {
+            "distance_m": 34.20588684082031,
+            "relative_velocity_mps": -24.256134033203125,
+            "azimuth_deg": -6.831935137119335,
+            "altitude_deg": -0.46307978209428297
+          },
+          {
+            "distance_m": 78.87034606933594,
+            "relative_velocity_mps": -24.392555236816406,
+            "azimuth_deg": -3.992136713732556,
+            "altitude_deg": 0.5782315421371146
+          },
+          {
+            "distance_m": 42.6536865234375,
+            "relative_velocity_mps": -24.485170364379883,
+            "azimuth_deg": -0.11014343045242728,
+            "altitude_deg": 0.0015626725769048704
+          },
+          {
+            "distance_m": 47.94288635253906,
+            "relative_velocity_mps": -24.473636627197266,
+            "azimuth_deg": 3.2239758601890753,
+            "altitude_deg": -0.03536592911469258
+          },
+          {
+            "distance_m": 43.86389923095703,
+            "relative_velocity_mps": -24.489755630493164,
+            "azimuth_deg": 0.6832827864188197,
+            "altitude_deg": 0.14573866782725783
+          },
+          {
+            "distance_m": 42.83462905883789,
+            "relative_velocity_mps": -24.486209869384766,
+            "azimuth_deg": 0.03956468118525214,
+            "altitude_deg": 0.007007934170991755
+          },
+          {
+            "distance_m": 48.23004150390625,
+            "relative_velocity_mps": -24.470136642456055,
+            "azimuth_deg": 3.432906437701299,
+            "altitude_deg": -0.16642005374723332
+          },
+          {
+            "distance_m": 43.00942611694336,
+            "relative_velocity_mps": -24.4871768951416,
+            "azimuth_deg": 0.16551099825738694,
+            "altitude_deg": -0.2939859360706144
+          },
+          {
+            "distance_m": 34.7060546875,
+            "relative_velocity_mps": -24.2401065826416,
+            "azimuth_deg": -6.685128758646374,
+            "altitude_deg": 2.524174954953667
+          },
+          {
+            "distance_m": 68.19534301757812,
+            "relative_velocity_mps": -24.425600051879883,
+            "azimuth_deg": -3.0105140924927825,
+            "altitude_deg": 0.6836867814360554
+          },
+          {
+            "distance_m": 68.76699829101562,
+            "relative_velocity_mps": -24.43625831604004,
+            "azimuth_deg": -2.704649683723149,
+            "altitude_deg": 0.29801251934932205
+          },
+          {
+            "distance_m": 42.818973541259766,
+            "relative_velocity_mps": -24.485816955566406,
+            "azimuth_deg": -0.03426402083239251,
+            "altitude_deg": 0.1584604421051487
+          },
+          {
+            "distance_m": 68.25347137451172,
+            "relative_velocity_mps": -24.12104606628418,
+            "azimuth_deg": -8.567265931618843,
+            "altitude_deg": 2.3752653051031647
+          },
+          {
+            "distance_m": 73.08865356445312,
+            "relative_velocity_mps": -24.129379272460938,
+            "azimuth_deg": -8.623294827154103,
+            "altitude_deg": 1.5549038770542156
+          },
+          {
+            "distance_m": 42.16261291503906,
+            "relative_velocity_mps": -24.48160743713379,
+            "azimuth_deg": -0.45283967434199424,
+            "altitude_deg": 0.037857414037226624
+          },
+          {
+            "distance_m": 42.79631423950195,
+            "relative_velocity_mps": -24.48426055908203,
+            "azimuth_deg": -0.17582935970043992,
+            "altitude_deg": 0.2111859406607167
+          },
+          {
+            "distance_m": 26.159690856933594,
+            "relative_velocity_mps": -23.535377502441406,
+            "azimuth_deg": -14.960260669274602,
+            "altitude_deg": 0.12256436958193348
+          },
+          {
+            "distance_m": 74.54686737060547,
+            "relative_velocity_mps": -24.171178817749023,
+            "azimuth_deg": -8.108908158118565,
+            "altitude_deg": 0.9852035613555642
+          },
+          {
+            "distance_m": 44.65656280517578,
+            "relative_velocity_mps": -24.490375518798828,
+            "azimuth_deg": 1.1851467838588152,
+            "altitude_deg": 0.1308734281093862
+          },
+          {
+            "distance_m": 35.09538650512695,
+            "relative_velocity_mps": -24.28978729248047,
+            "azimuth_deg": -6.2452581727952055,
+            "altitude_deg": 0.13770297694916428
+          },
+          {
+            "distance_m": 48.50584030151367,
+            "relative_velocity_mps": -24.468957901000977,
+            "azimuth_deg": 3.468820426130873,
+            "altitude_deg": 0.3088313789120636
+          },
+          {
+            "distance_m": 43.05617141723633,
+            "relative_velocity_mps": -24.48737335205078,
+            "azimuth_deg": 0.19782350264280654,
+            "altitude_deg": -0.3138901745290894
+          },
+          {
+            "distance_m": 43.24313735961914,
+            "relative_velocity_mps": -24.488187789916992,
+            "azimuth_deg": 0.29607530694597717,
+            "altitude_deg": -0.03761200413972888
+          },
+          {
+            "distance_m": 51.70501708984375,
+            "relative_velocity_mps": -24.415292739868164,
+            "azimuth_deg": 5.586897946244969,
+            "altitude_deg": -0.04663857937557674
+          },
+          {
+            "distance_m": 37.02248764038086,
+            "relative_velocity_mps": -24.36874008178711,
+            "azimuth_deg": -4.616345994432729,
+            "altitude_deg": -0.3852652778297524
+          },
+          {
+            "distance_m": 73.94185638427734,
+            "relative_velocity_mps": -24.48960304260254,
+            "azimuth_deg": 0.7803435097844033,
+            "altitude_deg": 0.31924186786763237
+          },
+          {
+            "distance_m": 43.343772888183594,
+            "relative_velocity_mps": -24.48845100402832,
+            "azimuth_deg": 0.3533244584651431,
+            "altitude_deg": 0.05695485974536698
+          },
+          {
+            "distance_m": 26.711944580078125,
+            "relative_velocity_mps": -23.624658584594727,
+            "azimuth_deg": -14.187186561840354,
+            "altitude_deg": -0.2624940949222277
+          },
+          {
+            "distance_m": 62.42978286743164,
+            "relative_velocity_mps": -24.099979400634766,
+            "azimuth_deg": 11.339199168525552,
+            "altitude_deg": -0.20368217744466433
+          },
+          {
+            "distance_m": 42.697914123535156,
+            "relative_velocity_mps": -24.485361099243164,
+            "azimuth_deg": -0.08622923062092014,
+            "altitude_deg": 0.04792933838636371
+          },
+          {
+            "distance_m": 74.44249725341797,
+            "relative_velocity_mps": -24.223461151123047,
+            "azimuth_deg": -7.214689546696741,
+            "altitude_deg": 1.5709524737262184
+          },
+          {
+            "distance_m": 40.46733474731445,
+            "relative_velocity_mps": -24.460981369018555,
+            "azimuth_deg": -1.714635001149251,
+            "altitude_deg": 0.14690388209140615
+          },
+          {
+            "distance_m": 35.47054672241211,
+            "relative_velocity_mps": -24.306270599365234,
+            "azimuth_deg": -5.896610739725082,
+            "altitude_deg": -0.8687751962681749
+          },
+          {
+            "distance_m": 77.97831726074219,
+            "relative_velocity_mps": -24.348876953125,
+            "azimuth_deg": -5.018290247370109,
+            "altitude_deg": 0.7400928314795479
+          },
+          {
+            "distance_m": 48.37372589111328,
+            "relative_velocity_mps": -24.467058181762695,
+            "azimuth_deg": 3.565735260924653,
+            "altitude_deg": -0.5232999591806986
+          },
+          {
+            "distance_m": 75.82685852050781,
+            "relative_velocity_mps": -24.487070083618164,
+            "azimuth_deg": 2.0056453492996935,
+            "altitude_deg": 0.2451305267524388
+          },
+          {
+            "distance_m": 44.89273452758789,
+            "relative_velocity_mps": -24.489702224731445,
+            "azimuth_deg": 1.3870567806779124,
+            "altitude_deg": -0.4684911595467842
+          },
+          {
+            "distance_m": 44.45641326904297,
+            "relative_velocity_mps": -24.490575790405273,
+            "azimuth_deg": 1.0826362098657962,
+            "altitude_deg": -0.0951698148423346
+          },
+          {
+            "distance_m": 43.138973236083984,
+            "relative_velocity_mps": -24.487558364868164,
+            "azimuth_deg": 0.21397886104123046,
+            "altitude_deg": 0.0971270442356201
+          },
+          {
+            "distance_m": 37.44658279418945,
+            "relative_velocity_mps": -24.36835479736328,
+            "azimuth_deg": -4.483099249009535,
+            "altitude_deg": 1.221513272320902
+          },
+          {
+            "distance_m": 70.51180267333984,
+            "relative_velocity_mps": -24.193134307861328,
+            "azimuth_deg": -6.850742489885789,
+            "altitude_deg": 4.0276588200585
+          },
+          {
+            "distance_m": 42.43205642700195,
+            "relative_velocity_mps": -24.483610153198242,
+            "azimuth_deg": -0.2676107870646399,
+            "altitude_deg": 0.05776307656346312
+          },
+          {
+            "distance_m": 35.99942398071289,
+            "relative_velocity_mps": -24.324420928955078,
+            "azimuth_deg": -5.546482009378711,
+            "altitude_deg": -0.7978713760202427
+          },
+          {
+            "distance_m": 79.05855560302734,
+            "relative_velocity_mps": -24.455968856811523,
+            "azimuth_deg": 4.12084266401816,
+            "altitude_deg": 0.25547463480701155
+          },
+          {
+            "distance_m": 55.28872299194336,
+            "relative_velocity_mps": -23.682077407836914,
+            "azimuth_deg": -13.656101787831428,
+            "altitude_deg": 0.5604745977598153
+          },
+          {
+            "distance_m": 47.24652099609375,
+            "relative_velocity_mps": -24.48037338256836,
+            "azimuth_deg": 2.7470894910178463,
+            "altitude_deg": -0.11374824954988663
+          },
+          {
+            "distance_m": 43.19398498535156,
+            "relative_velocity_mps": -24.48781394958496,
+            "azimuth_deg": 0.29870714425182704,
+            "altitude_deg": -0.4079370235625519
+          },
+          {
+            "distance_m": 36.24395751953125,
+            "relative_velocity_mps": -24.33463478088379,
+            "azimuth_deg": -5.337223369342915,
+            "altitude_deg": -0.7913320034984844
+          },
+          {
+            "distance_m": 39.291038513183594,
+            "relative_velocity_mps": -24.439237594604492,
+            "azimuth_deg": -2.6097706721888554,
+            "altitude_deg": -0.3189154595304998
+          },
+          {
+            "distance_m": 69.19731140136719,
+            "relative_velocity_mps": -24.006296157836914,
+            "azimuth_deg": -10.024384338203513,
+            "altitude_deg": 2.512136319654697
+          },
+          {
+            "distance_m": 42.78367614746094,
+            "relative_velocity_mps": -24.485830307006836,
+            "azimuth_deg": -0.03956468118525214,
+            "altitude_deg": 0.06327731373001788
+          },
+          {
+            "distance_m": 73.18050384521484,
+            "relative_velocity_mps": -24.48729133605957,
+            "azimuth_deg": 0.19382665469937227,
+            "altitude_deg": 0.18223903866924732
+          },
+          {
+            "distance_m": 42.85787582397461,
+            "relative_velocity_mps": -24.479476928710938,
+            "azimuth_deg": -0.11703393072641978,
+            "altitude_deg": 1.147576901442337
+          },
+          {
+            "distance_m": 27.950170516967773,
+            "relative_velocity_mps": -23.786396026611328,
+            "azimuth_deg": -12.679615255404093,
+            "altitude_deg": -0.07858303394828921
+          },
+          {
+            "distance_m": 41.88461685180664,
+            "relative_velocity_mps": -24.479272842407227,
+            "azimuth_deg": -0.6464956543533955,
+            "altitude_deg": -0.002472134943254547
+          },
+          {
+            "distance_m": 42.86882400512695,
+            "relative_velocity_mps": -24.48651885986328,
+            "azimuth_deg": 0.05934702678045817,
+            "altitude_deg": -0.12043392419005808
+          },
+          {
+            "distance_m": 33.66507339477539,
+            "relative_velocity_mps": -24.2318058013916,
+            "azimuth_deg": -7.194729172621026,
+            "altitude_deg": -0.9842278047996045
+          },
+          {
+            "distance_m": 41.30179214477539,
+            "relative_velocity_mps": -24.47322654724121,
+            "azimuth_deg": -1.0634886283013116,
+            "altitude_deg": -0.06217203037377246
+          },
+          {
+            "distance_m": 43.67378234863281,
+            "relative_velocity_mps": -24.48953628540039,
+            "azimuth_deg": 0.5740312426018213,
+            "altitude_deg": 0.008885629213043629
+          }
+        ],
+        "tracking_fov_deg": 30.0,
+        "candidate_count": 89,
+        "obstacle_candidate_count": 0,
+        "closing_candidate_count": 0,
+        "height_filter_min_m": -0.65,
+        "height_rejected_count": 37,
+        "height_boundary_candidate_count": 1,
+        "nearest_relative_height_m": -0.5782707213852428,
+        "nearest_altitude_deg": -0.9842278047996045,
+        "azimuth_obstacle_bins": [
+          {
+            "distance_m": 33.66507339477539,
+            "relative_velocity_mps": -24.2318058013916,
+            "azimuth_deg": -7.194729172621026,
+            "altitude_deg": -0.9842278047996045,
+            "relative_height_m": -0.5782707213852428,
+            "closing_speed_mps": 24.2318058013916
+          },
+          {
+            "distance_m": 35.09538650512695,
+            "relative_velocity_mps": -24.28978729248047,
+            "azimuth_deg": -6.2452581727952055,
+            "altitude_deg": 0.13770297694916428,
+            "relative_height_m": 0.08434712971077118,
+            "closing_speed_mps": 24.28978729248047
+          },
+          {
+            "distance_m": 36.24395751953125,
+            "relative_velocity_mps": -24.33463478088379,
+            "azimuth_deg": -5.337223369342915,
+            "altitude_deg": -0.7913320034984844,
+            "relative_height_m": -0.5005620298407923,
+            "closing_speed_mps": 24.33463478088379
+          },
+          {
+            "distance_m": 37.44658279418945,
+            "relative_velocity_mps": -24.36835479736328,
+            "azimuth_deg": -4.483099249009535,
+            "altitude_deg": 1.221513272320902,
+            "relative_height_m": 0.7982792676474824,
+            "closing_speed_mps": 24.36835479736328
+          },
+          {
+            "distance_m": 39.291038513183594,
+            "relative_velocity_mps": -24.439237594604492,
+            "azimuth_deg": -2.6097706721888554,
+            "altitude_deg": -0.3189154595304998,
+            "relative_height_m": -0.21869769477884704,
+            "closing_speed_mps": 24.439237594604492
+          },
+          {
+            "distance_m": 40.46733474731445,
+            "relative_velocity_mps": -24.460981369018555,
+            "azimuth_deg": -1.714635001149251,
+            "altitude_deg": 0.14690388209140615,
+            "relative_height_m": 0.10375636930666754,
+            "closing_speed_mps": 24.460981369018555
+          },
+          {
+            "distance_m": 41.30179214477539,
+            "relative_velocity_mps": -24.47322654724121,
+            "azimuth_deg": -1.0634886283013116,
+            "altitude_deg": -0.06217203037377246,
+            "relative_height_m": -0.04481683980256604,
+            "closing_speed_mps": 24.47322654724121
+          },
+          {
+            "distance_m": 42.16261291503906,
+            "relative_velocity_mps": -24.48160743713379,
+            "azimuth_deg": -0.45283967434199424,
+            "altitude_deg": 0.037857414037226624,
+            "relative_height_m": 0.027858376156850502,
+            "closing_speed_mps": 24.48160743713379
+          },
+          {
+            "distance_m": 43.67378234863281,
+            "relative_velocity_mps": -24.48953628540039,
+            "azimuth_deg": 0.5740312426018213,
+            "altitude_deg": 0.008885629213043629,
+            "relative_height_m": 0.006773082380997117,
+            "closing_speed_mps": 24.48953628540039
+          },
+          {
+            "distance_m": 75.82685852050781,
+            "relative_velocity_mps": -24.487070083618164,
+            "azimuth_deg": 2.0056453492996935,
+            "altitude_deg": 0.2451305267524388,
+            "relative_height_m": 0.3244116970651123,
+            "closing_speed_mps": 24.487070083618164
+          },
+          {
+            "distance_m": 47.24652099609375,
+            "relative_velocity_mps": -24.48037338256836,
+            "azimuth_deg": 2.7470894910178463,
+            "altitude_deg": -0.11374824954988663,
+            "relative_height_m": -0.09379758118370275,
+            "closing_speed_mps": 24.48037338256836
+          },
+          {
+            "distance_m": 48.37372589111328,
+            "relative_velocity_mps": -24.467058181762695,
+            "azimuth_deg": 3.565735260924653,
+            "altitude_deg": -0.5232999591806986,
+            "relative_height_m": -0.44180595959541147,
+            "closing_speed_mps": 24.467058181762695
+          },
+          {
+            "distance_m": 51.70501708984375,
+            "relative_velocity_mps": -24.415292739868164,
+            "azimuth_deg": 5.586897946244969,
+            "altitude_deg": -0.04663857937557674,
+            "relative_height_m": -0.0420877121814715,
+            "closing_speed_mps": 24.415292739868164
+          }
+        ],
+        "nearest_distance_m": null,
+        "nearest_relative_velocity_mps": null,
+        "nearest_azimuth_deg": null,
+        "nearest_closing_distance_m": null,
+        "nearest_closing_velocity_mps": null,
+        "ground_filter": {
+          "status": "same_frame_local_plane",
+          "rejected": 0,
+          "examined": 61,
+          "retained_reasons": {
+            "insufficient_support": 61
+          },
+          "history_limit_s": 0.2
+        },
+        "route_corridor_filter_applied": true,
+        "route_corridor_half_width_m": 1.244,
+        "route_corridor_obstacle_bins": [],
+        "unfiltered_obstacle_candidate_count": 52,
+        "unfiltered_nearest_distance_m": 33.66507339477539,
+        "unfiltered_nearest_azimuth_deg": -7.194729172621026
+      },
+      "rear_radar": {
+        "schema_version": "physical_rear_radar/1.0",
+        "direction": "rear",
+        "sensor_frame": 28005,
+        "measurement_timestamp_s": 30.386705439537764,
+        "measurement_pose": {
+          "x": 164.8795928955078,
+          "y": 160.03717041015625,
+          "yaw_deg": -45.2615852355957
+        },
+        "tracking_points": [
+          {
+            "distance_m": 39.95801544189453,
+            "relative_velocity_mps": 24.456438064575195,
+            "azimuth_deg": 0.9082753541771221,
+            "altitude_deg": 0.18820515554840056
+          },
+          {
+            "distance_m": 33.45535659790039,
+            "relative_velocity_mps": 24.23832893371582,
+            "azimuth_deg": 6.102199860629288,
+            "altitude_deg": -0.09207712653049399
+          },
+          {
+            "distance_m": 52.63455581665039,
+            "relative_velocity_mps": 24.407743453979492,
+            "azimuth_deg": -6.831935137119335,
+            "altitude_deg": -0.46307978209428297
+          },
+          {
+            "distance_m": 41.54157638549805,
+            "relative_velocity_mps": 24.475690841674805,
+            "azimuth_deg": -0.11190583270170214,
+            "altitude_deg": 0.0015625591850924776
+          },
+          {
+            "distance_m": 36.720367431640625,
+            "relative_velocity_mps": 24.38397979736328,
+            "azimuth_deg": 3.2239758601890753,
+            "altitude_deg": -0.03536598914565208
+          },
+          {
+            "distance_m": 55.246726989746094,
+            "relative_velocity_mps": 23.687307357788086,
+            "azimuth_deg": 12.569236837095747,
+            "altitude_deg": 0.7428489195313538
+          },
+          {
+            "distance_m": 72.99920654296875,
+            "relative_velocity_mps": 24.150672912597656,
+            "azimuth_deg": 7.375147765773266,
+            "altitude_deg": 1.0737405288020891
+          },
+          {
+            "distance_m": 30.990522384643555,
+            "relative_velocity_mps": 24.080636978149414,
+            "azimuth_deg": 8.341554646532956,
+            "altitude_deg": -0.7134353502009286
+          },
+          {
+            "distance_m": 40.297386169433594,
+            "relative_velocity_mps": 24.461395263671875,
+            "azimuth_deg": 0.6835691207554313,
+            "altitude_deg": 0.14573869450768429
+          },
+          {
+            "distance_m": 41.33966064453125,
+            "relative_velocity_mps": 24.47377586364746,
+            "azimuth_deg": 0.03426402083239251,
+            "altitude_deg": 0.007007934170991755
+          },
+          {
+            "distance_m": 36.443111419677734,
+            "relative_velocity_mps": 24.37532615661621,
+            "azimuth_deg": 3.4329634270921865,
+            "altitude_deg": -0.16642000038638044
+          },
+          {
+            "distance_m": 41.05304718017578,
+            "relative_velocity_mps": 24.470895767211914,
+            "azimuth_deg": 0.16312942335159455,
+            "altitude_deg": -0.293985909390188
+          },
+          {
+            "distance_m": 66.1092529296875,
+            "relative_velocity_mps": 24.345598220825195,
+            "azimuth_deg": 4.095816424012411,
+            "altitude_deg": 0.5161690282437937
+          },
+          {
+            "distance_m": 76.8361587524414,
+            "relative_velocity_mps": 24.48958396911621,
+            "azimuth_deg": -2.704504969090109,
+            "altitude_deg": 0.2980124926688956
+          },
+          {
+            "distance_m": 41.40596008300781,
+            "relative_velocity_mps": 24.474151611328125,
+            "azimuth_deg": -0.01978234059262607,
+            "altitude_deg": 0.15846040208450904
+          },
+          {
+            "distance_m": 73.00595092773438,
+            "relative_velocity_mps": 24.010446548461914,
+            "azimuth_deg": 8.971895729560506,
+            "altitude_deg": 2.5027757588406057
+          },
+          {
+            "distance_m": 42.12791442871094,
+            "relative_velocity_mps": 24.48046875,
+            "azimuth_deg": -0.45283967434199424,
+            "altitude_deg": 0.03785740736712002
+          },
+          {
+            "distance_m": 41.6870002746582,
+            "relative_velocity_mps": 24.476600646972656,
+            "azimuth_deg": -0.17582935970043992,
+            "altitude_deg": 0.2111859540009299
+          },
+          {
+            "distance_m": 69.01197052001953,
+            "relative_velocity_mps": 23.87990379333496,
+            "azimuth_deg": -14.960260669274602,
+            "altitude_deg": 0.12256431622108059
+          },
+          {
+            "distance_m": 39.53343963623047,
+            "relative_velocity_mps": 24.449920654296875,
+            "azimuth_deg": 1.1848165869011273,
+            "altitude_deg": 0.13087345478981266
+          },
+          {
+            "distance_m": 51.80580520629883,
+            "relative_velocity_mps": 24.4279727935791,
+            "azimuth_deg": -6.2452581727952055,
+            "altitude_deg": 0.1377030569904436
+          },
+          {
+            "distance_m": 36.45801544189453,
+            "relative_velocity_mps": 24.3737735748291,
+            "azimuth_deg": 3.468820426130873,
+            "altitude_deg": 0.3088313255512107
+          },
+          {
+            "distance_m": 40.99626922607422,
+            "relative_velocity_mps": 24.470266342163086,
+            "azimuth_deg": 0.19782350264280654,
+            "altitude_deg": -0.31389020120951583
+          },
+          {
+            "distance_m": 40.88078308105469,
+            "relative_velocity_mps": 24.468994140625,
+            "azimuth_deg": 0.29475057041211206,
+            "altitude_deg": -0.03761208084595491
+          },
+          {
+            "distance_m": 46.60152816772461,
+            "relative_velocity_mps": 31.102352142333984,
+            "azimuth_deg": 1.01817960794668,
+            "altitude_deg": 0.6573099248827884
+          },
+          {
+            "distance_m": 33.99263381958008,
+            "relative_velocity_mps": 24.268945693969727,
+            "azimuth_deg": 5.586862941525473,
+            "altitude_deg": -0.0466386727570693
+          },
+          {
+            "distance_m": 48.801292419433594,
+            "relative_velocity_mps": 24.46731948852539,
+            "azimuth_deg": -4.616303732637239,
+            "altitude_deg": -0.3852653578710317
+          },
+          {
+            "distance_m": 40.17470169067383,
+            "relative_velocity_mps": 24.459096908569336,
+            "azimuth_deg": 0.7800927137758169,
+            "altitude_deg": 0.31924178782635304
+          },
+          {
+            "distance_m": 40.803611755371094,
+            "relative_velocity_mps": 24.467967987060547,
+            "azimuth_deg": 0.35277022596659363,
+            "altitude_deg": 0.056954873085580206
+          },
+          {
+            "distance_m": 47.969642639160156,
+            "relative_velocity_mps": 31.214826583862305,
+            "azimuth_deg": -0.2624426283796146,
+            "altitude_deg": 0.3736713518787731
+          },
+          {
+            "distance_m": 67.12890625,
+            "relative_velocity_mps": 23.95073127746582,
+            "azimuth_deg": -14.187172901462015,
+            "altitude_deg": -0.2624942016439335
+          },
+          {
+            "distance_m": 28.376110076904297,
+            "relative_velocity_mps": 23.81674575805664,
+            "azimuth_deg": 11.339199168525552,
+            "altitude_deg": -0.20368229750658334
+          },
+          {
+            "distance_m": 41.506385803222656,
+            "relative_velocity_mps": 24.47530746459961,
+            "azimuth_deg": -0.09065408596539092,
+            "altitude_deg": 0.047929224994551316
+          },
+          {
+            "distance_m": 43.96936798095703,
+            "relative_velocity_mps": 24.490331649780273,
+            "azimuth_deg": -1.7144067234205846,
+            "altitude_deg": 0.14690382873055324
+          },
+          {
+            "distance_m": 36.23678207397461,
+            "relative_velocity_mps": 24.368690490722656,
+            "azimuth_deg": 3.565735260924653,
+            "altitude_deg": -0.5233000659024044
+          },
+          {
+            "distance_m": 38.37023162841797,
+            "relative_velocity_mps": 24.42698860168457,
+            "azimuth_deg": 2.0055478056606093,
+            "altitude_deg": 0.24513063347414457
+          },
+          {
+            "distance_m": 46.699134826660156,
+            "relative_velocity_mps": 31.112890243530273,
+            "azimuth_deg": 0.8991813841840733,
+            "altitude_deg": 0.7298443994342082
+          },
+          {
+            "distance_m": 39.15079116821289,
+            "relative_velocity_mps": 24.443769454956055,
+            "azimuth_deg": 1.3870567806779124,
+            "altitude_deg": -0.4684912129076371
+          },
+          {
+            "distance_m": 39.65330123901367,
+            "relative_velocity_mps": 24.452362060546875,
+            "azimuth_deg": 1.0824554232962023,
+            "altitude_deg": -0.09516978149180154
+          },
+          {
+            "distance_m": 72.02835083007812,
+            "relative_velocity_mps": 23.944686889648438,
+            "azimuth_deg": 9.706443301207651,
+            "altitude_deg": 2.684261142163838
+          },
+          {
+            "distance_m": 41.03466796875,
+            "relative_velocity_mps": 24.47048568725586,
+            "azimuth_deg": 0.21397886104123046,
+            "altitude_deg": 0.09712701088508705
+          },
+          {
+            "distance_m": 73.90054321289062,
+            "relative_velocity_mps": 24.03898048400879,
+            "azimuth_deg": 8.601013042534229,
+            "altitude_deg": 2.583506887282864
+          },
+          {
+            "distance_m": 35.79436111450195,
+            "relative_velocity_mps": 24.354520797729492,
+            "azimuth_deg": 3.8234643384054445,
+            "altitude_deg": -1.0118630703465934
+          },
+          {
+            "distance_m": 41.815189361572266,
+            "relative_velocity_mps": 24.478002548217773,
+            "azimuth_deg": -0.2668786228021263,
+            "altitude_deg": 0.05776314993463584
+          },
+          {
+            "distance_m": 35.6633186340332,
+            "relative_velocity_mps": 24.345077514648438,
+            "azimuth_deg": 4.120795279580793,
+            "altitude_deg": 0.25547458144615864
+          },
+          {
+            "distance_m": 66.25355529785156,
+            "relative_velocity_mps": 23.996545791625977,
+            "azimuth_deg": -13.656101787831428,
+            "altitude_deg": 0.5604745443989624
+          },
+          {
+            "distance_m": 32.83386993408203,
+            "relative_velocity_mps": 24.20256996154785,
+            "azimuth_deg": 6.667798007401113,
+            "altitude_deg": 0.13886605677919694
+          },
+          {
+            "distance_m": 37.32236862182617,
+            "relative_velocity_mps": 24.402095794677734,
+            "azimuth_deg": 2.7470182009183843,
+            "altitude_deg": -0.1137482362096734
+          },
+          {
+            "distance_m": 40.82004165649414,
+            "relative_velocity_mps": 24.46817970275879,
+            "azimuth_deg": 0.29870714425182704,
+            "altitude_deg": -0.4079370769234048
+          },
+          {
+            "distance_m": 72.17359924316406,
+            "relative_velocity_mps": 24.10533905029297,
+            "azimuth_deg": 7.929592640517282,
+            "altitude_deg": 1.6088535135957365
+          },
+          {
+            "distance_m": 45.29527282714844,
+            "relative_velocity_mps": 24.489652633666992,
+            "azimuth_deg": -2.6097706721888554,
+            "altitude_deg": -0.31891559293263205
+          },
+          {
+            "distance_m": 41.414676666259766,
+            "relative_velocity_mps": 24.474422454833984,
+            "azimuth_deg": -0.03426402083239251,
+            "altitude_deg": 0.06327730038980466
+          },
+          {
+            "distance_m": 41.07809829711914,
+            "relative_velocity_mps": 24.47075653076172,
+            "azimuth_deg": 0.19382665469937227,
+            "altitude_deg": 0.1822389319475415
+          },
+          {
+            "distance_m": 41.67737579345703,
+            "relative_velocity_mps": 24.47136688232422,
+            "azimuth_deg": -0.11703393072641978,
+            "altitude_deg": 1.14757732832916
+          },
+          {
+            "distance_m": 63.99542999267578,
+            "relative_velocity_mps": 24.077295303344727,
+            "azimuth_deg": -12.679615255404093,
+            "altitude_deg": -0.07858311398956853
+          },
+          {
+            "distance_m": 42.40087127685547,
+            "relative_velocity_mps": 24.482746124267578,
+            "azimuth_deg": -0.6461929382349464,
+            "altitude_deg": -0.002472081582401656
+          },
+          {
+            "distance_m": 72.2697525024414,
+            "relative_velocity_mps": 24.06686019897461,
+            "azimuth_deg": 8.518873187575656,
+            "altitude_deg": 0.8036574533817427
+          },
+          {
+            "distance_m": 41.26124572753906,
+            "relative_velocity_mps": 24.47309684753418,
+            "azimuth_deg": 0.05233915597547922,
+            "altitude_deg": -0.12043392419005808
+          },
+          {
+            "distance_m": 42.98158264160156,
+            "relative_velocity_mps": 24.486690521240234,
+            "azimuth_deg": -1.0634886283013116,
+            "altitude_deg": -0.0621720503840923
+          },
+          {
+            "distance_m": 40.447208404541016,
+            "relative_velocity_mps": 24.463680267333984,
+            "azimuth_deg": 0.5736902667518495,
+            "altitude_deg": 0.008885475800591569
+          }
+        ],
+        "tracking_fov_deg": 30.0,
+        "candidate_count": 89,
+        "obstacle_candidate_count": 49,
+        "closing_candidate_count": 0,
+        "height_filter_min_m": -0.65,
+        "height_rejected_count": 40,
+        "height_boundary_candidate_count": 1,
+        "nearest_relative_height_m": 0.07957838468038103,
+        "nearest_altitude_deg": 0.13886605677919694,
+        "azimuth_obstacle_bins": [
+          {
+            "distance_m": 52.63455581665039,
+            "relative_velocity_mps": 24.407743453979492,
+            "azimuth_deg": -6.831935137119335,
+            "altitude_deg": -0.46307978209428297,
+            "relative_height_m": -0.4254018966539175,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 51.80580520629883,
+            "relative_velocity_mps": 24.4279727935791,
+            "azimuth_deg": -6.2452581727952055,
+            "altitude_deg": 0.1377030569904436,
+            "relative_height_m": 0.12450848805383101,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 48.801292419433594,
+            "relative_velocity_mps": 24.46731948852539,
+            "azimuth_deg": -4.616303732637239,
+            "altitude_deg": -0.3852653578710317,
+            "relative_height_m": -0.32814468825868975,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 45.29527282714844,
+            "relative_velocity_mps": 24.489652633666992,
+            "azimuth_deg": -2.6097706721888554,
+            "altitude_deg": -0.31891559293263205,
+            "relative_height_m": -0.25211794521469144,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 43.96936798095703,
+            "relative_velocity_mps": 24.490331649780273,
+            "azimuth_deg": -1.7144067234205846,
+            "altitude_deg": 0.14690382873055324,
+            "relative_height_m": 0.11273537913433604,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 42.40087127685547,
+            "relative_velocity_mps": 24.482746124267578,
+            "azimuth_deg": -0.6461929382349464,
+            "altitude_deg": -0.002472081582401656,
+            "relative_height_m": -0.001829426422322144,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 40.803611755371094,
+            "relative_velocity_mps": 24.467967987060547,
+            "azimuth_deg": 0.35277022596659363,
+            "altitude_deg": 0.056954873085580206,
+            "relative_height_m": 0.040560826049986,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 39.15079116821289,
+            "relative_velocity_mps": 24.443769454956055,
+            "azimuth_deg": 1.3870567806779124,
+            "altitude_deg": -0.4684912129076371,
+            "relative_height_m": -0.3201212622037467,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 38.37023162841797,
+            "relative_velocity_mps": 24.42698860168457,
+            "azimuth_deg": 2.0055478056606093,
+            "altitude_deg": 0.24513063347414457,
+            "relative_height_m": 0.16416026750330784,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 36.443111419677734,
+            "relative_velocity_mps": 24.37532615661621,
+            "azimuth_deg": 3.4329634270921865,
+            "altitude_deg": -0.16642000038638044,
+            "relative_height_m": -0.10585167250220007,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 35.6633186340332,
+            "relative_velocity_mps": 24.345077514648438,
+            "azimuth_deg": 4.120795279580793,
+            "altitude_deg": 0.25547458144615864,
+            "relative_height_m": 0.159017667411224,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 33.45535659790039,
+            "relative_velocity_mps": 24.23832893371582,
+            "azimuth_deg": 6.102199860629288,
+            "altitude_deg": -0.09207712653049399,
+            "relative_height_m": -0.053764375017234974,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 32.83386993408203,
+            "relative_velocity_mps": 24.20256996154785,
+            "azimuth_deg": 6.667798007401113,
+            "altitude_deg": 0.13886605677919694,
+            "relative_height_m": 0.07957838468038103,
+            "closing_speed_mps": 0.0
+          },
+          {
+            "distance_m": 72.17359924316406,
+            "relative_velocity_mps": 24.10533905029297,
+            "azimuth_deg": 7.929592640517282,
+            "altitude_deg": 1.6088535135957365,
+            "relative_height_m": 2.0263532695381397,
+            "closing_speed_mps": 0.0
+          }
+        ],
+        "nearest_distance_m": 32.83386993408203,
+        "nearest_relative_velocity_mps": 24.20256996154785,
+        "nearest_azimuth_deg": 6.667798007401113,
+        "nearest_closing_distance_m": null,
+        "nearest_closing_velocity_mps": null,
+        "ground_filter": {
+          "status": "same_frame_local_plane",
+          "rejected": 0,
+          "examined": 60,
+          "retained_reasons": {
+            "insufficient_support": 60
+          },
+          "history_limit_s": 0.2
+        }
+      }
+    },
+    "traffic_control_contract": {
+      "source": "traffic_control_contract/1.0",
+      "observation": {
+        "applicable": false,
+        "state": "UNKNOWN",
+        "timestamp_s": 30.386705439537764,
+        "source": "rgb_static_opendrive",
+        "image_source": "synchronized_front_capture"
+      },
+      "active": false,
+      "changed": false,
+      "policy_safety_credit": false,
+      "status": "no_route_associated_signal"
+    },
+    "driving_intent": {
+      "schema_version": "1.2.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "simulation_frame": 0,
+      "route_s_m": 0.0,
+      "timestamp_s": 0.0,
+      "input": {
+        "modality": "TEXT",
+        "language": "zh-CN",
+        "raw_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。",
+        "normalized_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+      },
+      "parse_result": {
+        "status": "VALID",
+        "confidence": 1.0,
+        "source": "competition_schedule",
+        "source_kind": "CONFIGURED_PLAN",
+        "model_prediction": false
+      },
+      "intent": {
+        "category": "NAVIGATION",
+        "urgency": "NORMAL",
+        "steps": [
+          {
+            "step_id": "s2_t05_cmd_01_step_01",
+            "action": "KEEP_LANE",
+            "parameters": {},
+            "depends_on": [],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_02",
+            "action": "SET_SPEED",
+            "parameters": {
+              "target_speed_mps": 12.5
+            },
+            "depends_on": [
+              "s2_t05_cmd_01_step_01"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "TARGET_SPEED_REACHED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_03",
+            "action": "TURN",
+            "parameters": {
+              "direction": "RIGHT"
+            },
+            "depends_on": [
+              "s2_t05_cmd_01_step_02"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "JUNCTION_EXITED"
+            },
+            "status": "PENDING"
+          },
+          {
+            "step_id": "s2_t05_cmd_01_step_04",
+            "action": "KEEP_LANE",
+            "parameters": {},
+            "depends_on": [
+              "s2_t05_cmd_01_step_03"
+            ],
+            "on_blocked": "SAFE_STOP",
+            "trigger": {
+              "type": "IMMEDIATE"
+            },
+            "preconditions": [],
+            "completion": {
+              "type": "ACTION_REACHED"
+            },
+            "status": "PENDING"
+          }
+        ]
+      },
+      "voice_text": "保持当前车道，将车速调整至45公里每小时，在前方路口右转，然后保持车道继续行驶。"
+    },
+    "plan_before": {
+      "schema_version": "1.1.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "revision": 251,
+      "plan_status": "ACTIVE",
+      "active_step_index": 1,
+      "active_step_id": "s2_t05_cmd_01_step_02",
+      "step_states": [
+        {
+          "step_id": "s2_t05_cmd_01_step_01",
+          "action": "KEEP_LANE",
+          "status": "COMPLETED",
+          "activation_frame_id": "carla_27501",
+          "terminal_frame_id": "carla_27525",
+          "reason_codes": [
+            "observed_physical_completion"
+          ],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_02",
+          "action": "SET_SPEED",
+          "status": "ACTIVE",
+          "activation_frame_id": "carla_27525",
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": 9.448787,
+          "resolved_target_speed_kmh": 45.0
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_03",
+          "action": "TURN",
+          "status": "PENDING",
+          "activation_frame_id": null,
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_04",
+          "action": "KEEP_LANE",
+          "status": "PENDING",
+          "activation_frame_id": null,
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        }
+      ],
+      "last_frame_id": "carla_28003",
+      "last_feedback_outcome": "CONTINUE",
+      "reason_codes": []
+    },
+    "plan_after": {
+      "schema_version": "1.1.0",
+      "request_id": "s2_t05_cmd_01-configured",
+      "revision": 252,
+      "plan_status": "BLOCKED",
+      "active_step_index": null,
+      "active_step_id": null,
+      "step_states": [
+        {
+          "step_id": "s2_t05_cmd_01_step_01",
+          "action": "KEEP_LANE",
+          "status": "COMPLETED",
+          "activation_frame_id": "carla_27501",
+          "terminal_frame_id": "carla_27525",
+          "reason_codes": [
+            "observed_physical_completion"
+          ],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_02",
+          "action": "SET_SPEED",
+          "status": "COMPLETED",
+          "activation_frame_id": "carla_27525",
+          "terminal_frame_id": "carla_28005",
+          "reason_codes": [
+            "observed_physical_completion"
+          ],
+          "speed_reference_kmh": 9.448787,
+          "resolved_target_speed_kmh": 45.0
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_03",
+          "action": "TURN",
+          "status": "BLOCKED",
+          "activation_frame_id": "carla_28005",
+          "terminal_frame_id": "carla_28005",
+          "reason_codes": [
+            "turn_target_location_missing",
+            "safe_stop"
+          ],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        },
+        {
+          "step_id": "s2_t05_cmd_01_step_04",
+          "action": "KEEP_LANE",
+          "status": "PENDING",
+          "activation_frame_id": null,
+          "terminal_frame_id": null,
+          "reason_codes": [],
+          "speed_reference_kmh": null,
+          "resolved_target_speed_kmh": null
+        }
+      ],
+      "last_frame_id": "carla_28005",
+      "last_feedback_outcome": "COMPLETED",
+      "reason_codes": [
+        "turn_target_location_missing",
+        "safe_stop"
+      ]
+    }
+  }
+]
