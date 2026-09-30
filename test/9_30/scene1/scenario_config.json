@@ -1,0 +1,1135 @@
+{
+  "scenario_id": "basic_voice_urban_5km",
+  "scenario_name": "Basic Voice Control: 5 km Urban Arterial",
+  "map": "Town05_Opt",
+  "environment": {
+    "weather": "ClearNoon",
+    "road_requirement": "urban_arterial_with_six_lane_sections",
+    "visibility": "good",
+    "lighting": "natural_clear_day"
+  },
+  "route": {
+    "length_m": 5000,
+    "step_m": 5,
+    "goal_tolerance_m": 3,
+    "minimum_same_direction_lanes": 2,
+    "start_location_xyz": [
+      36.6,
+      -56.6,
+      0.0
+    ],
+    "start_spawn_index": 107,
+    "strict_start_spawn": true,
+    "initial_lane_from_right": 1,
+    "spawn_backoff_m": 0.0,
+    "max_uncommanded_heading_delta_deg": 50,
+    "directive_turn_tolerance_m": 110,
+    "route_continuity_horizon_m": 5000,
+    "corridor_sample_step_m": 50,
+    "minimum_multilane_route_fraction": 0.45,
+    "minimum_three_lane_route_fraction": 0.45,
+    "lane_change_preparation_m": 500,
+    "max_route_error_m": 12,
+    "route_error_grace_frames": 60
+  },
+  "map_lane_marking_exemptions_m": [],
+  "traffic": {
+    "enabled": true,
+    "traffic_manager_port": 8000,
+    "seed": 20260919,
+    "following_distance_m": 12,
+    "initial_spawn_divisor": 2,
+    "initial_spawn_near_m": 120,
+    "initial_spawn_max_m": 420,
+    "spawn_clearance_m": 0.25,
+    "ignore_traffic_lights": false,
+    "ignore_traffic_signs": false,
+    "traffic_manager_set_path": true,
+    "traffic_manager_path_mode": "local",
+    "recycle_enabled": true,
+    "maintenance_mode": "route_density",
+    "density_check_ticks": 10,
+    "density_spacing_m": 90,
+    "density_ahead_start_m": 180,
+    "density_ahead_end_m": 480,
+    "density_extend_past_goal_m": 220,
+    "lifecycle_protected_radius_m": 150,
+    "density_max_actors": 24,
+    "following_sources_enabled": true,
+    "following_source_actor_reserve": 6,
+    "following_source_check_ticks": 20,
+    "following_source_back_m": 100,
+    "following_source_spacing_m": 65,
+    "following_source_lane_vehicles": 2,
+    "following_source_front_vehicles": 2,
+    "following_source_speed_kmh": 55,
+    "density_lanes": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "recycle_min_speed_kmh": 52,
+    "recycle_max_speed_kmh": 60,
+    "recycle_follow_ego_speed": false,
+    "recycle_speed_delta_min_kmh": -10,
+    "recycle_speed_delta_max_kmh": 5,
+    "absolute_cruise_speed": true,
+    "respect_speed_limit": true,
+    "vehicles": [
+      {
+        "id": "flow_000",
+        "route_distance_m": 41,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 42,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_001",
+        "route_distance_m": 47,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 43,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_002",
+        "route_distance_m": 53,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 44,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_003",
+        "route_distance_m": 59,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 45,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_004",
+        "route_distance_m": 91,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 46,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_005",
+        "route_distance_m": 97,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 47,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_006",
+        "route_distance_m": 103,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 48,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_007",
+        "route_distance_m": 109,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 49,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_008",
+        "route_distance_m": 141,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 50,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_009",
+        "route_distance_m": 147,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 42,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_010",
+        "route_distance_m": 153,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 43,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_011",
+        "route_distance_m": 159,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 44,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_012",
+        "route_distance_m": 191,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 45,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_013",
+        "route_distance_m": 197,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 46,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_014",
+        "route_distance_m": 203,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 47,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_015",
+        "route_distance_m": 209,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 48,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_016",
+        "route_distance_m": 241,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 49,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_017",
+        "route_distance_m": 247,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 50,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_018",
+        "route_distance_m": 253,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 42,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_019",
+        "route_distance_m": 259,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 43,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_020",
+        "route_distance_m": 291,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 44,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_021",
+        "route_distance_m": 297,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 45,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_022",
+        "route_distance_m": 303,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 46,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_023",
+        "route_distance_m": 309,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 47,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_024",
+        "route_distance_m": 341,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 48,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_025",
+        "route_distance_m": 347,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 49,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_026",
+        "route_distance_m": 353,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 50,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_027",
+        "route_distance_m": 359,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 42,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_028",
+        "route_distance_m": 391,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 43,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_029",
+        "route_distance_m": 397,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 44,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_030",
+        "route_distance_m": 403,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 45,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_031",
+        "route_distance_m": 409,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 46,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_032",
+        "route_distance_m": 441,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 47,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_033",
+        "route_distance_m": 447,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 48,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_034",
+        "route_distance_m": 453,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 49,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_035",
+        "route_distance_m": 459,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 50,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_036",
+        "route_distance_m": 491,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 42,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_037",
+        "route_distance_m": 497,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 43,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_038",
+        "route_distance_m": 503,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 44,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_039",
+        "route_distance_m": 509,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 45,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_040",
+        "route_distance_m": 541,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 46,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_041",
+        "route_distance_m": 547,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 47,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_042",
+        "route_distance_m": 553,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 48,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_043",
+        "route_distance_m": 559,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 49,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_044",
+        "route_distance_m": 591,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 50,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_045",
+        "route_distance_m": 597,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 42,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_046",
+        "route_distance_m": 603,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 43,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_047",
+        "route_distance_m": 609,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 44,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_048",
+        "route_distance_m": 641,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 45,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_049",
+        "route_distance_m": 647,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 46,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_050",
+        "route_distance_m": 653,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 47,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_051",
+        "route_distance_m": 659,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 48,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_052",
+        "route_distance_m": 691,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 49,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_053",
+        "route_distance_m": 697,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 50,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_054",
+        "route_distance_m": 703,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 42,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_055",
+        "route_distance_m": 709,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 43,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_056",
+        "route_distance_m": 741,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 44,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_057",
+        "route_distance_m": 747,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 45,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_058",
+        "route_distance_m": 753,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 46,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_059",
+        "route_distance_m": 759,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 47,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_060",
+        "route_distance_m": 791,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 48,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_061",
+        "route_distance_m": 797,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 49,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_062",
+        "route_distance_m": 803,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 50,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_063",
+        "route_distance_m": 809,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 42,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_064",
+        "route_distance_m": 841,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 43,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_065",
+        "route_distance_m": 847,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 44,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_066",
+        "route_distance_m": 853,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 45,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_067",
+        "route_distance_m": 859,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 46,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_068",
+        "route_distance_m": 891,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 47,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_069",
+        "route_distance_m": 897,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 48,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_070",
+        "route_distance_m": 903,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 49,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_071",
+        "route_distance_m": 909,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 50,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_072",
+        "route_distance_m": 941,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 42,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_073",
+        "route_distance_m": 947,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 43,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_074",
+        "route_distance_m": 953,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 44,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_075",
+        "route_distance_m": 959,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 45,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_076",
+        "route_distance_m": 991,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 46,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_077",
+        "route_distance_m": 997,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 47,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_078",
+        "route_distance_m": 1003,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 48,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_079",
+        "route_distance_m": 1009,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 49,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_080",
+        "route_distance_m": 1041,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 50,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_081",
+        "route_distance_m": 1047,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 42,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_082",
+        "route_distance_m": 1053,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 43,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_083",
+        "route_distance_m": 1059,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 44,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_084",
+        "route_distance_m": 1091,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 45,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_085",
+        "route_distance_m": 1097,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 46,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_086",
+        "route_distance_m": 1103,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 47,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_087",
+        "route_distance_m": 1109,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 48,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_088",
+        "route_distance_m": 1141,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 49,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_089",
+        "route_distance_m": 1147,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 50,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_090",
+        "route_distance_m": 1153,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.audi.tt",
+        "speed_kmh": 42,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_091",
+        "route_distance_m": 1159,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.tesla.model3",
+        "speed_kmh": 43,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_092",
+        "route_distance_m": 1191,
+        "lane_from_right": 1,
+        "vehicle_type": "vehicle.lincoln.mkz_2020",
+        "speed_kmh": 44,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_093",
+        "route_distance_m": 1197,
+        "lane_from_right": 2,
+        "vehicle_type": "vehicle.nissan.patrol",
+        "speed_kmh": 45,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_094",
+        "route_distance_m": 1203,
+        "lane_from_right": 3,
+        "vehicle_type": "vehicle.mercedes.coupe",
+        "speed_kmh": 46,
+        "auto_lane_change": false
+      },
+      {
+        "id": "flow_095",
+        "route_distance_m": 1209,
+        "lane_from_right": 4,
+        "vehicle_type": "vehicle.volkswagen.t2",
+        "speed_kmh": 47,
+        "auto_lane_change": false
+      }
+    ]
+  },
+  "commands": [
+    {
+      "id": "c01_depart_30",
+      "announce_at_m": 0.0,
+      "action": "keep_lane",
+      "target_speed_kmh": 30,
+      "voice_text": "保持当前车道，提速至30公里每小时。",
+      "parser_text_en": "Keep the current lane and set the speed to 30 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 30
+      }
+    },
+    {
+      "id": "c02_cruise_60",
+      "announce_at_m": 180.0,
+      "action": "accelerate",
+      "target_speed_kmh": 60,
+      "voice_text": "保持当前车道，提速至60公里每小时。",
+      "parser_text_en": "Keep the current lane and increase speed to 60 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 60
+      }
+    },
+    {
+      "id": "c03_reduce_for_right_turn",
+      "announce_at_m": 800.0,
+      "action": "decelerate",
+      "target_speed_kmh": 30,
+      "voice_text": "减速至30公里每小时。",
+      "parser_text_en": "Reduce speed to 30 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 30
+      }
+    },
+    {
+      "id": "c04_change_left",
+      "announce_at_m": 1260.0,
+      "activate_at_m": 1300.0,
+      "action": "lane_change_left",
+      "target_speed_kmh": 50,
+      "requires_completion": true,
+      "voice_text": "确认左侧安全后，向左变道。",
+      "parser_text_en": "When safe, change to the left lane.",
+      "structured_command": {
+        "action": "CHANGE_LANE",
+        "direction": "LEFT"
+      }
+    },
+    {
+      "id": "c05_change_right",
+      "announce_at_m": 1420.0,
+      "activate_at_m": 1450.0,
+      "action": "lane_change_right",
+      "target_speed_kmh": 45,
+      "requires_completion": true,
+      "return_to_route": true,
+      "voice_text": "确认右侧安全后，向右变道。",
+      "parser_text_en": "When safe, change to the right lane.",
+      "structured_command": {
+        "action": "CHANGE_LANE",
+        "direction": "RIGHT"
+      }
+    },
+    {
+      "id": "c06_hold_45",
+      "announce_at_m": 1797.859,
+      "action": "keep_lane",
+      "target_speed_kmh": 45,
+      "voice_text": "保持当前车道，提速至45公里每小时。",
+      "parser_text_en": "Keep the current lane and set the speed to 45 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 45
+      }
+    },
+    {
+      "id": "c07_turn_right",
+      "announce_at_m": 2975.612,
+      "activate_at_m": 3075.0,
+      "action": "turn_right",
+      "target_speed_kmh": 30,
+      "requires_completion": true,
+      "voice_text": "前方路口右转。",
+      "parser_text_en": "Turn right at the intersection.",
+      "structured_command": {
+        "action": "TURN",
+        "direction": "RIGHT"
+      },
+      "route_directive": {
+        "distance_m": 3075.0,
+        "action": "turn_right"
+      }
+    },
+    {
+      "id": "c08_keep_50",
+      "announce_at_m": 1050.0,
+      "action": "accelerate",
+      "target_speed_kmh": 50,
+      "voice_text": "保持当前车道，提速至50公里每小时。",
+      "parser_text_en": "Keep the current lane and increase speed to 50 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 50
+      }
+    },
+    {
+      "id": "c09_reduce_for_turn",
+      "announce_at_m": 2891.131,
+      "action": "decelerate",
+      "target_speed_kmh": 30,
+      "voice_text": "减速至30公里每小时。",
+      "parser_text_en": "Reduce speed to 30 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 30
+      }
+    },
+    {
+      "id": "c10_keep_30",
+      "announce_at_m": 3291.123,
+      "action": "keep_lane",
+      "target_speed_kmh": 30,
+      "voice_text": "完成右转后，保持当前车道，以30公里每小时行驶。",
+      "parser_text_en": "After the right turn, keep the current lane at 30 km/h.",
+      "structured_command": {
+        "action": "KEEP_LANE",
+        "target_speed_kmh": 30
+      }
+    },
+    {
+      "id": "c11_accelerate_50",
+      "announce_at_m": 2592.966,
+      "action": "accelerate",
+      "target_speed_kmh": 50,
+      "voice_text": "道路通畅，提速至50公里每小时。",
+      "parser_text_en": "Increase speed to 50 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 50
+      }
+    },
+    {
+      "id": "c12_keep_30",
+      "announce_at_m": 3492.167,
+      "action": "keep_lane",
+      "target_speed_kmh": 30,
+      "voice_text": "保持当前车道，以30公里每小时行驶。",
+      "parser_text_en": "Keep the current lane at 30 km/h.",
+      "structured_command": {
+        "action": "KEEP_LANE",
+        "target_speed_kmh": 30
+      }
+    },
+    {
+      "id": "c13_reduce_25",
+      "announce_at_m": 3693.211,
+      "action": "decelerate",
+      "target_speed_kmh": 25,
+      "voice_text": "减速至25公里每小时。",
+      "parser_text_en": "Reduce speed to 25 km/h.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 25
+      }
+    },
+    {
+      "id": "c14_accelerate_30",
+      "announce_at_m": 4095.3,
+      "action": "accelerate",
+      "target_speed_kmh": 30,
+      "voice_text": "提速至30公里每小时并保持当前车道。",
+      "parser_text_en": "Increase speed to 30 km/h and keep the current lane.",
+      "structured_command": {
+        "action": "SET_SPEED",
+        "target_speed_kmh": 30
+      }
+    },
+    {
+      "id": "c15_keep_to_goal",
+      "announce_at_m": 4597.911,
+      "action": "keep_lane",
+      "target_speed_kmh": 30,
+      "voice_text": "保持当前车道行驶至终点。",
+      "parser_text_en": "Keep the current lane and continue to the destination.",
+      "structured_command": {
+        "action": "KEEP_LANE"
+      }
+    }
+  ],
+  "success": {
+    "route_completed": true,
+    "all_commands_emitted": true,
+    "no_collision": true,
+    "no_illegal_lane_invasion": true
+  },
+  "geometry_binding": {
+    "source_sha256": "0f786ffb5a1ce2a33de7de007121cd2835ea3f0792c4473c1992ba4188732197",
+    "map_sha256": "7edc53b0be840e177598da7a4ed9571146d7b2595ce280d154c90f92e8a48851",
+    "map_name": "Carla/Maps/Town05_Opt",
+    "attempts": 505,
+    "distance_anchors": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        1300.0,
+        1300.0
+      ],
+      [
+        1450.0,
+        1450.0
+      ],
+      [
+        3085.0,
+        3075.0
+      ],
+      [
+        5000.0,
+        5000.0
+      ]
+    ],
+    "scope": "map_bound_task_layout_not_original_fixed_mileage_benchmark",
+    "preflight": {
+      "selected_candidate_position": 0,
+      "selected_spawn_location": {
+        "x": 24.571,
+        "y": 103.751,
+        "z": 1.0
+      },
+      "applied_directives": [
+        {
+          "distance_m": 3075.0,
+          "action": "turn_right",
+          "id": "c07_turn_right",
+          "applied_distance_m": 3075.0,
+          "entry_road_id": 38,
+          "selected_road_id": 2370,
+          "entry_yaw_deg": 180.288
+        }
+      ],
+      "continuity_horizon_m": 5000.0,
+      "max_uncommanded_heading_delta_deg": 50.0,
+      "turn_evidence": [
+        {
+          "id": "c07_turn_right",
+          "action": "turn_right",
+          "entry_distance_m": 3075.0,
+          "entry_road_id": 38,
+          "exit_road_id": 27,
+          "heading_change_deg": 89.735,
+          "junction_observed": true
+        }
+      ],
+      "corridor_evidence": {
+        "valid": true,
+        "start_outside_junction": true,
+        "minimum_required_lanes": 2,
+        "sample_step_m": 50.0,
+        "multilane_fraction": 1.0,
+        "minimum_multilane_route_fraction": 0.45,
+        "lane_change_windows": [
+          {
+            "command_id": "c04_change_left",
+            "start_m": 800.0,
+            "end_m": 1300.0,
+            "minimum_observed_lanes": 3,
+            "valid": true
+          },
+          {
+            "command_id": "c05_change_right",
+            "start_m": 950.0,
+            "end_m": 1450.0,
+            "minimum_observed_lanes": 3,
+            "valid": true
+          }
+        ]
+      }
+    },
+    "displacement_cost_m": 10.0,
+    "search_candidates": 1350
+  }
+}
