@@ -1,0 +1,18 @@
+{
+  "frame": 104548,
+  "sim_time_s": 120.00000178813934,
+  "route_progress_m": 1090.766118230644,
+  "control_source": "MODEL",
+  "best_progress_m": 1090.766118230644,
+  "route_length_m": 8000.602435215494,
+  "speed_kmh": 2.7231577919889756e-07,
+  "position": {
+    "x": 176.8740234375,
+    "y": -142.41986083984375,
+    "z": -0.007787666283547878
+  },
+  "yaw_deg": 59.93498992919922,
+  "recorded_frames": 2400,
+  "start_progress_m": 1090.766118230644,
+  "stop_reason": "route_stalled"
+}

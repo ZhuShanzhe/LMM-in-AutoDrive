@@ -1,0 +1,22 @@
+Validated runtime config: D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\configs\scene_2_town05_runtime.json
+Map: Town05_Opt
+Commands: 15
+Traffic: 70 vehicles, 24 ambient walkers
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+CARLA world: loaded Town05_Opt
+Packaged Town optional map layers: ALL loaded
+INFO:  Found the required file in cache!  Carla/Maps/TM/Town05_Opt.bin 
+Town05 route geometry: 8000.6 m, accumulated curvature 5080.3 deg
+Route spatial audit: repeated cells=47.1%, junction entries=77
+Route-command audit: 15 commands, 4 mismatches
+Ego vehicle blueprint: vehicle.audi.a2
+Scene 2 variants: {"slow_vehicle": "steady_22", "compound_slow_vehicle": "steady_18", "crosswalk_pedestrian": "stop_and_go", "bus_stop_passengers": "busy_stop", "slow_cyclist": "steady_14"}
+Traffic startup corridor: length=150 m, radius=12 m, ego exclusion=35 m
+Traceback (most recent call last):
+  File "D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\run_complex_avoidance_town05.py", line 2157, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\run_complex_avoidance_town05.py", line 1508, in main
+    world.tick()
+RuntimeError: time-out of 30000ms while waiting for the simulator, make sure the simulator is ready and connected to 127.0.0.1:2000

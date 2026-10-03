@@ -1,0 +1,101 @@
+{
+  "route_progress_m": 645.7891719427528,
+  "stop_reason": "route_stalled",
+  "last_20_sim_seconds": {
+    "decision_reasons": [
+      [
+        "None",
+        400
+      ]
+    ],
+    "blocked_codes": [],
+    "actions": [
+      [
+        "None",
+        400
+      ]
+    ],
+    "errors": [
+      [
+        "command dispatch halted: TIMEOUT",
+        400
+      ]
+    ]
+  },
+  "active_command_ids": [],
+  "evidence_samples": [
+    {
+      "status": "fallback_safe_stop",
+      "simulation_frame": 42981,
+      "decision_trace": {
+        "schema_version": "decision_trace/1.0",
+        "simulation_frame": 42981,
+        "stage": "command_parse",
+        "stage_wall_ms": {
+          "command_parse": 0.052
+        },
+        "total_wall_ms": 0.052,
+        "timing_scope": "host wall time including waits; not isolated GPU kernel latency",
+        "stages": {}
+      },
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\universal_vla_controller.py\", line 1681, in run_step\n    self._decide(frame)\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\universal_vla_controller.py\", line 1007, in _decide\n    command = self.command_queue.select(progress_m,\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\control\\command_dispatch.py\", line 70, in select\n    raise ValueError('command dispatch halted: '+self.failed)\nValueError: command dispatch halted: TIMEOUT\n",
+      "error_type": "ValueError",
+      "error": "command dispatch halted: TIMEOUT"
+    },
+    {
+      "status": "fallback_safe_stop",
+      "simulation_frame": 42982,
+      "decision_trace": {
+        "schema_version": "decision_trace/1.0",
+        "simulation_frame": 42982,
+        "stage": "command_parse",
+        "stage_wall_ms": {
+          "command_parse": 0.048
+        },
+        "total_wall_ms": 0.048,
+        "timing_scope": "host wall time including waits; not isolated GPU kernel latency",
+        "stages": {}
+      },
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\universal_vla_controller.py\", line 1681, in run_step\n    self._decide(frame)\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\universal_vla_controller.py\", line 1007, in _decide\n    command = self.command_queue.select(progress_m,\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\control\\command_dispatch.py\", line 70, in select\n    raise ValueError('command dispatch halted: '+self.failed)\nValueError: command dispatch halted: TIMEOUT\n",
+      "error_type": "ValueError",
+      "error": "command dispatch halted: TIMEOUT"
+    },
+    {
+      "status": "fallback_safe_stop",
+      "simulation_frame": 42983,
+      "decision_trace": {
+        "schema_version": "decision_trace/1.0",
+        "simulation_frame": 42983,
+        "stage": "command_parse",
+        "stage_wall_ms": {
+          "command_parse": 0.051
+        },
+        "total_wall_ms": 0.051,
+        "timing_scope": "host wall time including waits; not isolated GPU kernel latency",
+        "stages": {}
+      },
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\universal_vla_controller.py\", line 1681, in run_step\n    self._decide(frame)\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\universal_vla_controller.py\", line 1007, in _decide\n    command = self.command_queue.select(progress_m,\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\control\\command_dispatch.py\", line 70, in select\n    raise ValueError('command dispatch halted: '+self.failed)\nValueError: command dispatch halted: TIMEOUT\n",
+      "error_type": "ValueError",
+      "error": "command dispatch halted: TIMEOUT"
+    },
+    {
+      "status": "fallback_safe_stop",
+      "simulation_frame": 42984,
+      "decision_trace": {
+        "schema_version": "decision_trace/1.0",
+        "simulation_frame": 42984,
+        "stage": "command_parse",
+        "stage_wall_ms": {
+          "command_parse": 0.05
+        },
+        "total_wall_ms": 0.05,
+        "timing_scope": "host wall time including waits; not isolated GPU kernel latency",
+        "stages": {}
+      },
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\universal_vla_controller.py\", line 1681, in run_step\n    self._decide(frame)\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\universal_vla_controller.py\", line 1007, in _decide\n    command = self.command_queue.select(progress_m,\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\CARLA\\temp\\challenge_code_upload_20260928\\experiment\\CARLA\\control\\command_dispatch.py\", line 70, in select\n    raise ValueError('command dispatch halted: '+self.failed)\nValueError: command dispatch halted: TIMEOUT\n",
+      "error_type": "ValueError",
+      "error": "command dispatch halted: TIMEOUT"
+    }
+  ],
+  "scope": "interruption diagnosis only; no task verdict"
+}

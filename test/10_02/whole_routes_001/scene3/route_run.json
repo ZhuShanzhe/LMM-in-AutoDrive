@@ -1,0 +1,3287 @@
+{
+  "scene": "scene3",
+  "status": "ROUTE_END_REACHED",
+  "mode": "whole_route_with_explicit_recovery",
+  "task_assessment": false,
+  "segments": [
+    {
+      "id": 1,
+      "start_progress_m": 0.0,
+      "directory": "segment_001",
+      "intervention": false,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [],
+      "pid": 49260,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 10935,
+        "sim_time_s": 256.90000000000003,
+        "route_progress_m": 771.2668994431177,
+        "control_source": "MODEL",
+        "best_progress_m": 771.2668994431177,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0,
+        "position": {
+          "x": -40.60769271850586,
+          "y": 201.50050354003906,
+          "z": 2.4172701835632324
+        },
+        "yaw_deg": -0.0904235765337944,
+        "recorded_frames": 5138,
+        "start_progress_m": 0.0,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_001\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 256.8,
+        "first_frame": 5799,
+        "last_frame": 10934
+      },
+      "interruption": {
+        "route_progress_m": 771.2668994431177,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "stationary_high_risk_radar_guarded_crawl",
+              96
+            ],
+            [
+              "unconfirmed_stop_crawl_floor",
+              47
+            ],
+            [
+              "stationary_high_risk_liveness",
+              22
+            ],
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              20
+            ],
+            [
+              "generic_text_envelope",
+              15
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              15
+            ]
+          ],
+          "actions": [
+            [
+              "decelerate",
+              165
+            ],
+            [
+              "stop",
+              20
+            ],
+            [
+              "emergency_brake",
+              15
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "Continue driving safely in the current lane.",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 2,
+      "start_progress_m": 771.2668994431177,
+      "directory": "segment_002",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [],
+      "pid": 58004,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 26430,
+        "sim_time_s": 176.20000000000002,
+        "route_progress_m": 905.0987424777124,
+        "control_source": "MODEL",
+        "best_progress_m": 905.0987424777124,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0008852448282673665,
+        "position": {
+          "x": 95.0394058227539,
+          "y": 202.0612335205078,
+          "z": -0.004700431600213051
+        },
+        "yaw_deg": -0.3582152724266052,
+        "recorded_frames": 3524,
+        "start_progress_m": 771.2668994431177,
+        "stop_reason": "controller_error_no_progress"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_002\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 176.15,
+        "first_frame": 22908,
+        "last_frame": 26430
+      },
+      "interruption": {
+        "route_progress_m": 905.0987424777124,
+        "stop_reason": "controller_error_no_progress",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "instruction_requires_clarification",
+              209
+            ],
+            [
+              "None",
+              209
+            ],
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              95
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "stop",
+              209
+            ],
+            [
+              "None",
+              209
+            ],
+            [
+              "accelerate",
+              75
+            ],
+            [
+              "keep_lane",
+              20
+            ]
+          ],
+          "errors": [
+            [
+              "'emergency'",
+              209
+            ]
+          ]
+        },
+        "active_command_ids": [
+          [
+            "scene3_general_hazard",
+            418
+          ],
+          [
+            "Continue driving safely in the current lane.",
+            95
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 3,
+      "start_progress_m": 905.0987424777124,
+      "directory": "segment_003",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [],
+      "pid": 33636,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 34086,
+        "sim_time_s": 10.100000000000001,
+        "route_progress_m": 905.0987424777124,
+        "control_source": "MODEL",
+        "best_progress_m": 905.0987424777124,
+        "route_length_m": 6000.0,
+        "speed_kmh": 2.414845263060376e-09,
+        "position": {
+          "x": 94.95066833496094,
+          "y": 205.53721618652344,
+          "z": -0.004701270721852779
+        },
+        "yaw_deg": 0.044928163290023804,
+        "recorded_frames": 202,
+        "start_progress_m": 905.0987424777124,
+        "stop_reason": "controller_error_no_progress"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_003\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 10.0,
+        "first_frame": 33886,
+        "last_frame": 34085
+      },
+      "interruption": {
+        "route_progress_m": 905.0987424777124,
+        "stop_reason": "controller_error_no_progress",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "None",
+              202
+            ],
+            [
+              "instruction_requires_clarification",
+              201
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "None",
+              202
+            ],
+            [
+              "stop",
+              201
+            ]
+          ],
+          "errors": [
+            [
+              "'emergency'",
+              201
+            ],
+            [
+              "no synchronized RGB/LiDAR frame is available",
+              1
+            ]
+          ]
+        },
+        "active_command_ids": [
+          [
+            "scene3_general_hazard",
+            403
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "withdraw_blocking_instruction"
+    },
+    {
+      "id": 4,
+      "start_progress_m": 905.0987424777124,
+      "directory": "segment_004",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard"
+      ],
+      "pid": 44908,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 41971,
+        "sim_time_s": 285.75,
+        "route_progress_m": 1255.55102265736,
+        "control_source": "MODEL",
+        "best_progress_m": 1255.55102265736,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0,
+        "position": {
+          "x": 206.37835693359375,
+          "y": -83.175048828125,
+          "z": -0.004698562435805798
+        },
+        "yaw_deg": -91.0372314453125,
+        "recorded_frames": 5715,
+        "start_progress_m": 905.0987424777124,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_004\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 285.7,
+        "first_frame": 36258,
+        "last_frame": 41971
+      },
+      "interruption": {
+        "route_progress_m": 1255.55102265736,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              189
+            ],
+            [
+              "stationary_high_risk_liveness",
+              8
+            ],
+            [
+              "stationary_high_risk_radar_guarded_crawl",
+              3
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "decelerate",
+              200
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "scene3_cut_in_decelerate",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 5,
+      "start_progress_m": 1255.55102265736,
+      "directory": "segment_005",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard"
+      ],
+      "pid": 33632,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 56777,
+        "sim_time_s": 124.25,
+        "route_progress_m": 1267.5510169736133,
+        "control_source": "MODEL",
+        "best_progress_m": 1267.5510169736133,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0,
+        "position": {
+          "x": 206.25741577148438,
+          "y": -95.13007354736328,
+          "z": -0.004528808407485485
+        },
+        "yaw_deg": -90.71368408203125,
+        "recorded_frames": 2485,
+        "start_progress_m": 1255.55102265736,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_005\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 124.2,
+        "first_frame": 54294,
+        "last_frame": 56777
+      },
+      "interruption": {
+        "route_progress_m": 1267.5510169736133,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "decelerate",
+              200
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "scene3_cut_in_decelerate",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "withdraw_blocking_instruction"
+    },
+    {
+      "id": 6,
+      "start_progress_m": 1267.5510169736133,
+      "directory": "segment_006",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate"
+      ],
+      "pid": 49768,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 70781,
+        "sim_time_s": 362.35,
+        "route_progress_m": 2299.7628150738005,
+        "control_source": "MODEL",
+        "best_progress_m": 2299.7628150738005,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0,
+        "position": {
+          "x": -37.43873977661133,
+          "y": 201.650390625,
+          "z": 2.0498154163360596
+        },
+        "yaw_deg": -0.1907653659582138,
+        "recorded_frames": 7247,
+        "start_progress_m": 1267.5510169736133,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_006\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 362.3,
+        "first_frame": 63536,
+        "last_frame": 70781
+      },
+      "interruption": {
+        "route_progress_m": 2299.7628150738005,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "stationary_high_risk_radar_guarded_crawl",
+              73
+            ],
+            [
+              "unconfirmed_stop_crawl_floor",
+              62
+            ],
+            [
+              "stationary_high_risk_liveness",
+              27
+            ],
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              22
+            ],
+            [
+              "generic_text_envelope",
+              16
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              16
+            ]
+          ],
+          "actions": [
+            [
+              "decelerate",
+              162
+            ],
+            [
+              "stop",
+              22
+            ],
+            [
+              "emergency_brake",
+              16
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "Continue driving safely in the current lane.",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 7,
+      "start_progress_m": 2299.7628150738005,
+      "directory": "segment_007",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate"
+      ],
+      "pid": 15512,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 94227,
+        "sim_time_s": 337.0,
+        "route_progress_m": 2859.053322065663,
+        "control_source": "MODEL",
+        "best_progress_m": 2859.053322065663,
+        "route_length_m": 6000.0,
+        "speed_kmh": 5.383298078223376e-05,
+        "position": {
+          "x": 188.08151245117188,
+          "y": -157.355224609375,
+          "z": -0.004700584337115288
+        },
+        "yaw_deg": -125.16358184814453,
+        "recorded_frames": 6740,
+        "start_progress_m": 2299.7628150738005,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_007\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 336.95,
+        "first_frame": 87489,
+        "last_frame": 94227
+      },
+      "interruption": {
+        "route_progress_m": 2859.053322065663,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "decelerate",
+              200
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "scene3_work_zone_warning",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 8,
+      "start_progress_m": 2859.053322065663,
+      "directory": "segment_008",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate"
+      ],
+      "pid": 38228,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 111244,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 2859.053322065663,
+        "control_source": "MODEL",
+        "best_progress_m": 2859.053322065663,
+        "route_length_m": 6000.0,
+        "speed_kmh": 4.850324206754549e-07,
+        "position": {
+          "x": 188.13665771484375,
+          "y": -157.4236297607422,
+          "z": -0.0047010802663862705
+        },
+        "yaw_deg": -123.51371765136719,
+        "recorded_frames": 2401,
+        "start_progress_m": 2859.053322065663,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_008\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 120.0,
+        "first_frame": 108845,
+        "last_frame": 111244
+      },
+      "interruption": {
+        "route_progress_m": 2859.053322065663,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "active_instruction_speed_bound",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "decelerate",
+              200
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "scene3_work_zone_warning",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "withdraw_blocking_instruction"
+    },
+    {
+      "id": 9,
+      "start_progress_m": 2859.053322065663,
+      "directory": "segment_009",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning"
+      ],
+      "pid": 49708,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 120976,
+        "sim_time_s": 141.45000000000002,
+        "route_progress_m": 2976.2518372272657,
+        "control_source": "MODEL",
+        "best_progress_m": 2976.2518372272657,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0,
+        "position": {
+          "x": 87.26998138427734,
+          "y": -204.36273193359375,
+          "z": -0.004698371980339289
+        },
+        "yaw_deg": 179.94505310058594,
+        "recorded_frames": 2829,
+        "start_progress_m": 2859.053322065663,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_009\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 141.35000000000002,
+        "first_frame": 118149,
+        "last_frame": 120975
+      },
+      "interruption": {
+        "route_progress_m": 2976.2518372272657,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "requested_lane_wait_for_sensor_clearance",
+              198
+            ],
+            [
+              "generic_text_envelope",
+              2
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "visual_target_lane_not_clear",
+              185
+            ],
+            [
+              "vla_overridden_by_deceleration_risk",
+              15
+            ],
+            [
+              "await_fresh_continuous_lane_clearance",
+              13
+            ]
+          ],
+          "actions": [
+            [
+              "stop",
+              198
+            ],
+            [
+              "decelerate",
+              2
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "scene3_right_lane_closure",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 10,
+      "start_progress_m": 2976.2518372272657,
+      "directory": "segment_010",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning"
+      ],
+      "pid": 43048,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 126795,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 2976.2518372272657,
+        "control_source": "MODEL",
+        "best_progress_m": 2976.2518372272657,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0,
+        "position": {
+          "x": 86.7598648071289,
+          "y": -204.32089233398438,
+          "z": -0.0050889584235847
+        },
+        "yaw_deg": 179.7565460205078,
+        "recorded_frames": 2401,
+        "start_progress_m": 2976.2518372272657,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_010\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 119.95,
+        "first_frame": 124396,
+        "last_frame": 126794
+      },
+      "interruption": {
+        "route_progress_m": 2976.2518372272657,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "requested_lane_wait_for_sensor_clearance",
+              200
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "visual_target_lane_not_clear",
+              182
+            ],
+            [
+              "vla_overridden_by_deceleration_risk",
+              18
+            ],
+            [
+              "await_fresh_continuous_lane_clearance",
+              18
+            ]
+          ],
+          "actions": [
+            [
+              "stop",
+              200
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "scene3_right_lane_closure",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "withdraw_blocking_instruction"
+    },
+    {
+      "id": 11,
+      "start_progress_m": 2976.2518372272657,
+      "directory": "segment_011",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure"
+      ],
+      "pid": 34596,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 133475,
+        "sim_time_s": 204.10000000000002,
+        "route_progress_m": 3102.7632125061723,
+        "control_source": "MODEL",
+        "best_progress_m": 3102.7632125061723,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0,
+        "position": {
+          "x": -36.108699798583984,
+          "y": -200.55764770507812,
+          "z": 3.964426279067993
+        },
+        "yaw_deg": 179.9447479248047,
+        "recorded_frames": 4082,
+        "start_progress_m": 2976.2518372272657,
+        "stop_reason": "controller_error_no_progress"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_011\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 204.05,
+        "first_frame": 129395,
+        "last_frame": 133475
+      },
+      "interruption": {
+        "route_progress_m": 3102.7632125061723,
+        "stop_reason": "controller_error_no_progress",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "instruction_requires_clarification",
+              209
+            ],
+            [
+              "None",
+              209
+            ],
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              90
+            ],
+            [
+              "generic_text_envelope",
+              5
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              5
+            ]
+          ],
+          "actions": [
+            [
+              "stop",
+              215
+            ],
+            [
+              "None",
+              209
+            ],
+            [
+              "accelerate",
+              66
+            ],
+            [
+              "keep_lane",
+              10
+            ],
+            [
+              "decelerate",
+              8
+            ],
+            [
+              "emergency_brake",
+              5
+            ]
+          ],
+          "errors": [
+            [
+              "'emergency'",
+              209
+            ]
+          ]
+        },
+        "active_command_ids": [
+          [
+            "scene3_pass_work_zone",
+            418
+          ],
+          [
+            "Continue driving safely in the current lane.",
+            95
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 12,
+      "start_progress_m": 3102.7632125061723,
+      "directory": "segment_012",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure"
+      ],
+      "pid": 47068,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 145852,
+        "sim_time_s": 10.100000000000001,
+        "route_progress_m": 3102.7632125061723,
+        "control_source": "MODEL",
+        "best_progress_m": 3102.7632125061723,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.001385899039558953,
+        "position": {
+          "x": -37.59589385986328,
+          "y": -203.99571228027344,
+          "z": 4.153212070465088
+        },
+        "yaw_deg": 179.93899536132812,
+        "recorded_frames": 202,
+        "start_progress_m": 3102.7632125061723,
+        "stop_reason": "controller_error_no_progress"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_012\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 10.0,
+        "first_frame": 145652,
+        "last_frame": 145851
+      },
+      "interruption": {
+        "route_progress_m": 3102.7632125061723,
+        "stop_reason": "controller_error_no_progress",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "None",
+              202
+            ],
+            [
+              "instruction_requires_clarification",
+              201
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "None",
+              202
+            ],
+            [
+              "stop",
+              201
+            ]
+          ],
+          "errors": [
+            [
+              "'emergency'",
+              201
+            ],
+            [
+              "no synchronized RGB/LiDAR frame is available",
+              1
+            ]
+          ]
+        },
+        "active_command_ids": [
+          [
+            "scene3_pass_work_zone",
+            403
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "withdraw_blocking_instruction"
+    },
+    {
+      "id": 13,
+      "start_progress_m": 3102.7632125061723,
+      "directory": "segment_013",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone"
+      ],
+      "pid": 36644,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 151058,
+        "sim_time_s": 172.9,
+        "route_progress_m": 3210.854015654578,
+        "control_source": "MODEL",
+        "best_progress_m": 3210.854015654578,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0004447376749760169,
+        "position": {
+          "x": -144.619873046875,
+          "y": -200.4453887939453,
+          "z": 10.013019561767578
+        },
+        "yaw_deg": 177.69358825683594,
+        "recorded_frames": 3458,
+        "start_progress_m": 3102.7632125061723,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_013\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 172.85000000000002,
+        "first_frame": 147602,
+        "last_frame": 151058
+      },
+      "interruption": {
+        "route_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "unconfirmed_stop_crawl_floor",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "decelerate",
+              200
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "Continue driving safely in the current lane.",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 14,
+      "start_progress_m": 3210.854015654578,
+      "directory": "segment_014",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone"
+      ],
+      "pid": 52616,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 159731,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 3210.854015654578,
+        "control_source": "MODEL",
+        "best_progress_m": 3210.854015654578,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0003679427976775158,
+        "position": {
+          "x": -145.2633056640625,
+          "y": -203.99354553222656,
+          "z": 11.10816478729248
+        },
+        "yaw_deg": 177.0182342529297,
+        "recorded_frames": 2401,
+        "start_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_014\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 120.0,
+        "first_frame": 157332,
+        "last_frame": 159731
+      },
+      "interruption": {
+        "route_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "accelerate",
+              200
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "Continue driving safely in the current lane.",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "withdraw_blocking_instruction"
+    },
+    {
+      "id": 15,
+      "start_progress_m": 3210.854015654578,
+      "directory": "segment_015",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "Continue driving safely in the current lane."
+      ],
+      "pid": 17752,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 164393,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 3210.854015654578,
+        "control_source": "MODEL",
+        "best_progress_m": 3210.854015654578,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0003679427976775158,
+        "position": {
+          "x": -145.2633056640625,
+          "y": -203.99354553222656,
+          "z": 11.10816478729248
+        },
+        "yaw_deg": 177.0182342529297,
+        "recorded_frames": 2401,
+        "start_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_015\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 120.0,
+        "first_frame": 161994,
+        "last_frame": 164393
+      },
+      "interruption": {
+        "route_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "accelerate",
+              200
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "Continue driving safely in the current lane.",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 16,
+      "start_progress_m": 3210.854015654578,
+      "directory": "segment_016",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "Continue driving safely in the current lane."
+      ],
+      "pid": 48908,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 169645,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 3210.854015654578,
+        "control_source": "MODEL",
+        "best_progress_m": 3210.854015654578,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0003679427976775158,
+        "position": {
+          "x": -145.2633056640625,
+          "y": -203.99354553222656,
+          "z": 11.10816478729248
+        },
+        "yaw_deg": 177.0182342529297,
+        "recorded_frames": 2401,
+        "start_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_016\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 120.0,
+        "first_frame": 167246,
+        "last_frame": 169645
+      },
+      "interruption": {
+        "route_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "accelerate",
+              200
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "Continue driving safely in the current lane.",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "external_navigation_assist_80m"
+    },
+    {
+      "id": 17,
+      "start_progress_m": 3210.854015654578,
+      "directory": "segment_017",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 80,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "Continue driving safely in the current lane."
+      ],
+      "pid": 40420,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 174376,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 3210.854015654578,
+        "control_source": "EXTERNAL_RECOVERY",
+        "best_progress_m": 3210.854015654578,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0003679427976775158,
+        "position": {
+          "x": -145.2633056640625,
+          "y": -203.99354553222656,
+          "z": 11.10816478729248
+        },
+        "yaw_deg": 177.0182342529297,
+        "recorded_frames": 2401,
+        "start_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_017\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 120.0,
+        "first_frame": 171977,
+        "last_frame": 174376
+      },
+      "interruption": {
+        "route_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "accelerate",
+              200
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "Continue driving safely in the current lane.",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 18,
+      "start_progress_m": 3210.854015654578,
+      "directory": "segment_018",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "Continue driving safely in the current lane."
+      ],
+      "pid": 13220,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 179186,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 3210.854015654578,
+        "control_source": "MODEL",
+        "best_progress_m": 3210.854015654578,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0003679427976775158,
+        "position": {
+          "x": -145.2633056640625,
+          "y": -203.99354553222656,
+          "z": 11.10816478729248
+        },
+        "yaw_deg": 177.0182342529297,
+        "recorded_frames": 2401,
+        "start_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_018\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 120.0,
+        "first_frame": 176787,
+        "last_frame": 179186
+      },
+      "interruption": {
+        "route_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "accelerate",
+              200
+            ]
+          ],
+          "errors": []
+        },
+        "active_command_ids": [
+          [
+            "Continue driving safely in the current lane.",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "external_navigation_assist_80m"
+    },
+    {
+      "id": 19,
+      "start_progress_m": 3210.854015654578,
+      "directory": "segment_019",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 80,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "Continue driving safely in the current lane."
+      ],
+      "pid": 13092,
+      "exit_code": 1,
+      "checkpoint": {},
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_019\\run\\drive.mp4"
+    },
+    {
+      "id": 20,
+      "start_progress_m": 3210.854015654578,
+      "directory": "segment_020",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 80,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone"
+      ],
+      "pid": 2708,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 13072,
+        "sim_time_s": 366.55,
+        "route_progress_m": 3302.4400116658735,
+        "control_source": "MODEL",
+        "best_progress_m": 3302.4400116658735,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0,
+        "position": {
+          "x": -222.37042236328125,
+          "y": -157.75306701660156,
+          "z": 9.999067306518555
+        },
+        "yaw_deg": 125.84603881835938,
+        "pitch_deg": -0.010832679457962513,
+        "roll_deg": -0.0004272461519576609,
+        "recorded_frames": 7331,
+        "start_progress_m": 3210.854015654578,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_020\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 366.5,
+        "first_frame": 5743,
+        "last_frame": 13072
+      },
+      "interruption": {
+        "route_progress_m": 3302.4400116658735,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              191
+            ],
+            [
+              "active_instruction_speed_bound",
+              9
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "decelerate",
+              200
+            ]
+          ],
+          "errors": [],
+          "model_proposal_actions": [
+            [
+              "decelerate",
+              191
+            ],
+            [
+              "emergency_brake",
+              9
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "decelerate",
+              191
+            ],
+            [
+              "emergency_brake",
+              9
+            ]
+          ],
+          "model_target_speed_kmh": {
+            "min": 0.0,
+            "max": 10.0,
+            "mean": 9.55
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "active_command_ids": [
+          [
+            "scene3_worker_crossing",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 21,
+      "start_progress_m": 3302.4400116658735,
+      "directory": "segment_021",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone"
+      ],
+      "pid": 33036,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 32010,
+        "sim_time_s": 262.40000000000003,
+        "route_progress_m": 3310.5810118480686,
+        "control_source": "MODEL",
+        "best_progress_m": 3310.5810118480686,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.011393105210468555,
+        "position": {
+          "x": -226.68617248535156,
+          "y": -151.11183166503906,
+          "z": 9.998306274414062
+        },
+        "yaw_deg": 121.28262329101562,
+        "pitch_deg": -0.005464151035994291,
+        "roll_deg": -0.0004272461519576609,
+        "recorded_frames": 5248,
+        "start_progress_m": 3302.4400116658735,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_021\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 262.3,
+        "first_frame": 26764,
+        "last_frame": 32009
+      },
+      "interruption": {
+        "route_progress_m": 3310.5810118480686,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "stationary_high_risk_radar_guarded_crawl",
+              96
+            ],
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              75
+            ],
+            [
+              "active_instruction_speed_bound",
+              29
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "decelerate",
+              200
+            ]
+          ],
+          "errors": [],
+          "model_proposal_actions": [
+            [
+              "emergency_brake",
+              125
+            ],
+            [
+              "decelerate",
+              75
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "emergency_brake",
+              125
+            ],
+            [
+              "decelerate",
+              75
+            ]
+          ],
+          "model_target_speed_kmh": {
+            "min": 0.0,
+            "max": 10.0,
+            "mean": 3.75
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.01,
+            "mean": 0.007
+          }
+        },
+        "active_command_ids": [
+          [
+            "scene3_worker_crossing",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "withdraw_blocking_instruction"
+    },
+    {
+      "id": 22,
+      "start_progress_m": 3310.5810118480686,
+      "directory": "segment_022",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing"
+      ],
+      "pid": 17100,
+      "exit_code": 1,
+      "checkpoint": {
+        "frame": 42819,
+        "sim_time_s": 49.050000000000004,
+        "route_progress_m": 3421.537519800519,
+        "control_source": "MODEL",
+        "best_progress_m": 3421.537519800519,
+        "route_length_m": 6000.0,
+        "speed_kmh": 26.33723126706903,
+        "position": {
+          "x": -240.07662963867188,
+          "y": -42.06488800048828,
+          "z": 9.995635032653809
+        },
+        "yaw_deg": 88.83988189697266,
+        "pitch_deg": -0.047394681721925735,
+        "roll_deg": 0.020229699090123177,
+        "recorded_frames": 981,
+        "start_progress_m": 3310.5810118480686,
+        "stop_reason": null
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_022\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 49.349999999999994,
+        "first_frame": 41840,
+        "last_frame": 42826
+      },
+      "interruption": {
+        "route_progress_m": 3421.537519800519,
+        "stop_reason": null,
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              188
+            ],
+            [
+              "generic_text_envelope",
+              16
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              16
+            ]
+          ],
+          "actions": [
+            [
+              "accelerate",
+              118
+            ],
+            [
+              "keep_lane",
+              46
+            ],
+            [
+              "emergency_brake",
+              16
+            ],
+            [
+              "decelerate",
+              15
+            ],
+            [
+              "stop",
+              9
+            ]
+          ],
+          "errors": [],
+          "model_proposal_actions": [
+            [
+              "accelerate",
+              141
+            ],
+            [
+              "keep_lane",
+              25
+            ],
+            [
+              "decelerate",
+              25
+            ],
+            [
+              "stop",
+              13
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "accelerate",
+              118
+            ],
+            [
+              "keep_lane",
+              56
+            ],
+            [
+              "decelerate",
+              21
+            ],
+            [
+              "stop",
+              9
+            ]
+          ],
+          "model_target_speed_kmh": {
+            "min": 0.0,
+            "max": 27.568,
+            "mean": 8.845
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 28.236,
+            "mean": 9.469
+          }
+        },
+        "active_command_ids": [],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 23,
+      "start_progress_m": 3421.537519800519,
+      "directory": "segment_023",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing"
+      ],
+      "pid": 11460,
+      "exit_code": 1,
+      "checkpoint": {},
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_023\\run\\drive.mp4"
+    },
+    {
+      "id": 24,
+      "start_progress_m": 3421.537519800519,
+      "directory": "segment_024",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0.0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing"
+      ],
+      "pid": 36832,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 15464,
+        "sim_time_s": 474.40000000000003,
+        "route_progress_m": 4701.259130907866,
+        "control_source": "MODEL",
+        "best_progress_m": 4701.259130907866,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0,
+        "position": {
+          "x": -108.2548828125,
+          "y": -200.67259216308594,
+          "z": 10.019693374633789
+        },
+        "yaw_deg": -179.92381286621094,
+        "pitch_deg": -0.01791558600962162,
+        "roll_deg": -3.0517576306010596e-05,
+        "traffic_signal_truth": {
+          "scope": "evaluation_only",
+          "at_trigger": false,
+          "state": null
+        },
+        "applied_control": {
+          "throttle": 0.0,
+          "brake": 0.0,
+          "steer": 0.0,
+          "hand_brake": false,
+          "reverse": false,
+          "gear": 1
+        },
+        "recorded_frames": 9488,
+        "start_progress_m": 3421.537519800519,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_024\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 474.35,
+        "first_frame": 5978,
+        "last_frame": 15464
+      },
+      "interruption": {
+        "route_progress_m": 4701.259130907866,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "requested_lane_wait_for_sensor_clearance",
+              200
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "target_lane_geometry_unavailable",
+              200
+            ],
+            [
+              "visual_target_lane_not_clear",
+              103
+            ],
+            [
+              "vla_overridden_by_deceleration_risk",
+              92
+            ]
+          ],
+          "actions": [
+            [
+              "stop",
+              200
+            ]
+          ],
+          "errors": [],
+          "failed_stages": [],
+          "parse_statuses": [
+            [
+              "VALID",
+              200
+            ]
+          ],
+          "model_proposal_actions": [
+            [
+              "decelerate",
+              175
+            ],
+            [
+              "emergency_brake",
+              25
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "decelerate",
+              175
+            ],
+            [
+              "emergency_brake",
+              25
+            ]
+          ],
+          "longitudinal_modes": [
+            [
+              "STOP",
+              200
+            ]
+          ],
+          "positive_proposal_zero_final_count": 175,
+          "model_target_speed_kmh": {
+            "min": 0.0,
+            "max": 10.0,
+            "mean": 8.75
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "active_command_ids": [
+          [
+            "scene3_blocked_lane_change_left",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 25,
+      "start_progress_m": 4701.259130907866,
+      "directory": "segment_025",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0.0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing"
+      ],
+      "pid": 52232,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 40631,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 4701.259130907866,
+        "control_source": "MODEL",
+        "best_progress_m": 4701.259130907866,
+        "route_length_m": 6000.0,
+        "speed_kmh": 2.0748711894355026e-06,
+        "position": {
+          "x": -109.69880676269531,
+          "y": -204.09103393554688,
+          "z": 10.019400596618652
+        },
+        "yaw_deg": 179.83506774902344,
+        "pitch_deg": -0.010771207511425018,
+        "roll_deg": 2.8956814276170917e-05,
+        "traffic_signal_truth": {
+          "scope": "evaluation_only",
+          "at_trigger": false,
+          "state": null
+        },
+        "applied_control": {
+          "throttle": 0.0,
+          "brake": 0.0,
+          "steer": -0.5999994277954102,
+          "hand_brake": false,
+          "reverse": false,
+          "gear": 0
+        },
+        "recorded_frames": 2401,
+        "start_progress_m": 4701.259130907866,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_025\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 120.0,
+        "first_frame": 38232,
+        "last_frame": 40631
+      },
+      "interruption": {
+        "route_progress_m": 4701.259130907866,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "generic_text_envelope",
+              119
+            ],
+            [
+              "requested_lane_wait_for_sensor_clearance",
+              80
+            ],
+            [
+              "stationary_high_risk_liveness",
+              1
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_deceleration_risk",
+              173
+            ],
+            [
+              "await_fresh_continuous_lane_clearance",
+              54
+            ],
+            [
+              "visual_target_lane_not_clear",
+              26
+            ]
+          ],
+          "actions": [
+            [
+              "decelerate",
+              120
+            ],
+            [
+              "stop",
+              80
+            ]
+          ],
+          "errors": [],
+          "failed_stages": [],
+          "parse_statuses": [
+            [
+              "VALID",
+              200
+            ]
+          ],
+          "model_proposal_actions": [
+            [
+              "decelerate",
+              199
+            ],
+            [
+              "emergency_brake",
+              1
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "decelerate",
+              199
+            ],
+            [
+              "emergency_brake",
+              1
+            ]
+          ],
+          "longitudinal_modes": [
+            [
+              "RISK_SPEED_CAP",
+              120
+            ],
+            [
+              "STOP",
+              80
+            ]
+          ],
+          "positive_proposal_zero_final_count": 80,
+          "model_target_speed_kmh": {
+            "min": 0.0,
+            "max": 10.0,
+            "mean": 9.95
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "active_command_ids": [
+          [
+            "scene3_blocked_lane_change_left",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "withdraw_blocking_instruction"
+    },
+    {
+      "id": 26,
+      "start_progress_m": 4701.259130907866,
+      "directory": "segment_026",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0.0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing",
+        "scene3_blocked_lane_change_left"
+      ],
+      "pid": 40684,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 52024,
+        "sim_time_s": 293.5,
+        "route_progress_m": 4833.006430805699,
+        "control_source": "MODEL",
+        "best_progress_m": 4833.006430805699,
+        "route_length_m": 6000.0,
+        "speed_kmh": 3.941587682598691e-06,
+        "position": {
+          "x": -225.05029296875,
+          "y": -153.75254821777344,
+          "z": 9.99858570098877
+        },
+        "yaw_deg": 123.13983154296875,
+        "pitch_deg": -0.005375358741730452,
+        "roll_deg": -9.155262523563579e-05,
+        "traffic_signal_truth": {
+          "scope": "evaluation_only",
+          "at_trigger": false,
+          "state": null
+        },
+        "applied_control": {
+          "throttle": 0.0,
+          "brake": 0.0,
+          "steer": 0.010458583943545818,
+          "hand_brake": false,
+          "reverse": false,
+          "gear": 1
+        },
+        "recorded_frames": 5870,
+        "start_progress_m": 4701.259130907866,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_026\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 293.40000000000003,
+        "first_frame": 46156,
+        "last_frame": 52023
+      },
+      "interruption": {
+        "route_progress_m": 4833.006430805699,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "unconfirmed_stop_crawl_floor",
+              161
+            ],
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              33
+            ],
+            [
+              "generic_text_envelope",
+              6
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_deceleration_risk",
+              6
+            ]
+          ],
+          "actions": [
+            [
+              "decelerate",
+              167
+            ],
+            [
+              "stop",
+              29
+            ],
+            [
+              "keep_lane",
+              3
+            ],
+            [
+              "accelerate",
+              1
+            ]
+          ],
+          "errors": [],
+          "failed_stages": [],
+          "parse_statuses": [
+            [
+              "VALID",
+              200
+            ]
+          ],
+          "model_proposal_actions": [
+            [
+              "accelerate",
+              199
+            ],
+            [
+              "keep_lane",
+              1
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "stop",
+              190
+            ],
+            [
+              "keep_lane",
+              9
+            ],
+            [
+              "accelerate",
+              1
+            ]
+          ],
+          "longitudinal_modes": [
+            [
+              "RISK_SPEED_CAP",
+              167
+            ],
+            [
+              "STOP",
+              29
+            ],
+            [
+              "ABSOLUTE_SPEED",
+              4
+            ]
+          ],
+          "positive_proposal_zero_final_count": 33,
+          "model_target_speed_kmh": {
+            "min": 0.071,
+            "max": 1.031,
+            "mean": 0.714
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.897,
+            "mean": 0.023
+          }
+        },
+        "active_command_ids": [],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 27,
+      "start_progress_m": 4833.006430805699,
+      "directory": "segment_027",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0.0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing",
+        "scene3_blocked_lane_change_left"
+      ],
+      "pid": 47780,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 63645,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 4833.006430805699,
+        "control_source": "MODEL",
+        "best_progress_m": 4833.006430805699,
+        "route_length_m": 6000.0,
+        "speed_kmh": 4.793763785804846e-06,
+        "position": {
+          "x": -228.10690307617188,
+          "y": -155.60995483398438,
+          "z": 9.998579025268555
+        },
+        "yaw_deg": 122.57896423339844,
+        "pitch_deg": -0.005095320753753185,
+        "roll_deg": -3.051740350201726e-05,
+        "traffic_signal_truth": {
+          "scope": "evaluation_only",
+          "at_trigger": false,
+          "state": null
+        },
+        "applied_control": {
+          "throttle": 0.0,
+          "brake": 0.0,
+          "steer": -0.6376082301139832,
+          "hand_brake": false,
+          "reverse": false,
+          "gear": 0
+        },
+        "recorded_frames": 2401,
+        "start_progress_m": 4833.006430805699,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_027\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 119.95,
+        "first_frame": 61246,
+        "last_frame": 63644
+      },
+      "interruption": {
+        "route_progress_m": 4833.006430805699,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "unconfirmed_stop_crawl_floor",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "decelerate",
+              200
+            ]
+          ],
+          "errors": [],
+          "failed_stages": [],
+          "parse_statuses": [
+            [
+              "VALID",
+              200
+            ]
+          ],
+          "model_proposal_actions": [
+            [
+              "accelerate",
+              200
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "stop",
+              200
+            ]
+          ],
+          "longitudinal_modes": [
+            [
+              "RISK_SPEED_CAP",
+              200
+            ]
+          ],
+          "positive_proposal_zero_final_count": 9,
+          "model_target_speed_kmh": {
+            "min": 0.462,
+            "max": 0.678,
+            "mean": 0.567
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "active_command_ids": [],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 28,
+      "start_progress_m": 4833.006430805699,
+      "directory": "segment_028",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0.0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing",
+        "scene3_blocked_lane_change_left"
+      ],
+      "pid": 30148,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 70858,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 4833.006430805699,
+        "control_source": "MODEL",
+        "best_progress_m": 4833.006430805699,
+        "route_length_m": 6000.0,
+        "speed_kmh": 1.8969261408413567e-06,
+        "position": {
+          "x": -228.10690307617188,
+          "y": -155.60995483398438,
+          "z": 9.998579025268555
+        },
+        "yaw_deg": 122.57896423339844,
+        "pitch_deg": -0.005095320753753185,
+        "roll_deg": -3.051740350201726e-05,
+        "traffic_signal_truth": {
+          "scope": "evaluation_only",
+          "at_trigger": false,
+          "state": null
+        },
+        "applied_control": {
+          "throttle": 0.0,
+          "brake": 0.0,
+          "steer": -0.6376081705093384,
+          "hand_brake": false,
+          "reverse": false,
+          "gear": 0
+        },
+        "recorded_frames": 2401,
+        "start_progress_m": 4833.006430805699,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_028\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 119.95,
+        "first_frame": 68459,
+        "last_frame": 70857
+      },
+      "interruption": {
+        "route_progress_m": 4833.006430805699,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "unconfirmed_stop_crawl_floor",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "decelerate",
+              200
+            ]
+          ],
+          "errors": [],
+          "failed_stages": [],
+          "parse_statuses": [
+            [
+              "VALID",
+              200
+            ]
+          ],
+          "model_proposal_actions": [
+            [
+              "accelerate",
+              200
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "stop",
+              200
+            ]
+          ],
+          "longitudinal_modes": [
+            [
+              "RISK_SPEED_CAP",
+              200
+            ]
+          ],
+          "positive_proposal_zero_final_count": 9,
+          "model_target_speed_kmh": {
+            "min": 0.46,
+            "max": 0.679,
+            "mean": 0.566
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "active_command_ids": [],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "external_navigation_assist_80m"
+    },
+    {
+      "id": 29,
+      "start_progress_m": 4833.006430805699,
+      "directory": "segment_029",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 80.0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing",
+        "scene3_blocked_lane_change_left"
+      ],
+      "pid": 48016,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 78122,
+        "sim_time_s": 122.35000000000001,
+        "route_progress_m": 4841.147405388871,
+        "control_source": "EXTERNAL_RECOVERY",
+        "best_progress_m": 4841.147405388871,
+        "route_length_m": 6000.0,
+        "speed_kmh": 1.7339876774610408e-06,
+        "position": {
+          "x": -232.33448791503906,
+          "y": -148.09739685058594,
+          "z": 9.9978609085083
+        },
+        "yaw_deg": 118.59408569335938,
+        "pitch_deg": -0.004699169658124447,
+        "roll_deg": -9.15528362384066e-05,
+        "traffic_signal_truth": {
+          "scope": "evaluation_only",
+          "at_trigger": false,
+          "state": null
+        },
+        "applied_control": {
+          "throttle": 0.0,
+          "brake": 0.5,
+          "steer": -0.002677571028470993,
+          "hand_brake": false,
+          "reverse": false,
+          "gear": 1
+        },
+        "recorded_frames": 2447,
+        "start_progress_m": 4833.006430805699,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_029\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 122.3,
+        "first_frame": 75677,
+        "last_frame": 78122
+      },
+      "interruption": {
+        "route_progress_m": 4841.147405388871,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "generic_text_envelope",
+              200
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              200
+            ]
+          ],
+          "actions": [
+            [
+              "emergency_brake",
+              200
+            ]
+          ],
+          "errors": [],
+          "failed_stages": [],
+          "parse_statuses": [
+            [
+              "VALID",
+              200
+            ]
+          ],
+          "model_proposal_actions": [
+            [
+              "accelerate",
+              184
+            ],
+            [
+              "keep_lane",
+              16
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "stop",
+              200
+            ]
+          ],
+          "longitudinal_modes": [
+            [
+              "STOP",
+              200
+            ]
+          ],
+          "positive_proposal_zero_final_count": 200,
+          "model_target_speed_kmh": {
+            "min": 0.065,
+            "max": 0.261,
+            "mean": 0.171
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "active_command_ids": [],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 30,
+      "start_progress_m": 4841.147405388871,
+      "directory": "segment_030",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 0.0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing",
+        "scene3_blocked_lane_change_left"
+      ],
+      "pid": 34108,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 84240,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 4841.147405388871,
+        "control_source": "MODEL",
+        "best_progress_m": 4841.147405388871,
+        "route_length_m": 6000.0,
+        "speed_kmh": 7.791455532126038e-07,
+        "position": {
+          "x": -232.325439453125,
+          "y": -148.32196044921875,
+          "z": 9.997873306274414
+        },
+        "yaw_deg": 117.95868682861328,
+        "pitch_deg": -0.004610377363860607,
+        "roll_deg": 0.0,
+        "traffic_signal_truth": {
+          "scope": "evaluation_only",
+          "at_trigger": false,
+          "state": null
+        },
+        "applied_control": {
+          "throttle": 0.0,
+          "brake": 1.0,
+          "steer": -0.6376084089279175,
+          "hand_brake": false,
+          "reverse": false,
+          "gear": 0
+        },
+        "recorded_frames": 2401,
+        "start_progress_m": 4841.147405388871,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_030\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 119.95,
+        "first_frame": 81841,
+        "last_frame": 84239
+      },
+      "interruption": {
+        "route_progress_m": 4841.147405388871,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "generic_text_envelope",
+              200
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              200
+            ]
+          ],
+          "actions": [
+            [
+              "emergency_brake",
+              200
+            ]
+          ],
+          "errors": [],
+          "failed_stages": [],
+          "parse_statuses": [
+            [
+              "VALID",
+              200
+            ]
+          ],
+          "model_proposal_actions": [
+            [
+              "accelerate",
+              187
+            ],
+            [
+              "keep_lane",
+              13
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "stop",
+              200
+            ]
+          ],
+          "longitudinal_modes": [
+            [
+              "STOP",
+              200
+            ]
+          ],
+          "positive_proposal_zero_final_count": 200,
+          "model_target_speed_kmh": {
+            "min": 0.061,
+            "max": 0.234,
+            "mean": 0.153
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "active_command_ids": [],
+        "scope": "interruption diagnosis only; no task verdict"
+      },
+      "next_intervention": "external_navigation_assist_80m"
+    },
+    {
+      "id": 31,
+      "start_progress_m": 4841.147405388871,
+      "directory": "segment_031",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 80.0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing",
+        "scene3_blocked_lane_change_left"
+      ],
+      "pid": 53168,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 90172,
+        "sim_time_s": 120.05000000000001,
+        "route_progress_m": 4841.147405388871,
+        "control_source": "EXTERNAL_RECOVERY",
+        "best_progress_m": 4841.147405388871,
+        "route_length_m": 6000.0,
+        "speed_kmh": 2.0666820405902512e-06,
+        "position": {
+          "x": -232.41896057128906,
+          "y": -148.13880920410156,
+          "z": 9.997859001159668
+        },
+        "yaw_deg": 117.8973388671875,
+        "pitch_deg": -0.004576226696372032,
+        "roll_deg": -3.0517610866809264e-05,
+        "traffic_signal_truth": {
+          "scope": "evaluation_only",
+          "at_trigger": false,
+          "state": null
+        },
+        "applied_control": {
+          "throttle": 0.0,
+          "brake": 0.5,
+          "steer": -0.05746113508939743,
+          "hand_brake": false,
+          "reverse": false,
+          "gear": 1
+        },
+        "recorded_frames": 2401,
+        "start_progress_m": 4841.147405388871,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_031\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 120.0,
+        "first_frame": 87773,
+        "last_frame": 90172
+      },
+      "interruption": {
+        "route_progress_m": 4841.147405388871,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "generic_text_envelope",
+              200
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              200
+            ]
+          ],
+          "actions": [
+            [
+              "emergency_brake",
+              200
+            ]
+          ],
+          "errors": [],
+          "failed_stages": [],
+          "parse_statuses": [
+            [
+              "VALID",
+              200
+            ]
+          ],
+          "model_proposal_actions": [
+            [
+              "accelerate",
+              199
+            ],
+            [
+              "keep_lane",
+              1
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "stop",
+              200
+            ]
+          ],
+          "longitudinal_modes": [
+            [
+              "STOP",
+              200
+            ]
+          ],
+          "positive_proposal_zero_final_count": 200,
+          "model_target_speed_kmh": {
+            "min": 0.107,
+            "max": 0.267,
+            "mean": 0.192
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "active_command_ids": [],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 32,
+      "start_progress_m": 4841.147405388871,
+      "directory": "segment_032",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 80.0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing",
+        "scene3_blocked_lane_change_left"
+      ],
+      "pid": 25176,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 8294,
+        "sim_time_s": 128.25,
+        "route_progress_m": 5348.754645343826,
+        "control_source": "MODEL",
+        "best_progress_m": 5348.754645343826,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.0,
+        "position": {
+          "x": -40.718963623046875,
+          "y": 201.54153442382812,
+          "z": 2.4301443099975586
+        },
+        "yaw_deg": -0.02789306454360485,
+        "pitch_deg": -6.760159015655518,
+        "roll_deg": -0.00036621096660383046,
+        "traffic_signal_truth": {
+          "scope": "evaluation_only",
+          "at_trigger": false,
+          "state": null
+        },
+        "applied_control": {
+          "throttle": 0.0,
+          "brake": 0.0,
+          "steer": 0.0,
+          "hand_brake": false,
+          "reverse": false,
+          "gear": 1
+        },
+        "recorded_frames": 2565,
+        "start_progress_m": 4841.147405388871,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_032\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 128.20000000000002,
+        "first_frame": 5731,
+        "last_frame": 8294
+      },
+      "interruption": {
+        "route_progress_m": 5348.754645343826,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "stationary_high_risk_radar_guarded_crawl",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "decelerate",
+              200
+            ]
+          ],
+          "errors": [],
+          "failed_stages": [],
+          "parse_statuses": [
+            [
+              "VALID",
+              200
+            ]
+          ],
+          "model_proposal_actions": [
+            [
+              "accelerate",
+              200
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "stop",
+              200
+            ]
+          ],
+          "longitudinal_modes": [
+            [
+              "RISK_SPEED_CAP",
+              200
+            ]
+          ],
+          "positive_proposal_zero_final_count": 200,
+          "model_target_speed_kmh": {
+            "min": 1.08,
+            "max": 1.08,
+            "mean": 1.08
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "active_command_ids": [
+          [
+            "scene3_resume_normal_driving",
+            200
+          ]
+        ],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 33,
+      "start_progress_m": 5348.754645343826,
+      "directory": "segment_033",
+      "intervention": true,
+      "status": "STOPPED",
+      "recovery_assist_m": 80.0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing",
+        "scene3_blocked_lane_change_left",
+        "scene3_resume_normal_driving"
+      ],
+      "pid": 17156,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 16321,
+        "sim_time_s": 50.150000000000006,
+        "route_progress_m": 5429.5864851945125,
+        "control_source": "MODEL",
+        "best_progress_m": 5429.5864851945125,
+        "route_length_m": 6000.0,
+        "speed_kmh": 0.020850622528674104,
+        "position": {
+          "x": 39.900291442871094,
+          "y": 202.6349334716797,
+          "z": -0.004701423458755016
+        },
+        "yaw_deg": 9.409754753112793,
+        "pitch_deg": 0.00018441509746480733,
+        "roll_deg": 0.0011217062128707767,
+        "traffic_signal_truth": {
+          "scope": "evaluation_only",
+          "at_trigger": false,
+          "state": null
+        },
+        "applied_control": {
+          "throttle": 0.0,
+          "brake": 0.0,
+          "steer": -0.35383903980255127,
+          "hand_brake": false,
+          "reverse": false,
+          "gear": 1
+        },
+        "recorded_frames": 1003,
+        "start_progress_m": 5348.754645343826,
+        "stop_reason": "route_stalled"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_033\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 50.099999999999994,
+        "first_frame": 15320,
+        "last_frame": 16321
+      },
+      "interruption": {
+        "route_progress_m": 5429.5864851945125,
+        "stop_reason": "route_stalled",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "traffic_signal_stopline_constraint",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "stop",
+              200
+            ]
+          ],
+          "errors": [],
+          "failed_stages": [],
+          "parse_statuses": [
+            [
+              "VALID",
+              200
+            ]
+          ],
+          "model_proposal_actions": [
+            [
+              "accelerate",
+              200
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "accelerate",
+              200
+            ]
+          ],
+          "longitudinal_modes": [
+            [
+              "ABSOLUTE_SPEED",
+              200
+            ]
+          ],
+          "positive_proposal_zero_final_count": 200,
+          "model_target_speed_kmh": {
+            "min": 0.771,
+            "max": 1.105,
+            "mean": 0.973
+          },
+          "final_target_speed_kmh": {
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "active_command_ids": [],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    },
+    {
+      "id": 34,
+      "start_progress_m": 5429.5864851945125,
+      "directory": "segment_034",
+      "intervention": true,
+      "status": "ROUTE_END_REACHED",
+      "recovery_assist_m": 80.0,
+      "withdrawn_instruction_ids": [
+        "scene3_general_hazard",
+        "scene3_cut_in_decelerate",
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure",
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing",
+        "scene3_blocked_lane_change_left",
+        "scene3_resume_normal_driving"
+      ],
+      "pid": 21064,
+      "exit_code": 0,
+      "checkpoint": {
+        "frame": 21970,
+        "sim_time_s": 105.95,
+        "route_progress_m": 6000.410291090374,
+        "control_source": "MODEL",
+        "best_progress_m": 6000.410291090374,
+        "route_length_m": 6000.0,
+        "speed_kmh": 31.792188965297953,
+        "position": {
+          "x": 117.04776000976562,
+          "y": -202.96417236328125,
+          "z": -0.004585456568747759
+        },
+        "yaw_deg": -170.26150512695312,
+        "pitch_deg": 0.012594868429005146,
+        "roll_deg": 0.3836804926395416,
+        "traffic_signal_truth": {
+          "scope": "evaluation_only",
+          "at_trigger": false,
+          "state": null
+        },
+        "applied_control": {
+          "throttle": 0.4450418949127197,
+          "brake": 0.0,
+          "steer": -0.04431461915373802,
+          "hand_brake": false,
+          "reverse": false,
+          "gear": 2
+        },
+        "recorded_frames": 2119,
+        "start_progress_m": 5429.5864851945125,
+        "stop_reason": "route_completed"
+      },
+      "video": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_034\\run\\drive.mp4",
+      "video_interval": {
+        "in_s": 0.0,
+        "out_s": 105.89999999999999,
+        "first_frame": 19853,
+        "last_frame": 21970
+      },
+      "interruption": {
+        "route_progress_m": 6000.410291090374,
+        "stop_reason": "route_completed",
+        "last_20_sim_seconds": {
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "actions": [
+            [
+              "keep_lane",
+              184
+            ],
+            [
+              "accelerate",
+              16
+            ]
+          ],
+          "errors": [],
+          "failed_stages": [],
+          "parse_statuses": [
+            [
+              "VALID",
+              200
+            ]
+          ],
+          "model_proposal_actions": [
+            [
+              "keep_lane",
+              146
+            ],
+            [
+              "accelerate",
+              51
+            ],
+            [
+              "decelerate",
+              3
+            ]
+          ],
+          "processed_proposal_actions": [
+            [
+              "keep_lane",
+              184
+            ],
+            [
+              "accelerate",
+              16
+            ]
+          ],
+          "longitudinal_modes": [
+            [
+              "ABSOLUTE_SPEED",
+              200
+            ]
+          ],
+          "positive_proposal_zero_final_count": 0,
+          "model_target_speed_kmh": {
+            "min": 28.845,
+            "max": 31.941,
+            "mean": 31.446
+          },
+          "final_target_speed_kmh": {
+            "min": 28.909,
+            "max": 31.924,
+            "mean": 31.553
+          }
+        },
+        "active_command_ids": [],
+        "scope": "interruption diagnosis only; no task verdict"
+      }
+    }
+  ],
+  "created_at": "2026-10-02T12:19:23.331301",
+  "covered_route_m": 6000.410291090374,
+  "continuous_autonomous_completion": false,
+  "withdrawn_instruction_ids": [
+    "scene3_general_hazard",
+    "scene3_cut_in_decelerate",
+    "scene3_work_zone_warning",
+    "scene3_right_lane_closure",
+    "scene3_pass_work_zone",
+    "scene3_worker_crossing",
+    "scene3_blocked_lane_change_left",
+    "scene3_resume_normal_driving"
+  ]
+}

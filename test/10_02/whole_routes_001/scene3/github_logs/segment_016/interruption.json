@@ -1,0 +1,4440 @@
+{
+  "route_progress_m": 3210.854015654578,
+  "stop_reason": "route_stalled",
+  "last_20_sim_seconds": {
+    "decision_reasons": [
+      [
+        "vla_accepted_phase-recovery-epoch_06",
+        200
+      ]
+    ],
+    "blocked_codes": [],
+    "actions": [
+      [
+        "accelerate",
+        200
+      ]
+    ],
+    "errors": [],
+    "failed_stages": [],
+    "parse_statuses": [
+      [
+        "VALID",
+        200
+      ]
+    ],
+    "model_proposal_actions": [
+      [
+        "accelerate",
+        200
+      ]
+    ],
+    "processed_proposal_actions": [
+      [
+        "accelerate",
+        200
+      ]
+    ],
+    "longitudinal_modes": [
+      [
+        "ABSOLUTE_SPEED",
+        200
+      ]
+    ],
+    "positive_proposal_zero_final_count": 0,
+    "model_target_speed_kmh": {
+      "min": 1.08,
+      "max": 1.082,
+      "mean": 1.081
+    },
+    "final_target_speed_kmh": {
+      "min": 1.08,
+      "max": 5.401,
+      "mean": 3.241
+    }
+  },
+  "active_command_ids": [],
+  "evidence_samples": [
+    {
+      "schema_version": "unified_vla_decision/1.0",
+      "decision_trace": {
+        "schema_version": "decision_trace/1.0",
+        "simulation_frame": 169245,
+        "stage": "execution_contracts",
+        "stage_wall_ms": {
+          "command_parse": 0.165,
+          "plan_prepare": 0.022,
+          "language_encoding": 0.082,
+          "sensor_acquisition": 0.402,
+          "sensor_features_and_batch": 15.396,
+          "vla_model": 19.839,
+          "risk_fusion_and_plan": 0.13,
+          "execution_contracts": 0.562
+        },
+        "total_wall_ms": 36.598,
+        "timing_scope": "host wall time including waits; not isolated GPU kernel latency",
+        "stages": {
+          "command": {
+            "text": "Continue driving safely in the current lane."
+          },
+          "parsed_instruction": {
+            "parsed_intent": "KEEP_LANE",
+            "requested_lane_direction": null,
+            "target_speed_kmh": null,
+            "confidence": 1.0,
+            "source_text": "Continue driving safely in the current lane.",
+            "semantic_goal": [],
+            "speed_change": null,
+            "speed_delta_kmh": null,
+            "speed_reference_kmh": null,
+            "parse_status": "VALID",
+            "parse_source": null
+          },
+          "driving_intent": null,
+          "plan_before": null,
+          "model_proposal": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169245",
+            "frame_id": "carla_169245",
+            "action": "accelerate",
+            "target_speed_kmh": 1.080813,
+            "target_lane": null,
+            "target_location": null,
+            "target_entity_id": null,
+            "confidence": 0.89776,
+            "model": "phase-recovery-epoch_06",
+            "latency_ms": 17.9997
+          },
+          "raw_network_output": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169245",
+            "frame_id": "carla_169245",
+            "action": "accelerate",
+            "target_speed_kmh": 1.080812692642212,
+            "target_lane": null,
+            "target_location": null,
+            "target_entity_id": null,
+            "confidence": 0.89776,
+            "model": "phase-recovery-epoch_06",
+            "latency_ms": 17.9997,
+            "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+            "target_acceleration_mps2": 3.0
+          },
+          "learned_risk": {
+            "risk_level": "low",
+            "recommended_action": "keep_lane",
+            "reason_codes": [],
+            "matched_entity_id": null,
+            "lane_change": {
+              "left": {
+                "is_safe": true,
+                "reason_codes": []
+              },
+              "right": {
+                "is_safe": true,
+                "reason_codes": []
+              }
+            },
+            "source": "event_memory_vla",
+            "temporal_used": true,
+            "risk_score": null,
+            "horizon_probabilities": null,
+            "risk_uncertainty": 0.0,
+            "raw_argmax_level": "low",
+            "high_confidence_threshold": 0.55,
+            "probabilities": {
+              "low": 1.0,
+              "medium": 0.0,
+              "high": 0.0
+            },
+            "event_memory": {
+              "schema_version": "layered_behavior_sequence/2.0",
+              "event_probabilities": [
+                8.317760148202069e-06,
+                2.541564736446844e-10,
+                9.367195907827863e-10,
+                7.707964869041461e-06,
+                2.089838199026417e-05
+              ],
+              "event_names": [
+                "closing",
+                "deceleration",
+                "observation_loss",
+                "recovery",
+                "rear_approach"
+              ],
+              "memory_weights": [
+                0.9980204105377197,
+                0.0005751025164499879,
+                0.0014044797280803323
+              ],
+              "selected_memory_s": 0.4,
+              "valid_history_steps": 80,
+              "horizon_seconds": [
+                1,
+                2,
+                4
+              ],
+              "front_rear_horizon_scores": [
+                [
+                  1.7598650171512932e-26,
+                  1.1975178927533275e-17,
+                  1.8960921721600243e-08
+                ],
+                [
+                  3.666817063608654e-15,
+                  8.730032668990972e-11,
+                  2.452424814691767e-05
+                ]
+              ],
+              "severity_scores": [
+                3.3515692621222115e-07,
+                0.0010468498803675175
+              ],
+              "required_decel_mps2": 4.684188297687797e-06,
+              "uncertainty_score": 4.364183439544561e-14,
+              "raw_action": "accelerate",
+              "raw_target_speed_kmh": 1.080812692642212,
+              "raw_risk_probabilities": [
+                1.0,
+                5.909357031486095e-11,
+                1.0764355579855403e-13
+              ],
+              "risk_scope": "joint_front_rear_rollout_surrogate",
+              "score_semantics": "learned kinematic surrogate; not calibrated real-world probability",
+              "authorized": true,
+              "available": true,
+              "applied": true,
+              "behavior_memory": {
+                "extension_probability": 0.5288690328598022,
+                "extended_memory_used": true,
+                "completed_segments": 5,
+                "inheritance_weights": [
+                  0.40858325362205505,
+                  0.4943739175796509,
+                  0.4644160568714142,
+                  0.47293928265571594,
+                  0.5075975060462952,
+                  0.4879654347896576
+                ],
+                "write_weights": [
+                  0.49326860904693604,
+                  0.566006064414978,
+                  0.536588191986084,
+                  0.49434176087379456,
+                  0.506105363368988,
+                  0.472650408744812
+                ],
+                "relative_motion_state": [
+                  -0.20482724905014038,
+                  0.06302646547555923,
+                  0.15931084752082825
+                ],
+                "semantics": "causal summaries of executed behavior; gate is not a calibrated necessity probability"
+              },
+              "layered_context": {
+                "consumed": true,
+                "observation_event_gates": [
+                  0.5884016156196594,
+                  0.5771390199661255
+                ],
+                "context_ablated": false,
+                "events_ablated": false,
+                "long_memory_ablated": false,
+                "feature_version": "layered_observation_event/1.0"
+              },
+              "longitudinal_sequence": {
+                "schema_version": "longitudinal_sequence/1.0",
+                "dt_s": 0.1,
+                "horizon_s": 3.0,
+                "speed_mps": [
+                  0.30022576451301575,
+                  0.6002258062362671,
+                  0.900225818157196,
+                  1.200225830078125,
+                  1.5002257823944092,
+                  1.8002257347106934,
+                  2.1002256870269775,
+                  2.4002256393432617,
+                  2.700225591659546,
+                  3.00022554397583,
+                  3.3002254962921143,
+                  3.6002254486083984,
+                  3.9002254009246826,
+                  4.193532466888428,
+                  4.486912250518799,
+                  4.7767229080200195,
+                  5.059036731719971,
+                  5.335854530334473,
+                  5.613559722900391,
+                  5.889020919799805,
+                  6.156752109527588,
+                  6.4212188720703125,
+                  6.655994892120361,
+                  6.897282123565674,
+                  7.111311435699463,
+                  7.301362991333008,
+                  7.469474792480469,
+                  7.585865020751953,
+                  7.685299396514893,
+                  7.785013198852539
+                ],
+                "acceleration_mps2": [
+                  3.0,
+                  3.000000476837158,
+                  3.0,
+                  3.0,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.933070659637451,
+                  2.933797836303711,
+                  2.898106575012207,
+                  2.8231382369995117,
+                  2.7681779861450195,
+                  2.7770519256591797,
+                  2.7546119689941406,
+                  2.677311897277832,
+                  2.644667625427246,
+                  2.3477602005004883,
+                  2.412872314453125,
+                  2.1402931213378906,
+                  1.9005155563354492,
+                  1.6811180114746094,
+                  1.1639022827148438,
+                  0.9943437576293945,
+                  0.9971380233764648
+                ],
+                "execution": "replan on each new observation; track first speed and acceleration samples",
+                "action_source": "deterministic encoding of first predicted speed/acceleration, not an independent classifier"
+              }
+            },
+            "risk_semantics": {
+              "scope": "joint_front_rear_rollout_surrogate",
+              "calibrated": false,
+              "horizon_seconds": [
+                1,
+                2,
+                4
+              ],
+              "directional_horizon_scores": {
+                "front": [
+                  1.7598650171512932e-26,
+                  1.1975178927533275e-17,
+                  1.8960921721600243e-08
+                ],
+                "rear": [
+                  3.666817063608654e-15,
+                  8.730032668990972e-11,
+                  2.452424814691767e-05
+                ]
+              },
+              "note": "legacy visual reason codes retained; this head is not a front-only visual probability"
+            },
+            "prediction_provenance": {
+              "schema_version": "vla_prediction_provenance/1.0",
+              "base": {
+                "action": "keep_lane",
+                "target_speed_kmh": 21.85483741760254,
+                "risk_probabilities": [
+                  0.5198912620544434,
+                  0.007477992679923773,
+                  0.47263070940971375
+                ]
+              },
+              "effective": {
+                "action": "accelerate",
+                "target_speed_kmh": 1.080812692642212,
+                "risk_probabilities": [
+                  1.0,
+                  5.909357031486095e-11,
+                  1.0764355579855403e-13
+                ]
+              },
+              "residual_present": true,
+              "residual_applied": true,
+              "effective_action_source": "sequence_first_sample_encoding",
+              "scope": "model stages before execution and safety gates; not ground-truth correctness"
+            }
+          },
+          "canonical_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169245",
+            "frame_id": "carla_169245",
+            "decision_status": "READY",
+            "action": "keep_lane",
+            "target_speed_kmh": 32.0,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "generic_text_envelope",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": []
+          },
+          "gated_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169245",
+            "frame_id": "carla_169245",
+            "decision_status": "READY",
+            "action": "accelerate",
+            "target_speed_kmh": 1.080813,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "vla_accepted_phase-recovery-epoch_06",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": []
+          },
+          "plan_after": null,
+          "final_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169245",
+            "frame_id": "carla_169245",
+            "decision_status": "READY",
+            "action": "accelerate",
+            "target_speed_kmh": 1.080813,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "vla_accepted_phase-recovery-epoch_06",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": [],
+            "longitudinal_control_mode": "ABSOLUTE_SPEED",
+            "allow_positive_acceleration": true,
+            "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+            "target_acceleration_mps2": 2.9999997937580387,
+            "sequence_valid_until_s": 104.44049074798822,
+            "control_valid_until_s": 104.44049074798822,
+            "command_id": "Continue driving safely in the current lane."
+          },
+          "execution_blocks": {
+            "parse_blocked": false,
+            "plan_blocked": false,
+            "sequence_accepted": true
+          }
+        }
+      },
+      "simulation_frame": 169245,
+      "route_s_m": 3210.854,
+      "source_text": "Continue driving safely in the current lane.",
+      "parsed_intent": "KEEP_LANE",
+      "requested_lane_direction": null,
+      "target_speed_envelope_kmh": null,
+      "relative_speed_reference_kmh": null,
+      "relative_speed_change": null,
+      "semantic_text": "Keep the current lane at 32.0 kilometers per hour.",
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "sensor_frame": 169243,
+      "sensor_frame_lag": 2,
+      "camera_wait_ms": 0.0,
+      "candidate_count": 0,
+      "safety_observation_candidate_count": 112,
+      "physical_safety_observation": {
+        "forward_radar": {
+          "schema_version": "physical_front_radar/1.0",
+          "direction": "front",
+          "sensor_frame": 169243,
+          "measurement_timestamp_s": 104.04049074649811,
+          "measurement_pose": {
+            "x": -147.485595703125,
+            "y": -203.87753295898438,
+            "yaw_deg": 177.03201293945312
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 112,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 150,
+            "examined": 150,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          },
+          "route_corridor_filter_applied": true,
+          "route_corridor_half_width_m": 1.268,
+          "route_corridor_obstacle_bins": [],
+          "unfiltered_obstacle_candidate_count": 0,
+          "unfiltered_nearest_distance_m": null,
+          "unfiltered_nearest_azimuth_deg": null
+        },
+        "rear_radar": {
+          "schema_version": "physical_rear_radar/1.0",
+          "direction": "rear",
+          "sensor_frame": 169243,
+          "measurement_timestamp_s": 104.04049074649811,
+          "measurement_pose": {
+            "x": -144.10479736328125,
+            "y": -204.0528106689453,
+            "yaw_deg": -2.967949628829956
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 0,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 0,
+            "examined": 0,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          }
+        }
+      },
+      "policy_truth_access": false,
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "sensor_batch_schema_version": "unified_sensor_batch/1.0",
+      "sensor_contract": {
+        "cameras": [
+          "front",
+          "left",
+          "right",
+          "rear"
+        ],
+        "lidar": true,
+        "source": "model_config.sensor_requirements"
+      },
+      "risk_assessment": {
+        "risk_level": "low",
+        "recommended_action": "keep_lane",
+        "reason_codes": [],
+        "matched_entity_id": null,
+        "lane_change": {
+          "left": {
+            "is_safe": true,
+            "reason_codes": []
+          },
+          "right": {
+            "is_safe": true,
+            "reason_codes": []
+          }
+        },
+        "source": "event_memory_vla",
+        "temporal_used": true,
+        "risk_score": null,
+        "horizon_probabilities": null,
+        "risk_uncertainty": 0.0,
+        "raw_argmax_level": "low",
+        "high_confidence_threshold": 0.55,
+        "probabilities": {
+          "low": 1.0,
+          "medium": 0.0,
+          "high": 0.0
+        },
+        "event_memory": {
+          "schema_version": "layered_behavior_sequence/2.0",
+          "event_probabilities": [
+            8.317760148202069e-06,
+            2.541564736446844e-10,
+            9.367195907827863e-10,
+            7.707964869041461e-06,
+            2.089838199026417e-05
+          ],
+          "event_names": [
+            "closing",
+            "deceleration",
+            "observation_loss",
+            "recovery",
+            "rear_approach"
+          ],
+          "memory_weights": [
+            0.9980204105377197,
+            0.0005751025164499879,
+            0.0014044797280803323
+          ],
+          "selected_memory_s": 0.4,
+          "valid_history_steps": 80,
+          "horizon_seconds": [
+            1,
+            2,
+            4
+          ],
+          "front_rear_horizon_scores": [
+            [
+              1.7598650171512932e-26,
+              1.1975178927533275e-17,
+              1.8960921721600243e-08
+            ],
+            [
+              3.666817063608654e-15,
+              8.730032668990972e-11,
+              2.452424814691767e-05
+            ]
+          ],
+          "severity_scores": [
+            3.3515692621222115e-07,
+            0.0010468498803675175
+          ],
+          "required_decel_mps2": 4.684188297687797e-06,
+          "uncertainty_score": 4.364183439544561e-14,
+          "raw_action": "accelerate",
+          "raw_target_speed_kmh": 1.080812692642212,
+          "raw_risk_probabilities": [
+            1.0,
+            5.909357031486095e-11,
+            1.0764355579855403e-13
+          ],
+          "risk_scope": "joint_front_rear_rollout_surrogate",
+          "score_semantics": "learned kinematic surrogate; not calibrated real-world probability",
+          "authorized": true,
+          "available": true,
+          "applied": true,
+          "behavior_memory": {
+            "extension_probability": 0.5288690328598022,
+            "extended_memory_used": true,
+            "completed_segments": 5,
+            "inheritance_weights": [
+              0.40858325362205505,
+              0.4943739175796509,
+              0.4644160568714142,
+              0.47293928265571594,
+              0.5075975060462952,
+              0.4879654347896576
+            ],
+            "write_weights": [
+              0.49326860904693604,
+              0.566006064414978,
+              0.536588191986084,
+              0.49434176087379456,
+              0.506105363368988,
+              0.472650408744812
+            ],
+            "relative_motion_state": [
+              -0.20482724905014038,
+              0.06302646547555923,
+              0.15931084752082825
+            ],
+            "semantics": "causal summaries of executed behavior; gate is not a calibrated necessity probability"
+          },
+          "layered_context": {
+            "consumed": true,
+            "observation_event_gates": [
+              0.5884016156196594,
+              0.5771390199661255
+            ],
+            "context_ablated": false,
+            "events_ablated": false,
+            "long_memory_ablated": false,
+            "feature_version": "layered_observation_event/1.0"
+          },
+          "longitudinal_sequence": {
+            "schema_version": "longitudinal_sequence/1.0",
+            "dt_s": 0.1,
+            "horizon_s": 3.0,
+            "speed_mps": [
+              0.30022576451301575,
+              0.6002258062362671,
+              0.900225818157196,
+              1.200225830078125,
+              1.5002257823944092,
+              1.8002257347106934,
+              2.1002256870269775,
+              2.4002256393432617,
+              2.700225591659546,
+              3.00022554397583,
+              3.3002254962921143,
+              3.6002254486083984,
+              3.9002254009246826,
+              4.193532466888428,
+              4.486912250518799,
+              4.7767229080200195,
+              5.059036731719971,
+              5.335854530334473,
+              5.613559722900391,
+              5.889020919799805,
+              6.156752109527588,
+              6.4212188720703125,
+              6.655994892120361,
+              6.897282123565674,
+              7.111311435699463,
+              7.301362991333008,
+              7.469474792480469,
+              7.585865020751953,
+              7.685299396514893,
+              7.785013198852539
+            ],
+            "acceleration_mps2": [
+              3.0,
+              3.000000476837158,
+              3.0,
+              3.0,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.933070659637451,
+              2.933797836303711,
+              2.898106575012207,
+              2.8231382369995117,
+              2.7681779861450195,
+              2.7770519256591797,
+              2.7546119689941406,
+              2.677311897277832,
+              2.644667625427246,
+              2.3477602005004883,
+              2.412872314453125,
+              2.1402931213378906,
+              1.9005155563354492,
+              1.6811180114746094,
+              1.1639022827148438,
+              0.9943437576293945,
+              0.9971380233764648
+            ],
+            "execution": "replan on each new observation; track first speed and acceleration samples",
+            "action_source": "deterministic encoding of first predicted speed/acceleration, not an independent classifier"
+          }
+        },
+        "risk_semantics": {
+          "scope": "joint_front_rear_rollout_surrogate",
+          "calibrated": false,
+          "horizon_seconds": [
+            1,
+            2,
+            4
+          ],
+          "directional_horizon_scores": {
+            "front": [
+              1.7598650171512932e-26,
+              1.1975178927533275e-17,
+              1.8960921721600243e-08
+            ],
+            "rear": [
+              3.666817063608654e-15,
+              8.730032668990972e-11,
+              2.452424814691767e-05
+            ]
+          },
+          "note": "legacy visual reason codes retained; this head is not a front-only visual probability"
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "keep_lane",
+            "target_speed_kmh": 21.85483741760254,
+            "risk_probabilities": [
+              0.5198912620544434,
+              0.007477992679923773,
+              0.47263070940971375
+            ]
+          },
+          "effective": {
+            "action": "accelerate",
+            "target_speed_kmh": 1.080812692642212,
+            "risk_probabilities": [
+              1.0,
+              5.909357031486095e-11,
+              1.0764355579855403e-13
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        },
+        "physical_forward_radar": {
+          "schema_version": "physical_front_radar/1.0",
+          "direction": "front",
+          "sensor_frame": 169243,
+          "measurement_timestamp_s": 104.04049074649811,
+          "measurement_pose": {
+            "x": -147.485595703125,
+            "y": -203.87753295898438,
+            "yaw_deg": 177.03201293945312
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 112,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 150,
+            "examined": 150,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          },
+          "route_corridor_filter_applied": true,
+          "route_corridor_half_width_m": 1.268,
+          "route_corridor_obstacle_bins": [],
+          "unfiltered_obstacle_candidate_count": 0,
+          "unfiltered_nearest_distance_m": null,
+          "unfiltered_nearest_azimuth_deg": null,
+          "emergency_distance_m": 6.0,
+          "caution_distance_m": 12.0
+        },
+        "learned_probabilities": {
+          "low": 1.0,
+          "medium": 0.0,
+          "high": 0.0
+        },
+        "risk_evidence": {
+          "schema_version": "risk_evidence/1.0",
+          "status": "INSUFFICIENT_EVIDENCE",
+          "sensor": "forward_radar",
+          "sensor_frame": 169243,
+          "observed_at_s": 104.04049074649811,
+          "decision_timestamp_s": 104.14049074798822,
+          "age_s": 0.1,
+          "valid_until_s": 104.290491,
+          "is_fresh": true,
+          "physical_candidate_count": 0,
+          "nearest_distance_m": null,
+          "fusion_sources": [
+            "event_memory_vla",
+            "physical_forward_radar"
+          ]
+        },
+        "frame_id": "carla_169245",
+        "sensor_frame_id": "carla_169243",
+        "sequence_execution": {
+          "operation_updated": true,
+          "safety_bypass": false,
+          "operation_time_s": 104.14049074798822,
+          "selected_acceleration_mps2": 2.9999997937580387,
+          "applied_acceleration_mps2": 2.9999997937580387,
+          "anchor_speed_mps": 0.00022575021779131025,
+          "reference_speed_mps": 0.30022572959359517,
+          "observation_gap_reset": false,
+          "reference_mode": "speed_endpoint",
+          "interval_s": 0.5,
+          "forecast_steps": 10,
+          "forwarded": true
+        },
+        "observation_layer": {
+          "schema_version": "tracked_route_observation/1.0",
+          "frame": 169245,
+          "timestamp_s": 104.14049074798822,
+          "status": "UNKNOWN",
+          "reason": "no_confirmed_target_not_proof_of_clear_road",
+          "radar_fresh": true,
+          "selected_track_id": null,
+          "selected": null,
+          "entities": [],
+          "nearest_obstacle": null,
+          "selected_role": "CONTINUITY_REFERENCE_NOT_CLEARANCE_AUTHORITY",
+          "requested_track_resolved": true,
+          "target_history": {
+            "schema_version": "target_history/1.0",
+            "status": "AVAILABLE",
+            "source": "front_radar",
+            "timestamp_s": 104.14049074798822,
+            "retention_s": 30.0,
+            "entries": [],
+            "cross_id_reidentification": false,
+            "authority": "REFERENCE_CONTEXT_ONLY"
+          },
+          "ego": {
+            "x": -145.26329040527344,
+            "y": -203.9934844970703,
+            "vx_mps": 9.317687363363802e-05,
+            "vy_mps": 6.39786958345212e-05,
+            "ax_mps2": -0.0007496523903682828,
+            "ay_mps2": 0.005254433955997229,
+            "yaw_deg": 177.03201293945312,
+            "yaw_rate_dps": 0.010082220658659935,
+            "half_length_m": 2.44619083404541,
+            "corridor_half_width_m": 1.2683566570281983
+          },
+          "capabilities": {
+            "semantic_classification": false,
+            "front_radar_tracking": true,
+            "all_around_coverage": false
+          },
+          "invalid_route": false,
+          "compute_ms": 0.46900002053007483
+        },
+        "task_event_memory": {
+          "schema_version": "task_event_memory/1.0",
+          "active_events": [
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "kind": "KEEP_LANE",
+              "goal": {
+                "text": "Continue driving safely in the current lane."
+              },
+              "started_s": 4.140489257872105,
+              "phase": "ACTIVE",
+              "current_behavior": "ACCELERATE",
+              "previous_behavior": "HOLD",
+              "boundary_observation": {
+                "target_ref": null,
+                "target_last_seen_s": null,
+                "observation_status": "UNKNOWN"
+              },
+              "boundary_time_s": 5.640489280223846
+            }
+          ],
+          "recent_transitions": [
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": null,
+              "next_behavior": "ACCELERATE",
+              "timestamp_s": 4.140489257872105,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "ACCELERATE",
+              "next_behavior": "EMERGENCY_BRAKE",
+              "timestamp_s": 4.240489259362221,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "EMERGENCY_BRAKE",
+              "next_behavior": "HOLD",
+              "timestamp_s": 4.740489266812801,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "HOLD",
+              "next_behavior": "ACCELERATE",
+              "timestamp_s": 5.640489280223846,
+              "previous_behavior_status": "SUPERSEDED"
+            }
+          ],
+          "authority": "DECISION_CONTEXT_ONLY",
+          "behavior_source": "ISSUED_POST_CONTRACT_CONTROL"
+        },
+        "layered_context_mode": "experimental_trained_policy"
+      },
+      "target_lane_risk_assessment": null,
+      "front_view_risk_assessment": null,
+      "directional_collision_assessment": {
+        "schema_version": "directional_collision_response/1.0",
+        "front_priority": true,
+        "rear": {
+          "schema_version": "rear_collision_assessment/1.0",
+          "collision_risk": false,
+          "distance_m": null,
+          "closing_speed_mps": null,
+          "ttc_s": null,
+          "reason": "no_closing_rear_return"
+        },
+        "front_risk_level": "unknown",
+        "selected_response": "none"
+      },
+      "vla_proposal": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169245",
+        "frame_id": "carla_169245",
+        "action": "accelerate",
+        "target_speed_kmh": 1.0808126265369427,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.89776,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 17.9997
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169245",
+        "frame_id": "carla_169245",
+        "action": "accelerate",
+        "target_speed_kmh": 1.080813,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.89776,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 17.9997
+      },
+      "proposal_stage": "after_sequence_execution_and_risk_constraints",
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169245",
+        "frame_id": "carla_169245",
+        "decision_status": "READY",
+        "action": "accelerate",
+        "target_speed_kmh": 1.080813,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "vla_accepted_phase-recovery-epoch_06",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": [],
+        "longitudinal_control_mode": "ABSOLUTE_SPEED",
+        "allow_positive_acceleration": true,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 2.9999997937580387,
+        "sequence_valid_until_s": 104.44049074798822,
+        "control_valid_until_s": 104.44049074798822,
+        "command_id": "Continue driving safely in the current lane."
+      },
+      "longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "ABSOLUTE_SPEED",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 1.080813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 1.080813,
+        "reference_ego_speed_kmh": 0.000812700784048717,
+        "speed_clamped": false,
+        "risk_constraint_active": false,
+        "policy_safety_credit": false
+      },
+      "active_instruction_contract": {
+        "schema_version": "active_instruction_contract/1.0",
+        "parsed_intent": "KEEP_LANE",
+        "active_stop": false,
+        "speed_bound_kmh": null,
+        "speed_contract_mode": "NONE",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 1.080813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 1.080813,
+        "changed": false,
+        "policy_safety_credit": false
+      },
+      "issued_instruction_contract": {
+        "schema_version": "active_instruction_contract/1.0",
+        "parsed_intent": "KEEP_LANE",
+        "active_stop": false,
+        "speed_bound_kmh": null,
+        "speed_contract_mode": "NONE",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 1.080813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 1.080813,
+        "changed": false,
+        "policy_safety_credit": false
+      },
+      "issued_longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "ABSOLUTE_SPEED",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 1.080813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 1.080813,
+        "reference_ego_speed_kmh": 0.000812700784048717,
+        "speed_clamped": false,
+        "risk_constraint_active": false,
+        "policy_safety_credit": false
+      },
+      "traffic_control_contract": {
+        "source": "traffic_control_contract/1.0",
+        "observation": {
+          "applicable": false,
+          "state": "UNKNOWN",
+          "timestamp_s": 104.04049074798823,
+          "source": "rgb_static_opendrive",
+          "image_source": "synchronized_front_capture"
+        },
+        "active": false,
+        "changed": false,
+        "policy_safety_credit": false,
+        "status": "no_route_associated_signal"
+      },
+      "mandatory_execution_wait": {
+        "request_id": null,
+        "observed_at_s": 104.14049074798822,
+        "safety_wait": false,
+        "reason": null
+      },
+      "lane_task_feedback": {
+        "target_lane": null,
+        "completed": false
+      },
+      "control_plan_state": null,
+      "command_dispatch": {
+        "mode": "route_latest"
+      },
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 169245,
+        "previous_decision_frame": 169243,
+        "speed_kmh": 0.000812700784048717,
+        "acceleration_xyz_mps2": [
+          -0.0007496523903682828,
+          0.005254433955997229,
+          -0.0012458800338208675
+        ],
+        "throttle": 1.0,
+        "brake": 0.0
+      },
+      "model_output_applied": true,
+      "training_teacher_force_control": false,
+      "liveness_override": null,
+      "full_decision_latency_ms": 21.279,
+      "text_to_control_command_wall_ms": 36.525,
+      "sensor_to_decision_response_ms": 21.279
+    },
+    {
+      "schema_version": "unified_vla_decision/1.0",
+      "decision_trace": {
+        "schema_version": "decision_trace/1.0",
+        "simulation_frame": 169247,
+        "stage": "execution_contracts",
+        "stage_wall_ms": {
+          "command_parse": 0.103,
+          "plan_prepare": 0.016,
+          "language_encoding": 0.082,
+          "sensor_acquisition": 1.02,
+          "sensor_features_and_batch": 16.004,
+          "vla_model": 18.338,
+          "risk_fusion_and_plan": 0.095,
+          "execution_contracts": 0.518
+        },
+        "total_wall_ms": 36.175,
+        "timing_scope": "host wall time including waits; not isolated GPU kernel latency",
+        "stages": {
+          "command": {
+            "text": "Continue driving safely in the current lane."
+          },
+          "parsed_instruction": {
+            "parsed_intent": "KEEP_LANE",
+            "requested_lane_direction": null,
+            "target_speed_kmh": null,
+            "confidence": 1.0,
+            "source_text": "Continue driving safely in the current lane.",
+            "semantic_goal": [],
+            "speed_change": null,
+            "speed_delta_kmh": null,
+            "speed_reference_kmh": null,
+            "parse_status": "VALID",
+            "parse_source": null
+          },
+          "driving_intent": null,
+          "plan_before": null,
+          "model_proposal": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169247",
+            "frame_id": "carla_169247",
+            "action": "accelerate",
+            "target_speed_kmh": 1.08088,
+            "target_lane": null,
+            "target_location": null,
+            "target_entity_id": null,
+            "confidence": 0.881604,
+            "model": "phase-recovery-epoch_06",
+            "latency_ms": 16.7019
+          },
+          "raw_network_output": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169247",
+            "frame_id": "carla_169247",
+            "action": "accelerate",
+            "target_speed_kmh": 1.0808801651000977,
+            "target_lane": null,
+            "target_location": null,
+            "target_entity_id": null,
+            "confidence": 0.881604,
+            "model": "phase-recovery-epoch_06",
+            "latency_ms": 16.7019,
+            "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+            "target_acceleration_mps2": 3.0
+          },
+          "learned_risk": {
+            "risk_level": "low",
+            "recommended_action": "keep_lane",
+            "reason_codes": [],
+            "matched_entity_id": null,
+            "lane_change": {
+              "left": {
+                "is_safe": true,
+                "reason_codes": []
+              },
+              "right": {
+                "is_safe": true,
+                "reason_codes": []
+              }
+            },
+            "source": "event_memory_vla",
+            "temporal_used": true,
+            "risk_score": null,
+            "horizon_probabilities": null,
+            "risk_uncertainty": 0.0,
+            "raw_argmax_level": "low",
+            "high_confidence_threshold": 0.55,
+            "probabilities": {
+              "low": 1.0,
+              "medium": 0.0,
+              "high": 0.0
+            },
+            "event_memory": {
+              "schema_version": "layered_behavior_sequence/2.0",
+              "event_probabilities": [
+                8.770090971665923e-06,
+                2.5225560529307245e-10,
+                5.807909153610069e-10,
+                3.894355813827133e-06,
+                2.3955835786182433e-05
+              ],
+              "event_names": [
+                "closing",
+                "deceleration",
+                "observation_loss",
+                "recovery",
+                "rear_approach"
+              ],
+              "memory_weights": [
+                0.998304009437561,
+                0.0005878492374904454,
+                0.0011080572148784995
+              ],
+              "selected_memory_s": 0.4,
+              "valid_history_steps": 80,
+              "horizon_seconds": [
+                1,
+                2,
+                4
+              ],
+              "front_rear_horizon_scores": [
+                [
+                  4.5738941064131574e-26,
+                  1.9798187458374943e-17,
+                  2.3698373041725063e-08
+                ],
+                [
+                  5.546976943661972e-15,
+                  1.1662305843263e-10,
+                  2.708668034756556e-05
+                ]
+              ],
+              "severity_scores": [
+                4.162789650763443e-07,
+                0.0010863183997571468
+              ],
+              "required_decel_mps2": 5.1528322728700005e-06,
+              "uncertainty_score": 6.902168588193355e-14,
+              "raw_action": "accelerate",
+              "raw_target_speed_kmh": 1.0808801651000977,
+              "raw_risk_probabilities": [
+                1.0,
+                7.253537354090511e-11,
+                1.3765194767454553e-13
+              ],
+              "risk_scope": "joint_front_rear_rollout_surrogate",
+              "score_semantics": "learned kinematic surrogate; not calibrated real-world probability",
+              "authorized": true,
+              "available": true,
+              "applied": true,
+              "behavior_memory": {
+                "extension_probability": 0.5122906565666199,
+                "extended_memory_used": true,
+                "completed_segments": 5,
+                "inheritance_weights": [
+                  0.40858325362205505,
+                  0.4943739175796509,
+                  0.4644160568714142,
+                  0.47293928265571594,
+                  0.5075975060462952,
+                  0.4879654347896576
+                ],
+                "write_weights": [
+                  0.49326860904693604,
+                  0.566006064414978,
+                  0.5365881323814392,
+                  0.49434176087379456,
+                  0.506105363368988,
+                  0.472650408744812
+                ],
+                "relative_motion_state": [
+                  -0.204827219247818,
+                  0.06302643567323685,
+                  0.15931087732315063
+                ],
+                "semantics": "causal summaries of executed behavior; gate is not a calibrated necessity probability"
+              },
+              "layered_context": {
+                "consumed": true,
+                "observation_event_gates": [
+                  0.5885953307151794,
+                  0.5722364187240601
+                ],
+                "context_ablated": false,
+                "events_ablated": false,
+                "long_memory_ablated": false,
+                "feature_version": "layered_observation_event/1.0"
+              },
+              "longitudinal_sequence": {
+                "schema_version": "longitudinal_sequence/1.0",
+                "dt_s": 0.1,
+                "horizon_s": 3.0,
+                "speed_mps": [
+                  0.3002445101737976,
+                  0.6002445220947266,
+                  0.9002445340156555,
+                  1.2002445459365845,
+                  1.5002446174621582,
+                  1.8002445697784424,
+                  2.1002445220947266,
+                  2.4002444744110107,
+                  2.700244426727295,
+                  3.000244379043579,
+                  3.3002443313598633,
+                  3.6002442836761475,
+                  3.9002442359924316,
+                  4.191961288452148,
+                  4.483497619628906,
+                  4.7711944580078125,
+                  5.050763130187988,
+                  5.324538230895996,
+                  5.599039077758789,
+                  5.8711934089660645,
+                  6.135123252868652,
+                  6.395852088928223,
+                  6.626216888427734,
+                  6.863333702087402,
+                  7.073136329650879,
+                  7.258954048156738,
+                  7.423221588134766,
+                  7.5361433029174805,
+                  7.632202625274658,
+                  7.729025363922119
+                ],
+                "acceleration_mps2": [
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0000007152557373,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.917170524597168,
+                  2.915363311767578,
+                  2.8769683837890625,
+                  2.795686721801758,
+                  2.737751007080078,
+                  2.7450084686279297,
+                  2.721543312072754,
+                  2.639298439025879,
+                  2.607288360595703,
+                  2.303647994995117,
+                  2.3711681365966797,
+                  2.0980262756347656,
+                  1.8581771850585938,
+                  1.6426753997802734,
+                  1.1292171478271484,
+                  0.9605932235717773,
+                  0.9682273864746094
+                ],
+                "execution": "replan on each new observation; track first speed and acceleration samples",
+                "action_source": "deterministic encoding of first predicted speed/acceleration, not an independent classifier"
+              }
+            },
+            "risk_semantics": {
+              "scope": "joint_front_rear_rollout_surrogate",
+              "calibrated": false,
+              "horizon_seconds": [
+                1,
+                2,
+                4
+              ],
+              "directional_horizon_scores": {
+                "front": [
+                  4.5738941064131574e-26,
+                  1.9798187458374943e-17,
+                  2.3698373041725063e-08
+                ],
+                "rear": [
+                  5.546976943661972e-15,
+                  1.1662305843263e-10,
+                  2.708668034756556e-05
+                ]
+              },
+              "note": "legacy visual reason codes retained; this head is not a front-only visual probability"
+            },
+            "prediction_provenance": {
+              "schema_version": "vla_prediction_provenance/1.0",
+              "base": {
+                "action": "keep_lane",
+                "target_speed_kmh": 22.13204002380371,
+                "risk_probabilities": [
+                  0.5509747266769409,
+                  0.013019990175962448,
+                  0.43600529432296753
+                ]
+              },
+              "effective": {
+                "action": "accelerate",
+                "target_speed_kmh": 1.0808801651000977,
+                "risk_probabilities": [
+                  1.0,
+                  7.253537354090511e-11,
+                  1.3765194767454553e-13
+                ]
+              },
+              "residual_present": true,
+              "residual_applied": true,
+              "effective_action_source": "sequence_first_sample_encoding",
+              "scope": "model stages before execution and safety gates; not ground-truth correctness"
+            }
+          },
+          "canonical_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169247",
+            "frame_id": "carla_169247",
+            "decision_status": "READY",
+            "action": "keep_lane",
+            "target_speed_kmh": 32.0,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "generic_text_envelope",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": []
+          },
+          "gated_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169247",
+            "frame_id": "carla_169247",
+            "decision_status": "READY",
+            "action": "accelerate",
+            "target_speed_kmh": 2.160813,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "vla_accepted_phase-recovery-epoch_06",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": []
+          },
+          "plan_after": null,
+          "final_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169247",
+            "frame_id": "carla_169247",
+            "decision_status": "READY",
+            "action": "accelerate",
+            "target_speed_kmh": 2.160813,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "vla_accepted_phase-recovery-epoch_06",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": [],
+            "longitudinal_control_mode": "ABSOLUTE_SPEED",
+            "allow_positive_acceleration": true,
+            "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+            "target_acceleration_mps2": 2.9999997937580387,
+            "sequence_valid_until_s": 104.54049074947834,
+            "control_valid_until_s": 104.54049074947834,
+            "command_id": "Continue driving safely in the current lane."
+          },
+          "execution_blocks": {
+            "parse_blocked": false,
+            "plan_blocked": false,
+            "sequence_accepted": true
+          }
+        }
+      },
+      "simulation_frame": 169247,
+      "route_s_m": 3210.854,
+      "source_text": "Continue driving safely in the current lane.",
+      "parsed_intent": "KEEP_LANE",
+      "requested_lane_direction": null,
+      "target_speed_envelope_kmh": null,
+      "relative_speed_reference_kmh": null,
+      "relative_speed_change": null,
+      "semantic_text": "Keep the current lane at 32.0 kilometers per hour.",
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "sensor_frame": 169245,
+      "sensor_frame_lag": 2,
+      "camera_wait_ms": 0.0,
+      "candidate_count": 0,
+      "safety_observation_candidate_count": 122,
+      "physical_safety_observation": {
+        "forward_radar": {
+          "schema_version": "physical_front_radar/1.0",
+          "direction": "front",
+          "sensor_frame": 169245,
+          "measurement_timestamp_s": 104.14049074798822,
+          "measurement_pose": {
+            "x": -147.485595703125,
+            "y": -203.87753295898438,
+            "yaw_deg": 177.03201293945312
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 122,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 150,
+            "examined": 150,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          },
+          "route_corridor_filter_applied": true,
+          "route_corridor_half_width_m": 1.268,
+          "route_corridor_obstacle_bins": [],
+          "unfiltered_obstacle_candidate_count": 0,
+          "unfiltered_nearest_distance_m": null,
+          "unfiltered_nearest_azimuth_deg": null
+        },
+        "rear_radar": {
+          "schema_version": "physical_rear_radar/1.0",
+          "direction": "rear",
+          "sensor_frame": 169245,
+          "measurement_timestamp_s": 104.14049074798822,
+          "measurement_pose": {
+            "x": -144.10479736328125,
+            "y": -204.0528106689453,
+            "yaw_deg": -2.967949628829956
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 0,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 0,
+            "examined": 0,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          }
+        }
+      },
+      "policy_truth_access": false,
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "sensor_batch_schema_version": "unified_sensor_batch/1.0",
+      "sensor_contract": {
+        "cameras": [
+          "front",
+          "left",
+          "right",
+          "rear"
+        ],
+        "lidar": true,
+        "source": "model_config.sensor_requirements"
+      },
+      "risk_assessment": {
+        "risk_level": "low",
+        "recommended_action": "keep_lane",
+        "reason_codes": [],
+        "matched_entity_id": null,
+        "lane_change": {
+          "left": {
+            "is_safe": true,
+            "reason_codes": []
+          },
+          "right": {
+            "is_safe": true,
+            "reason_codes": []
+          }
+        },
+        "source": "event_memory_vla",
+        "temporal_used": true,
+        "risk_score": null,
+        "horizon_probabilities": null,
+        "risk_uncertainty": 0.0,
+        "raw_argmax_level": "low",
+        "high_confidence_threshold": 0.55,
+        "probabilities": {
+          "low": 1.0,
+          "medium": 0.0,
+          "high": 0.0
+        },
+        "event_memory": {
+          "schema_version": "layered_behavior_sequence/2.0",
+          "event_probabilities": [
+            8.770090971665923e-06,
+            2.5225560529307245e-10,
+            5.807909153610069e-10,
+            3.894355813827133e-06,
+            2.3955835786182433e-05
+          ],
+          "event_names": [
+            "closing",
+            "deceleration",
+            "observation_loss",
+            "recovery",
+            "rear_approach"
+          ],
+          "memory_weights": [
+            0.998304009437561,
+            0.0005878492374904454,
+            0.0011080572148784995
+          ],
+          "selected_memory_s": 0.4,
+          "valid_history_steps": 80,
+          "horizon_seconds": [
+            1,
+            2,
+            4
+          ],
+          "front_rear_horizon_scores": [
+            [
+              4.5738941064131574e-26,
+              1.9798187458374943e-17,
+              2.3698373041725063e-08
+            ],
+            [
+              5.546976943661972e-15,
+              1.1662305843263e-10,
+              2.708668034756556e-05
+            ]
+          ],
+          "severity_scores": [
+            4.162789650763443e-07,
+            0.0010863183997571468
+          ],
+          "required_decel_mps2": 5.1528322728700005e-06,
+          "uncertainty_score": 6.902168588193355e-14,
+          "raw_action": "accelerate",
+          "raw_target_speed_kmh": 1.0808801651000977,
+          "raw_risk_probabilities": [
+            1.0,
+            7.253537354090511e-11,
+            1.3765194767454553e-13
+          ],
+          "risk_scope": "joint_front_rear_rollout_surrogate",
+          "score_semantics": "learned kinematic surrogate; not calibrated real-world probability",
+          "authorized": true,
+          "available": true,
+          "applied": true,
+          "behavior_memory": {
+            "extension_probability": 0.5122906565666199,
+            "extended_memory_used": true,
+            "completed_segments": 5,
+            "inheritance_weights": [
+              0.40858325362205505,
+              0.4943739175796509,
+              0.4644160568714142,
+              0.47293928265571594,
+              0.5075975060462952,
+              0.4879654347896576
+            ],
+            "write_weights": [
+              0.49326860904693604,
+              0.566006064414978,
+              0.5365881323814392,
+              0.49434176087379456,
+              0.506105363368988,
+              0.472650408744812
+            ],
+            "relative_motion_state": [
+              -0.204827219247818,
+              0.06302643567323685,
+              0.15931087732315063
+            ],
+            "semantics": "causal summaries of executed behavior; gate is not a calibrated necessity probability"
+          },
+          "layered_context": {
+            "consumed": true,
+            "observation_event_gates": [
+              0.5885953307151794,
+              0.5722364187240601
+            ],
+            "context_ablated": false,
+            "events_ablated": false,
+            "long_memory_ablated": false,
+            "feature_version": "layered_observation_event/1.0"
+          },
+          "longitudinal_sequence": {
+            "schema_version": "longitudinal_sequence/1.0",
+            "dt_s": 0.1,
+            "horizon_s": 3.0,
+            "speed_mps": [
+              0.3002445101737976,
+              0.6002445220947266,
+              0.9002445340156555,
+              1.2002445459365845,
+              1.5002446174621582,
+              1.8002445697784424,
+              2.1002445220947266,
+              2.4002444744110107,
+              2.700244426727295,
+              3.000244379043579,
+              3.3002443313598633,
+              3.6002442836761475,
+              3.9002442359924316,
+              4.191961288452148,
+              4.483497619628906,
+              4.7711944580078125,
+              5.050763130187988,
+              5.324538230895996,
+              5.599039077758789,
+              5.8711934089660645,
+              6.135123252868652,
+              6.395852088928223,
+              6.626216888427734,
+              6.863333702087402,
+              7.073136329650879,
+              7.258954048156738,
+              7.423221588134766,
+              7.5361433029174805,
+              7.632202625274658,
+              7.729025363922119
+            ],
+            "acceleration_mps2": [
+              3.0,
+              3.0,
+              3.0,
+              3.0,
+              3.0000007152557373,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.917170524597168,
+              2.915363311767578,
+              2.8769683837890625,
+              2.795686721801758,
+              2.737751007080078,
+              2.7450084686279297,
+              2.721543312072754,
+              2.639298439025879,
+              2.607288360595703,
+              2.303647994995117,
+              2.3711681365966797,
+              2.0980262756347656,
+              1.8581771850585938,
+              1.6426753997802734,
+              1.1292171478271484,
+              0.9605932235717773,
+              0.9682273864746094
+            ],
+            "execution": "replan on each new observation; track first speed and acceleration samples",
+            "action_source": "deterministic encoding of first predicted speed/acceleration, not an independent classifier"
+          }
+        },
+        "risk_semantics": {
+          "scope": "joint_front_rear_rollout_surrogate",
+          "calibrated": false,
+          "horizon_seconds": [
+            1,
+            2,
+            4
+          ],
+          "directional_horizon_scores": {
+            "front": [
+              4.5738941064131574e-26,
+              1.9798187458374943e-17,
+              2.3698373041725063e-08
+            ],
+            "rear": [
+              5.546976943661972e-15,
+              1.1662305843263e-10,
+              2.708668034756556e-05
+            ]
+          },
+          "note": "legacy visual reason codes retained; this head is not a front-only visual probability"
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "keep_lane",
+            "target_speed_kmh": 22.13204002380371,
+            "risk_probabilities": [
+              0.5509747266769409,
+              0.013019990175962448,
+              0.43600529432296753
+            ]
+          },
+          "effective": {
+            "action": "accelerate",
+            "target_speed_kmh": 1.0808801651000977,
+            "risk_probabilities": [
+              1.0,
+              7.253537354090511e-11,
+              1.3765194767454553e-13
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        },
+        "physical_forward_radar": {
+          "schema_version": "physical_front_radar/1.0",
+          "direction": "front",
+          "sensor_frame": 169245,
+          "measurement_timestamp_s": 104.14049074798822,
+          "measurement_pose": {
+            "x": -147.485595703125,
+            "y": -203.87753295898438,
+            "yaw_deg": 177.03201293945312
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 122,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 150,
+            "examined": 150,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          },
+          "route_corridor_filter_applied": true,
+          "route_corridor_half_width_m": 1.268,
+          "route_corridor_obstacle_bins": [],
+          "unfiltered_obstacle_candidate_count": 0,
+          "unfiltered_nearest_distance_m": null,
+          "unfiltered_nearest_azimuth_deg": null,
+          "emergency_distance_m": 6.0,
+          "caution_distance_m": 12.0
+        },
+        "learned_probabilities": {
+          "low": 1.0,
+          "medium": 0.0,
+          "high": 0.0
+        },
+        "risk_evidence": {
+          "schema_version": "risk_evidence/1.0",
+          "status": "INSUFFICIENT_EVIDENCE",
+          "sensor": "forward_radar",
+          "sensor_frame": 169245,
+          "observed_at_s": 104.14049074798822,
+          "decision_timestamp_s": 104.24049074947834,
+          "age_s": 0.1,
+          "valid_until_s": 104.390491,
+          "is_fresh": true,
+          "physical_candidate_count": 0,
+          "nearest_distance_m": null,
+          "fusion_sources": [
+            "event_memory_vla",
+            "physical_forward_radar"
+          ]
+        },
+        "frame_id": "carla_169247",
+        "sensor_frame_id": "carla_169245",
+        "sequence_execution": {
+          "operation_updated": false,
+          "safety_bypass": false,
+          "operation_time_s": 104.14049074798822,
+          "selected_acceleration_mps2": 2.9999997937580387,
+          "applied_acceleration_mps2": 2.9999997937580387,
+          "anchor_speed_mps": 0.00022575021779131025,
+          "reference_speed_mps": 0.6002257134397472,
+          "observation_gap_reset": false,
+          "reference_mode": "speed_endpoint",
+          "interval_s": 0.5,
+          "forecast_steps": 10,
+          "forwarded": true
+        },
+        "observation_layer": {
+          "schema_version": "tracked_route_observation/1.0",
+          "frame": 169247,
+          "timestamp_s": 104.24049074947834,
+          "status": "UNKNOWN",
+          "reason": "no_confirmed_target_not_proof_of_clear_road",
+          "radar_fresh": true,
+          "selected_track_id": null,
+          "selected": null,
+          "entities": [],
+          "nearest_obstacle": null,
+          "selected_role": "CONTINUITY_REFERENCE_NOT_CLEARANCE_AUTHORITY",
+          "requested_track_resolved": true,
+          "target_history": {
+            "schema_version": "target_history/1.0",
+            "status": "AVAILABLE",
+            "source": "front_radar",
+            "timestamp_s": 104.24049074947834,
+            "retention_s": 30.0,
+            "entries": [],
+            "cross_id_reidentification": false,
+            "authority": "REFERENCE_CONTEXT_ONLY"
+          },
+          "ego": {
+            "x": -145.26329040527344,
+            "y": -203.9934844970703,
+            "vx_mps": 0.00014419302169699222,
+            "vy_mps": -0.0001571308239363134,
+            "ax_mps2": 0.00028916896553710103,
+            "ay_mps2": 7.060880307108164e-06,
+            "yaw_deg": 177.03201293945312,
+            "yaw_rate_dps": -0.012781940400600433,
+            "half_length_m": 2.44619083404541,
+            "corridor_half_width_m": 1.2683566570281983
+          },
+          "capabilities": {
+            "semantic_classification": false,
+            "front_radar_tracking": true,
+            "all_around_coverage": false
+          },
+          "invalid_route": false,
+          "compute_ms": 0.4276999970898032
+        },
+        "task_event_memory": {
+          "schema_version": "task_event_memory/1.0",
+          "active_events": [
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "kind": "KEEP_LANE",
+              "goal": {
+                "text": "Continue driving safely in the current lane."
+              },
+              "started_s": 4.140489257872105,
+              "phase": "ACTIVE",
+              "current_behavior": "ACCELERATE",
+              "previous_behavior": "HOLD",
+              "boundary_observation": {
+                "target_ref": null,
+                "target_last_seen_s": null,
+                "observation_status": "UNKNOWN"
+              },
+              "boundary_time_s": 5.640489280223846
+            }
+          ],
+          "recent_transitions": [
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": null,
+              "next_behavior": "ACCELERATE",
+              "timestamp_s": 4.140489257872105,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "ACCELERATE",
+              "next_behavior": "EMERGENCY_BRAKE",
+              "timestamp_s": 4.240489259362221,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "EMERGENCY_BRAKE",
+              "next_behavior": "HOLD",
+              "timestamp_s": 4.740489266812801,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "HOLD",
+              "next_behavior": "ACCELERATE",
+              "timestamp_s": 5.640489280223846,
+              "previous_behavior_status": "SUPERSEDED"
+            }
+          ],
+          "authority": "DECISION_CONTEXT_ONLY",
+          "behavior_source": "ISSUED_POST_CONTRACT_CONTROL"
+        },
+        "layered_context_mode": "experimental_trained_policy"
+      },
+      "target_lane_risk_assessment": null,
+      "front_view_risk_assessment": null,
+      "directional_collision_assessment": {
+        "schema_version": "directional_collision_response/1.0",
+        "front_priority": true,
+        "rear": {
+          "schema_version": "rear_collision_assessment/1.0",
+          "collision_risk": false,
+          "distance_m": null,
+          "closing_speed_mps": null,
+          "ttc_s": null,
+          "reason": "no_closing_rear_return"
+        },
+        "front_risk_level": "unknown",
+        "selected_response": "none"
+      },
+      "vla_proposal": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169247",
+        "frame_id": "carla_169247",
+        "action": "accelerate",
+        "target_speed_kmh": 2.16081256838309,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.881604,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 16.7019
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169247",
+        "frame_id": "carla_169247",
+        "action": "accelerate",
+        "target_speed_kmh": 1.08088,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.881604,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 16.7019
+      },
+      "proposal_stage": "after_sequence_execution_and_risk_constraints",
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169247",
+        "frame_id": "carla_169247",
+        "decision_status": "READY",
+        "action": "accelerate",
+        "target_speed_kmh": 2.160813,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "vla_accepted_phase-recovery-epoch_06",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": [],
+        "longitudinal_control_mode": "ABSOLUTE_SPEED",
+        "allow_positive_acceleration": true,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 2.9999997937580387,
+        "sequence_valid_until_s": 104.54049074947834,
+        "control_valid_until_s": 104.54049074947834,
+        "command_id": "Continue driving safely in the current lane."
+      },
+      "longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "ABSOLUTE_SPEED",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 2.160813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 2.160813,
+        "reference_ego_speed_kmh": 0.0008801412488648201,
+        "speed_clamped": false,
+        "risk_constraint_active": false,
+        "policy_safety_credit": false
+      },
+      "active_instruction_contract": {
+        "schema_version": "active_instruction_contract/1.0",
+        "parsed_intent": "KEEP_LANE",
+        "active_stop": false,
+        "speed_bound_kmh": null,
+        "speed_contract_mode": "NONE",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 2.160813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 2.160813,
+        "changed": false,
+        "policy_safety_credit": false
+      },
+      "issued_instruction_contract": {
+        "schema_version": "active_instruction_contract/1.0",
+        "parsed_intent": "KEEP_LANE",
+        "active_stop": false,
+        "speed_bound_kmh": null,
+        "speed_contract_mode": "NONE",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 2.160813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 2.160813,
+        "changed": false,
+        "policy_safety_credit": false
+      },
+      "issued_longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "ABSOLUTE_SPEED",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 2.160813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 2.160813,
+        "reference_ego_speed_kmh": 0.0008801412488648201,
+        "speed_clamped": false,
+        "risk_constraint_active": false,
+        "policy_safety_credit": false
+      },
+      "traffic_control_contract": {
+        "source": "traffic_control_contract/1.0",
+        "observation": {
+          "applicable": false,
+          "state": "UNKNOWN",
+          "timestamp_s": 104.14049074947835,
+          "source": "rgb_static_opendrive",
+          "image_source": "synchronized_front_capture"
+        },
+        "active": false,
+        "changed": false,
+        "policy_safety_credit": false,
+        "status": "no_route_associated_signal"
+      },
+      "mandatory_execution_wait": {
+        "request_id": null,
+        "observed_at_s": 104.24049074947834,
+        "safety_wait": false,
+        "reason": null
+      },
+      "lane_task_feedback": {
+        "target_lane": null,
+        "completed": false
+      },
+      "control_plan_state": null,
+      "command_dispatch": {
+        "mode": "route_latest"
+      },
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 169247,
+        "previous_decision_frame": 169245,
+        "speed_kmh": 0.0008801412488648201,
+        "acceleration_xyz_mps2": [
+          0.00028916896553710103,
+          7.060880307108164e-06,
+          0.000180816714419052
+        ],
+        "throttle": 1.0,
+        "brake": 0.0
+      },
+      "model_output_applied": true,
+      "training_teacher_force_control": false,
+      "liveness_override": null,
+      "full_decision_latency_ms": 19.623,
+      "text_to_control_command_wall_ms": 36.109,
+      "sensor_to_decision_response_ms": 19.623
+    },
+    {
+      "schema_version": "unified_vla_decision/1.0",
+      "decision_trace": {
+        "schema_version": "decision_trace/1.0",
+        "simulation_frame": 169249,
+        "stage": "execution_contracts",
+        "stage_wall_ms": {
+          "command_parse": 0.1,
+          "plan_prepare": 0.017,
+          "language_encoding": 0.082,
+          "sensor_acquisition": 0.826,
+          "sensor_features_and_batch": 16.907,
+          "vla_model": 16.345,
+          "risk_fusion_and_plan": 0.094,
+          "execution_contracts": 0.59
+        },
+        "total_wall_ms": 34.96,
+        "timing_scope": "host wall time including waits; not isolated GPU kernel latency",
+        "stages": {
+          "command": {
+            "text": "Continue driving safely in the current lane."
+          },
+          "parsed_instruction": {
+            "parsed_intent": "KEEP_LANE",
+            "requested_lane_direction": null,
+            "target_speed_kmh": null,
+            "confidence": 1.0,
+            "source_text": "Continue driving safely in the current lane.",
+            "semantic_goal": [],
+            "speed_change": null,
+            "speed_delta_kmh": null,
+            "speed_reference_kmh": null,
+            "parse_status": "VALID",
+            "parse_source": null
+          },
+          "driving_intent": null,
+          "plan_before": null,
+          "model_proposal": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169249",
+            "frame_id": "carla_169249",
+            "action": "accelerate",
+            "target_speed_kmh": 1.080778,
+            "target_lane": null,
+            "target_location": null,
+            "target_entity_id": null,
+            "confidence": 0.884774,
+            "model": "phase-recovery-epoch_06",
+            "latency_ms": 14.6618
+          },
+          "raw_network_output": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169249",
+            "frame_id": "carla_169249",
+            "action": "accelerate",
+            "target_speed_kmh": 1.080777645111084,
+            "target_lane": null,
+            "target_location": null,
+            "target_entity_id": null,
+            "confidence": 0.884774,
+            "model": "phase-recovery-epoch_06",
+            "latency_ms": 14.6618,
+            "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+            "target_acceleration_mps2": 3.0
+          },
+          "learned_risk": {
+            "risk_level": "low",
+            "recommended_action": "keep_lane",
+            "reason_codes": [],
+            "matched_entity_id": null,
+            "lane_change": {
+              "left": {
+                "is_safe": true,
+                "reason_codes": []
+              },
+              "right": {
+                "is_safe": true,
+                "reason_codes": []
+              }
+            },
+            "source": "event_memory_vla",
+            "temporal_used": true,
+            "risk_score": null,
+            "horizon_probabilities": null,
+            "risk_uncertainty": 0.0,
+            "raw_argmax_level": "low",
+            "high_confidence_threshold": 0.55,
+            "probabilities": {
+              "low": 1.0,
+              "medium": 0.0,
+              "high": 0.0
+            },
+            "event_memory": {
+              "schema_version": "layered_behavior_sequence/2.0",
+              "event_probabilities": [
+                7.4976255746150855e-06,
+                3.6037173245517806e-10,
+                1.1744435424176913e-09,
+                1.89483162102988e-05,
+                3.17873309541028e-05
+              ],
+              "event_names": [
+                "closing",
+                "deceleration",
+                "observation_loss",
+                "recovery",
+                "rear_approach"
+              ],
+              "memory_weights": [
+                0.996207594871521,
+                0.0011735920561477542,
+                0.00261886534281075
+              ],
+              "selected_memory_s": 0.4,
+              "valid_history_steps": 80,
+              "horizon_seconds": [
+                1,
+                2,
+                4
+              ],
+              "front_rear_horizon_scores": [
+                [
+                  5.920887352476052e-26,
+                  2.591920818598159e-17,
+                  2.7469367225307906e-08
+                ],
+                [
+                  7.141611758074758e-15,
+                  1.339772875974532e-10,
+                  2.7134199626743793e-05
+                ]
+              ],
+              "severity_scores": [
+                4.6367182449102984e-07,
+                0.0011255376739427447
+              ],
+              "required_decel_mps2": 6.275333362282254e-06,
+              "uncertainty_score": 9.373467849344355e-14,
+              "raw_action": "accelerate",
+              "raw_target_speed_kmh": 1.080777645111084,
+              "raw_risk_probabilities": [
+                1.0,
+                8.082003122300563e-11,
+                1.6153048408400206e-13
+              ],
+              "risk_scope": "joint_front_rear_rollout_surrogate",
+              "score_semantics": "learned kinematic surrogate; not calibrated real-world probability",
+              "authorized": true,
+              "available": true,
+              "applied": true,
+              "behavior_memory": {
+                "extension_probability": 0.5186625123023987,
+                "extended_memory_used": true,
+                "completed_segments": 5,
+                "inheritance_weights": [
+                  0.4085831642150879,
+                  0.4943738579750061,
+                  0.4644160568714142,
+                  0.47293922305107117,
+                  0.5075975060462952,
+                  0.48796531558036804
+                ],
+                "write_weights": [
+                  0.49326854944229126,
+                  0.566006064414978,
+                  0.5365881323814392,
+                  0.49434176087379456,
+                  0.506105363368988,
+                  0.47265034914016724
+                ],
+                "relative_motion_state": [
+                  -0.20482710003852844,
+                  0.0630263164639473,
+                  0.15931081771850586
+                ],
+                "semantics": "causal summaries of executed behavior; gate is not a calibrated necessity probability"
+              },
+              "layered_context": {
+                "consumed": true,
+                "observation_event_gates": [
+                  0.593768835067749,
+                  0.571485161781311
+                ],
+                "context_ablated": false,
+                "events_ablated": false,
+                "long_memory_ablated": false,
+                "feature_version": "layered_observation_event/1.0"
+              },
+              "longitudinal_sequence": {
+                "schema_version": "longitudinal_sequence/1.0",
+                "dt_s": 0.1,
+                "horizon_s": 3.0,
+                "speed_mps": [
+                  0.30021601915359497,
+                  0.6002160310745239,
+                  0.9002160429954529,
+                  1.2002160549163818,
+                  1.500216007232666,
+                  1.8002159595489502,
+                  2.1002159118652344,
+                  2.4002158641815186,
+                  2.7002158164978027,
+                  3.000215768814087,
+                  3.300215721130371,
+                  3.6002156734466553,
+                  3.9002156257629395,
+                  4.19244909286499,
+                  4.484508991241455,
+                  4.772787094116211,
+                  5.053425312042236,
+                  5.32826042175293,
+                  5.603976249694824,
+                  5.877266883850098,
+                  6.142440319061279,
+                  6.40477991104126,
+                  6.637670993804932,
+                  6.877070426940918,
+                  7.089710235595703,
+                  7.278799533843994,
+                  7.446723461151123,
+                  7.563419818878174,
+                  7.663336277008057,
+                  7.763060092926025
+                ],
+                "acceleration_mps2": [
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.922334671020508,
+                  2.9205989837646484,
+                  2.8827810287475586,
+                  2.806382179260254,
+                  2.7483510971069336,
+                  2.7571582794189453,
+                  2.7329063415527344,
+                  2.6517343521118164,
+                  2.6233959197998047,
+                  2.3289108276367188,
+                  2.3939943313598633,
+                  2.1263980865478516,
+                  1.8908929824829102,
+                  1.679239273071289,
+                  1.1669635772705078,
+                  0.9991645812988281,
+                  0.9972381591796875
+                ],
+                "execution": "replan on each new observation; track first speed and acceleration samples",
+                "action_source": "deterministic encoding of first predicted speed/acceleration, not an independent classifier"
+              }
+            },
+            "risk_semantics": {
+              "scope": "joint_front_rear_rollout_surrogate",
+              "calibrated": false,
+              "horizon_seconds": [
+                1,
+                2,
+                4
+              ],
+              "directional_horizon_scores": {
+                "front": [
+                  5.920887352476052e-26,
+                  2.591920818598159e-17,
+                  2.7469367225307906e-08
+                ],
+                "rear": [
+                  7.141611758074758e-15,
+                  1.339772875974532e-10,
+                  2.7134199626743793e-05
+                ]
+              },
+              "note": "legacy visual reason codes retained; this head is not a front-only visual probability"
+            },
+            "prediction_provenance": {
+              "schema_version": "vla_prediction_provenance/1.0",
+              "base": {
+                "action": "keep_lane",
+                "target_speed_kmh": 23.03873634338379,
+                "risk_probabilities": [
+                  0.5820598006248474,
+                  0.013329037465155125,
+                  0.40461117029190063
+                ]
+              },
+              "effective": {
+                "action": "accelerate",
+                "target_speed_kmh": 1.080777645111084,
+                "risk_probabilities": [
+                  1.0,
+                  8.082003122300563e-11,
+                  1.6153048408400206e-13
+                ]
+              },
+              "residual_present": true,
+              "residual_applied": true,
+              "effective_action_source": "sequence_first_sample_encoding",
+              "scope": "model stages before execution and safety gates; not ground-truth correctness"
+            }
+          },
+          "canonical_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169249",
+            "frame_id": "carla_169249",
+            "decision_status": "READY",
+            "action": "keep_lane",
+            "target_speed_kmh": 32.0,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "generic_text_envelope",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": []
+          },
+          "gated_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169249",
+            "frame_id": "carla_169249",
+            "decision_status": "READY",
+            "action": "accelerate",
+            "target_speed_kmh": 3.240813,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "vla_accepted_phase-recovery-epoch_06",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": []
+          },
+          "plan_after": null,
+          "final_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169249",
+            "frame_id": "carla_169249",
+            "decision_status": "READY",
+            "action": "accelerate",
+            "target_speed_kmh": 3.240813,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "vla_accepted_phase-recovery-epoch_06",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": [],
+            "longitudinal_control_mode": "ABSOLUTE_SPEED",
+            "allow_positive_acceleration": true,
+            "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+            "target_acceleration_mps2": 2.9999997937580387,
+            "sequence_valid_until_s": 104.64049075096845,
+            "control_valid_until_s": 104.64049075096845,
+            "command_id": "Continue driving safely in the current lane."
+          },
+          "execution_blocks": {
+            "parse_blocked": false,
+            "plan_blocked": false,
+            "sequence_accepted": true
+          }
+        }
+      },
+      "simulation_frame": 169249,
+      "route_s_m": 3210.854,
+      "source_text": "Continue driving safely in the current lane.",
+      "parsed_intent": "KEEP_LANE",
+      "requested_lane_direction": null,
+      "target_speed_envelope_kmh": null,
+      "relative_speed_reference_kmh": null,
+      "relative_speed_change": null,
+      "semantic_text": "Keep the current lane at 32.0 kilometers per hour.",
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "sensor_frame": 169247,
+      "sensor_frame_lag": 2,
+      "camera_wait_ms": 0.0,
+      "candidate_count": 0,
+      "safety_observation_candidate_count": 111,
+      "physical_safety_observation": {
+        "forward_radar": {
+          "schema_version": "physical_front_radar/1.0",
+          "direction": "front",
+          "sensor_frame": 169247,
+          "measurement_timestamp_s": 104.24049074947834,
+          "measurement_pose": {
+            "x": -147.485595703125,
+            "y": -203.87753295898438,
+            "yaw_deg": 177.03201293945312
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 111,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 150,
+            "examined": 150,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          },
+          "route_corridor_filter_applied": true,
+          "route_corridor_half_width_m": 1.268,
+          "route_corridor_obstacle_bins": [],
+          "unfiltered_obstacle_candidate_count": 0,
+          "unfiltered_nearest_distance_m": null,
+          "unfiltered_nearest_azimuth_deg": null
+        },
+        "rear_radar": {
+          "schema_version": "physical_rear_radar/1.0",
+          "direction": "rear",
+          "sensor_frame": 169247,
+          "measurement_timestamp_s": 104.24049074947834,
+          "measurement_pose": {
+            "x": -144.10479736328125,
+            "y": -204.0528106689453,
+            "yaw_deg": -2.967956066131592
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 0,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 0,
+            "examined": 0,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          }
+        }
+      },
+      "policy_truth_access": false,
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "sensor_batch_schema_version": "unified_sensor_batch/1.0",
+      "sensor_contract": {
+        "cameras": [
+          "front",
+          "left",
+          "right",
+          "rear"
+        ],
+        "lidar": true,
+        "source": "model_config.sensor_requirements"
+      },
+      "risk_assessment": {
+        "risk_level": "low",
+        "recommended_action": "keep_lane",
+        "reason_codes": [],
+        "matched_entity_id": null,
+        "lane_change": {
+          "left": {
+            "is_safe": true,
+            "reason_codes": []
+          },
+          "right": {
+            "is_safe": true,
+            "reason_codes": []
+          }
+        },
+        "source": "event_memory_vla",
+        "temporal_used": true,
+        "risk_score": null,
+        "horizon_probabilities": null,
+        "risk_uncertainty": 0.0,
+        "raw_argmax_level": "low",
+        "high_confidence_threshold": 0.55,
+        "probabilities": {
+          "low": 1.0,
+          "medium": 0.0,
+          "high": 0.0
+        },
+        "event_memory": {
+          "schema_version": "layered_behavior_sequence/2.0",
+          "event_probabilities": [
+            7.4976255746150855e-06,
+            3.6037173245517806e-10,
+            1.1744435424176913e-09,
+            1.89483162102988e-05,
+            3.17873309541028e-05
+          ],
+          "event_names": [
+            "closing",
+            "deceleration",
+            "observation_loss",
+            "recovery",
+            "rear_approach"
+          ],
+          "memory_weights": [
+            0.996207594871521,
+            0.0011735920561477542,
+            0.00261886534281075
+          ],
+          "selected_memory_s": 0.4,
+          "valid_history_steps": 80,
+          "horizon_seconds": [
+            1,
+            2,
+            4
+          ],
+          "front_rear_horizon_scores": [
+            [
+              5.920887352476052e-26,
+              2.591920818598159e-17,
+              2.7469367225307906e-08
+            ],
+            [
+              7.141611758074758e-15,
+              1.339772875974532e-10,
+              2.7134199626743793e-05
+            ]
+          ],
+          "severity_scores": [
+            4.6367182449102984e-07,
+            0.0011255376739427447
+          ],
+          "required_decel_mps2": 6.275333362282254e-06,
+          "uncertainty_score": 9.373467849344355e-14,
+          "raw_action": "accelerate",
+          "raw_target_speed_kmh": 1.080777645111084,
+          "raw_risk_probabilities": [
+            1.0,
+            8.082003122300563e-11,
+            1.6153048408400206e-13
+          ],
+          "risk_scope": "joint_front_rear_rollout_surrogate",
+          "score_semantics": "learned kinematic surrogate; not calibrated real-world probability",
+          "authorized": true,
+          "available": true,
+          "applied": true,
+          "behavior_memory": {
+            "extension_probability": 0.5186625123023987,
+            "extended_memory_used": true,
+            "completed_segments": 5,
+            "inheritance_weights": [
+              0.4085831642150879,
+              0.4943738579750061,
+              0.4644160568714142,
+              0.47293922305107117,
+              0.5075975060462952,
+              0.48796531558036804
+            ],
+            "write_weights": [
+              0.49326854944229126,
+              0.566006064414978,
+              0.5365881323814392,
+              0.49434176087379456,
+              0.506105363368988,
+              0.47265034914016724
+            ],
+            "relative_motion_state": [
+              -0.20482710003852844,
+              0.0630263164639473,
+              0.15931081771850586
+            ],
+            "semantics": "causal summaries of executed behavior; gate is not a calibrated necessity probability"
+          },
+          "layered_context": {
+            "consumed": true,
+            "observation_event_gates": [
+              0.593768835067749,
+              0.571485161781311
+            ],
+            "context_ablated": false,
+            "events_ablated": false,
+            "long_memory_ablated": false,
+            "feature_version": "layered_observation_event/1.0"
+          },
+          "longitudinal_sequence": {
+            "schema_version": "longitudinal_sequence/1.0",
+            "dt_s": 0.1,
+            "horizon_s": 3.0,
+            "speed_mps": [
+              0.30021601915359497,
+              0.6002160310745239,
+              0.9002160429954529,
+              1.2002160549163818,
+              1.500216007232666,
+              1.8002159595489502,
+              2.1002159118652344,
+              2.4002158641815186,
+              2.7002158164978027,
+              3.000215768814087,
+              3.300215721130371,
+              3.6002156734466553,
+              3.9002156257629395,
+              4.19244909286499,
+              4.484508991241455,
+              4.772787094116211,
+              5.053425312042236,
+              5.32826042175293,
+              5.603976249694824,
+              5.877266883850098,
+              6.142440319061279,
+              6.40477991104126,
+              6.637670993804932,
+              6.877070426940918,
+              7.089710235595703,
+              7.278799533843994,
+              7.446723461151123,
+              7.563419818878174,
+              7.663336277008057,
+              7.763060092926025
+            ],
+            "acceleration_mps2": [
+              3.0,
+              3.0,
+              3.0,
+              3.0,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.922334671020508,
+              2.9205989837646484,
+              2.8827810287475586,
+              2.806382179260254,
+              2.7483510971069336,
+              2.7571582794189453,
+              2.7329063415527344,
+              2.6517343521118164,
+              2.6233959197998047,
+              2.3289108276367188,
+              2.3939943313598633,
+              2.1263980865478516,
+              1.8908929824829102,
+              1.679239273071289,
+              1.1669635772705078,
+              0.9991645812988281,
+              0.9972381591796875
+            ],
+            "execution": "replan on each new observation; track first speed and acceleration samples",
+            "action_source": "deterministic encoding of first predicted speed/acceleration, not an independent classifier"
+          }
+        },
+        "risk_semantics": {
+          "scope": "joint_front_rear_rollout_surrogate",
+          "calibrated": false,
+          "horizon_seconds": [
+            1,
+            2,
+            4
+          ],
+          "directional_horizon_scores": {
+            "front": [
+              5.920887352476052e-26,
+              2.591920818598159e-17,
+              2.7469367225307906e-08
+            ],
+            "rear": [
+              7.141611758074758e-15,
+              1.339772875974532e-10,
+              2.7134199626743793e-05
+            ]
+          },
+          "note": "legacy visual reason codes retained; this head is not a front-only visual probability"
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "keep_lane",
+            "target_speed_kmh": 23.03873634338379,
+            "risk_probabilities": [
+              0.5820598006248474,
+              0.013329037465155125,
+              0.40461117029190063
+            ]
+          },
+          "effective": {
+            "action": "accelerate",
+            "target_speed_kmh": 1.080777645111084,
+            "risk_probabilities": [
+              1.0,
+              8.082003122300563e-11,
+              1.6153048408400206e-13
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        },
+        "physical_forward_radar": {
+          "schema_version": "physical_front_radar/1.0",
+          "direction": "front",
+          "sensor_frame": 169247,
+          "measurement_timestamp_s": 104.24049074947834,
+          "measurement_pose": {
+            "x": -147.485595703125,
+            "y": -203.87753295898438,
+            "yaw_deg": 177.03201293945312
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 111,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 150,
+            "examined": 150,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          },
+          "route_corridor_filter_applied": true,
+          "route_corridor_half_width_m": 1.268,
+          "route_corridor_obstacle_bins": [],
+          "unfiltered_obstacle_candidate_count": 0,
+          "unfiltered_nearest_distance_m": null,
+          "unfiltered_nearest_azimuth_deg": null,
+          "emergency_distance_m": 6.0,
+          "caution_distance_m": 12.0
+        },
+        "learned_probabilities": {
+          "low": 1.0,
+          "medium": 0.0,
+          "high": 0.0
+        },
+        "risk_evidence": {
+          "schema_version": "risk_evidence/1.0",
+          "status": "INSUFFICIENT_EVIDENCE",
+          "sensor": "forward_radar",
+          "sensor_frame": 169247,
+          "observed_at_s": 104.24049074947834,
+          "decision_timestamp_s": 104.34049075096846,
+          "age_s": 0.1,
+          "valid_until_s": 104.490491,
+          "is_fresh": true,
+          "physical_candidate_count": 0,
+          "nearest_distance_m": null,
+          "fusion_sources": [
+            "event_memory_vla",
+            "physical_forward_radar"
+          ]
+        },
+        "frame_id": "carla_169249",
+        "sensor_frame_id": "carla_169247",
+        "sequence_execution": {
+          "operation_updated": false,
+          "safety_bypass": false,
+          "operation_time_s": 104.14049074798822,
+          "selected_acceleration_mps2": 2.9999997937580387,
+          "applied_acceleration_mps2": 2.9999997937580387,
+          "anchor_speed_mps": 0.00022575021779131025,
+          "reference_speed_mps": 0.900225697285899,
+          "observation_gap_reset": false,
+          "reference_mode": "speed_endpoint",
+          "interval_s": 0.5,
+          "forecast_steps": 10,
+          "forwarded": true
+        },
+        "observation_layer": {
+          "schema_version": "tracked_route_observation/1.0",
+          "frame": 169249,
+          "timestamp_s": 104.34049075096846,
+          "status": "UNKNOWN",
+          "reason": "no_confirmed_target_not_proof_of_clear_road",
+          "radar_fresh": true,
+          "selected_track_id": null,
+          "selected": null,
+          "entities": [],
+          "nearest_obstacle": null,
+          "selected_role": "CONTINUITY_REFERENCE_NOT_CLEARANCE_AUTHORITY",
+          "requested_track_resolved": true,
+          "target_history": {
+            "schema_version": "target_history/1.0",
+            "status": "AVAILABLE",
+            "source": "front_radar",
+            "timestamp_s": 104.34049075096846,
+            "retention_s": 30.0,
+            "entries": [],
+            "cross_id_reidentification": false,
+            "authority": "REFERENCE_CONTEXT_ONLY"
+          },
+          "ego": {
+            "x": -145.26329040527344,
+            "y": -203.9934844970703,
+            "vx_mps": 8.961479761637747e-05,
+            "vy_mps": 5.6062192015815526e-05,
+            "ax_mps2": 0.00021788349840790033,
+            "ay_mps2": -0.00016145218978635967,
+            "yaw_deg": 177.03201293945312,
+            "yaw_rate_dps": 0.009936932474374771,
+            "half_length_m": 2.44619083404541,
+            "corridor_half_width_m": 1.2683566570281983
+          },
+          "capabilities": {
+            "semantic_classification": false,
+            "front_radar_tracking": true,
+            "all_around_coverage": false
+          },
+          "invalid_route": false,
+          "compute_ms": 0.5801999941468239
+        },
+        "task_event_memory": {
+          "schema_version": "task_event_memory/1.0",
+          "active_events": [
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "kind": "KEEP_LANE",
+              "goal": {
+                "text": "Continue driving safely in the current lane."
+              },
+              "started_s": 4.140489257872105,
+              "phase": "ACTIVE",
+              "current_behavior": "ACCELERATE",
+              "previous_behavior": "HOLD",
+              "boundary_observation": {
+                "target_ref": null,
+                "target_last_seen_s": null,
+                "observation_status": "UNKNOWN"
+              },
+              "boundary_time_s": 5.640489280223846
+            }
+          ],
+          "recent_transitions": [
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": null,
+              "next_behavior": "ACCELERATE",
+              "timestamp_s": 4.140489257872105,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "ACCELERATE",
+              "next_behavior": "EMERGENCY_BRAKE",
+              "timestamp_s": 4.240489259362221,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "EMERGENCY_BRAKE",
+              "next_behavior": "HOLD",
+              "timestamp_s": 4.740489266812801,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "HOLD",
+              "next_behavior": "ACCELERATE",
+              "timestamp_s": 5.640489280223846,
+              "previous_behavior_status": "SUPERSEDED"
+            }
+          ],
+          "authority": "DECISION_CONTEXT_ONLY",
+          "behavior_source": "ISSUED_POST_CONTRACT_CONTROL"
+        },
+        "layered_context_mode": "experimental_trained_policy"
+      },
+      "target_lane_risk_assessment": null,
+      "front_view_risk_assessment": null,
+      "directional_collision_assessment": {
+        "schema_version": "directional_collision_response/1.0",
+        "front_priority": true,
+        "rear": {
+          "schema_version": "rear_collision_assessment/1.0",
+          "collision_risk": false,
+          "distance_m": null,
+          "closing_speed_mps": null,
+          "ttc_s": null,
+          "reason": "no_closing_rear_return"
+        },
+        "front_risk_level": "unknown",
+        "selected_response": "none"
+      },
+      "vla_proposal": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169249",
+        "frame_id": "carla_169249",
+        "action": "accelerate",
+        "target_speed_kmh": 3.240812510229236,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.884774,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 14.6618
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169249",
+        "frame_id": "carla_169249",
+        "action": "accelerate",
+        "target_speed_kmh": 1.080778,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.884774,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 14.6618
+      },
+      "proposal_stage": "after_sequence_execution_and_risk_constraints",
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169249",
+        "frame_id": "carla_169249",
+        "decision_status": "READY",
+        "action": "accelerate",
+        "target_speed_kmh": 3.240813,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "vla_accepted_phase-recovery-epoch_06",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": [],
+        "longitudinal_control_mode": "ABSOLUTE_SPEED",
+        "allow_positive_acceleration": true,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 2.9999997937580387,
+        "sequence_valid_until_s": 104.64049075096845,
+        "control_valid_until_s": 104.64049075096845,
+        "command_id": "Continue driving safely in the current lane."
+      },
+      "longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "ABSOLUTE_SPEED",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 3.240813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 3.240813,
+        "reference_ego_speed_kmh": 0.0007776378068194958,
+        "speed_clamped": false,
+        "risk_constraint_active": false,
+        "policy_safety_credit": false
+      },
+      "active_instruction_contract": {
+        "schema_version": "active_instruction_contract/1.0",
+        "parsed_intent": "KEEP_LANE",
+        "active_stop": false,
+        "speed_bound_kmh": null,
+        "speed_contract_mode": "NONE",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 3.240813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 3.240813,
+        "changed": false,
+        "policy_safety_credit": false
+      },
+      "issued_instruction_contract": {
+        "schema_version": "active_instruction_contract/1.0",
+        "parsed_intent": "KEEP_LANE",
+        "active_stop": false,
+        "speed_bound_kmh": null,
+        "speed_contract_mode": "NONE",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 3.240813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 3.240813,
+        "changed": false,
+        "policy_safety_credit": false
+      },
+      "issued_longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "ABSOLUTE_SPEED",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 3.240813,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 3.240813,
+        "reference_ego_speed_kmh": 0.0007776378068194958,
+        "speed_clamped": false,
+        "risk_constraint_active": false,
+        "policy_safety_credit": false
+      },
+      "traffic_control_contract": {
+        "source": "traffic_control_contract/1.0",
+        "observation": {
+          "applicable": false,
+          "state": "UNKNOWN",
+          "timestamp_s": 104.24049075096846,
+          "source": "rgb_static_opendrive",
+          "image_source": "synchronized_front_capture"
+        },
+        "active": false,
+        "changed": false,
+        "policy_safety_credit": false,
+        "status": "no_route_associated_signal"
+      },
+      "mandatory_execution_wait": {
+        "request_id": null,
+        "observed_at_s": 104.34049075096846,
+        "safety_wait": false,
+        "reason": null
+      },
+      "lane_task_feedback": {
+        "target_lane": null,
+        "completed": false
+      },
+      "control_plan_state": null,
+      "command_dispatch": {
+        "mode": "route_latest"
+      },
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 169249,
+        "previous_decision_frame": 169247,
+        "speed_kmh": 0.0007776378068194958,
+        "acceleration_xyz_mps2": [
+          0.00021788349840790033,
+          -0.00016145218978635967,
+          0.00032253272365778685
+        ],
+        "throttle": 1.0,
+        "brake": 0.0
+      },
+      "model_output_applied": true,
+      "training_teacher_force_control": false,
+      "liveness_override": null,
+      "full_decision_latency_ms": 17.868,
+      "text_to_control_command_wall_ms": 34.897,
+      "sensor_to_decision_response_ms": 17.868
+    },
+    {
+      "schema_version": "unified_vla_decision/1.0",
+      "decision_trace": {
+        "schema_version": "decision_trace/1.0",
+        "simulation_frame": 169251,
+        "stage": "execution_contracts",
+        "stage_wall_ms": {
+          "command_parse": 0.117,
+          "plan_prepare": 0.017,
+          "language_encoding": 0.143,
+          "sensor_acquisition": 0.66,
+          "sensor_features_and_batch": 16.015,
+          "vla_model": 16.729,
+          "risk_fusion_and_plan": 0.098,
+          "execution_contracts": 0.529
+        },
+        "total_wall_ms": 34.309,
+        "timing_scope": "host wall time including waits; not isolated GPU kernel latency",
+        "stages": {
+          "command": {
+            "text": "Continue driving safely in the current lane."
+          },
+          "parsed_instruction": {
+            "parsed_intent": "KEEP_LANE",
+            "requested_lane_direction": null,
+            "target_speed_kmh": null,
+            "confidence": 1.0,
+            "source_text": "Continue driving safely in the current lane.",
+            "semantic_goal": [],
+            "speed_change": null,
+            "speed_delta_kmh": null,
+            "speed_reference_kmh": null,
+            "parse_status": "VALID",
+            "parse_source": null
+          },
+          "driving_intent": null,
+          "plan_before": null,
+          "model_proposal": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169251",
+            "frame_id": "carla_169251",
+            "action": "accelerate",
+            "target_speed_kmh": 1.080905,
+            "target_lane": null,
+            "target_location": null,
+            "target_entity_id": null,
+            "confidence": 0.887877,
+            "model": "phase-recovery-epoch_06",
+            "latency_ms": 14.4628
+          },
+          "raw_network_output": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169251",
+            "frame_id": "carla_169251",
+            "action": "accelerate",
+            "target_speed_kmh": 1.0809053182601929,
+            "target_lane": null,
+            "target_location": null,
+            "target_entity_id": null,
+            "confidence": 0.887877,
+            "model": "phase-recovery-epoch_06",
+            "latency_ms": 14.4628,
+            "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+            "target_acceleration_mps2": 3.0
+          },
+          "learned_risk": {
+            "risk_level": "low",
+            "recommended_action": "keep_lane",
+            "reason_codes": [],
+            "matched_entity_id": null,
+            "lane_change": {
+              "left": {
+                "is_safe": true,
+                "reason_codes": []
+              },
+              "right": {
+                "is_safe": true,
+                "reason_codes": []
+              }
+            },
+            "source": "event_memory_vla",
+            "temporal_used": true,
+            "risk_score": null,
+            "horizon_probabilities": null,
+            "risk_uncertainty": 0.0,
+            "raw_argmax_level": "low",
+            "high_confidence_threshold": 0.55,
+            "probabilities": {
+              "low": 1.0,
+              "medium": 0.0,
+              "high": 0.0
+            },
+            "event_memory": {
+              "schema_version": "layered_behavior_sequence/2.0",
+              "event_probabilities": [
+                7.531868050136836e-06,
+                3.3688829503830675e-10,
+                1.2671880211811981e-09,
+                5.7032830227399245e-06,
+                1.708593663352076e-05
+              ],
+              "event_names": [
+                "closing",
+                "deceleration",
+                "observation_loss",
+                "recovery",
+                "rear_approach"
+              ],
+              "memory_weights": [
+                0.9983177185058594,
+                0.0006496241549029946,
+                0.00103257957380265
+              ],
+              "selected_memory_s": 0.4,
+              "valid_history_steps": 80,
+              "horizon_seconds": [
+                1,
+                2,
+                4
+              ],
+              "front_rear_horizon_scores": [
+                [
+                  2.5835871032584605e-26,
+                  1.458329511534461e-17,
+                  2.063904425142482e-08
+                ],
+                [
+                  4.926286446507071e-15,
+                  1.0610775452724042e-10,
+                  2.5244718926842324e-05
+                ]
+              ],
+              "severity_scores": [
+                3.8031967619645e-07,
+                0.0010621135588735342
+              ],
+              "required_decel_mps2": 4.820331923838239e-06,
+              "uncertainty_score": 6.82649330943294e-14,
+              "raw_action": "accelerate",
+              "raw_target_speed_kmh": 1.0809053182601929,
+              "raw_risk_probabilities": [
+                1.0,
+                6.219658815753704e-11,
+                1.1609821177344104e-13
+              ],
+              "risk_scope": "joint_front_rear_rollout_surrogate",
+              "score_semantics": "learned kinematic surrogate; not calibrated real-world probability",
+              "authorized": true,
+              "available": true,
+              "applied": true,
+              "behavior_memory": {
+                "extension_probability": 0.5275701284408569,
+                "extended_memory_used": true,
+                "completed_segments": 5,
+                "inheritance_weights": [
+                  0.40858325362205505,
+                  0.4943739175796509,
+                  0.4644159972667694,
+                  0.47293928265571594,
+                  0.5075975060462952,
+                  0.4879654347896576
+                ],
+                "write_weights": [
+                  0.49326860904693604,
+                  0.566006064414978,
+                  0.536588191986084,
+                  0.49434176087379456,
+                  0.506105363368988,
+                  0.472650408744812
+                ],
+                "relative_motion_state": [
+                  -0.20482727885246277,
+                  0.06302651017904282,
+                  0.15931090712547302
+                ],
+                "semantics": "causal summaries of executed behavior; gate is not a calibrated necessity probability"
+              },
+              "layered_context": {
+                "consumed": true,
+                "observation_event_gates": [
+                  0.590648353099823,
+                  0.5723333358764648
+                ],
+                "context_ablated": false,
+                "events_ablated": false,
+                "long_memory_ablated": false,
+                "feature_version": "layered_observation_event/1.0"
+              },
+              "longitudinal_sequence": {
+                "schema_version": "longitudinal_sequence/1.0",
+                "dt_s": 0.1,
+                "horizon_s": 3.0,
+                "speed_mps": [
+                  0.30025148391723633,
+                  0.6002514958381653,
+                  0.9002515077590942,
+                  1.200251579284668,
+                  1.5002515316009521,
+                  1.8002514839172363,
+                  2.1002514362335205,
+                  2.4002513885498047,
+                  2.700251340866089,
+                  3.000251293182373,
+                  3.3002512454986572,
+                  3.6002511978149414,
+                  3.9002511501312256,
+                  4.193392753601074,
+                  4.486533164978027,
+                  4.776148319244385,
+                  5.058146953582764,
+                  5.334561824798584,
+                  5.611928462982178,
+                  5.887032985687256,
+                  6.1542863845825195,
+                  6.418339729309082,
+                  6.652620315551758,
+                  6.893711566925049,
+                  7.107350826263428,
+                  7.297238349914551,
+                  7.465515613555908,
+                  7.582211971282959,
+                  7.681835651397705,
+                  7.78159761428833
+                ],
+                "acceleration_mps2": [
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0000007152557373,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.999999523162842,
+                  2.9314160346984863,
+                  2.9314041137695312,
+                  2.896151542663574,
+                  2.819986343383789,
+                  2.764148712158203,
+                  2.7736663818359375,
+                  2.7510452270507812,
+                  2.6725339889526367,
+                  2.640533447265625,
+                  2.342805862426758,
+                  2.41091251373291,
+                  2.136392593383789,
+                  1.8988752365112305,
+                  1.6827726364135742,
+                  1.1669635772705078,
+                  0.9962368011474609,
+                  0.99761962890625
+                ],
+                "execution": "replan on each new observation; track first speed and acceleration samples",
+                "action_source": "deterministic encoding of first predicted speed/acceleration, not an independent classifier"
+              }
+            },
+            "risk_semantics": {
+              "scope": "joint_front_rear_rollout_surrogate",
+              "calibrated": false,
+              "horizon_seconds": [
+                1,
+                2,
+                4
+              ],
+              "directional_horizon_scores": {
+                "front": [
+                  2.5835871032584605e-26,
+                  1.458329511534461e-17,
+                  2.063904425142482e-08
+                ],
+                "rear": [
+                  4.926286446507071e-15,
+                  1.0610775452724042e-10,
+                  2.5244718926842324e-05
+                ]
+              },
+              "note": "legacy visual reason codes retained; this head is not a front-only visual probability"
+            },
+            "prediction_provenance": {
+              "schema_version": "vla_prediction_provenance/1.0",
+              "base": {
+                "action": "keep_lane",
+                "target_speed_kmh": 22.75656509399414,
+                "risk_probabilities": [
+                  0.4924520254135132,
+                  0.021365482360124588,
+                  0.4861825108528137
+                ]
+              },
+              "effective": {
+                "action": "accelerate",
+                "target_speed_kmh": 1.0809053182601929,
+                "risk_probabilities": [
+                  1.0,
+                  6.219658815753704e-11,
+                  1.1609821177344104e-13
+                ]
+              },
+              "residual_present": true,
+              "residual_applied": true,
+              "effective_action_source": "sequence_first_sample_encoding",
+              "scope": "model stages before execution and safety gates; not ground-truth correctness"
+            }
+          },
+          "canonical_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169251",
+            "frame_id": "carla_169251",
+            "decision_status": "READY",
+            "action": "keep_lane",
+            "target_speed_kmh": 32.0,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "generic_text_envelope",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": []
+          },
+          "gated_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169251",
+            "frame_id": "carla_169251",
+            "decision_status": "READY",
+            "action": "accelerate",
+            "target_speed_kmh": 4.320812,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "vla_accepted_phase-recovery-epoch_06",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": []
+          },
+          "plan_after": null,
+          "final_decision": {
+            "schema_version": "1.0.0",
+            "request_id": "unified-169251",
+            "frame_id": "carla_169251",
+            "decision_status": "READY",
+            "action": "accelerate",
+            "target_speed_kmh": 4.320812,
+            "target_lane": null,
+            "target_location": null,
+            "emergency": false,
+            "reason": "vla_accepted_phase-recovery-epoch_06",
+            "parse_status": "VALID",
+            "parse_confidence": 1.0,
+            "source_step_id": "step_1",
+            "source_step_action": "KEEP_LANE",
+            "source_step_count": 1,
+            "matched_entity_id": null,
+            "risk_level": "low",
+            "risk_reason_codes": [],
+            "blocked_reason_codes": [],
+            "longitudinal_control_mode": "ABSOLUTE_SPEED",
+            "allow_positive_acceleration": true,
+            "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+            "target_acceleration_mps2": 2.9999997937580387,
+            "sequence_valid_until_s": 104.74049075245857,
+            "control_valid_until_s": 104.74049075245857,
+            "command_id": "Continue driving safely in the current lane."
+          },
+          "execution_blocks": {
+            "parse_blocked": false,
+            "plan_blocked": false,
+            "sequence_accepted": true
+          }
+        }
+      },
+      "simulation_frame": 169251,
+      "route_s_m": 3210.854,
+      "source_text": "Continue driving safely in the current lane.",
+      "parsed_intent": "KEEP_LANE",
+      "requested_lane_direction": null,
+      "target_speed_envelope_kmh": null,
+      "relative_speed_reference_kmh": null,
+      "relative_speed_change": null,
+      "semantic_text": "Keep the current lane at 32.0 kilometers per hour.",
+      "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+      "sensor_frame": 169249,
+      "sensor_frame_lag": 2,
+      "camera_wait_ms": 0.0,
+      "candidate_count": 0,
+      "safety_observation_candidate_count": 105,
+      "physical_safety_observation": {
+        "forward_radar": {
+          "schema_version": "physical_front_radar/1.0",
+          "direction": "front",
+          "sensor_frame": 169249,
+          "measurement_timestamp_s": 104.34049075096846,
+          "measurement_pose": {
+            "x": -147.485595703125,
+            "y": -203.87753295898438,
+            "yaw_deg": 177.03201293945312
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 105,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 150,
+            "examined": 150,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          },
+          "route_corridor_filter_applied": true,
+          "route_corridor_half_width_m": 1.268,
+          "route_corridor_obstacle_bins": [],
+          "unfiltered_obstacle_candidate_count": 0,
+          "unfiltered_nearest_distance_m": null,
+          "unfiltered_nearest_azimuth_deg": null
+        },
+        "rear_radar": {
+          "schema_version": "physical_rear_radar/1.0",
+          "direction": "rear",
+          "sensor_frame": 169249,
+          "measurement_timestamp_s": 104.34049075096846,
+          "measurement_pose": {
+            "x": -144.10479736328125,
+            "y": -204.0528106689453,
+            "yaw_deg": -2.967956066131592
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 0,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 0,
+            "examined": 0,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          }
+        }
+      },
+      "policy_truth_access": false,
+      "modality_mask": {
+        "text": true,
+        "front_rgb": true,
+        "left_rgb": true,
+        "right_rgb": true,
+        "rear_rgb": true,
+        "lidar_bev": true,
+        "vehicle_state": true,
+        "environment_state": true
+      },
+      "camera_view_mask": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "sensor_batch_schema_version": "unified_sensor_batch/1.0",
+      "sensor_contract": {
+        "cameras": [
+          "front",
+          "left",
+          "right",
+          "rear"
+        ],
+        "lidar": true,
+        "source": "model_config.sensor_requirements"
+      },
+      "risk_assessment": {
+        "risk_level": "low",
+        "recommended_action": "keep_lane",
+        "reason_codes": [],
+        "matched_entity_id": null,
+        "lane_change": {
+          "left": {
+            "is_safe": true,
+            "reason_codes": []
+          },
+          "right": {
+            "is_safe": true,
+            "reason_codes": []
+          }
+        },
+        "source": "event_memory_vla",
+        "temporal_used": true,
+        "risk_score": null,
+        "horizon_probabilities": null,
+        "risk_uncertainty": 0.0,
+        "raw_argmax_level": "low",
+        "high_confidence_threshold": 0.55,
+        "probabilities": {
+          "low": 1.0,
+          "medium": 0.0,
+          "high": 0.0
+        },
+        "event_memory": {
+          "schema_version": "layered_behavior_sequence/2.0",
+          "event_probabilities": [
+            7.531868050136836e-06,
+            3.3688829503830675e-10,
+            1.2671880211811981e-09,
+            5.7032830227399245e-06,
+            1.708593663352076e-05
+          ],
+          "event_names": [
+            "closing",
+            "deceleration",
+            "observation_loss",
+            "recovery",
+            "rear_approach"
+          ],
+          "memory_weights": [
+            0.9983177185058594,
+            0.0006496241549029946,
+            0.00103257957380265
+          ],
+          "selected_memory_s": 0.4,
+          "valid_history_steps": 80,
+          "horizon_seconds": [
+            1,
+            2,
+            4
+          ],
+          "front_rear_horizon_scores": [
+            [
+              2.5835871032584605e-26,
+              1.458329511534461e-17,
+              2.063904425142482e-08
+            ],
+            [
+              4.926286446507071e-15,
+              1.0610775452724042e-10,
+              2.5244718926842324e-05
+            ]
+          ],
+          "severity_scores": [
+            3.8031967619645e-07,
+            0.0010621135588735342
+          ],
+          "required_decel_mps2": 4.820331923838239e-06,
+          "uncertainty_score": 6.82649330943294e-14,
+          "raw_action": "accelerate",
+          "raw_target_speed_kmh": 1.0809053182601929,
+          "raw_risk_probabilities": [
+            1.0,
+            6.219658815753704e-11,
+            1.1609821177344104e-13
+          ],
+          "risk_scope": "joint_front_rear_rollout_surrogate",
+          "score_semantics": "learned kinematic surrogate; not calibrated real-world probability",
+          "authorized": true,
+          "available": true,
+          "applied": true,
+          "behavior_memory": {
+            "extension_probability": 0.5275701284408569,
+            "extended_memory_used": true,
+            "completed_segments": 5,
+            "inheritance_weights": [
+              0.40858325362205505,
+              0.4943739175796509,
+              0.4644159972667694,
+              0.47293928265571594,
+              0.5075975060462952,
+              0.4879654347896576
+            ],
+            "write_weights": [
+              0.49326860904693604,
+              0.566006064414978,
+              0.536588191986084,
+              0.49434176087379456,
+              0.506105363368988,
+              0.472650408744812
+            ],
+            "relative_motion_state": [
+              -0.20482727885246277,
+              0.06302651017904282,
+              0.15931090712547302
+            ],
+            "semantics": "causal summaries of executed behavior; gate is not a calibrated necessity probability"
+          },
+          "layered_context": {
+            "consumed": true,
+            "observation_event_gates": [
+              0.590648353099823,
+              0.5723333358764648
+            ],
+            "context_ablated": false,
+            "events_ablated": false,
+            "long_memory_ablated": false,
+            "feature_version": "layered_observation_event/1.0"
+          },
+          "longitudinal_sequence": {
+            "schema_version": "longitudinal_sequence/1.0",
+            "dt_s": 0.1,
+            "horizon_s": 3.0,
+            "speed_mps": [
+              0.30025148391723633,
+              0.6002514958381653,
+              0.9002515077590942,
+              1.200251579284668,
+              1.5002515316009521,
+              1.8002514839172363,
+              2.1002514362335205,
+              2.4002513885498047,
+              2.700251340866089,
+              3.000251293182373,
+              3.3002512454986572,
+              3.6002511978149414,
+              3.9002511501312256,
+              4.193392753601074,
+              4.486533164978027,
+              4.776148319244385,
+              5.058146953582764,
+              5.334561824798584,
+              5.611928462982178,
+              5.887032985687256,
+              6.1542863845825195,
+              6.418339729309082,
+              6.652620315551758,
+              6.893711566925049,
+              7.107350826263428,
+              7.297238349914551,
+              7.465515613555908,
+              7.582211971282959,
+              7.681835651397705,
+              7.78159761428833
+            ],
+            "acceleration_mps2": [
+              3.0,
+              3.0,
+              3.0,
+              3.0000007152557373,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.999999523162842,
+              2.9314160346984863,
+              2.9314041137695312,
+              2.896151542663574,
+              2.819986343383789,
+              2.764148712158203,
+              2.7736663818359375,
+              2.7510452270507812,
+              2.6725339889526367,
+              2.640533447265625,
+              2.342805862426758,
+              2.41091251373291,
+              2.136392593383789,
+              1.8988752365112305,
+              1.6827726364135742,
+              1.1669635772705078,
+              0.9962368011474609,
+              0.99761962890625
+            ],
+            "execution": "replan on each new observation; track first speed and acceleration samples",
+            "action_source": "deterministic encoding of first predicted speed/acceleration, not an independent classifier"
+          }
+        },
+        "risk_semantics": {
+          "scope": "joint_front_rear_rollout_surrogate",
+          "calibrated": false,
+          "horizon_seconds": [
+            1,
+            2,
+            4
+          ],
+          "directional_horizon_scores": {
+            "front": [
+              2.5835871032584605e-26,
+              1.458329511534461e-17,
+              2.063904425142482e-08
+            ],
+            "rear": [
+              4.926286446507071e-15,
+              1.0610775452724042e-10,
+              2.5244718926842324e-05
+            ]
+          },
+          "note": "legacy visual reason codes retained; this head is not a front-only visual probability"
+        },
+        "prediction_provenance": {
+          "schema_version": "vla_prediction_provenance/1.0",
+          "base": {
+            "action": "keep_lane",
+            "target_speed_kmh": 22.75656509399414,
+            "risk_probabilities": [
+              0.4924520254135132,
+              0.021365482360124588,
+              0.4861825108528137
+            ]
+          },
+          "effective": {
+            "action": "accelerate",
+            "target_speed_kmh": 1.0809053182601929,
+            "risk_probabilities": [
+              1.0,
+              6.219658815753704e-11,
+              1.1609821177344104e-13
+            ]
+          },
+          "residual_present": true,
+          "residual_applied": true,
+          "effective_action_source": "sequence_first_sample_encoding",
+          "scope": "model stages before execution and safety gates; not ground-truth correctness"
+        },
+        "physical_forward_radar": {
+          "schema_version": "physical_front_radar/1.0",
+          "direction": "front",
+          "sensor_frame": 169249,
+          "measurement_timestamp_s": 104.34049075096846,
+          "measurement_pose": {
+            "x": -147.485595703125,
+            "y": -203.87753295898438,
+            "yaw_deg": 177.03201293945312
+          },
+          "tracking_points": [],
+          "tracking_fov_deg": 30.0,
+          "candidate_count": 105,
+          "obstacle_candidate_count": 0,
+          "closing_candidate_count": 0,
+          "height_filter_min_m": -0.65,
+          "height_rejected_count": 0,
+          "height_boundary_candidate_count": 0,
+          "nearest_relative_height_m": null,
+          "nearest_altitude_deg": null,
+          "azimuth_obstacle_bins": [],
+          "nearest_distance_m": null,
+          "nearest_relative_velocity_mps": null,
+          "nearest_azimuth_deg": null,
+          "nearest_closing_distance_m": null,
+          "nearest_closing_velocity_mps": null,
+          "ground_filter": {
+            "status": "same_frame_local_plane",
+            "rejected": 150,
+            "examined": 150,
+            "retained_reasons": {},
+            "history_limit_s": 0.2
+          },
+          "route_corridor_filter_applied": true,
+          "route_corridor_half_width_m": 1.268,
+          "route_corridor_obstacle_bins": [],
+          "unfiltered_obstacle_candidate_count": 0,
+          "unfiltered_nearest_distance_m": null,
+          "unfiltered_nearest_azimuth_deg": null,
+          "emergency_distance_m": 6.0,
+          "caution_distance_m": 12.0
+        },
+        "learned_probabilities": {
+          "low": 1.0,
+          "medium": 0.0,
+          "high": 0.0
+        },
+        "risk_evidence": {
+          "schema_version": "risk_evidence/1.0",
+          "status": "INSUFFICIENT_EVIDENCE",
+          "sensor": "forward_radar",
+          "sensor_frame": 169249,
+          "observed_at_s": 104.34049075096846,
+          "decision_timestamp_s": 104.44049075245857,
+          "age_s": 0.1,
+          "valid_until_s": 104.590491,
+          "is_fresh": true,
+          "physical_candidate_count": 0,
+          "nearest_distance_m": null,
+          "fusion_sources": [
+            "event_memory_vla",
+            "physical_forward_radar"
+          ]
+        },
+        "frame_id": "carla_169251",
+        "sensor_frame_id": "carla_169249",
+        "sequence_execution": {
+          "operation_updated": false,
+          "safety_bypass": false,
+          "operation_time_s": 104.14049074798822,
+          "selected_acceleration_mps2": 2.9999997937580387,
+          "applied_acceleration_mps2": 2.9999997937580387,
+          "anchor_speed_mps": 0.00022575021779131025,
+          "reference_speed_mps": 1.2002256811320509,
+          "observation_gap_reset": false,
+          "reference_mode": "speed_endpoint",
+          "interval_s": 0.5,
+          "forecast_steps": 10,
+          "forwarded": true
+        },
+        "observation_layer": {
+          "schema_version": "tracked_route_observation/1.0",
+          "frame": 169251,
+          "timestamp_s": 104.44049075245857,
+          "status": "UNKNOWN",
+          "reason": "no_confirmed_target_not_proof_of_clear_road",
+          "radar_fresh": true,
+          "selected_track_id": null,
+          "selected": null,
+          "entities": [],
+          "nearest_obstacle": null,
+          "selected_role": "CONTINUITY_REFERENCE_NOT_CLEARANCE_AUTHORITY",
+          "requested_track_resolved": true,
+          "target_history": {
+            "schema_version": "target_history/1.0",
+            "status": "AVAILABLE",
+            "source": "front_radar",
+            "timestamp_s": 104.44049075245857,
+            "retention_s": 30.0,
+            "entries": [],
+            "cross_id_reidentification": false,
+            "authority": "REFERENCE_CONTEXT_ONLY"
+          },
+          "ego": {
+            "x": -145.26329040527344,
+            "y": -203.9934844970703,
+            "vx_mps": 0.00013073402806185186,
+            "vy_mps": -0.00016798160504549742,
+            "ax_mps2": -1.7782440409064293e-07,
+            "ay_mps2": -3.934546839445829e-06,
+            "yaw_deg": 177.03199768066406,
+            "yaw_rate_dps": -0.011746846139431,
+            "half_length_m": 2.44619083404541,
+            "corridor_half_width_m": 1.2683566570281983
+          },
+          "capabilities": {
+            "semantic_classification": false,
+            "front_radar_tracking": true,
+            "all_around_coverage": false
+          },
+          "invalid_route": false,
+          "compute_ms": 0.46469998778775334
+        },
+        "task_event_memory": {
+          "schema_version": "task_event_memory/1.0",
+          "active_events": [
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "kind": "KEEP_LANE",
+              "goal": {
+                "text": "Continue driving safely in the current lane."
+              },
+              "started_s": 4.140489257872105,
+              "phase": "ACTIVE",
+              "current_behavior": "ACCELERATE",
+              "previous_behavior": "HOLD",
+              "boundary_observation": {
+                "target_ref": null,
+                "target_last_seen_s": null,
+                "observation_status": "UNKNOWN"
+              },
+              "boundary_time_s": 5.640489280223846
+            }
+          ],
+          "recent_transitions": [
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": null,
+              "next_behavior": "ACCELERATE",
+              "timestamp_s": 4.140489257872105,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "ACCELERATE",
+              "next_behavior": "EMERGENCY_BRAKE",
+              "timestamp_s": 4.240489259362221,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "EMERGENCY_BRAKE",
+              "next_behavior": "HOLD",
+              "timestamp_s": 4.740489266812801,
+              "previous_behavior_status": "SUPERSEDED"
+            },
+            {
+              "event_id": "{\"text\": \"Continue driving safely in the current lane.\"}",
+              "previous_behavior": "HOLD",
+              "next_behavior": "ACCELERATE",
+              "timestamp_s": 5.640489280223846,
+              "previous_behavior_status": "SUPERSEDED"
+            }
+          ],
+          "authority": "DECISION_CONTEXT_ONLY",
+          "behavior_source": "ISSUED_POST_CONTRACT_CONTROL"
+        },
+        "layered_context_mode": "experimental_trained_policy"
+      },
+      "target_lane_risk_assessment": null,
+      "front_view_risk_assessment": null,
+      "directional_collision_assessment": {
+        "schema_version": "directional_collision_response/1.0",
+        "front_priority": true,
+        "rear": {
+          "schema_version": "rear_collision_assessment/1.0",
+          "collision_risk": false,
+          "distance_m": null,
+          "closing_speed_mps": null,
+          "ttc_s": null,
+          "reason": "no_closing_rear_return"
+        },
+        "front_risk_level": "unknown",
+        "selected_response": "none"
+      },
+      "vla_proposal": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169251",
+        "frame_id": "carla_169251",
+        "action": "accelerate",
+        "target_speed_kmh": 4.3208124520753834,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.887877,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 14.4628
+      },
+      "network_proposal_before_execution": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169251",
+        "frame_id": "carla_169251",
+        "action": "accelerate",
+        "target_speed_kmh": 1.080905,
+        "target_lane": null,
+        "target_location": null,
+        "target_entity_id": null,
+        "confidence": 0.887877,
+        "model": "phase-recovery-epoch_06",
+        "latency_ms": 14.4628
+      },
+      "proposal_stage": "after_sequence_execution_and_risk_constraints",
+      "control_decision": {
+        "schema_version": "1.0.0",
+        "request_id": "unified-169251",
+        "frame_id": "carla_169251",
+        "decision_status": "READY",
+        "action": "accelerate",
+        "target_speed_kmh": 4.320812,
+        "target_lane": null,
+        "target_location": null,
+        "emergency": false,
+        "reason": "vla_accepted_phase-recovery-epoch_06",
+        "parse_status": "VALID",
+        "parse_confidence": 1.0,
+        "source_step_id": "step_1",
+        "source_step_action": "KEEP_LANE",
+        "source_step_count": 1,
+        "matched_entity_id": null,
+        "risk_level": "low",
+        "risk_reason_codes": [],
+        "blocked_reason_codes": [],
+        "longitudinal_control_mode": "ABSOLUTE_SPEED",
+        "allow_positive_acceleration": true,
+        "longitudinal_sequence_schema": "longitudinal_sequence/1.0",
+        "target_acceleration_mps2": 2.9999997937580387,
+        "sequence_valid_until_s": 104.74049075245857,
+        "control_valid_until_s": 104.74049075245857,
+        "command_id": "Continue driving safely in the current lane."
+      },
+      "longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "ABSOLUTE_SPEED",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 4.320812,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 4.320812,
+        "reference_ego_speed_kmh": 0.0009052930618661378,
+        "speed_clamped": false,
+        "risk_constraint_active": false,
+        "policy_safety_credit": false
+      },
+      "active_instruction_contract": {
+        "schema_version": "active_instruction_contract/1.0",
+        "parsed_intent": "KEEP_LANE",
+        "active_stop": false,
+        "speed_bound_kmh": null,
+        "speed_contract_mode": "NONE",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 4.320812,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 4.320812,
+        "changed": false,
+        "policy_safety_credit": false
+      },
+      "issued_instruction_contract": {
+        "schema_version": "active_instruction_contract/1.0",
+        "parsed_intent": "KEEP_LANE",
+        "active_stop": false,
+        "speed_bound_kmh": null,
+        "speed_contract_mode": "NONE",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 4.320812,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 4.320812,
+        "changed": false,
+        "policy_safety_credit": false
+      },
+      "issued_longitudinal_contract": {
+        "schema_version": "longitudinal_control_contract/1.0",
+        "mode": "ABSOLUTE_SPEED",
+        "input_action": "accelerate",
+        "input_target_speed_kmh": 4.320812,
+        "issued_action": "accelerate",
+        "issued_target_speed_kmh": 4.320812,
+        "reference_ego_speed_kmh": 0.0009052930618661378,
+        "speed_clamped": false,
+        "risk_constraint_active": false,
+        "policy_safety_credit": false
+      },
+      "traffic_control_contract": {
+        "source": "traffic_control_contract/1.0",
+        "observation": {
+          "applicable": false,
+          "state": "UNKNOWN",
+          "timestamp_s": 104.34049075245858,
+          "source": "rgb_static_opendrive",
+          "image_source": "synchronized_front_capture"
+        },
+        "active": false,
+        "changed": false,
+        "policy_safety_credit": false,
+        "status": "no_route_associated_signal"
+      },
+      "mandatory_execution_wait": {
+        "request_id": null,
+        "observed_at_s": 104.44049075245857,
+        "safety_wait": false,
+        "reason": null
+      },
+      "lane_task_feedback": {
+        "target_lane": null,
+        "completed": false
+      },
+      "control_plan_state": null,
+      "command_dispatch": {
+        "mode": "route_latest"
+      },
+      "execution_feedback": {
+        "scope": "observed_before_current_command; previous_physics_step",
+        "frame": 169251,
+        "previous_decision_frame": 169249,
+        "speed_kmh": 0.0009052930618661378,
+        "acceleration_xyz_mps2": [
+          -1.7782440409064293e-07,
+          -3.934546839445829e-06,
+          1.1443626135587692e-06
+        ],
+        "throttle": 1.0,
+        "brake": 0.0
+      },
+      "model_output_applied": true,
+      "training_teacher_force_control": false,
+      "liveness_override": null,
+      "full_decision_latency_ms": 18.221,
+      "text_to_control_command_wall_ms": 34.244,
+      "sensor_to_decision_response_ms": 18.221
+    }
+  ],
+  "scope": "interruption diagnosis only; no task verdict"
+}

@@ -1,0 +1,10 @@
+{
+  "start_progress_m": 0.0,
+  "initial_speed_kmh": 0.0,
+  "external_intervention": false,
+  "controller_state": "fresh",
+  "environment_state": "cold_reset",
+  "retained_instruction": "latest_and_future",
+  "withdrawn_instruction_ids": [],
+  "simulation_frame": 16012
+}

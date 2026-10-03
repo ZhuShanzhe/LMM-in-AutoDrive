@@ -1,0 +1,15 @@
+Runtime config: D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\configs\scene_3_emergency_6km_runtime.json
+Configured events: 7
+Event variant: baseline
+CARLA server: 0.9.16
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+Town05_Opt layers: All (buildings, foliage, streetlights, props)
+Official map and route: Carla/Maps/Town05_Opt, length=6000.4 m
+INFO:  Found the required file in cache!  Carla/Maps/TM/Town05_Opt.bin 
+Weather: rainy night, wet road, fog density 35
+Town05 night lights enabled: 384
+Wet-road friction triggers: count=157, friction=0.68
+Wet-weather ego speed cap: requested=40.0, effective=32.0 km/h
+ERROR: [Errno 2] No such file or directory: 'D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene3\\segment_019\\run\\recovery_placement.json'
+Scene actors cleaned up

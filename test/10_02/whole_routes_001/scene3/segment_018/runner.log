@@ -1,0 +1,53 @@
+Runtime config: D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\configs\scene_3_emergency_6km_runtime.json
+Configured events: 7
+Event variant: baseline
+CARLA server: 0.9.16
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+Town05_Opt layers: All (buildings, foliage, streetlights, props)
+Official map and route: Carla/Maps/Town05_Opt, length=6000.4 m
+INFO:  Found the required file in cache!  Carla/Maps/TM/Town05_Opt.bin 
+Weather: rainy night, wet road, fog density 35
+Town05 night lights enabled: 384
+Wet-road friction triggers: count=157, friction=0.68
+Wet-weather ego speed cap: requested=40.0, effective=32.0 km/h
+Ego spawned: road=37, lane=-2, route_s=3210.9 m
+Ego mode: vla-route-pid 32.0 km/h
+Scene3 route-PID executor assigned: waypoints=2968
+Dynamic vehicle state: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_018\run\vehicle_state.jsonl
+RGB camera: chase_rgb (synchronized direct recorder)
+H.264 video output: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_018\run\drive.mp4
+Safety sensors: collision, lane_invasion
+BACKGROUND TRAFFIC ARMED | planned=16 | checkpoint=3210.9 m | future_spawn_lead=220.0 m | reserved_for_gap=2 | configured=18
+EVENT SKIPPED  | scene3_cut_in | route=3210.9 m
+EVENT SKIPPED  | scene3_advance_warning | route=3210.9 m
+EVENT SKIPPED  | scene3_cone_taper | route=3210.9 m
+WORKER SPAWNED | role=scene3_crossing_worker | lane=-4 | s=3345.0 m | z_offset=0.3 m | attempt=1
+WORKER SPAWNED | role=scene3_static_worker | lane=-4 | s=3380.0 m | z_offset=0.3 m | attempt=1
+WORKER CROSSING ARMED | crossing_s=3345.0 m | static_workers=2
+W1002 13:02:02.703000 56264 site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+Scene3 online text-to-VLA controller assigned
+Frame ground truth: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_018\run\frame_ground_truth.jsonl
+WORK ZONE SPAWNED | vehicles=2 | boundary_cones=10 | closed_lane=-2 | s=3150.0-3450.0 m
+EVENT ACTIVE   | scene3_work_zone | route=3210.9 m
+COLLISION SAMPLE | frame=176787 | other=static.prop.trafficcone01 | role=prop
+COLLISION SAMPLE | frame=176788 | other=static.prop.trafficcone01 | role=prop
+COLLISION SAMPLE | frame=176789 | other=static.prop.trafficcone01 | role=prop
+COLLISION SAMPLE | frame=176790 | other=static.prop.trafficcone01 | role=prop
+COLLISION SAMPLE | frame=176791 | other=static.prop.trafficcone01 | role=prop
+ROUTE STALLED | s=3210.9 m | elapsed=120.1 s
+[Camera] Direct video frames: 2400, dropped: 0
+Event scheduler summary:
+  pending: 3
+  active: 1
+  resolved: 0
+Event timeline: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_018\run\event_timeline.jsonl
+Safety audit:
+  collisions: 4760
+  lane-invasion events: 0
+  invalid-lane samples: 0
+RGB frame counts:
+  chase_rgb: 2400
+Scene summary: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_018\run\scene_summary.json
+CHASE RGB DIRECT H.264 CAPTURE: PASS
+Scene actors cleaned up

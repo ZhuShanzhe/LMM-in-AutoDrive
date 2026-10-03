@@ -1,0 +1,25 @@
+{
+  "status": "RECORDED",
+  "scope": "online_control_loop; model initialization excluded",
+  "sampling": {
+    "schema_version": "resource_summary/1.0",
+    "sample_count": 88,
+    "interval_s": 1.0,
+    "process_rss_sampled_peak_bytes": {
+      "model_host": 2601541632
+    },
+    "whole_gpu_sampled_peak_mib": {
+      "GPU-5644cd60-ba8d-4260-484a-65a20b5f0dde": 10294.0
+    },
+    "gpu_available_samples": 88,
+    "errors": [],
+    "process_probe_error": null,
+    "limitations": [
+      "sampled peaks may miss short spikes",
+      "whole GPU includes CARLA and unrelated processes",
+      "PyTorch allocator excludes other CUDA libraries",
+      "initialization before sampler start excluded"
+    ]
+  },
+  "error": null
+}

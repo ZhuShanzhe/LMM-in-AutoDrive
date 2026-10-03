@@ -1,0 +1,9 @@
+{
+  "external_intervention": true,
+  "reason": "cold_restore_inside_closed_work_zone",
+  "route_progress_m": 3421.537519800519,
+  "logical_lane_id": -1,
+  "closed_logical_lane_id": -2,
+  "actual_road_id": 37,
+  "actual_lane_id": -1
+}

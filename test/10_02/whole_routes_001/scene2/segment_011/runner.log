@@ -1,0 +1,28 @@
+Validated runtime config: D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\configs\scene_2_town05_runtime.json
+Map: Town05_Opt
+Commands: 15
+Traffic: 70 vehicles, 24 ambient walkers
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+CARLA world: loaded Town05_Opt
+Packaged Town optional map layers: ALL loaded
+INFO:  Found the required file in cache!  Carla/Maps/TM/Town05_Opt.bin 
+Town05 route geometry: 8000.6 m, accumulated curvature 5080.3 deg
+Route spatial audit: repeated cells=47.1%, junction entries=77
+Route-command audit: 15 commands, 4 mismatches
+Ego vehicle blueprint: vehicle.audi.a2
+Scene 2 variants: {"slow_vehicle": "steady_22", "compound_slow_vehicle": "steady_18", "crosswalk_pedestrian": "stop_and_go", "bus_stop_passengers": "busy_stop", "slow_cyclist": "steady_14"}
+Traffic startup corridor: length=150 m, radius=12 m, ego exclusion=35 m
+W1002 12:18:51.134000 33920 site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+Scene 2 universal VLA control enabled: unified batch -> VLA pipeline -> temporal supervisor -> instruction FSM -> route PID
+[Camera] Direct video frames: 0, dropped: 0
+Traceback (most recent call last):
+  File "D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\run_complex_avoidance_town05.py", line 2155, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\run_complex_avoidance_town05.py", line 1709, in main
+    for change in events.update(progress_m):
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\scenarios\complex\town05_scene2.py", line 2561, in update
+    raise RuntimeError('staged cyclist disappeared before activation')
+RuntimeError: staged cyclist disappeared before activation

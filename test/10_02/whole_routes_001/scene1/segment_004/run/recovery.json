@@ -1,0 +1,15 @@
+{
+  "start_progress_m": 1453.541,
+  "requested_initial_speed_kmh": 10.0,
+  "initial_speed_kmh": 10.0,
+  "withheld_reason": null,
+  "truth_scope": "recovery placement clearance only; never model input",
+  "external_intervention": true,
+  "controller_state": "fresh",
+  "environment_state": "cold_reset",
+  "retained_instruction": "latest_and_future",
+  "withdrawn_instruction_ids": [
+    "c04_change_left"
+  ],
+  "simulation_frame": 91124
+}

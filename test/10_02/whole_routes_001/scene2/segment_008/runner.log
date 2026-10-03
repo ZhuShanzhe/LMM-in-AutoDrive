@@ -1,0 +1,2638 @@
+Validated runtime config: D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\configs\scene_2_town05_runtime.json
+Map: Town05_Opt
+Commands: 15
+Traffic: 70 vehicles, 24 ambient walkers
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+CARLA world: loaded Town05_Opt
+Packaged Town optional map layers: ALL loaded
+INFO:  Found the required file in cache!  Carla/Maps/TM/Town05_Opt.bin 
+Town05 route geometry: 8000.6 m, accumulated curvature 5080.3 deg
+Route spatial audit: repeated cells=47.1%, junction entries=77
+Route-command audit: 15 commands, 4 mismatches
+Ego vehicle blueprint: vehicle.audi.a2
+Scene 2 variants: {"slow_vehicle": "steady_22", "compound_slow_vehicle": "steady_18", "crosswalk_pedestrian": "stop_and_go", "bus_stop_passengers": "busy_stop", "slow_cyclist": "steady_14"}
+Traffic startup corridor: length=150 m, radius=12 m, ego exclusion=35 m
+W1002 12:05:57.514000 45100 site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+Scene 2 universal VLA control enabled: unified batch -> VLA pipeline -> temporal supervisor -> instruction FSM -> route PID
+EVENT | slow_vehicle | ACTIVE
+COMMAND | s2_t05_cmd_03 | 800.6 m | 前方有慢车且路口有横穿行人，先减速礼让行人，确认安全后向左变道超越慢车。
+EVENT | slow_vehicle | RESOLVED
+EVENT | crosswalk_pedestrian | ACTIVE
+EVENT | compound_slow_vehicle | ACTIVE
+EVENT | bus_stop_passengers | ACTIVE
+EVENT | bus_stop_passengers | RESOLVED
+Town05 Scene 2 route stalled
+{
+  "schema_version": "scene_2_town05_summary/v1",
+  "map": "Carla/Maps/Town05_Opt",
+  "world_reused": false,
+  "route_start_spawn_index": 244,
+  "route_turnaround_spawn_index": 109,
+  "route_length_m": 8000.602435215494,
+  "route_curvature_degrees": 5080.3267822265625,
+  "route_spatial_audit": {
+    "schema_version": "scene_route_spatial_audit/v1",
+    "sample_interval_m": 20.0,
+    "cell_size_m": 20.0,
+    "samples": 401,
+    "unique_cells": 212,
+    "repeated_cell_fraction": 0.4713,
+    "junction_entries": 77,
+    "mean_m_per_junction": 103.9
+  },
+  "route_progress_m": 1090.766118230644,
+  "stop_reason": "route_stalled",
+  "max_stall_s": 120.0,
+  "route_completed": false,
+  "route_command_audit": {
+    "schema_version": "scene_2_route_command_audit/v1",
+    "commands_audited": 15,
+    "mismatch_count": 4,
+    "competition_ready": false,
+    "global_maneuvers": [
+      {
+        "route_option": "RIGHT",
+        "progress_m": 305.727
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 343.346
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 396.286
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 485.962
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 545.099
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 662.122
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 741.45
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 831.216
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 890.042
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 930.452
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 1530.379
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 2348.054
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 2400.343
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 2458.743
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 2548.537
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 2614.429
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 2689.439
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 2755.839
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 2838.238
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 2986.652
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 3055.577
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 3114.757
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 3193.072
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 3265.983
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 3346.943
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 3387.422
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 3434.112
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 4094.881
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 4143.183
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 4202.083
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 4291.877
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 4379.677
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 4447.234
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 4556.914
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 4662.247
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 4752.017
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 4839.627
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 4933.042
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 4973.8
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 5064.073
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 5139.864
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 5226.264
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 5296.29
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 5372.352
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 5438.244
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 5513.254
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 5579.654
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 5662.053
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 5810.467
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 5879.392
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 5938.572
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 6019.992
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 6098.922
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 6173.853
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 6240.911
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 6316.233
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 6405.183
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 6515.291
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 6567.502
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 6657.32
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 6745.95
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 6793.342
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 6955.079
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 7024.004
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 7083.684
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 7175.784
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 7235.383
+      },
+      {
+        "route_option": "RIGHT",
+        "progress_m": 7315.996
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 7377.704
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 7464.69
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 7537.101
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 7624.792
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 7713.056
+      },
+      {
+        "route_option": "STRAIGHT",
+        "progress_m": 7787.037
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 7849.337
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 7941.669
+      },
+      {
+        "route_option": "LEFT",
+        "progress_m": 7998.602
+      }
+    ],
+    "records": [
+      {
+        "command_id": "s2_t05_cmd_01",
+        "announce_at_m": 0.0,
+        "horizon_end_m": 350.0,
+        "required_route_options": [
+          "RIGHT"
+        ],
+        "encountered_route_options": [
+          "RIGHT",
+          "STRAIGHT"
+        ],
+        "maneuvers": [
+          {
+            "route_option": "RIGHT",
+            "progress_m": 305.727
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 343.346
+          }
+        ],
+        "matched": true,
+        "route_option_matched": true,
+        "geometry_status": "BOUND",
+        "geometry_reason": null
+      },
+      {
+        "command_id": "s2_t05_cmd_02",
+        "announce_at_m": 370.0,
+        "horizon_end_m": 720.0,
+        "required_route_options": [],
+        "encountered_route_options": [
+          "STRAIGHT",
+          "RIGHT",
+          "RIGHT",
+          "RIGHT"
+        ],
+        "maneuvers": [
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 396.286
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 485.962
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 545.099
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 662.122
+          }
+        ],
+        "matched": true,
+        "route_option_matched": true,
+        "geometry_status": "NO_JUNCTION_REQUIREMENT",
+        "geometry_reason": null
+      },
+      {
+        "command_id": "s2_t05_cmd_03",
+        "announce_at_m": 800.0,
+        "horizon_end_m": 1150.0,
+        "required_route_options": [],
+        "encountered_route_options": [
+          "STRAIGHT",
+          "STRAIGHT",
+          "RIGHT"
+        ],
+        "maneuvers": [
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 831.216
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 890.042
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 930.452
+          }
+        ],
+        "matched": true,
+        "route_option_matched": true,
+        "geometry_status": "NO_JUNCTION_REQUIREMENT",
+        "geometry_reason": null
+      },
+      {
+        "command_id": "s2_t05_cmd_04",
+        "announce_at_m": 980.0,
+        "horizon_end_m": 1330.0,
+        "required_route_options": [],
+        "encountered_route_options": [],
+        "maneuvers": [],
+        "matched": true,
+        "route_option_matched": true,
+        "geometry_status": "NO_JUNCTION_REQUIREMENT",
+        "geometry_reason": null
+      },
+      {
+        "command_id": "s2_t05_cmd_05",
+        "announce_at_m": 1000.0,
+        "horizon_end_m": 1350.0,
+        "required_route_options": [],
+        "encountered_route_options": [],
+        "maneuvers": [],
+        "matched": true,
+        "route_option_matched": true,
+        "geometry_status": "NO_JUNCTION_REQUIREMENT",
+        "geometry_reason": null
+      },
+      {
+        "command_id": "s2_t05_cmd_06",
+        "announce_at_m": 1180.0,
+        "horizon_end_m": 1530.0,
+        "required_route_options": [],
+        "encountered_route_options": [],
+        "maneuvers": [],
+        "matched": true,
+        "route_option_matched": true,
+        "geometry_status": "NO_JUNCTION_REQUIREMENT",
+        "geometry_reason": null
+      },
+      {
+        "command_id": "s2_t05_cmd_07",
+        "announce_at_m": 1560.0,
+        "horizon_end_m": 1910.0,
+        "required_route_options": [],
+        "encountered_route_options": [],
+        "maneuvers": [],
+        "matched": true,
+        "route_option_matched": true,
+        "geometry_status": "NO_JUNCTION_REQUIREMENT",
+        "geometry_reason": null
+      },
+      {
+        "command_id": "s2_t05_cmd_08",
+        "announce_at_m": 1850.0,
+        "horizon_end_m": 2200.0,
+        "required_route_options": [],
+        "encountered_route_options": [],
+        "maneuvers": [],
+        "matched": true,
+        "route_option_matched": true,
+        "geometry_status": "NO_JUNCTION_REQUIREMENT",
+        "geometry_reason": null
+      },
+      {
+        "command_id": "s2_t05_cmd_09",
+        "announce_at_m": 2250.0,
+        "horizon_end_m": 2600.0,
+        "required_route_options": [
+          "STRAIGHT"
+        ],
+        "encountered_route_options": [
+          "STRAIGHT",
+          "STRAIGHT",
+          "STRAIGHT",
+          "RIGHT"
+        ],
+        "maneuvers": [
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 2348.054
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 2400.343
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 2458.743
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 2548.537
+          }
+        ],
+        "matched": false,
+        "route_option_matched": true,
+        "geometry_status": "MISMATCH",
+        "geometry_reason": "next junction is not straight"
+      },
+      {
+        "command_id": "s2_t05_cmd_10",
+        "announce_at_m": 2500.0,
+        "horizon_end_m": 2850.0,
+        "required_route_options": [],
+        "encountered_route_options": [
+          "RIGHT",
+          "STRAIGHT",
+          "STRAIGHT",
+          "LEFT",
+          "RIGHT"
+        ],
+        "maneuvers": [
+          {
+            "route_option": "RIGHT",
+            "progress_m": 2548.537
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 2614.429
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 2689.439
+          },
+          {
+            "route_option": "LEFT",
+            "progress_m": 2755.839
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 2838.238
+          }
+        ],
+        "matched": true,
+        "route_option_matched": true,
+        "geometry_status": "NO_JUNCTION_REQUIREMENT",
+        "geometry_reason": null
+      },
+      {
+        "command_id": "s2_t05_cmd_11",
+        "announce_at_m": 4300.0,
+        "horizon_end_m": 4650.0,
+        "required_route_options": [
+          "RIGHT"
+        ],
+        "encountered_route_options": [
+          "RIGHT",
+          "LEFT",
+          "STRAIGHT"
+        ],
+        "maneuvers": [
+          {
+            "route_option": "RIGHT",
+            "progress_m": 4379.677
+          },
+          {
+            "route_option": "LEFT",
+            "progress_m": 4447.234
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 4556.914
+          }
+        ],
+        "matched": false,
+        "route_option_matched": true,
+        "geometry_status": "MISMATCH",
+        "geometry_reason": "turn task activated inside or after junction entry"
+      },
+      {
+        "command_id": "s2_t05_cmd_12",
+        "announce_at_m": 4450.0,
+        "horizon_end_m": 4800.0,
+        "required_route_options": [],
+        "encountered_route_options": [
+          "STRAIGHT",
+          "STRAIGHT",
+          "STRAIGHT"
+        ],
+        "maneuvers": [
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 4556.914
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 4662.247
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 4752.017
+          }
+        ],
+        "matched": true,
+        "route_option_matched": true,
+        "geometry_status": "NO_JUNCTION_REQUIREMENT",
+        "geometry_reason": null
+      },
+      {
+        "command_id": "s2_t05_cmd_13",
+        "announce_at_m": 5200.0,
+        "horizon_end_m": 5800.0,
+        "required_route_options": [
+          "RIGHT",
+          "STRAIGHT",
+          "RIGHT"
+        ],
+        "encountered_route_options": [
+          "RIGHT",
+          "RIGHT",
+          "RIGHT",
+          "STRAIGHT",
+          "STRAIGHT",
+          "LEFT",
+          "RIGHT"
+        ],
+        "maneuvers": [
+          {
+            "route_option": "RIGHT",
+            "progress_m": 5226.264
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 5296.29
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 5372.352
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 5438.244
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 5513.254
+          },
+          {
+            "route_option": "LEFT",
+            "progress_m": 5579.654
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 5662.053
+          }
+        ],
+        "matched": false,
+        "route_option_matched": true,
+        "geometry_status": "MISMATCH",
+        "geometry_reason": "next junction is not straight"
+      },
+      {
+        "command_id": "s2_t05_cmd_14",
+        "announce_at_m": 6050.0,
+        "horizon_end_m": 6450.0,
+        "required_route_options": [
+          "RIGHT"
+        ],
+        "encountered_route_options": [
+          "RIGHT",
+          "RIGHT",
+          "RIGHT",
+          "STRAIGHT",
+          "STRAIGHT"
+        ],
+        "maneuvers": [
+          {
+            "route_option": "RIGHT",
+            "progress_m": 6098.922
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 6173.853
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 6240.911
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 6316.233
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 6405.183
+          }
+        ],
+        "matched": true,
+        "route_option_matched": true,
+        "geometry_status": "BOUND",
+        "geometry_reason": null
+      },
+      {
+        "command_id": "s2_t05_cmd_15",
+        "announce_at_m": 7000.0,
+        "horizon_end_m": 7800.0,
+        "required_route_options": [
+          "STRAIGHT",
+          "RIGHT",
+          "RIGHT"
+        ],
+        "encountered_route_options": [
+          "STRAIGHT",
+          "LEFT",
+          "RIGHT",
+          "RIGHT",
+          "RIGHT",
+          "LEFT",
+          "LEFT",
+          "LEFT",
+          "STRAIGHT",
+          "LEFT",
+          "STRAIGHT"
+        ],
+        "maneuvers": [
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 7024.004
+          },
+          {
+            "route_option": "LEFT",
+            "progress_m": 7083.684
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 7175.784
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 7235.383
+          },
+          {
+            "route_option": "RIGHT",
+            "progress_m": 7315.996
+          },
+          {
+            "route_option": "LEFT",
+            "progress_m": 7377.704
+          },
+          {
+            "route_option": "LEFT",
+            "progress_m": 7464.69
+          },
+          {
+            "route_option": "LEFT",
+            "progress_m": 7537.101
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 7624.792
+          },
+          {
+            "route_option": "LEFT",
+            "progress_m": 7713.056
+          },
+          {
+            "route_option": "STRAIGHT",
+            "progress_m": 7787.037
+          }
+        ],
+        "matched": false,
+        "route_option_matched": true,
+        "geometry_status": "MISMATCH",
+        "geometry_reason": "next junction does not match requested distinct-road turn"
+      }
+    ],
+    "task_geometry": {
+      "schema_version": "scene_2_task_geometry_audit/v1",
+      "rows": [
+        {
+          "task_id": "s2_t05_cmd_01",
+          "status": "BOUND",
+          "evidence": {
+            "1": {
+              "direction": "RIGHT",
+              "legal": true,
+              "entry_road_key": "38",
+              "exit_road_key": "27",
+              "junction_start_m": 305.7268997456114,
+              "junction_end_m": 321.67585554948363,
+              "heading_change_deg": 89.735,
+              "legality_scope": "recorded_route_topology_not_signal_permission"
+            }
+          }
+        },
+        {
+          "task_id": "s2_t05_cmd_02",
+          "status": "NO_JUNCTION_REQUIREMENT"
+        },
+        {
+          "task_id": "s2_t05_cmd_03",
+          "status": "NO_JUNCTION_REQUIREMENT"
+        },
+        {
+          "task_id": "s2_t05_cmd_04",
+          "status": "NO_JUNCTION_REQUIREMENT"
+        },
+        {
+          "task_id": "s2_t05_cmd_05",
+          "status": "NO_JUNCTION_REQUIREMENT"
+        },
+        {
+          "task_id": "s2_t05_cmd_06",
+          "status": "NO_JUNCTION_REQUIREMENT"
+        },
+        {
+          "task_id": "s2_t05_cmd_07",
+          "status": "NO_JUNCTION_REQUIREMENT"
+        },
+        {
+          "task_id": "s2_t05_cmd_08",
+          "status": "NO_JUNCTION_REQUIREMENT"
+        },
+        {
+          "task_id": "s2_t05_cmd_09",
+          "status": "MISMATCH",
+          "activate_m": 2250.0,
+          "end_m": 2500,
+          "reason": "next junction is not straight"
+        },
+        {
+          "task_id": "s2_t05_cmd_10",
+          "status": "NO_JUNCTION_REQUIREMENT"
+        },
+        {
+          "task_id": "s2_t05_cmd_11",
+          "status": "MISMATCH",
+          "activate_m": 4300.0,
+          "end_m": 4450,
+          "reason": "turn task activated inside or after junction entry"
+        },
+        {
+          "task_id": "s2_t05_cmd_12",
+          "status": "NO_JUNCTION_REQUIREMENT"
+        },
+        {
+          "task_id": "s2_t05_cmd_13",
+          "status": "MISMATCH",
+          "activate_m": 5200.0,
+          "end_m": 6100,
+          "reason": "next junction is not straight"
+        },
+        {
+          "task_id": "s2_t05_cmd_14",
+          "status": "BOUND",
+          "evidence": {
+            "1": {
+              "direction": "RIGHT",
+              "legal": true,
+              "entry_road_key": "0",
+              "exit_road_key": "26",
+              "junction_start_m": 6099.88910475714,
+              "junction_end_m": 6111.7191162573445,
+              "heading_change_deg": 89.674,
+              "legality_scope": "recorded_route_topology_not_signal_permission"
+            }
+          }
+        },
+        {
+          "task_id": "s2_t05_cmd_15",
+          "status": "MISMATCH",
+          "activate_m": 7000.0,
+          "end_m": 8001.5721805662615,
+          "reason": "next junction does not match requested distinct-road turn"
+        }
+      ],
+      "mismatch_count": 4
+    },
+    "route_option_mismatch_count": 0,
+    "readiness_basis": "route_options_and_independent_task_geometry",
+    "route_spatial_audit": {
+      "schema_version": "scene_route_spatial_audit/v1",
+      "sample_interval_m": 20.0,
+      "cell_size_m": 20.0,
+      "samples": 401,
+      "unique_cells": 212,
+      "repeated_cell_fraction": 0.4713,
+      "junction_entries": 77,
+      "mean_m_per_junction": 103.9
+    },
+    "route_strategy": "coverage_greedy_v1",
+    "coverage_legs": [
+      {
+        "spawn_index": 83,
+        "length_m": 967.6,
+        "new_cell_fraction": 0.8
+      },
+      {
+        "spawn_index": 218,
+        "length_m": 595.7,
+        "new_cell_fraction": 0.656
+      },
+      {
+        "spawn_index": 191,
+        "length_m": 1205.9,
+        "new_cell_fraction": 0.7
+      },
+      {
+        "spawn_index": 101,
+        "length_m": 400.2,
+        "new_cell_fraction": 0.304
+      },
+      {
+        "spawn_index": 272,
+        "length_m": 414.9,
+        "new_cell_fraction": 0.739
+      },
+      {
+        "spawn_index": 200,
+        "length_m": 402.9,
+        "new_cell_fraction": 0.583
+      },
+      {
+        "spawn_index": 218,
+        "length_m": 399.9,
+        "new_cell_fraction": 0.0
+      },
+      {
+        "spawn_index": 128,
+        "length_m": 351.6,
+        "new_cell_fraction": 0.158
+      },
+      {
+        "spawn_index": 272,
+        "length_m": 439.3,
+        "new_cell_fraction": 0.385
+      },
+      {
+        "spawn_index": 218,
+        "length_m": 353.7,
+        "new_cell_fraction": 0.1
+      },
+      {
+        "spawn_index": 92,
+        "length_m": 384.3,
+        "new_cell_fraction": 0.136
+      },
+      {
+        "spawn_index": 47,
+        "length_m": 367.7,
+        "new_cell_fraction": 0.0
+      },
+      {
+        "spawn_index": 290,
+        "length_m": 358.4,
+        "new_cell_fraction": 0.1
+      }
+    ]
+  },
+  "commands_announced": 1,
+  "segment_command_schedule": {
+    "start_progress_m": 656.9919415065823,
+    "mode": "cold_segment",
+    "eligible_command_ids": [
+      "s2_t05_cmd_03",
+      "s2_t05_cmd_04",
+      "s2_t05_cmd_05",
+      "s2_t05_cmd_06",
+      "s2_t05_cmd_07",
+      "s2_t05_cmd_08",
+      "s2_t05_cmd_09",
+      "s2_t05_cmd_10",
+      "s2_t05_cmd_11",
+      "s2_t05_cmd_12",
+      "s2_t05_cmd_13",
+      "s2_t05_cmd_14",
+      "s2_t05_cmd_15"
+    ],
+    "skipped_before_start_ids": [
+      "s2_t05_cmd_01",
+      "s2_t05_cmd_02"
+    ],
+    "announced_ids": [
+      "s2_t05_cmd_03"
+    ],
+    "restores_previous_instruction_state": false,
+    "skipped_event_ids": []
+  },
+  "traffic_vehicles_spawned": 82,
+  "traffic_initial_route_actors_spawned": 11,
+  "traffic_initial_route_spawns": [
+    {
+      "actor_id": 1948,
+      "requested_offset_m": 50.0,
+      "actual_distance_from_ego_m": 98.8
+    },
+    {
+      "actor_id": 1949,
+      "requested_offset_m": 75.0,
+      "actual_distance_from_ego_m": 65.6
+    },
+    {
+      "actor_id": 1950,
+      "requested_offset_m": 105.0,
+      "actual_distance_from_ego_m": 116.0
+    },
+    {
+      "actor_id": 1951,
+      "requested_offset_m": 135.0,
+      "actual_distance_from_ego_m": 123.9
+    },
+    {
+      "actor_id": 1952,
+      "requested_offset_m": 170.0,
+      "actual_distance_from_ego_m": 160.1
+    },
+    {
+      "actor_id": 1953,
+      "requested_offset_m": 205.0,
+      "actual_distance_from_ego_m": 193.8
+    },
+    {
+      "actor_id": 1954,
+      "requested_offset_m": 240.0,
+      "actual_distance_from_ego_m": 247.7
+    },
+    {
+      "actor_id": 1955,
+      "requested_offset_m": 275.0,
+      "actual_distance_from_ego_m": 275.2
+    },
+    {
+      "actor_id": 1956,
+      "requested_offset_m": 315.0,
+      "actual_distance_from_ego_m": 279.9
+    },
+    {
+      "actor_id": 1957,
+      "requested_offset_m": 355.0,
+      "actual_distance_from_ego_m": 278.1
+    },
+    {
+      "actor_id": 1958,
+      "requested_offset_m": 400.0,
+      "actual_distance_from_ego_m": 280.2
+    }
+  ],
+  "traffic_replenishment_settings": {
+    "check_ticks": 20,
+    "minimum_front_vehicles": 4,
+    "minimum_same_direction_vehicles": 2,
+    "lookahead_m": 360.0,
+    "visibility_clearance_m": 350.0,
+    "maximum_extra_actors": 12,
+    "following_source_actor_reserve": 12,
+    "lane_spacing_m": 75.0,
+    "staging_window_m": 300.0,
+    "following_source_back_m": 100.0,
+    "following_source_spacing_m": 65.0,
+    "following_source_lane_vehicles": 2,
+    "following_source_front_vehicles": 2
+  },
+  "traffic_replenishment_count": 69,
+  "traffic_replenishment_events": [
+    {
+      "ego_progress_m": 681.4,
+      "spawn_distance_from_ego_m": 72.7,
+      "front_vehicles_before": 14,
+      "same_direction_visible_before": 4,
+      "same_direction_nearby_before": 11,
+      "route_vehicles_120m_before": 3,
+      "route_vehicles_staging_before": 7,
+      "requested_spawn_route_m": 583.1,
+      "lane_from_right": 2,
+      "source_kind": "following_lane_source",
+      "new_actor_id": 2011,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 732.4,
+      "spawn_distance_from_ego_m": 70.4,
+      "front_vehicles_before": 9,
+      "same_direction_visible_before": 5,
+      "same_direction_nearby_before": 7,
+      "route_vehicles_120m_before": 3,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 633.4,
+      "lane_from_right": 1,
+      "source_kind": "following_lane_source",
+      "new_actor_id": 2012,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 767.1,
+      "spawn_distance_from_ego_m": 101.9,
+      "front_vehicles_before": 8,
+      "same_direction_visible_before": 3,
+      "same_direction_nearby_before": 5,
+      "route_vehicles_120m_before": 3,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 649.3,
+      "lane_from_right": 2,
+      "source_kind": "following_lane_source",
+      "new_actor_id": 2013,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 806.6,
+      "spawn_distance_from_ego_m": 99.1,
+      "front_vehicles_before": 8,
+      "same_direction_visible_before": 4,
+      "same_direction_nearby_before": 5,
+      "route_vehicles_120m_before": 3,
+      "route_vehicles_staging_before": 7,
+      "requested_spawn_route_m": 707.4,
+      "lane_from_right": 2,
+      "source_kind": "following_lane_source",
+      "new_actor_id": 2014,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 826.6,
+      "spawn_distance_from_ego_m": 98.5,
+      "front_vehicles_before": 9,
+      "same_direction_visible_before": 1,
+      "same_direction_nearby_before": 1,
+      "route_vehicles_120m_before": 1,
+      "route_vehicles_staging_before": 5,
+      "requested_spawn_route_m": 728.4,
+      "lane_from_right": 1,
+      "source_kind": "following_lane_source",
+      "new_actor_id": 2015,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 874.9,
+      "spawn_distance_from_ego_m": 99.5,
+      "front_vehicles_before": 10,
+      "same_direction_visible_before": 1,
+      "same_direction_nearby_before": 1,
+      "route_vehicles_120m_before": 4,
+      "route_vehicles_staging_before": 7,
+      "requested_spawn_route_m": 775.0,
+      "lane_from_right": 1,
+      "source_kind": "following_lane_source",
+      "new_actor_id": 2016,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 900.0,
+      "spawn_distance_from_ego_m": 352.8,
+      "front_vehicles_before": 7,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 8,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1630.0,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2017,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 904.0,
+      "spawn_distance_from_ego_m": 367.5,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1669.0,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2018,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 908.0,
+      "spawn_distance_from_ego_m": 351.1,
+      "front_vehicles_before": 7,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1418.0,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2019,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 910.0,
+      "spawn_distance_from_ego_m": 350.7,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1455.0,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2020,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 912.0,
+      "spawn_distance_from_ego_m": 360.8,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1642.0,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2021,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 912.0,
+      "spawn_distance_from_ego_m": 353.1,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1527.0,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2022,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 915.1,
+      "spawn_distance_from_ego_m": 352.9,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1500.1,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2023,
+      "retired_actor_id": 2019
+    },
+    {
+      "ego_progress_m": 915.1,
+      "spawn_distance_from_ego_m": 360.1,
+      "front_vehicles_before": 5,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1610.1,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2024,
+      "retired_actor_id": 2020
+    },
+    {
+      "ego_progress_m": 917.1,
+      "spawn_distance_from_ego_m": 360.5,
+      "front_vehicles_before": 5,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1422.1,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2025,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 361.9,
+      "front_vehicles_before": 5,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1459.1,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2026,
+      "retired_actor_id": 2023
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 352.9,
+      "front_vehicles_before": 5,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1504.1,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2027,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 360.0,
+      "front_vehicles_before": 4,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1614.1,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2028,
+      "retired_actor_id": 2026
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 358.5,
+      "front_vehicles_before": 4,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1424.1,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2029,
+      "retired_actor_id": 2027
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 388.1,
+      "front_vehicles_before": 4,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1684.1,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2030,
+      "retired_actor_id": 2025
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 359.2,
+      "front_vehicles_before": 3,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1504.1,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2031,
+      "retired_actor_id": 2029
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 361.4,
+      "front_vehicles_before": 3,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1464.1,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2032,
+      "retired_actor_id": 2031
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 355.1,
+      "front_vehicles_before": 3,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1424.1,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2033,
+      "retired_actor_id": 2032
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 362.0,
+      "front_vehicles_before": 3,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1459.1,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2034,
+      "retired_actor_id": 2033
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 356.3,
+      "front_vehicles_before": 4,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 8,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1429.1,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2035,
+      "retired_actor_id": 2034
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 361.6,
+      "front_vehicles_before": 3,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 8,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1464.1,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2036,
+      "retired_actor_id": 2035
+    },
+    {
+      "ego_progress_m": 919.1,
+      "spawn_distance_from_ego_m": 99.6,
+      "front_vehicles_before": 3,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 8,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 818.6,
+      "lane_from_right": 1,
+      "source_kind": "following_lane_source",
+      "new_actor_id": 2037,
+      "retired_actor_id": 2036
+    },
+    {
+      "ego_progress_m": 927.1,
+      "spawn_distance_from_ego_m": 366.8,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1467.1,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2038,
+      "retired_actor_id": 1958
+    },
+    {
+      "ego_progress_m": 927.1,
+      "spawn_distance_from_ego_m": 370.5,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1437.1,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2039,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 927.1,
+      "spawn_distance_from_ego_m": 361.3,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1397.1,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2040,
+      "retired_actor_id": 2038
+    },
+    {
+      "ego_progress_m": 930.5,
+      "spawn_distance_from_ego_m": 363.6,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1510.5,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2041,
+      "retired_actor_id": 2039
+    },
+    {
+      "ego_progress_m": 930.5,
+      "spawn_distance_from_ego_m": 373.9,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 5,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1470.5,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2042,
+      "retired_actor_id": 2040
+    },
+    {
+      "ego_progress_m": 934.1,
+      "spawn_distance_from_ego_m": 380.1,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 5,
+      "route_vehicles_staging_before": 7,
+      "requested_spawn_route_m": 1444.1,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2043,
+      "retired_actor_id": 2041
+    },
+    {
+      "ego_progress_m": 935.8,
+      "spawn_distance_from_ego_m": 365.4,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 6,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1405.8,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2044,
+      "retired_actor_id": 2042
+    },
+    {
+      "ego_progress_m": 939.2,
+      "spawn_distance_from_ego_m": 374.8,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 4,
+      "same_direction_nearby_before": 4,
+      "route_vehicles_120m_before": 6,
+      "route_vehicles_staging_before": 10,
+      "requested_spawn_route_m": 1519.2,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2045,
+      "retired_actor_id": 2043
+    },
+    {
+      "ego_progress_m": 940.8,
+      "spawn_distance_from_ego_m": 383.1,
+      "front_vehicles_before": 7,
+      "same_direction_visible_before": 6,
+      "same_direction_nearby_before": 6,
+      "route_vehicles_120m_before": 6,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1480.8,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2046,
+      "retired_actor_id": 2044
+    },
+    {
+      "ego_progress_m": 944.2,
+      "spawn_distance_from_ego_m": 353.4,
+      "front_vehicles_before": 8,
+      "same_direction_visible_before": 6,
+      "same_direction_nearby_before": 6,
+      "route_vehicles_120m_before": 6,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1379.2,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2047,
+      "retired_actor_id": 2045
+    },
+    {
+      "ego_progress_m": 946.5,
+      "spawn_distance_from_ego_m": 375.5,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 5,
+      "same_direction_nearby_before": 5,
+      "route_vehicles_120m_before": 5,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1416.5,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2048,
+      "retired_actor_id": 2047
+    },
+    {
+      "ego_progress_m": 950.5,
+      "spawn_distance_from_ego_m": 358.3,
+      "front_vehicles_before": 5,
+      "same_direction_visible_before": 5,
+      "same_direction_nearby_before": 5,
+      "route_vehicles_120m_before": 5,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1380.5,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2049,
+      "retired_actor_id": 2046
+    },
+    {
+      "ego_progress_m": 952.5,
+      "spawn_distance_from_ego_m": 370.6,
+      "front_vehicles_before": 5,
+      "same_direction_visible_before": 5,
+      "same_direction_nearby_before": 5,
+      "route_vehicles_120m_before": 5,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1417.5,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2050,
+      "retired_actor_id": 2048
+    },
+    {
+      "ego_progress_m": 956.5,
+      "spawn_distance_from_ego_m": 387.5,
+      "front_vehicles_before": 5,
+      "same_direction_visible_before": 5,
+      "same_direction_nearby_before": 5,
+      "route_vehicles_120m_before": 5,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1616.5,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2051,
+      "retired_actor_id": 2049
+    },
+    {
+      "ego_progress_m": 958.5,
+      "spawn_distance_from_ego_m": 386.8,
+      "front_vehicles_before": 5,
+      "same_direction_visible_before": 5,
+      "same_direction_nearby_before": 5,
+      "route_vehicles_120m_before": 5,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1578.5,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2052,
+      "retired_actor_id": 2050
+    },
+    {
+      "ego_progress_m": 1038.0,
+      "spawn_distance_from_ego_m": 370.5,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 6,
+      "same_direction_nearby_before": 6,
+      "route_vehicles_120m_before": 6,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1468.0,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2053,
+      "retired_actor_id": 1956
+    },
+    {
+      "ego_progress_m": 1045.1,
+      "spawn_distance_from_ego_m": 371.1,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 6,
+      "same_direction_nearby_before": 6,
+      "route_vehicles_120m_before": 6,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1510.1,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2054,
+      "retired_actor_id": 1912
+    },
+    {
+      "ego_progress_m": 1053.9,
+      "spawn_distance_from_ego_m": 94.9,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 6,
+      "same_direction_nearby_before": 6,
+      "route_vehicles_120m_before": 6,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 954.5,
+      "lane_from_right": 3,
+      "source_kind": "following_lane_source",
+      "new_actor_id": 2055,
+      "retired_actor_id": 2053
+    },
+    {
+      "ego_progress_m": 1057.4,
+      "spawn_distance_from_ego_m": 358.6,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 6,
+      "same_direction_nearby_before": 6,
+      "route_vehicles_120m_before": 6,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1452.4,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2056,
+      "retired_actor_id": 2054
+    },
+    {
+      "ego_progress_m": 1073.2,
+      "spawn_distance_from_ego_m": 364.5,
+      "front_vehicles_before": 6,
+      "same_direction_visible_before": 6,
+      "same_direction_nearby_before": 6,
+      "route_vehicles_120m_before": 6,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1503.2,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2057,
+      "retired_actor_id": 2056
+    },
+    {
+      "ego_progress_m": 1073.2,
+      "spawn_distance_from_ego_m": 95.9,
+      "front_vehicles_before": 7,
+      "same_direction_visible_before": 6,
+      "same_direction_nearby_before": 6,
+      "route_vehicles_120m_before": 7,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 973.6,
+      "lane_from_right": 1,
+      "source_kind": "following_lane_source",
+      "new_actor_id": 2058,
+      "retired_actor_id": 2057
+    },
+    {
+      "ego_progress_m": 1076.7,
+      "spawn_distance_from_ego_m": 357.8,
+      "front_vehicles_before": 11,
+      "same_direction_visible_before": 7,
+      "same_direction_nearby_before": 8,
+      "route_vehicles_120m_before": 6,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1511.7,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2059,
+      "retired_actor_id": 1955
+    },
+    {
+      "ego_progress_m": 1080.2,
+      "spawn_distance_from_ego_m": 350.2,
+      "front_vehicles_before": 11,
+      "same_direction_visible_before": 7,
+      "same_direction_nearby_before": 8,
+      "route_vehicles_120m_before": 6,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1475.2,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2060,
+      "retired_actor_id": 2059
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 97.1,
+      "front_vehicles_before": 7,
+      "same_direction_visible_before": 5,
+      "same_direction_nearby_before": 9,
+      "route_vehicles_120m_before": 3,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 991.6,
+      "lane_from_right": 3,
+      "source_kind": "following_lane_source",
+      "new_actor_id": 2061,
+      "retired_actor_id": 2060
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 404.7,
+      "front_vehicles_before": 3,
+      "same_direction_visible_before": 1,
+      "same_direction_nearby_before": 7,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 9,
+      "requested_spawn_route_m": 1630.8,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2062,
+      "retired_actor_id": 2017
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 391.2,
+      "front_vehicles_before": 2,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 6,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1600.8,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2063,
+      "retired_actor_id": 2055
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 375.2,
+      "front_vehicles_before": 2,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 6,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 7,
+      "requested_spawn_route_m": 1560.8,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2064,
+      "retired_actor_id": 1918
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 386.1,
+      "front_vehicles_before": 3,
+      "same_direction_visible_before": 3,
+      "same_direction_nearby_before": 7,
+      "route_vehicles_120m_before": 3,
+      "route_vehicles_staging_before": 10,
+      "requested_spawn_route_m": 1595.8,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2065,
+      "retired_actor_id": 2018
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 489.8,
+      "front_vehicles_before": 4,
+      "same_direction_visible_before": 4,
+      "same_direction_nearby_before": 5,
+      "route_vehicles_120m_before": 1,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1780.8,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2066,
+      "retired_actor_id": 2061
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 394.2,
+      "front_vehicles_before": 0,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 2,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 8,
+      "requested_spawn_route_m": 1600.8,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2067,
+      "retired_actor_id": 1954
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 372.0,
+      "front_vehicles_before": 0,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 1,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 7,
+      "requested_spawn_route_m": 1560.8,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2068,
+      "retired_actor_id": 1905
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 431.7,
+      "front_vehicles_before": 0,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 1,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 7,
+      "requested_spawn_route_m": 1670.8,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2069,
+      "retired_actor_id": 1891
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 452.8,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 1,
+      "same_direction_nearby_before": 2,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 6,
+      "requested_spawn_route_m": 1705.8,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2070,
+      "retired_actor_id": 1902
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 478.7,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 1,
+      "same_direction_nearby_before": 2,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 5,
+      "requested_spawn_route_m": 1750.8,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2071,
+      "retired_actor_id": 1914
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 368.9,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 1,
+      "same_direction_nearby_before": 2,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 4,
+      "requested_spawn_route_m": 1560.8,
+      "lane_from_right": 1,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2072,
+      "retired_actor_id": 1896
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 90.2,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 1,
+      "same_direction_nearby_before": 1,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 4,
+      "requested_spawn_route_m": 991.6,
+      "lane_from_right": 2,
+      "source_kind": "following_lane_source",
+      "new_actor_id": 2073,
+      "retired_actor_id": 2030
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 410.5,
+      "front_vehicles_before": 1,
+      "same_direction_visible_before": 1,
+      "same_direction_nearby_before": 1,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 3,
+      "requested_spawn_route_m": 1630.8,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2074,
+      "retired_actor_id": 2024
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 391.2,
+      "front_vehicles_before": 2,
+      "same_direction_visible_before": 2,
+      "same_direction_nearby_before": 2,
+      "route_vehicles_120m_before": 2,
+      "route_vehicles_staging_before": 3,
+      "requested_spawn_route_m": 1600.8,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2075,
+      "retired_actor_id": 2022
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 375.2,
+      "front_vehicles_before": 2,
+      "same_direction_visible_before": 2,
+      "same_direction_nearby_before": 2,
+      "route_vehicles_120m_before": 2,
+      "route_vehicles_staging_before": 2,
+      "requested_spawn_route_m": 1560.8,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2076,
+      "retired_actor_id": null
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 356.8,
+      "front_vehicles_before": 0,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 2,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 2,
+      "requested_spawn_route_m": 1520.8,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2077,
+      "retired_actor_id": 1937
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 407.6,
+      "front_vehicles_before": 0,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 1,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 3,
+      "requested_spawn_route_m": 1630.8,
+      "lane_from_right": 2,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2078,
+      "retired_actor_id": 2077
+    },
+    {
+      "ego_progress_m": 1090.8,
+      "spawn_distance_from_ego_m": 394.2,
+      "front_vehicles_before": 0,
+      "same_direction_visible_before": 0,
+      "same_direction_nearby_before": 0,
+      "route_vehicles_120m_before": 0,
+      "route_vehicles_staging_before": 2,
+      "requested_spawn_route_m": 1600.8,
+      "lane_from_right": 3,
+      "source_kind": "forward_staging",
+      "new_actor_id": 2079,
+      "retired_actor_id": 2073
+    }
+  ],
+  "ambient_walkers_spawned": 21,
+  "traffic_hybrid_physics": {
+    "enabled": false,
+    "radius_m": 100.0
+  },
+  "event_states": {
+    "slow_vehicle": "RESOLVED",
+    "compound_slow_vehicle": "ACTIVE",
+    "crosswalk_pedestrian": "ACTIVE",
+    "bus_stop_passengers": "RESOLVED",
+    "slow_cyclist": "STAGED"
+  },
+  "event_summary": {
+    "STAGED": 1,
+    "ACTIVE": 2,
+    "RESOLVED": 2,
+    "SKIPPED": 0
+  },
+  "variant_index": 0,
+  "selected_variants": {
+    "slow_vehicle": "steady_22",
+    "compound_slow_vehicle": "steady_18",
+    "crosswalk_pedestrian": "stop_and_go",
+    "bus_stop_passengers": "busy_stop",
+    "slow_cyclist": "steady_14"
+  },
+  "spawn_diagnostics": {
+    "scene2_slow_vehicle": {
+      "attempts": 1,
+      "source": "hidden_air_staging",
+      "prestage_progress_m": 656.992,
+      "prestage_route_offset_m": 0.0,
+      "prestage_forward_m": 5.814,
+      "prestage_lateral_m": 79.779,
+      "activation_source": "physical_parked_release",
+      "activation_progress_m": 656.992,
+      "retirement": "hidden_physics_disabled",
+      "retirement_z_m": -50.0
+    },
+    "scene2_compound_slow_vehicle": {
+      "attempts": 1,
+      "source": "route_waypoint_retry",
+      "activation_source": "physical_parked_release"
+    },
+    "scene2_crosswalk_pedestrian": {
+      "attempts": 1,
+      "source": "sidewalk_retry",
+      "staging": "physical_waiting",
+      "collision_survival": "invincible_actor",
+      "reactivation": "start_walking_in_place",
+      "activation_transform_source": "spawn_candidate",
+      "configured_walker_speed_mps": 1.25,
+      "geometry_source": "official_crosswalk_polygon",
+      "crosswalk_polygon_index": 57,
+      "crosswalk_route_progress_m": 932.4278,
+      "crosswalk_length_m": 21.29758589067949,
+      "completion_distance_m": 0.3
+    },
+    "scene2_bus_stop_bus": {
+      "attempts": 1,
+      "source": "route_waypoint_retry",
+      "activation_source": "physical_parked_bus_no_relocation",
+      "activation_location": {
+        "x": 142.981,
+        "y": -171.731,
+        "z": 0.45
+      },
+      "retirement": "deferred_for_independent_evaluation"
+    },
+    "scene2_bus_passenger_1": {
+      "attempts": 1,
+      "source": "sidewalk_retry",
+      "staging": "physical_waiting",
+      "collision_survival": "invincible_actor",
+      "reactivation": "start_walking_in_place",
+      "activation_transform_source": "spawn_candidate",
+      "configured_walker_speed_mps": 1.25,
+      "retirement": "deferred_for_independent_evaluation"
+    },
+    "scene2_bus_passenger_2": {
+      "attempts": 1,
+      "source": "sidewalk_retry",
+      "staging": "physical_waiting",
+      "collision_survival": "invincible_actor",
+      "reactivation": "start_walking_in_place",
+      "activation_transform_source": "spawn_candidate",
+      "configured_walker_speed_mps": 1.25,
+      "retirement": "deferred_for_independent_evaluation"
+    },
+    "scene2_bus_passenger_3": {
+      "attempts": 1,
+      "source": "sidewalk_retry",
+      "staging": "physical_waiting",
+      "collision_survival": "invincible_actor",
+      "reactivation": "start_walking_in_place",
+      "activation_transform_source": "spawn_candidate",
+      "configured_walker_speed_mps": 1.25,
+      "retirement": "deferred_for_independent_evaluation"
+    },
+    "scene2_slow_cyclist": {
+      "source": "deferred_event_staging",
+      "staging_progress_m": 1300.0,
+      "spawned": false
+    }
+  },
+  "collision_count": 0,
+  "collision_contact_samples": 0,
+  "collision_events": [],
+  "lane_invasion_count": 1,
+  "lane_invasion_events": [
+    {
+      "frame": 82523,
+      "simulation_time_s": 35.10000052303076,
+      "markings": [
+        "Solid"
+      ],
+      "restricted": true
+    }
+  ],
+  "restricted_lane_invasion_count": 1,
+  "restricted_lane_invasion_events": [
+    {
+      "frame": 82523,
+      "simulation_time_s": 35.10000052303076,
+      "markings": [
+        "Solid"
+      ],
+      "restricted": true
+    }
+  ],
+  "video_output": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene2\\segment_008\\run\\drive.mp4",
+  "artifact_recording": {
+    "mode": "full_artifacts",
+    "online_vla_sensors_enabled": true
+  },
+  "preview_controller": {
+    "source": "universal multisensor VLA + deterministic safety gate + PID",
+    "competition_metric_eligible": true,
+    "compound_baseline_task": null,
+    "compound_baseline_uses_simulator_truth": false,
+    "behavior_agent_executes_announced_commands": null,
+    "behavior_agent_scope": null
+  },
+  "vla_control": {
+    "controller": "universal-vla-controller",
+    "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+    "model_output_used": true,
+    "training_teacher_force_control": false,
+    "decision_count": 2737,
+    "model_accepted_count": 1320,
+    "safety_gate_or_canonical_count": 1417,
+    "fallback_count": 2418,
+    "sensor_warmup_safe_hold_count": 0,
+    "liveness_override_counts": {
+      "physical_rear_radar_acceleration_escape": 18,
+      "temporal_risk_confirmation": 5,
+      "unconfirmed_stop_crawl_floor": 169,
+      "stationary_high_risk_liveness": 1,
+      "stationary_high_risk_radar_guarded_crawl": 91
+    },
+    "proposal_action_counts": {
+      "accelerate": 1593,
+      "stop": 613,
+      "keep_lane": 298,
+      "decelerate": 215,
+      "emergency_brake": 18
+    },
+    "final_action_counts": {
+      "stop": 569,
+      "accelerate": 1107,
+      "decelerate": 245,
+      "emergency_brake": 619,
+      "keep_lane": 197
+    },
+    "full_decision_latency_ms": {
+      "mean": 27.181,
+      "median": 26.435,
+      "p95": 33.148,
+      "max": 165.345
+    },
+    "sensor_to_decision_response_ms": {
+      "mean": 27.725,
+      "median": 26.609,
+      "p95": 35.899,
+      "max": 165.345,
+      "within_120_ms_rate": 0.999269
+    },
+    "sensor_batch_schema_version": "unified_sensor_batch/1.0",
+    "supervisor": {
+      "global_visual_risk_history": [
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low",
+        "low"
+      ],
+      "left_lane_visual_risk_history": [],
+      "right_lane_visual_risk_history": [],
+      "stopped_since_frame": null,
+      "resume_active_intent": null,
+      "crawl_pending": false,
+      "high_confirm_count": 0,
+      "override_counts": {
+        "temporal_risk_confirmation": 5,
+        "unconfirmed_stop_crawl_floor": 169,
+        "stationary_high_risk_liveness": 1,
+        "stationary_high_risk_radar_guarded_crawl": 99
+      },
+      "radar_caution_crawl_active": false,
+      "decision_history": [
+        {
+          "frame": 87214,
+          "risk_level": "high",
+          "action": "emergency_brake",
+          "target_speed_kmh": 0.0,
+          "override": null
+        },
+        {
+          "frame": 87216,
+          "risk_level": "high",
+          "action": "emergency_brake",
+          "target_speed_kmh": 0.0,
+          "override": null
+        },
+        {
+          "frame": 87218,
+          "risk_level": "high",
+          "action": "emergency_brake",
+          "target_speed_kmh": 0.0,
+          "override": null
+        },
+        {
+          "frame": 87220,
+          "risk_level": "high",
+          "action": "emergency_brake",
+          "target_speed_kmh": 0.0,
+          "override": null
+        },
+        {
+          "frame": 87222,
+          "risk_level": "high",
+          "action": "emergency_brake",
+          "target_speed_kmh": 0.0,
+          "override": null
+        },
+        {
+          "frame": 87224,
+          "risk_level": "high",
+          "action": "emergency_brake",
+          "target_speed_kmh": 0.0,
+          "override": null
+        },
+        {
+          "frame": 87226,
+          "risk_level": "high",
+          "action": "emergency_brake",
+          "target_speed_kmh": 0.0,
+          "override": "stationary_high_risk_radar_guarded_crawl"
+        },
+        {
+          "frame": 87228,
+          "risk_level": "high",
+          "action": "emergency_brake",
+          "target_speed_kmh": 0.0,
+          "override": "stationary_high_risk_radar_guarded_crawl"
+        },
+        {
+          "frame": 87230,
+          "risk_level": "high",
+          "action": "emergency_brake",
+          "target_speed_kmh": 0.0,
+          "override": "stationary_high_risk_radar_guarded_crawl"
+        },
+        {
+          "frame": 87232,
+          "risk_level": "high",
+          "action": "emergency_brake",
+          "target_speed_kmh": 0.0,
+          "override": "stationary_high_risk_radar_guarded_crawl"
+        },
+        {
+          "frame": 87234,
+          "risk_level": "high",
+          "action": "emergency_brake",
+          "target_speed_kmh": 0.0,
+          "override": "stationary_high_risk_radar_guarded_crawl"
+        },
+        {
+          "frame": 87236,
+          "risk_level": "low",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": null
+        },
+        {
+          "frame": 87238,
+          "risk_level": "low",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": null
+        },
+        {
+          "frame": 87240,
+          "risk_level": "low",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": null
+        },
+        {
+          "frame": 87242,
+          "risk_level": "low",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": null
+        },
+        {
+          "frame": 87244,
+          "risk_level": "low",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": null
+        },
+        {
+          "frame": 87246,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 2.160001,
+          "override": null
+        },
+        {
+          "frame": 87248,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 3.240001,
+          "override": null
+        },
+        {
+          "frame": 87250,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 4.320001,
+          "override": null
+        },
+        {
+          "frame": 87252,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 5.4,
+          "override": null
+        },
+        {
+          "frame": 87254,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 3.334344,
+          "override": null
+        },
+        {
+          "frame": 87256,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 4.414344,
+          "override": null
+        },
+        {
+          "frame": 87258,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 5.494344,
+          "override": null
+        },
+        {
+          "frame": 87260,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 6.574344,
+          "override": null
+        },
+        {
+          "frame": 87262,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 7.654344,
+          "override": null
+        },
+        {
+          "frame": 87264,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 10.005636,
+          "override": null
+        },
+        {
+          "frame": 87266,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 11.080844,
+          "override": null
+        },
+        {
+          "frame": 87268,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 12.156051,
+          "override": null
+        },
+        {
+          "frame": 87270,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 13.231258,
+          "override": null
+        },
+        {
+          "frame": 87272,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 14.306465,
+          "override": null
+        },
+        {
+          "frame": 87274,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 15.932144,
+          "override": null
+        },
+        {
+          "frame": 87276,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 16.98487,
+          "override": null
+        },
+        {
+          "frame": 87278,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 18.037597,
+          "override": null
+        },
+        {
+          "frame": 87280,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 19.090323,
+          "override": null
+        },
+        {
+          "frame": 87282,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 20.14305,
+          "override": null
+        },
+        {
+          "frame": 87284,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 20.822904,
+          "override": null
+        },
+        {
+          "frame": 87286,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 21.823808,
+          "override": null
+        },
+        {
+          "frame": 87288,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 22.824713,
+          "override": null
+        },
+        {
+          "frame": 87290,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 23.825617,
+          "override": null
+        },
+        {
+          "frame": 87292,
+          "risk_level": "low",
+          "action": "accelerate",
+          "target_speed_kmh": 24.826521,
+          "override": null
+        }
+      ],
+      "moving_since_frame": 87254
+    },
+    "checkpoint": "D:\\CARLA\\temp\\challenge_x86_20260926\\models\\lightweight_vla_adapter\\universal_three_scene_v6_sensor_policy\\model.pt",
+    "config": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene2\\segment_008\\runtime.json"
+  },
+  "competition_acceptance": {
+    "measurable_checks": {
+      "route_completed": false,
+      "collision_count_equals_0": true,
+      "restricted_lane_invasions_at_most_1": true,
+      "all_commands_announced": false,
+      "all_events_resolved": false,
+      "route_commands_aligned": false,
+      "sensor_evidence_available": false,
+      "vla_fallback_count_equals_0": false
+    },
+    "measurable_checks_passed": false,
+    "pending_external_metrics": [
+      "asr_accuracy",
+      "ordered_step_completion_and_omissions",
+      "semantic_alignment_accuracy",
+      "instruction_parse_latency_ms",
+      "end_to_end_decision_latency_ms",
+      "task_completion_rate",
+      "traffic_rule_violations_beyond_lane_invasion"
+    ],
+    "final_competition_pass_claimed": false
+  },
+  "ground_truth": {
+    "schema_version": "FrameGroundTruth/1.0.0",
+    "path": "D:\\CARLA\\test_result\\2026-10-02\\whole_routes_001\\scene2\\segment_008\\run\\frame_ground_truth.jsonl",
+    "records": 7892,
+    "frame_quality_counts": {
+      "OBSERVED": 5330,
+      "PARTIAL": 0,
+      "PROXY": 0,
+      "SCHEDULE_ONLY": 2562
+    },
+    "observed_event_frames": {
+      "bus_stop_passengers": 79,
+      "compound_slow_vehicle": 3293,
+      "crosswalk_pedestrian": 5030,
+      "slow_vehicle": 300
+    },
+    "event_evidence_modes": {
+      "slow_vehicle": "OBSERVED",
+      "compound_slow_vehicle": "OBSERVED",
+      "crosswalk_pedestrian": "OBSERVED",
+      "bus_stop_passengers": "OBSERVED",
+      "slow_cyclist": "OBSERVED"
+    },
+    "claim_capable_event_contracts": [
+      "bus_stop_passengers",
+      "compound_slow_vehicle",
+      "crosswalk_pedestrian",
+      "slow_cyclist",
+      "slow_vehicle"
+    ],
+    "model_output_used": true
+  }
+}
+[Camera] Direct video frames: 7892, dropped: 0

@@ -1,0 +1,916 @@
+{
+  "scenario": "basic_voice_urban_5km",
+  "frames": 12050,
+  "duration_s": 602.45,
+  "distance_m": 1277.683,
+  "average_speed_kmh": 7.639,
+  "max_speed_kmh": 59.438,
+  "task_completed": false,
+  "goal_distance_m": null,
+  "goal_reached": false,
+  "collision_events": 0,
+  "collision_free": true,
+  "lane_invasion_free": true,
+  "collision_rate_per_1000_frames": 0.0,
+  "collision_rate_per_km": 0.0,
+  "lane_invasion_events": 0,
+  "lane_invasion_rate_per_1000_frames": 0.0,
+  "illegal_lane_invasion_events": 0,
+  "illegal_lane_invasion_free": true,
+  "speeding_frames": 0,
+  "speeding_rate": 0.0,
+  "speed_limit_observed_frames": 12050,
+  "speed_limit_compliance_evaluable": true,
+  "target_speed_overshoot_frames": 0,
+  "target_speed_overshoot_rate": 0.0,
+  "violation_free": true,
+  "response_latency_ms_mean": 0.0,
+  "response_latency_ms_p95": 0.0,
+  "control_latency_ms_mean": 0.0,
+  "control_latency_ms_p95": 0.0,
+  "scenario_status": {
+    "status": "RUNNING",
+    "reason": "",
+    "actors": {
+      "ego": 138,
+      "traffic_139": 139,
+      "traffic_140": 140,
+      "traffic_141": 141,
+      "traffic_142": 142,
+      "traffic_143": 143,
+      "traffic_144": 144,
+      "traffic_145": 145,
+      "traffic_146": 146,
+      "traffic_147": 147,
+      "traffic_148": 148,
+      "traffic_149": 149,
+      "traffic_150": 150,
+      "traffic_151": 151,
+      "traffic_152": 152
+    },
+    "metrics": {
+      "collision_count": 0,
+      "lane_invasion_count": 0,
+      "simulation_time": 602.5000089772045,
+      "min_distance": null,
+      "reaction_time": null,
+      "route_progress_m": 1336.76,
+      "route_length_m": 5000.0,
+      "route_cross_track_error_m": 0.069,
+      "illegal_lane_invasion_count": 0
+    },
+    "route_progress_m": 1336.76,
+    "route_length_m": 5000.0,
+    "route_cross_track_error_m": 0.069,
+    "emitted_command_ids": [
+      "c01_depart_30",
+      "c02_cruise_60",
+      "c03_reduce_for_right_turn",
+      "c04_change_left",
+      "c08_keep_50"
+    ],
+    "applied_route_directives": [
+      {
+        "distance_m": 3075.0,
+        "action": "turn_right",
+        "id": "c07_turn_right",
+        "applied_distance_m": 3075.0,
+        "entry_road_id": 38,
+        "selected_road_id": 2370,
+        "entry_yaw_deg": 180.288
+      }
+    ],
+    "route_preflight": {
+      "selected_candidate_position": 0,
+      "selected_spawn_location": {
+        "x": 24.571,
+        "y": 103.751,
+        "z": 1.0
+      },
+      "applied_directives": [
+        {
+          "distance_m": 3075.0,
+          "action": "turn_right",
+          "id": "c07_turn_right",
+          "applied_distance_m": 3075.0,
+          "entry_road_id": 38,
+          "selected_road_id": 2370,
+          "entry_yaw_deg": 180.288
+        }
+      ],
+      "continuity_horizon_m": 5000.0,
+      "max_uncommanded_heading_delta_deg": 50.0,
+      "turn_evidence": [
+        {
+          "id": "c07_turn_right",
+          "action": "turn_right",
+          "entry_distance_m": 3075.0,
+          "entry_road_id": 38,
+          "exit_road_id": 27,
+          "heading_change_deg": 89.735,
+          "junction_observed": true
+        }
+      ],
+      "corridor_evidence": {
+        "valid": true,
+        "start_outside_junction": true,
+        "minimum_required_lanes": 2,
+        "sample_step_m": 50.0,
+        "multilane_fraction": 1.0,
+        "minimum_multilane_route_fraction": 0.45,
+        "lane_change_windows": [
+          {
+            "command_id": "c04_change_left",
+            "start_m": 800.0,
+            "end_m": 1300.0,
+            "minimum_observed_lanes": 3,
+            "valid": true
+          },
+          {
+            "command_id": "c05_change_right",
+            "start_m": 950.0,
+            "end_m": 1450.0,
+            "minimum_observed_lanes": 3,
+            "valid": true
+          }
+        ]
+      }
+    },
+    "turn_executions": {},
+    "traffic": {
+      "mode": "fixed_route_traffic_manager",
+      "active_actor_count": 23,
+      "visible_actor_count": 0,
+      "recycle_count": 295,
+      "density": {
+        "gaps": 1,
+        "replacements": 0,
+        "added": 0,
+        "total_added": 4,
+        "eligible_sources": 5,
+        "progress_m": 1336.8
+      },
+      "following_source_spawn_count": 19,
+      "traffic_event_count": 344,
+      "recent_traffic_events": [
+        {
+          "id": "density_00001",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 400,
+          "actor_id": 428,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 2,
+          "tick": 10250
+        },
+        {
+          "id": "follow_source_00016",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 415,
+          "actor_id": 429,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 3,
+          "tick": 10280
+        },
+        {
+          "id": "follow_source_00014",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 408,
+          "actor_id": 430,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 3,
+          "tick": 10310
+        },
+        {
+          "id": "follow_source_00006",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 414,
+          "actor_id": 431,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 1,
+          "tick": 10350
+        },
+        {
+          "id": "follow_source_00013",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 418,
+          "actor_id": 432,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 1,
+          "tick": 10460
+        },
+        {
+          "id": "follow_source_00017",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 420,
+          "actor_id": 433,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 1,
+          "tick": 10530
+        },
+        {
+          "id": "follow_source_00015",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 421,
+          "actor_id": 434,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 3,
+          "tick": 10540
+        },
+        {
+          "id": "follow_source_00005",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 411,
+          "actor_id": 435,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 2,
+          "tick": 10610
+        },
+        {
+          "id": "follow_source_00000",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 422,
+          "actor_id": 436,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 2,
+          "tick": 10620
+        },
+        {
+          "id": "follow_source_00009",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 413,
+          "actor_id": 437,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 1,
+          "tick": 10700
+        },
+        {
+          "id": "follow_source_00012",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 424,
+          "actor_id": 438,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 3,
+          "tick": 10770
+        },
+        {
+          "id": "follow_source_00011",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 427,
+          "actor_id": 439,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 1,
+          "tick": 10770
+        },
+        {
+          "id": "follow_source_00010",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 426,
+          "actor_id": 440,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 2,
+          "tick": 10860
+        },
+        {
+          "id": "density_00002",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 417,
+          "actor_id": 441,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 3,
+          "tick": 10860
+        },
+        {
+          "id": "density_00003",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 416,
+          "actor_id": 442,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 1,
+          "tick": 10930
+        },
+        {
+          "id": "follow_source_00016",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 429,
+          "actor_id": 443,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 3,
+          "tick": 10980
+        },
+        {
+          "id": "density_00000",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 419,
+          "actor_id": 444,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 3,
+          "tick": 11000
+        },
+        {
+          "id": "follow_source_00014",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 430,
+          "actor_id": 445,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 2,
+          "tick": 11090
+        },
+        {
+          "id": "follow_source_00013",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 432,
+          "actor_id": 446,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 1,
+          "tick": 11100
+        },
+        {
+          "id": "follow_source_00017",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 433,
+          "actor_id": 447,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 1,
+          "tick": 11160
+        },
+        {
+          "id": "follow_source_00006",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 431,
+          "actor_id": 448,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 2,
+          "tick": 11230
+        },
+        {
+          "id": "follow_source_00005",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 435,
+          "actor_id": 449,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 3,
+          "tick": 11240
+        },
+        {
+          "id": "follow_source_00009",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 437,
+          "actor_id": 450,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 1,
+          "tick": 11300
+        },
+        {
+          "id": "follow_source_00015",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 434,
+          "actor_id": 451,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 2,
+          "tick": 11330
+        },
+        {
+          "id": "follow_source_00012",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 438,
+          "actor_id": 452,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 3,
+          "tick": 11390
+        },
+        {
+          "id": "follow_source_00011",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 439,
+          "actor_id": 453,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 1,
+          "tick": 11410
+        },
+        {
+          "id": "follow_source_00000",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 436,
+          "actor_id": 454,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 2,
+          "tick": 11460
+        },
+        {
+          "id": "follow_source_00010",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 440,
+          "actor_id": 455,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 3,
+          "tick": 11490
+        },
+        {
+          "id": "density_00003",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 442,
+          "actor_id": 456,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 1,
+          "tick": 11530
+        },
+        {
+          "id": "density_00002",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 441,
+          "actor_id": 457,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 2,
+          "tick": 11560
+        },
+        {
+          "id": "density_00001",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 428,
+          "actor_id": 458,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 3,
+          "tick": 11620
+        },
+        {
+          "id": "follow_source_00016",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 443,
+          "actor_id": 459,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 1,
+          "tick": 11660
+        },
+        {
+          "id": "follow_source_00014",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 445,
+          "actor_id": 460,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 2,
+          "tick": 11710
+        },
+        {
+          "id": "follow_source_00013",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 446,
+          "actor_id": 461,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 3,
+          "tick": 11730
+        },
+        {
+          "id": "follow_source_00017",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 447,
+          "actor_id": 462,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 2,
+          "tick": 11790
+        },
+        {
+          "id": "follow_source_00006",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 448,
+          "actor_id": 463,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 3,
+          "tick": 11860
+        },
+        {
+          "id": "density_00000",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 444,
+          "actor_id": 464,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 1,
+          "tick": 11890
+        },
+        {
+          "id": "follow_source_00015",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 451,
+          "actor_id": 465,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 3,
+          "tick": 11950
+        },
+        {
+          "id": "follow_source_00005",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 449,
+          "actor_id": 466,
+          "route_distance_m": 1786.8,
+          "lane_from_right": 1,
+          "tick": 12010
+        },
+        {
+          "id": "follow_source_00012",
+          "status": "respawned_outside_protected_radius",
+          "old_actor_id": 452,
+          "actor_id": 467,
+          "route_distance_m": 1606.8,
+          "lane_from_right": 2,
+          "tick": 12040
+        }
+      ],
+      "scripted_event_count": 0
+    }
+  },
+  "runner_stop_reason": "route_stalled",
+  "universal_vla_controller": {
+    "controller": "universal-vla-controller",
+    "input_mode": "text_raw_4view_rgb_lidar_bidirectional_radar_vehicle_environment",
+    "model_output_used": true,
+    "training_teacher_force_control": false,
+    "decision_count": 4017,
+    "model_accepted_count": 295,
+    "safety_gate_or_canonical_count": 3722,
+    "fallback_count": 0,
+    "sensor_warmup_safe_hold_count": 0,
+    "liveness_override_counts": {
+      "temporal_risk_confirmation": 4,
+      "unconfirmed_stop_crawl_floor": 3,
+      "low_risk_command_speed_floor": 381,
+      "requested_lane_wait_for_sensor_clearance": 920,
+      "lane_change_wait_timeout": 2,
+      "sensor_clear_low_speed_lane_completion": 224
+    },
+    "proposal_action_counts": {
+      "accelerate": 968,
+      "keep_lane": 524,
+      "decelerate": 1919,
+      "stop": 48,
+      "emergency_brake": 490,
+      "lane_change_left": 68
+    },
+    "final_action_counts": {
+      "accelerate": 731,
+      "decelerate": 1349,
+      "emergency_brake": 193,
+      "keep_lane": 412,
+      "stop": 1312,
+      "lane_change_left": 20
+    },
+    "full_decision_latency_ms": {
+      "mean": 27.34,
+      "median": 26.876,
+      "p95": 32.766,
+      "max": 254.437
+    },
+    "sensor_to_decision_response_ms": {
+      "mean": 27.679,
+      "median": 26.98,
+      "p95": 34.063,
+      "max": 254.437,
+      "within_120_ms_rate": 0.998008
+    },
+    "sensor_batch_schema_version": "unified_sensor_batch/1.0",
+    "supervisor": {
+      "global_visual_risk_history": [
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "high",
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "medium",
+        "medium"
+      ],
+      "left_lane_visual_risk_history": [
+        "medium",
+        "medium",
+        "medium",
+        "high",
+        "medium",
+        "medium",
+        "medium",
+        "high",
+        "high",
+        "high",
+        "medium",
+        "medium",
+        "high",
+        "high",
+        "medium",
+        "medium",
+        "high",
+        "high",
+        "high",
+        "high"
+      ],
+      "right_lane_visual_risk_history": [],
+      "stopped_since_frame": 25674,
+      "resume_active_intent": null,
+      "crawl_pending": true,
+      "high_confirm_count": 0,
+      "override_counts": {
+        "temporal_risk_confirmation": 4,
+        "unconfirmed_stop_crawl_floor": 3,
+        "low_risk_command_speed_floor": 386,
+        "stationary_high_risk_liveness": 170,
+        "lane_change_wait_timeout": 94,
+        "stationary_high_risk_radar_guarded_crawl": 311
+      },
+      "radar_caution_crawl_active": false,
+      "decision_history": [
+        {
+          "frame": 27942,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27945,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27948,
+          "risk_level": "high",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27951,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27954,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27957,
+          "risk_level": "high",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27960,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27963,
+          "risk_level": "high",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27966,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27969,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27972,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27975,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27978,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27981,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27984,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27987,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27990,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27993,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27996,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 27999,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28002,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28005,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28008,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28011,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28014,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28017,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28020,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28023,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28026,
+          "risk_level": "high",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28029,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28032,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28035,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28038,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28041,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28044,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28047,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28050,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28053,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28056,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        },
+        {
+          "frame": 28059,
+          "risk_level": "medium",
+          "action": "stop",
+          "target_speed_kmh": 0.0,
+          "override": "requested_lane_wait_for_sensor_clearance"
+        }
+      ],
+      "moving_since_frame": null
+    }
+  },
+  "scenario_goal_reached": false,
+  "completion_basis": "external_distance_or_runner_stop",
+  "scenario_reason": "route_stalled"
+}

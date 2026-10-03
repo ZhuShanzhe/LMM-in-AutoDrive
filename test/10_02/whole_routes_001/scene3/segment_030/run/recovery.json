@@ -1,0 +1,22 @@
+{
+  "start_progress_m": 4841.147405388871,
+  "requested_initial_speed_kmh": 10.0,
+  "initial_speed_kmh": 10.0,
+  "withheld_reason": null,
+  "truth_scope": "recovery placement clearance only; never model input",
+  "external_intervention": true,
+  "controller_state": "fresh",
+  "environment_state": "cold_reset",
+  "retained_instruction": "latest_and_future",
+  "recovery_assist_m": 0.0,
+  "withdrawn_instruction_ids": [
+    "scene3_general_hazard",
+    "scene3_cut_in_decelerate",
+    "scene3_work_zone_warning",
+    "scene3_right_lane_closure",
+    "scene3_pass_work_zone",
+    "scene3_worker_crossing",
+    "scene3_blocked_lane_change_left"
+  ],
+  "simulation_frame": 81840
+}

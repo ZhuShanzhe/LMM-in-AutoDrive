@@ -1,0 +1,18 @@
+{
+  "frame": 145852,
+  "sim_time_s": 10.100000000000001,
+  "route_progress_m": 3102.7632125061723,
+  "control_source": "MODEL",
+  "best_progress_m": 3102.7632125061723,
+  "route_length_m": 6000.0,
+  "speed_kmh": 0.001385899039558953,
+  "position": {
+    "x": -37.59589385986328,
+    "y": -203.99571228027344,
+    "z": 4.153212070465088
+  },
+  "yaw_deg": 179.93899536132812,
+  "recorded_frames": 202,
+  "start_progress_m": 3102.7632125061723,
+  "stop_reason": "controller_error_no_progress"
+}

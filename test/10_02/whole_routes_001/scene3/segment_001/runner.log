@@ -1,0 +1,57 @@
+Runtime config: D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\configs\scene_3_emergency_6km_runtime.json
+Configured events: 7
+Event variant: baseline
+CARLA server: 0.9.16
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town10HD_Opt.bin 
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+Town05_Opt layers: All (buildings, foliage, streetlights, props)
+Official map and route: Carla/Maps/Town05_Opt, length=6000.4 m
+INFO:  Found the required file in cache!  Carla/Maps/TM/Town05_Opt.bin 
+Weather: rainy night, wet road, fog density 35
+Town05 night lights enabled: 417
+Wet-road friction triggers: count=157, friction=0.68
+Wet-weather ego speed cap: requested=40.0, effective=32.0 km/h
+Ego spawned: road=36, lane=-2, route_s=0.0 m
+Ego mode: vla-route-pid 32.0 km/h
+Scene3 route-PID executor assigned: waypoints=2968
+Dynamic vehicle state: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_001\run\vehicle_state.jsonl
+RGB camera: chase_rgb (synchronized direct recorder)
+H.264 video output: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_001\run\drive.mp4
+Safety sensors: collision, lane_invasion
+BACKGROUND TRAFFIC ARMED | planned=16 | checkpoint=0.0 m | future_spawn_lead=220.0 m | reserved_for_gap=2 | configured=18
+BACKGROUND EARLY SPAWNED | role=scene3_background_01 | lane=-3
+BACKGROUND EARLY SPAWNED | role=scene3_background_02 | lane=-1
+BACKGROUND EARLY SPAWNED | role=scene3_background_03 | lane=-2
+BACKGROUND EARLY SPAWNED | role=scene3_background_04 | lane=-3
+BACKGROUND EARLY SPAWNED | role=scene3_background_05 | lane=-1
+BACKGROUND EARLY SPAWNED | role=scene3_background_06 | lane=-2
+WORKER SPAWNED | role=scene3_crossing_worker | lane=-4 | s=3345.0 m | z_offset=0.3 m | attempt=1
+WORKER SPAWNED | role=scene3_static_worker | lane=-4 | s=3380.0 m | z_offset=0.3 m | attempt=1
+WORKER CROSSING ARMED | crossing_s=3345.0 m | static_workers=2
+W1002 12:19:33.253000 43596 site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+Scene3 online text-to-VLA controller assigned
+Frame ground truth: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_001\run\frame_ground_truth.jsonl
+FOLLOWING SOURCE SPAWNED | route=137.8 m | lane=-3 | active=1
+FOLLOWING SOURCE SPAWNED | route=145.8 m | lane=-2 | active=2
+FOLLOWING SOURCE SPAWNED | route=151.8 m | lane=-1 | active=3
+BACKGROUND TRAFFIC SPAWNED | role=scene3_background_07 | active=10
+BACKGROUND TRAFFIC SPAWNED | role=scene3_background_08 | active=11
+FOLLOWING SOURCE SPAWNED | route=771.3 m | lane=-1 | active=4
+FOLLOWING SOURCE SPAWNED | route=771.3 m | lane=-2 | active=5
+FOLLOWING SOURCE SPAWNED | route=771.3 m | lane=-3 | active=6
+ROUTE STALLED | s=771.3 m | elapsed=256.9 s
+[Camera] Direct video frames: 5136, dropped: 0
+Event scheduler summary:
+  pending: 7
+  active: 0
+  resolved: 0
+Event timeline: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_001\run\event_timeline.jsonl
+Safety audit:
+  collisions: 0
+  lane-invasion events: 4
+  invalid-lane samples: 0
+RGB frame counts:
+  chase_rgb: 5136
+Scene summary: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_001\run\scene_summary.json
+CHASE RGB DIRECT H.264 CAPTURE: PASS
+Scene actors cleaned up

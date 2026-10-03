@@ -1,0 +1,24 @@
+{
+  "start_progress_m": 5588.778928285655,
+  "requested_initial_speed_kmh": 10.0,
+  "initial_speed_kmh": 10.0,
+  "withheld_reason": null,
+  "truth_scope": "recovery placement clearance only; never model input",
+  "external_intervention": true,
+  "controller_state": "fresh",
+  "environment_state": "cold_reset",
+  "retained_instruction": "latest_and_future",
+  "recovery_assist_m": 80.0,
+  "withdrawn_instruction_ids": [
+    "s2_t05_cmd_01",
+    "s2_t05_cmd_02",
+    "s2_t05_cmd_05",
+    "s2_t05_cmd_07",
+    "s2_t05_cmd_09",
+    "s2_t05_cmd_10",
+    "s2_t05_cmd_11",
+    "s2_t05_cmd_12",
+    "s2_t05_cmd_13"
+  ],
+  "simulation_frame": 136172
+}

@@ -1,0 +1,7 @@
+{
+  "withdrawn_instruction_ids": [],
+  "recover_after_recorded_stall": true,
+  "stall_timeout_s": 30,
+  "assist_next_start_m": null,
+  "assist_m": 80
+}

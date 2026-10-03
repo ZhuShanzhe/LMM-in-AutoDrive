@@ -1,0 +1,65 @@
+Runtime config: D:\CARLA\temp\challenge_code_upload_20260928\experiment\CARLA\configs\scene_3_emergency_6km_runtime.json
+Configured events: 7
+Event variant: baseline
+CARLA server: 0.9.16
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town10HD_Opt.bin 
+INFO:  Found the required file in cache!  Carla/Maps/Nav/Town05_Opt.bin 
+Town05_Opt layers: All (buildings, foliage, streetlights, props)
+Official map and route: Carla/Maps/Town05_Opt, length=6000.4 m
+INFO:  Found the required file in cache!  Carla/Maps/TM/Town05_Opt.bin 
+Weather: rainy night, wet road, fog density 35
+Town05 night lights enabled: 417
+Wet-road friction triggers: count=157, friction=0.68
+Wet-weather ego speed cap: requested=40.0, effective=32.0 km/h
+Ego spawned: road=37, lane=-1, route_s=3421.5 m
+Ego mode: vla-route-pid 32.0 km/h
+Scene3 route-PID executor assigned: waypoints=2968
+Dynamic vehicle state: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_024\run\vehicle_state.jsonl
+RGB camera: chase_rgb (synchronized direct recorder)
+H.264 video output: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_024\run\drive.mp4
+Safety sensors: collision, lane_invasion
+BACKGROUND TRAFFIC ARMED | planned=16 | checkpoint=3421.5 m | future_spawn_lead=220.0 m | reserved_for_gap=2 | configured=18
+EVENT SKIPPED  | scene3_cut_in | route=3421.5 m
+EVENT SKIPPED  | scene3_advance_warning | route=3421.5 m
+EVENT SKIPPED  | scene3_cone_taper | route=3421.5 m
+EVENT SKIPPED  | scene3_temporary_pedestrian | route=3421.5 m
+W1002 15:30:23.361000 58756 site-packages\torch\utils\flop_counter.py:29] triton not found; flop counting will not work for triton kernels
+Scene3 online text-to-VLA controller assigned
+Frame ground truth: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_024\run\frame_ground_truth.jsonl
+WORK ZONE SPAWNED | vehicles=2 | boundary_cones=10 | closed_lane=-2 | s=3150.0-3450.0 m
+EVENT ACTIVE   | scene3_work_zone | route=3421.5 m
+BACKGROUND TRAFFIC RETIRED | count=0 | reason=completed_work_zone_diversity_window
+EVENT RESOLVED | scene3_work_zone | route=3451.5 m
+FOLLOWING SOURCE SPAWNED | route=3683.6 m | lane=-3 | active=1
+FOLLOWING SOURCE SPAWNED | route=3691.7 m | lane=-2 | active=2
+FOLLOWING SOURCE SPAWNED | route=3699.9 m | lane=-1 | active=3
+FOLLOWING SOURCE SPAWNED | route=3776.3 m | lane=-3 | active=4
+FOLLOWING SOURCE SPAWNED | route=3822.3 m | lane=-1 | active=5
+FOLLOWING SOURCE SPAWNED | route=3822.3 m | lane=-2 | active=6
+FOLLOWING SOURCE SPAWNED | route=3848.3 m | lane=-3 | active=6
+FOLLOWING SOURCE SPAWNED | route=3893.1 m | lane=-2 | active=6
+FOLLOWING SOURCE SPAWNED | route=3895.1 m | lane=-1 | active=6
+FOLLOWING SOURCE SPAWNED | route=3920.1 m | lane=-3 | active=6
+FOLLOWING SOURCE SPAWNED | route=4208.8 m | lane=-2 | active=6
+FOLLOWING SOURCE SPAWNED | route=4398.2 m | lane=-3 | active=6
+UNSAFE TARGET-LANE GAP CREATED | front=35.0 m | rear=20.0 m
+MAINTENANCE BLOCKAGE SPAWNED | lane=-2 s=4850.0 m | target_lane=-1 initially_unsafe
+EVENT ACTIVE   | scene3_blocked_lane | route=4701.3 m
+TARGET-LANE GAP OPENING | front_speed=65.0 km/h | rear_speed=20.0 km/h
+BLOCKED-LANE GAP CONTROL UNAVAILABLE | reason=gap_control_actor_unavailable | release_pending=true
+ROUTE STALLED | s=4701.3 m | elapsed=474.4 s
+[Camera] Direct video frames: 9487, dropped: 0
+Event scheduler summary:
+  pending: 1
+  active: 1
+  resolved: 1
+Event timeline: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_024\run\event_timeline.jsonl
+Safety audit:
+  collisions: 0
+  lane-invasion events: 13
+  invalid-lane samples: 0
+RGB frame counts:
+  chase_rgb: 9487
+Scene summary: D:\CARLA\test_result\2026-10-02\whole_routes_001\scene3\segment_024\run\scene_summary.json
+CHASE RGB DIRECT H.264 CAPTURE: PASS
+Scene actors cleaned up

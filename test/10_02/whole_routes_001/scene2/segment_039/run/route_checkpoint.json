@@ -1,0 +1,33 @@
+{
+  "frame": 31474,
+  "sim_time_s": 142.65000212565064,
+  "route_progress_m": 4851.626537165157,
+  "control_source": "MODEL",
+  "best_progress_m": 4851.626537165157,
+  "route_length_m": 8000.602435215494,
+  "speed_kmh": 0.0,
+  "position": {
+    "x": -184.59445190429688,
+    "y": -84.83720397949219,
+    "z": 0.0042075347155332565
+  },
+  "yaw_deg": -90.1145248413086,
+  "pitch_deg": 0.16579599678516388,
+  "roll_deg": 0.1262163370847702,
+  "traffic_signal_truth": {
+    "scope": "evaluation_only",
+    "at_trigger": false,
+    "state": null
+  },
+  "applied_control": {
+    "throttle": 0.0,
+    "brake": 0.0,
+    "steer": 0.0,
+    "hand_brake": false,
+    "reverse": false,
+    "gear": 1
+  },
+  "recorded_frames": 2853,
+  "start_progress_m": 4845.626536938846,
+  "stop_reason": "route_stalled"
+}

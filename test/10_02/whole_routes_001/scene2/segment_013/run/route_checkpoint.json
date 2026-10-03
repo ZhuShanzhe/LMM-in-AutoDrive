@@ -1,0 +1,20 @@
+{
+  "frame": 23052,
+  "sim_time_s": 147.75000220164657,
+  "route_progress_m": 1591.4470083773037,
+  "control_source": "MODEL",
+  "best_progress_m": 1591.4470083773037,
+  "route_length_m": 8000.602435215494,
+  "speed_kmh": 0.003742343863914144,
+  "position": {
+    "x": -15.61011791229248,
+    "y": 187.5935821533203,
+    "z": 0.22514255344867706
+  },
+  "yaw_deg": -179.8594207763672,
+  "pitch_deg": 2.50118088722229,
+  "roll_deg": 0.0076894075609743595,
+  "recorded_frames": 2955,
+  "start_progress_m": 1577.447013301031,
+  "stop_reason": "route_stalled"
+}
