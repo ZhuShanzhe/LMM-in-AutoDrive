@@ -1,0 +1,36 @@
+{
+  "schema_version": "diagnostic_route_index/1.0",
+  "map_name": "Carla/Maps/Town05_Opt",
+  "map_sha256": "7edc53b0be840e177598da7a4ed9571146d7b2595ce280d154c90f92e8a48851",
+  "scenes": {
+    "scene_1": {
+      "route_length_m": 5000.0,
+      "phase_count": 15,
+      "section_count": 36,
+      "task_count": 15,
+      "event_count": 0,
+      "geometry_features": 46,
+      "source_sha256": "eba491915aad6ed7079d96f4bebc294bcdf8b96329bff89f2979e944d356fd8f"
+    },
+    "scene_2": {
+      "route_length_m": 8000.0,
+      "phase_count": 15,
+      "section_count": 54,
+      "task_count": 15,
+      "event_count": 5,
+      "geometry_features": 68,
+      "source_sha256": "203889584f05d9d7b6440d499128cd63319d0d0d67d4af449386ad00d3eb0686"
+    },
+    "scene_3": {
+      "route_length_m": 6000.0,
+      "phase_count": 8,
+      "section_count": 40,
+      "task_count": 7,
+      "event_count": 6,
+      "geometry_features": 30,
+      "source_sha256": "c0b36a89e65ff870ca8805ba20e63d7cffb60e323ef053a4f9788700cbfd0916"
+    }
+  },
+  "scenario_modified": false,
+  "weights_modified": false
+}

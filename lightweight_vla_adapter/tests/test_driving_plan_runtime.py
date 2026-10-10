@@ -22,10 +22,39 @@ def documents():
     return d,w,r
 
 
+@pytest.mark.parametrize('fault', [None, 'stale', 'wrong_step', 'wrong_command', 'centered', 'unissued',
+    'missing_target', 'wrong_target', 'invalid_previous_status'])
+def test_return_direction_survives_lane_entry_until_vehicle_is_centered(fault):
+    runtime = DrivingPlanRuntime()
+    original = dict(road_id=42, section_id=0, lane_id=-2)
+    runtime.document = {'request_id': 'return-request'}
+    runtime.plan_origin_lane = original
+    runtime.frame_id = 'f20'
+    runtime.return_resolution = dict(status='DIRECTION_RESOLVED', direction='right', original_lane_ref=original)
+    step = dict(step_id='return-step', action='CHANGE_LANE', parameters={'return_to':'ORIGINAL_LANE'})
+    evidence = dict(observation_frame_id='f20', source_step_id='return-step',
+        pid=dict(current_lane_ref=original, current_lane_id=-2, target_lane_id=-2,
+            lane_change_command_id='return-request:return-step', lane_change_completed=False,
+            lateral_error_m=.94, heading_error_deg=20.))
+    if fault == 'stale': evidence['observation_frame_id'] = 'f19'
+    if fault == 'wrong_step': evidence['source_step_id'] = 'other'
+    if fault == 'wrong_command': evidence['pid']['lane_change_command_id'] = 'other'
+    if fault == 'centered':
+        evidence['pid'].update(lateral_error_m=.1, heading_error_deg=1.)
+    if fault == 'unissued': runtime.return_resolution = None
+    if fault == 'missing_target': evidence['pid'].pop('target_lane_id')
+    if fault == 'wrong_target': evidence['pid']['target_lane_id'] = -3
+    if fault == 'invalid_previous_status': runtime.return_resolution['status'] = 'UNKNOWN'
+    resolution = runtime._resolve_return(step, evidence)
+    assert resolution['status'] == ('DIRECTION_RESOLVED' if fault is None else 'ALREADY_IN_ORIGINAL_LANE')
+    assert resolution['direction'] == ('right' if fault is None else None)
+
+
 @pytest.mark.parametrize('fault',[None,'stale','wrong_step','off_lane','stopped','gap','unhandled_condition'])
-def test_keep_lane_requires_fresh_centered_moving_execution(fault):
+@pytest.mark.parametrize('action',['KEEP_LANE','PROCEED'])
+def test_keep_lane_requires_fresh_centered_moving_execution(fault,action):
     d,w,r=documents();runtime=DrivingPlanRuntime()
-    d['intent']['steps'][0].update(action='KEEP_LANE',parameters={},completion={'type':'ACTION_REACHED'})
+    d['intent']['steps'][0].update(action=action,parameters={},completion={'type':'ACTION_REACHED'})
     if fault=='unhandled_condition':d['intent']['steps'][0]['parameters']={'until':'bus_stop'}
     for i in range(12):
         frame=f'f{i}';w['frame_id']=r['frame_id']=frame
@@ -38,6 +67,37 @@ def test_keep_lane_requires_fresh_centered_moving_execution(fault):
             speed_mps=0. if fault=='stopped' else 2.,execution_state=evidence)
         runtime.advance(w,r)
     assert (runtime.state['step_states'][0]['status']=='COMPLETED') == (fault is None)
+
+
+@pytest.mark.parametrize('direction',['RIGHT','LEFT','CURRENT'])
+@pytest.mark.parametrize('fault',[None,'stale','wrong_step','off_lane','stopped',
+    'gap','unhandled_condition','unknown_topology','missing_side_key','not_edge','lane_transition'])
+def test_parameterized_lane_keep_completes_only_observed_lane_position(direction,fault):
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    d['intent']['steps'][0].update(action='KEEP_LANE',parameters={'direction':direction},
+        completion={'type':'ACTION_REACHED'})
+    if fault=='unhandled_condition':d['intent']['steps'][0]['parameters']['until']='bus_stop'
+    for i in range(12):
+        frame=f'f{i}';w['frame_id']=r['frame_id']=frame
+        current=dict(road_id=28,section_id=0,lane_id=-2)
+        evidence=dict(source_step_id='step_1',observation_frame_id=frame,
+            pid=dict(current_lane_id=-2,current_lane_ref=current,in_junction=False,
+                lateral_error_m=.1,heading_error_deg=1.,lane_topology_valid=True,
+                left_lane_ref=None,right_lane_ref=None))
+        pid=evidence['pid']
+        if fault=='stale':evidence['observation_frame_id']='old'
+        if fault=='wrong_step':evidence['source_step_id']='other'
+        if fault=='off_lane':pid['lateral_error_m']=1.
+        if fault=='unknown_topology':pid['lane_topology_valid']=False
+        if fault=='missing_side_key':pid.pop(direction.lower()+'_lane_ref',None)
+        if fault=='not_edge':pid[direction.lower()+'_lane_ref']=dict(road_id=28,section_id=0,lane_id=-1)
+        if fault=='lane_transition':current['road_id']=28+i%2
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*(.5 if fault=='gap' else .1),
+            speed_mps=0. if fault=='stopped' else 2.,execution_state=evidence)
+        runtime.advance(w,r)
+    expected=(fault is None or (direction=='CURRENT' and fault in
+        ('unknown_topology','missing_side_key','not_edge')))
+    assert (runtime.state['step_states'][0]['status']=='COMPLETED') == expected
 
 
 @pytest.mark.parametrize('exit_yaw,entered,expected',[(2.,True,True),(90.,True,False),(0.,False,False)])
@@ -81,6 +141,24 @@ def test_turn_completion_requires_observed_matching_direction(direction,yaw,expe
         runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=2.,execution_state=evidence)
         runtime.advance(w,r)
     assert (runtime.state['step_states'][0]['status']=='COMPLETED') == expected
+
+
+def test_turn_exit_is_observed_before_following_lane_change_starts():
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    d['intent']['steps'][0].update(action='TURN',parameters={'direction':'RIGHT',
+        'target_location':{'x':10.,'y':10.}},completion={'type':'JUNCTION_EXITED'})
+    d['intent']['steps'][1].update(action='CHANGE_LANE',parameters={'direction':'LEFT'},
+        completion={'type':'LANE_CHANGE_COMPLETED'})
+    for i in range(20):
+        frame=f'f{i}';w['frame_id']=r['frame_id']=frame
+        evidence=dict(source_step_id='step_1',observation_frame_id=frame,
+            ego_heading_deg=0. if i<4 else 90.,pid=dict(in_junction=i<4,
+                current_lane_id=-2,lateral_error_m=.1,heading_error_deg=1.))
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=2.,execution_state=evidence)
+        runtime.advance(w,r)
+        if i<=16:
+            assert runtime.state['active_step_id']=='step_1'
+    assert runtime.state['step_states'][0]['status']=='COMPLETED'
 
 
 @pytest.mark.parametrize('condition,fault,expected',[
@@ -217,6 +295,85 @@ def test_explicit_unreachable_speed_fails_instead_of_deadlocking():
     assert 'target_speed_unreachable' in runtime.state['reason_codes']
 
 
+@pytest.mark.parametrize('codes',[
+    ['junction_speed_cap'], ['lane_transition_speed_cap'], ['risk_speed_cap'],
+    ['road_speed_limit','junction_speed_cap'], [], ['unknown_cap']])
+def test_temporary_speed_constraint_never_completes_original_goal(codes):
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    for i in range(12):
+        frame=f'temporary-{i}';w['frame_id']=r['frame_id']=frame
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=3.,
+            execution_state=execution(frame,'step_1',speed_target_status='CONSTRAINED',
+                effective_target_speed_kmh=10.8,speed_constraint_codes=codes))
+        runtime.advance(w,r)
+    assert runtime.state['active_step_id']=='step_1'
+    assert runtime.state['step_states'][0]['status']!='COMPLETED'
+    for i in range(12,22):
+        frame=f'recovered-{i}';w['frame_id']=r['frame_id']=frame
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=4.,
+            execution_state=execution(frame,'step_1',speed_target_status='TRACKING'))
+        runtime.advance(w,r)
+    assert runtime.state['step_states'][0]['status']=='COMPLETED'
+    assert 'observed_constrained_speed_completion' not in runtime.state['step_states'][0]['reason_codes']
+
+
+def test_speed_completion_uses_configured_continuous_hold():
+    d,w,r=documents();runtime=DrivingPlanRuntime(speed_completion_hold_s=2.)
+    for i in range(18):
+        frame=f'hold-{i}';w['frame_id']=r['frame_id']=frame
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=4.,
+            execution_state=execution(frame,'step_1'))
+        runtime.advance(w,r)
+    assert runtime.state['active_step_id']=='step_1'
+    # A speed excursion must restart the continuous hold, not accumulate it.
+    for i in range(18,42):
+        frame=f'hold-{i}';w['frame_id']=r['frame_id']=frame
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=3. if i==18 else 4.,
+            execution_state=execution(frame,'step_1'))
+        runtime.advance(w,r)
+        if i<39:
+            assert runtime.state['active_step_id']=='step_1'
+    assert runtime.state['step_states'][0]['status']=='COMPLETED'
+
+
+@pytest.mark.parametrize('value',[True,0.,.1,11.,float('nan'),float('inf'),'2'])
+def test_invalid_speed_hold_rejected(value):
+    with pytest.raises(ValueError):DrivingPlanRuntime(speed_completion_hold_s=value)
+
+
+@pytest.mark.parametrize('value',[True,0.,3.1,float('nan'),float('inf'),'2'])
+def test_invalid_speed_tolerance_rejected(value):
+    with pytest.raises(ValueError):DrivingPlanRuntime(speed_completion_tolerance_kmh=value)
+
+
+def test_native_speed_feedback_uses_two_kmh_band_for_two_seconds():
+    d,w,r=documents();runtime=DrivingPlanRuntime(speed_completion_hold_s=2.,
+        speed_completion_tolerance_kmh=2.)
+    for i in range(23):
+        frame=f'tolerance-{i}';w['frame_id']=r['frame_id']=frame
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=(14.4-1.5)/3.6,
+            execution_state=execution(frame,'step_1'))
+        runtime.advance(w,r)
+        if i<20:assert runtime.state['active_step_id']=='step_1'
+    assert runtime.state['step_states'][0]['status']=='COMPLETED'
+
+
+@pytest.mark.parametrize('unsafe_frame',[0,4])
+def test_path_clear_timer_restarts_after_transient_unsafe_observation(unsafe_frame):
+    d,w,r=documents();runtime=DrivingPlanRuntime()
+    d['intent']['steps'][0].update(action='CHECK',parameters={'condition':'PATH_CLEAR'},
+        completion={'type':'ACTION_REACHED'})
+    for i in range(30):
+        frame=f'recovery-{i}';w['frame_id']=r['frame_id']=frame
+        r['risk_level']='high' if i==unsafe_frame else 'low'
+        r['recommended_action']='emergency_brake' if i==unsafe_frame else 'maintain_speed'
+        runtime.prepare(d,frame_id=frame,timestamp_s=i*.1,speed_mps=2.,
+            execution_state=execution(frame,'step_1'))
+        runtime.advance(w,r)
+    assert runtime.state['step_states'][0]['status']=='COMPLETED'
+    assert runtime.state['active_step_id']=='step_2'
+
+
 def predicate(d,frame,step_id,condition,**changes):
     result=dict(request_id=d['request_id'],step_id=step_id,frame_id=frame,
         condition=condition,satisfied=True,valid=True,source='scene_observer')
@@ -314,6 +471,27 @@ def test_lane_change_history_drives_later_return_step():
     assert runtime.lane_change_history[-1]['source']['lane_id']==-2
     assert runtime.state['active_step_id']=='step_2'
     assert decision['action']=='lane_change_right'
+
+
+@pytest.mark.parametrize('fault',[None,'stale','wrong_step','invalid','ambiguous','wrong_ancestor','illegal'])
+def test_return_across_road_boundary_requires_fresh_unique_static_corridor(fault):
+    d,w,r=return_document();runtime=DrivingPlanRuntime()
+    original=dict(road_id=42,section_id=0,lane_id=-2)
+    runtime.lane_change_history=[dict(source=original,returned=False)]
+    frame='corridor';w['frame_id']=r['frame_id']=frame
+    observed=execution(frame,'step_1',
+        current_lane_ref=dict(road_id=693,section_id=0,lane_id=-1),
+        right_lane_ref=dict(road_id=693,section_id=0,lane_id=-2),
+        lane_topology_valid=True,right_lane_change_allowed=True,
+        lane_predecessor_refs=dict(current=[],left=[],right=[original]))
+    if fault=='stale':observed['observation_frame_id']='old'
+    if fault=='wrong_step':observed['source_step_id']='old_step'
+    if fault=='invalid':observed['pid']['lane_topology_valid']=False
+    if fault=='ambiguous':observed['pid']['lane_predecessor_refs']['current']=[original]
+    if fault=='wrong_ancestor':observed['pid']['lane_predecessor_refs']['right']=[dict(road_id=99,lane_id=-2)]
+    if fault=='illegal':observed['pid']['right_lane_change_allowed']=False
+    step=runtime.prepare(d,frame_id=frame,timestamp_s=0.,speed_mps=2.,execution_state=observed)
+    assert (step['parameters'].get('direction')=='RIGHT') == (fault is None)
 
 
 def test_already_in_original_lane_completes_without_lateral_command():

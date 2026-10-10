@@ -4,6 +4,9 @@ from threading import Lock
 from typing import Any
 
 from .modernbert_parser import ModernBertEnglishIntentParser
+from .factory import make_document
+from .normalizer import normalize_text
+from .rule_parser import RuleIntentParser
 
 
 class ModernBertCommandService:
@@ -93,3 +96,23 @@ class ModernBertCommandService:
             source_text=message.get("source_text"),
             source_language=message.get("source_language"),
         )
+
+    def parse_source_text(self, text: str, *, request_id: str | None = None,
+                          modality: str = 'TEXT') -> dict[str, Any]:
+        """Parse supported Chinese source rules, never feed Chinese to the English model."""
+        if not isinstance(text, str) or not text.strip():
+            raise ValueError('Source command must be a non-empty string')
+        if len(text) > self.max_input_chars:
+            raise ValueError('Source command exceeds max_input_chars')
+        if modality not in {'TEXT', 'VOICE'}:
+            raise ValueError('modality must be VOICE or TEXT')
+        document = RuleIntentParser().parse(text, modality=modality, request_id=request_id)
+        if document is None:
+            document = make_document(raw_text=text, normalized_text=normalize_text(text),
+                modality=modality, request_id=request_id, category='META_CONTROL', urgency='NORMAL',
+                steps=[], status='NEEDS_CLARIFICATION', method='RULE', model=None, confidence=0.,
+                latency_ms=0., missing_slots=['intent.steps'],
+                warnings=['Chinese source expression requires an upstream translation or clarification.'])
+        document['parse_result'].update(source='chinese_source_rules',
+            source_kind='SOURCE_LANGUAGE_RULE', model_prediction=False)
+        return document

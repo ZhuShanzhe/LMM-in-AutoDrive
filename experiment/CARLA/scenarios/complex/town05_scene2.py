@@ -284,9 +284,12 @@ def build_repeated_route(
             raise RuntimeError(
                 "GlobalRoutePlanner returned an empty Town05 leg"
             )
+        from scenarios.route_continuity import repair_route_continuity
+        leg, _ = repair_route_continuity(leg, float(sampling_m))
         if route:
             leg = leg[1:]
         route.extend(leg)
+        route, _ = repair_route_continuity(route, float(sampling_m))
         distances = cumulative_route_distances(route)
         leg_index += 1
         if leg_index > 20:
@@ -336,6 +339,11 @@ def extend_route_for_coverage(
             )
             if len(leg) < 3:
                 continue
+            from scenarios.route_continuity import repair_route_continuity, RouteContinuityError
+            try:
+                leg, _ = repair_route_continuity(leg)
+            except RouteContinuityError:
+                continue
             length_m = cumulative_route_distances(leg)[-1]
             if not 350.0 <= length_m <= 1600.0:
                 continue
@@ -349,6 +357,7 @@ def extend_route_for_coverage(
             scored, key=lambda item: (item[0], item[1], item[2], -item[3])
         )
         route.extend(leg[1:])
+        route, _ = repair_route_continuity(route)
         selected_legs.append({
             "spawn_index": destination_index,
             "length_m": round(length_m, 1),
@@ -359,6 +368,42 @@ def extend_route_for_coverage(
     distances = cumulative_route_distances(route)
     end_index = bisect.bisect_left(distances, target_length_m)
     return route[:end_index + 1], distances[:end_index + 1], selected_legs
+
+
+def extend_event_corridor(
+    prefix: Sequence[tuple[Any, Any]], target_length_m: float, sampling_m: float,
+) -> tuple[list[tuple[Any, Any]], list[float]]:
+    """Keep event geometry, then follow connected lanes with minimal branching."""
+    from agents.navigation.local_planner import RoadOption
+
+    if not prefix or sampling_m <= 0:
+        raise ValueError('event corridor needs a prefix and positive sampling')
+    route = list(prefix)
+    distances = cumulative_route_distances(route)
+    while distances[-1] < target_length_m:
+        current = route[-1][0]
+        choices = current.next(float(sampling_m))
+        if not choices:
+            raise RuntimeError('event corridor reached a disconnected lane end')
+        heading = float(current.transform.rotation.yaw)
+
+        def score(candidate):
+            successors = candidate.next(35.) or candidate.next(15.) or [candidate]
+            future_change = min(abs((float(w.transform.rotation.yaw)-heading+180.)%360.-180.)
+                                for w in successors)
+            local_change = abs((float(candidate.transform.rotation.yaw)-heading+180.)%360.-180.)
+            return (round(future_change, 2), round(local_change, 2),
+                    int(candidate.road_id), int(candidate.lane_id), float(candidate.s))
+
+        selected = min(choices, key=score)
+        distance = distance_2d(current.transform.location, selected.transform.location)
+        if not .01 < distance <= sampling_m*2.5:
+            raise RuntimeError('event corridor has an invalid connected segment')
+        route.append((selected, RoadOption.LANEFOLLOW))
+        distances.append(distances[-1]+distance)
+        if len(route) > 50000:
+            raise RuntimeError('event corridor exceeded its bounded sample budget')
+    return route, distances
 
 
 def build_configured_route(
@@ -380,7 +425,7 @@ def build_configured_route(
         float(route_config["route_sampling_m"]),
     )
     coverage_legs: list[dict[str, Any]] = []
-    if route_config.get("strategy") == "coverage_greedy_v1":
+    if route_config.get("strategy") in {"coverage_greedy_v1", "event_corridor_v2"}:
         from agents.navigation.global_route_planner import GlobalRoutePlanner
 
         prefix_end = bisect.bisect_left(
@@ -397,6 +442,13 @@ def build_configured_route(
             candidate_limit=int(route_config["coverage_candidate_limit"]),
             candidate_offset=int(route_config["coverage_candidate_offset"]),
         )
+        if route_config.get('strategy') == 'event_corridor_v2':
+            prefix_end = bisect.bisect_left(distances, float(route_config['corridor_start_m']))
+            route, distances = extend_event_corridor(route[:prefix_end+1],
+                float(route_config['target_length_m']), float(route_config['route_sampling_m']))
+            coverage_legs = [dict(strategy='event_corridor_v2',
+                preserved_event_prefix_m=float(route_config['corridor_start_m']),
+                lane_changes_in_extension=0, selection='minimum_future_heading_change')]
     return route, distances, coverage_legs, int(destination)
 
 
@@ -537,6 +589,7 @@ class TownTrafficFlow:
         self.vehicles: list[Any] = []
         self.walkers: list[Any] = []
         self.walker_controllers: list[Any] = []
+        self.sidewalk_patrols: list[Any] = []
         self.route_distances = cumulative_route_distances(route)
         self.reserved_locations: list[Any] = []
         self._maintenance_ticks = 0
@@ -670,7 +723,10 @@ class TownTrafficFlow:
                     path = self._route_path(candidate_index)
                     if path:
                         self.traffic_manager.set_path(actor, path)
-                self.traffic_manager.distance_to_leading_vehicle(actor, 5.0)
+                self.traffic_manager.distance_to_leading_vehicle(
+                    actor, max(5.0, float(self.config.get(
+                        "global_distance_to_leading_vehicle_m", 15.0)))
+                )
                 self.traffic_manager.vehicle_percentage_speed_difference(
                     actor, self.rng.uniform(-3.0, 14.0)
                 )
@@ -684,6 +740,15 @@ class TownTrafficFlow:
                 self.vehicles.append(actor)
                 return actor, location
         return None
+
+    def _static_road_map(self):
+        if (not hasattr(self,'_cached_road_map')
+                or getattr(self,'_cached_map_world',None) is not self.world):
+            getter=getattr(self.world,'get_map',None)
+            road_map=getter() if callable(getter) else None
+            self._cached_road_map=road_map
+            self._cached_map_world=self.world
+        return self._cached_road_map
 
     def _route_path(self, start_index: int) -> list[Any]:
         import bisect
@@ -737,8 +802,7 @@ class TownTrafficFlow:
         if sample_indices[-1] != end - 1:
             sample_indices.append(end - 1)
         close = ahead = 0
-        get_map = getattr(self.world, "get_map", None)
-        road_map = get_map() if callable(get_map) else None
+        road_map = self._static_road_map()
         for actor in self.vehicles:
             if not actor.is_alive:
                 continue
@@ -781,8 +845,7 @@ class TownTrafficFlow:
 
         spacing = self.replenishment_settings["lane_spacing_m"]
         actors = [(actor, actor.get_location()) for actor in self.vehicles if actor.is_alive]
-        get_map = getattr(self.world, "get_map", None)
-        road_map = get_map() if callable(get_map) else None
+        road_map = self._static_road_map()
         actor_lanes = {}
         if road_map is not None:
             import carla
@@ -838,6 +901,8 @@ class TownTrafficFlow:
         self, ego_location: Any, progress_m: float
     ) -> list[tuple[float, int, tuple[int, int]]]:
         """Move the per-lane spawn sources along the route behind the ego."""
+        if not self.config.get('following_sources_enabled',True):
+            return []
         back_m = self.replenishment_settings["following_source_back_m"]
         if progress_m < back_m + 30.0:
             return []
@@ -907,9 +972,17 @@ class TownTrafficFlow:
 
     def maintain(self, ego: Any, progress_m: float) -> None:
         """Replenish only beyond the camera range, without moving task actors."""
+        if self.sidewalk_patrols:
+            import carla
+            for patrol in self.sidewalk_patrols:
+                patrol.update(carla)
         self._maintenance_ticks += 1
         if self._maintenance_ticks % self.replenishment_settings["check_ticks"]:
             return
+        if self.config.get('rear_following_distance_m',0.)>0.:
+            from control.background_spacing import maintain_rear_spacing
+            maintain_rear_spacing(self.traffic_manager,ego,self.vehicles,
+                self.config['rear_following_distance_m'])
         dead = [actor for actor in self.vehicles if not actor.is_alive]
         if dead:
             self.vehicles = [actor for actor in self.vehicles if actor.is_alive]
@@ -1201,8 +1274,12 @@ class TownTrafficFlow:
         )
         controller_blueprint = library.find("controller.ai.walker")
         requested = int(self.config["ambient_walkers"])
+        mode = self.config.get("ambient_walker_controller", "carla_ai")
+        if mode not in {"carla_ai", "sidewalk_patrol"}:
+            raise ValueError("unknown ambient walker controller")
         for index in range(requested):
             location = None
+            sidewalk = None
             if self.route:
                 # Put most ambient pedestrians on sidewalks alongside the
                 # recorded route.  Pure navigation-mesh random sampling can
@@ -1218,7 +1295,28 @@ class TownTrafficFlow:
                 )
                 if sidewalk is not None:
                     location = sidewalk.transform.location
-            if location is None:
+                if mode == "sidewalk_patrol":
+                    from scenarios.complex.sidewalk_patrol import sidewalk_path
+                    location = None
+                    offsets = [0] + [offset for delta in range(5, 151, 5) for offset in (delta, -delta)]
+                    for offset in offsets:
+                        candidate_index = route_index + offset
+                        if not 0 <= candidate_index < len(self.route):
+                            continue
+                        for side in ("right", "left"):
+                            candidate = _lane_sidewalk(self.route[candidate_index][0], side)
+                            if len(sidewalk_path(candidate)) < 2:
+                                continue
+                            point = candidate.transform.location
+                            if any(distance_2d(point, walker.get_location()) < 4.0 for walker in self.walkers):
+                                continue
+                            if any(distance_2d(point, reserved) < 6.0 for reserved in self.reserved_locations):
+                                continue
+                            sidewalk, location = candidate, point
+                            break
+                        if location is not None:
+                            break
+            if location is None and mode == "carla_ai":
                 location = self.world.get_random_location_from_navigation()
             if location is None:
                 continue
@@ -1237,6 +1335,16 @@ class TownTrafficFlow:
                 continue
             self.registry.add(actor)
             self.walkers.append(actor)
+            if mode == "sidewalk_patrol":
+                from scenarios.complex.sidewalk_patrol import SidewalkPatrol, sidewalk_path
+                path = sidewalk_path(sidewalk)
+                if path:
+                    index_on_path = min(range(len(path)), key=lambda i:
+                        distance_2d(path[i].transform.location, location))
+                    self.sidewalk_patrols.append(SidewalkPatrol(
+                        actor, tuple(point.transform.location for point in path),
+                        self.rng.uniform(1.0, 1.55), index_on_path))
+                continue
             controller = self.world.try_spawn_actor(
                 controller_blueprint,
                 carla.Transform(),
@@ -1322,6 +1430,44 @@ def crossing_endpoints(waypoint: Any) -> tuple[Any, Any]:
     )
 
 
+def crosswalk_polygons(carla_map: Any) -> list[list[Any]]:
+    polygons = []
+    current = []
+    for point in carla_map.get_crosswalks():
+        current.append(point)
+        if len(current) >= 4 and distance_2d(current[0], current[-1]) < .05:
+            polygons.append(current[:-1])
+            current = []
+    return polygons
+
+
+def route_crosswalk_index(carla_map: Any, waypoint: Any, preferred_index: int,
+                         max_distance_m: float = 25.) -> int:
+    """Bind a crossing to the current route level and transverse direction."""
+    anchor = waypoint.transform.location
+    yaw = math.radians(float(waypoint.transform.rotation.yaw))
+    candidates = []
+    for index in range(len(crosswalk_polygons(carla_map))):
+        try:
+            first, last = crosswalk_polygon_endpoints(carla_map, index)
+        except (RuntimeError, ValueError):
+            continue
+        dx, dy = last.x-first.x, last.y-first.y
+        length = math.hypot(dx, dy)
+        if length < 4. or abs(dx*math.cos(yaw)+dy*math.sin(yaw))/length > .35:
+            continue
+        fraction = max(0., min(1., ((anchor.x-first.x)*dx+(anchor.y-first.y)*dy)/length**2))
+        separation = math.hypot(anchor.x-first.x-fraction*dx, anchor.y-first.y-fraction*dy)
+        surface_z = first.z+fraction*(last.z-first.z)
+        if separation <= max_distance_m and abs(surface_z-anchor.z) <= 1.5:
+            candidates.append((separation,index))
+    if not candidates:
+        raise ValueError('No same-level transverse official crosswalk near route anchor')
+    if any(index == int(preferred_index) for _,index in candidates):
+        return int(preferred_index)
+    return min(candidates)[1]
+
+
 def crosswalk_polygon_endpoints(
     carla_map: Any,
     polygon_index: int,
@@ -1334,25 +1480,7 @@ def crosswalk_polygon_endpoints(
     if not math.isfinite(clearance_m) or clearance_m < 0:
         raise ValueError('crosswalk clearance must be finite and nonnegative')
 
-    def point_distance(left: Any, right: Any) -> float:
-        return math.hypot(
-            float(left.x) - float(right.x),
-            float(left.y) - float(right.y),
-        )
-
-    polygons: list[list[Any]] = []
-    current: list[Any] = []
-    for point in carla_map.get_crosswalks():
-        if not current:
-            current = [point]
-            continue
-        current.append(point)
-        if (
-            len(current) >= 4
-            and point_distance(current[0], current[-1]) < 0.05
-        ):
-            polygons.append(current[:-1])
-            current = []
+    polygons = crosswalk_polygons(carla_map)
 
     index = int(polygon_index)
     if not 0 <= index < len(polygons):
@@ -1418,6 +1546,19 @@ def crosswalk_polygon_endpoints(
     )
 
 
+def crosswalk_entry_staging(start: Any, target: Any, distance_m: float) -> Any:
+    """Extend only the entry endpoint, leaving the exit and its curb path intact."""
+    distance_m = float(distance_m)
+    if not math.isfinite(distance_m) or distance_m < 0:
+        raise ValueError("crosswalk entry staging must be finite and nonnegative")
+    dx, dy = float(start.x-target.x), float(start.y-target.y)
+    length = math.hypot(dx, dy)
+    if length < 0.001:
+        raise ValueError("crosswalk entry and exit must differ")
+    return type(start)(x=start.x+dx/length*distance_m,
+                       y=start.y+dy/length*distance_m, z=start.z)
+
+
 class ScriptedWalker:
     def __init__(
         self,
@@ -1428,9 +1569,11 @@ class ScriptedWalker:
         activation_transform: Any | None = None,
         pause_fraction: float | None = None,
         pause_ticks: int = 0,
+        continuation_targets: Sequence[Any] = (),
     ) -> None:
         self.actor = actor
         self.target = target
+        self.continuation_targets = list(continuation_targets)
         self.speed_mps = float(speed_mps)
         self.activation_transform = activation_transform
         self.active = False
@@ -1452,6 +1595,10 @@ class ScriptedWalker:
         self._activation_settle_ticks = 0
         self._activation_retries = 0
         self._activation_validation_pending = False
+        self.allow_curb_step = False
+        self._curb_step_target = None
+        self._curb_stall_ticks = 0
+        self._curb_previous_location = None
 
     def start(self) -> None:
         if self.active:
@@ -1542,8 +1689,23 @@ class ScriptedWalker:
                     speed=0.0,
                 )
             )
-            self.completed = True
+            if self.continuation_targets:
+                self.target = self.continuation_targets.pop(0)
+                self._initial_distance = None
+            else:
+                self.completed = True
             return
+        curb_step = False
+        if self.allow_curb_step:
+            previous = self._curb_previous_location
+            stalled = previous is not None and distance_2d(previous, location) < 0.005
+            self._curb_stall_ticks = self._curb_stall_ticks + 1 if stalled else 0
+            self._curb_previous_location = location
+            # A physical walker may need one jump to clear a raised sidewalk curb.
+            if distance < 2.0 and self._curb_stall_ticks >= 20 and self._curb_step_target is not self.target:
+                curb_step = True
+                self._curb_step_target = self.target
+                self._curb_stall_ticks = 0
         self.actor.apply_control(
             carla.WalkerControl(
                 direction=carla.Vector3D(
@@ -1552,6 +1714,7 @@ class ScriptedWalker:
                     z=0.0,
                 ),
                 speed=self.speed_mps,
+                jump=curb_step,
             )
         )
 
@@ -1615,6 +1778,8 @@ class DeterministicSceneEvents:
             for role in event.get('ground_truth',{}).get('actor_roles',[])
         )
         self._spawned = False
+        from scenarios.crosswalk_priority import CrossingTrafficPriority
+        self._crossing_traffic_priority = CrossingTrafficPriority()
 
     def _set_desired_speed(
         self,
@@ -1744,7 +1909,7 @@ class DeterministicSceneEvents:
         ][0]
 
     def _prestage_slow_vehicle(
-        self, event: Mapping[str, Any], progress_m: float
+        self, event: Mapping[str, Any], progress_m: float, *, initial_setup: bool = False
     ) -> None:
         if self._slow_vehicle_prestaged or self.slow_vehicle is None:
             return
@@ -1768,7 +1933,7 @@ class DeterministicSceneEvents:
             dx, dy = location.x - origin.x, location.y - origin.y
             along = dx * forward.x + dy * forward.y
             lateral = abs(dx * forward.y - dy * forward.x)
-            if along > 0.0 and lateral < along:
+            if not initial_setup and along > 0.0 and lateral < along:
                 continue
             if any(
                 actor.id != self.slow_vehicle.id
@@ -1793,6 +1958,7 @@ class DeterministicSceneEvents:
                 "prestage_forward_m": round(along, 3),
                 "prestage_lateral_m": round(lateral, 3),
                 "activation_source": "physical_parked_release",
+                "prestage_phase": "before_capture" if initial_setup else "offscreen_runtime",
             })
             return
         if progress_m >= activate_at - 20.0:
@@ -1834,7 +2000,7 @@ class DeterministicSceneEvents:
         )
 
     def _spawn_route_slow_vehicle(self, event: Mapping[str, Any]) -> None:
-        """Park before capture; release in place without teleporting or hiding."""
+        """Spawn on approach; release in place without teleporting or hiding."""
         import carla
         role = str(event['actor_role'])
         actor = self._spawn_vehicle(
@@ -1847,6 +2013,56 @@ class DeterministicSceneEvents:
         self.route_slow_vehicles[str(event['id'])] = actor
         self.spawn_diagnostics[role]['activation_source'] = 'physical_parked_release'
 
+    def _stage_route_slow_vehicle(self, event: Mapping[str, Any], progress_m: float) -> None:
+        event_id = str(event['id'])
+        if event_id in self.route_slow_vehicles:
+            return
+        if progress_m < self._staging_progress(event):
+            return
+        self._spawn_route_slow_vehicle(event)
+        self.spawn_diagnostics[str(event['actor_role'])].update(
+            staged_at_progress_m=float(progress_m),
+            staging_progress_m=self._staging_progress(event),
+            spawned=True,
+        )
+
+    def _isolate_route_slow_task(self, event: Mapping[str, Any], progress_m: float) -> None:
+        if self.registry is None or progress_m < self._staging_progress(event):
+            return
+        anchor = float(event['anchor_progress_m'])
+        before = float(event.get('traffic_spawn_exclusion_before_m', 0.))
+        after = float(event.get('traffic_spawn_exclusion_after_m', 0.))
+        if before <= 0. and after <= 0.:
+            return
+        end = float(event.get('complete_progress_m', anchor)) + after
+        if progress_m > end:
+            return
+        start_index = route_index_at(self.distances, max(0., anchor - before))
+        end_index = min(len(self.route) - 1, route_index_at(self.distances, end) + 1)
+        corridor = [(float(wp.transform.location.x), float(wp.transform.location.y),
+            float(wp.transform.location.z), float(wp.lane_width))
+            for wp, _ in self.route[start_index:end_index + 1]]
+        excluded = {actor.id for actor in self.bindings.values() if actor is not None}
+        if self.ego is not None:
+            excluded.add(self.ego.id)
+        protected = {str(role) for configured in self.events
+            for role in configured.get('ground_truth', {}).get('actor_roles', [])}
+        protected.update(str(configured['actor_role']) for configured in self.events
+            if 'actor_role' in configured)
+        from scenarios.task_traffic_isolation import prune_unrelated_task_corridor
+        removed = prune_unrelated_task_corridor(corridor,
+            self.world.get_actors().filter('vehicle.*'),
+            owned_ids=[actor.id for actor in self.registry.actors if actor.is_alive],
+            excluded_ids=excluded, protected_roles=protected)
+        if removed:
+            diagnostic_role=str(event.get('actor_role') or
+                ('scene2_slow_cyclist' if event.get('kind')=='cyclist' else event['id']))
+            diagnostic = self.spawn_diagnostics.setdefault(diagnostic_role, {})
+            for item in removed:
+                item.update(ego_trigger_progress_m=float(progress_m),
+                    corridor_start_progress_m=anchor - before, corridor_end_progress_m=end)
+            diagnostic.setdefault('background_conflict_removals', []).extend(removed)
+
     def _activate_route_slow_vehicle(self, event: Mapping[str, Any]) -> None:
         import carla
         actor = self.route_slow_vehicles[str(event['id'])]
@@ -1857,6 +2073,19 @@ class DeterministicSceneEvents:
         self._set_desired_speed(actor, float(event['target_speed_kmh']), 60.0)
         self.traffic_manager.auto_lane_change(actor, False)
         self.traffic_manager.update_vehicle_lights(actor, True)
+        start = route_index_at(self.distances, float(event['anchor_progress_m']))
+        # Completing the task does not end this physical actor's navigation.
+        # Keep it on the published route instead of releasing it to random TM turns.
+        end = len(self.route) - 1
+        path = [self.route[index][0].transform.location for index in range(start, end + 1, 5)]
+        if path and (end - start) % 5:
+            path.append(self.route[end][0].transform.location)
+        if path:
+            self.traffic_manager.set_path(actor, path)
+        self.spawn_diagnostics[str(event['actor_role'])].update(
+            route_path_points=len(path), release_progress_m=float(event['activate_progress_m']),
+            route_path_end_progress_m=float(self.distances[end]),
+        )
 
     def _activate_bus(self) -> None:
         """Keep the physically staged bus stationary without relocating it."""
@@ -1990,6 +2219,7 @@ class DeterministicSceneEvents:
         pause_fraction: float | None = None,
         pause_ticks: int = 0,
         physical_staging: bool = False,
+        strict_crosswalk_geometry: bool = False,
     ) -> ScriptedWalker:
         import carla
 
@@ -2011,6 +2241,8 @@ class DeterministicSceneEvents:
         for attempt_index, (offset, z_lift) in enumerate(
             walker_spawn_offsets()
         ):
+            if strict_crosswalk_geometry and abs(offset) > 1.0:
+                continue
             attempts += 1
             blueprint = blueprints[attempt_index % len(blueprints)]
             if blueprint.has_attribute("is_invincible"):
@@ -2044,7 +2276,7 @@ class DeterministicSceneEvents:
                     z=float(target.z),
                 )
                 break
-        if actor is None:
+        if actor is None and not strict_crosswalk_geometry:
             # Do not rely on a global random nav-mesh sample for a local
             # event.  On Town05 the chance of landing near this one bus stop
             # is very small.  Instead, walk along the already planned route
@@ -2111,7 +2343,7 @@ class DeterministicSceneEvents:
                         break
                 if actor is not None:
                     break
-        if actor is None:
+        if actor is None and not strict_crosswalk_geometry:
             # Packaged towns occasionally contain an invisible collision
             # volume on a sidewalk waypoint.  A nearby navigation-mesh point
             # is safer than dropping a required competition actor.
@@ -2237,8 +2469,30 @@ class DeterministicSceneEvents:
         )
 
         for event in self.events:
-            if event['kind'] == 'route_slow_vehicle':
-                self._spawn_route_slow_vehicle(event)
+            if event['kind'] in {'route_slow_vehicle','cyclist'}:
+                # Reserve the physical task approach before ambient traffic
+                # is spawned, even though the task actor itself is deferred.
+                before = float(event.get('traffic_spawn_exclusion_before_m', 0.))
+                after = float(event.get('traffic_spawn_exclusion_after_m', 0.))
+                if not all(math.isfinite(v) and v >= 0. for v in (before, after)):
+                    raise ValueError('invalid route actor traffic spawn exclusion')
+                if before or after:
+                    anchor = float(event['anchor_progress_m'])
+                    start = max(0., anchor-before)
+                    end = min(float(self.distances[-1]), anchor+after)
+                    count = max(1, int(math.ceil((end-start)/5.)))
+                    for index in range(count+1):
+                        self.reserved_locations.append(self._waypoint(
+                            start+(end-start)*index/count).transform.location)
+                role=str(event.get('actor_role') or
+                    ('scene2_slow_cyclist' if event['kind']=='cyclist' else event['id']))
+                self.spawn_diagnostics.setdefault(role, {}).update({
+                    'source': 'deferred_physical_route_staging',
+                    'staging_progress_m': self._staging_progress(event),
+                    'spawned': False,
+                    'traffic_spawn_exclusion_before_m': before,
+                    'traffic_spawn_exclusion_after_m': after,
+                })
 
         crossing_config = by_kind["crossing_pedestrian"]
         crossing_waypoint = self._waypoint(
@@ -2250,13 +2504,18 @@ class DeterministicSceneEvents:
         if crosswalk_polygon_index is None:
             start, target = crossing_endpoints(crossing_waypoint)
         else:
+            crosswalk_polygon_index = route_crosswalk_index(
+                self.world.get_map(), crossing_waypoint, int(crosswalk_polygon_index))
             start, target = crosswalk_polygon_endpoints(
                 self.world.get_map(),
                 int(crosswalk_polygon_index),
+                inset_m=float(crossing_config.get('endpoint_inset_m', 0.35)),
                 clearance_m=float(crossing_config.get('endpoint_clearance_m',0.0)),
             )
         if bool(crossing_config.get("reverse_direction", False)):
             start, target = target, start
+        entry_staging_m = float(crossing_config.get("entry_staging_m", 0.0))
+        start = crosswalk_entry_staging(start, target, entry_staging_m)
         self.scripted_walkers["crosswalk_pedestrian"] = (
             self._spawn_walker(
                 start,
@@ -2266,21 +2525,63 @@ class DeterministicSceneEvents:
                 pause_fraction=crossing_config.get("pause_fraction"),
                 pause_ticks=int(crossing_config.get("pause_ticks", 0)),
                 physical_staging=bool(crossing_config.get('physical_staging',False)),
+                strict_crosswalk_geometry=True,
             )
         )
+        exit_walk_m = float(crossing_config.get("exit_walk_m", 0.0))
+        if not math.isfinite(exit_walk_m) or exit_walk_m < 0:
+            raise ValueError("crosswalk exit walk must be finite and nonnegative")
+        if exit_walk_m:
+            # Continue along the curb, rather than stopping inside the crosswalk
+            # or trying to walk directly through a raised curb.
+            yaw = math.radians(float(crossing_waypoint.transform.rotation.yaw))
+            exit_direction = crossing_config.get("exit_walk_direction", "UPSTREAM")
+            if exit_direction not in ("UPSTREAM", "DOWNSTREAM"):
+                raise ValueError("invalid crosswalk exit walk direction")
+            exit_sign = 1.0 if exit_direction == "DOWNSTREAM" else -1.0
+            self.scripted_walkers["crosswalk_pedestrian"].continuation_targets = [
+                carla.Location(x=target.x+exit_sign*math.cos(yaw)*exit_walk_m,
+                               y=target.y+exit_sign*math.sin(yaw)*exit_walk_m, z=target.z)
+            ]
+
+        if bool(crossing_config.get('exit_to_sidewalk', False)):
+            from scenarios.crosswalk_exit import sidewalk_exit_targets
+            walker = self.scripted_walkers['crosswalk_pedestrian']
+            walker.continuation_targets = sidewalk_exit_targets(
+                self.world.get_map(), walker.target,
+                crossing_waypoint.transform.get_forward_vector())
+            walker.allow_curb_step = True
+            self.spawn_diagnostics['scene2_crosswalk_pedestrian']['exit_route'] = {
+                'source': 'static_map_nonjunction_sidewalk',
+                'targets': [{'x': p.x, 'y': p.y, 'z': p.z}
+                            for p in walker.continuation_targets],
+                'actor_retained': True,
+                'physical_walk_required': True,
+            }
 
         self.spawn_diagnostics[
             "scene2_crosswalk_pedestrian"
         ].update(
             {
                 "geometry_source": "official_crosswalk_polygon",
-                "crosswalk_polygon_index": int(
-                    crossing_config["crosswalk_polygon_index"]
-                ),
+                "crosswalk_polygon_index": int(crosswalk_polygon_index)
+                    if crosswalk_polygon_index is not None else None,
+                "configured_crosswalk_polygon_index": crossing_config.get('crosswalk_polygon_index'),
                 "crosswalk_route_progress_m": float(
                     crossing_config["anchor_progress_m"]
                 ),
                 "crosswalk_length_m": distance_2d(start, target),
+                "trigger_source": "ego_route_progress",
+                "trigger_progress_m": float(crossing_config["activate_progress_m"]),
+                "trigger_location": {
+                    axis: float(getattr(self._waypoint(
+                        float(crossing_config["activate_progress_m"])
+                    ).transform.location, axis))
+                    for axis in ("x", "y", "z")
+                },
+                "strict_crosswalk_geometry": True,
+                "exit_walk_m": exit_walk_m,
+                "entry_staging_m": entry_staging_m,
             }
         )
         # Event completion is separate from the oracle's footprint-clear test.
@@ -2411,11 +2712,11 @@ class DeterministicSceneEvents:
         )
 
         cyclist_config = by_kind["cyclist"]
-        self.spawn_diagnostics["scene2_slow_cyclist"] = {
+        self.spawn_diagnostics.setdefault("scene2_slow_cyclist", {}).update({
             "source": "deferred_event_staging",
             "staging_progress_m": self._staging_progress(cyclist_config),
             "spawned": False,
-        }
+        })
         self._spawned = True
 
     @staticmethod
@@ -2455,7 +2756,7 @@ class DeterministicSceneEvents:
         )
 
     def skip_events_before(self, start_progress_m: float) -> list[str]:
-        """Cold segments must not activate actors belonging to earlier tasks."""
+        """Initialize cold segments before recording, without runtime relocation."""
 
         skipped = []
         for event in self.events:
@@ -2466,9 +2767,21 @@ class DeterministicSceneEvents:
                 self.states[event_id] = "SKIPPED"
                 self._retire_event_actors(event_id, force=True)
                 skipped.append(event_id)
+        for event in self.events:
+            if (event["kind"] == "slow_vehicle"
+                    and self.states[str(event["id"])] == "STAGED"
+                    and start_progress_m >= float(event["activate_progress_m"])
+                    - float(event.get("prestage_before_activation_m", 80.0))):
+                self._prestage_slow_vehicle(event, start_progress_m, initial_setup=True)
+            if (event['kind']=='cyclist' and self.states[str(event['id'])]=='STAGED'
+                    and start_progress_m>=self._staging_progress(event)):
+                self._stage_cyclist(event,start_progress_m)
+                self._prestage_cyclist(event,start_progress_m,initial_setup=True)
+            if event['kind'] == 'route_slow_vehicle' and self.states[str(event['id'])] == 'STAGED':
+                self._stage_route_slow_vehicle(event, start_progress_m)
         return skipped
 
-    def _prestage_cyclist(self, event: Mapping[str, Any], progress_m: float) -> None:
+    def _prestage_cyclist(self, event: Mapping[str, Any], progress_m: float, *, initial_setup: bool = False) -> None:
         """Place the parked cyclist only after the earlier route overlap is passed."""
         if self._cyclist_placed or self.cyclist is None:
             return
@@ -2482,7 +2795,7 @@ class DeterministicSceneEvents:
         for offset_m in (0.0, 12.0, -12.0, 24.0, -24.0):
             waypoint = self._waypoint(float(event["anchor_progress_m"]) + offset_m)
             location = waypoint.transform.location
-            if distance_2d(origin, location) < 200.0:
+            if not initial_setup and distance_2d(origin, location) < 200.0:
                 continue
             if any(
                 actor.id != self.cyclist.id and actor.type_id.startswith("vehicle.")
@@ -2503,6 +2816,7 @@ class DeterministicSceneEvents:
             self.spawn_diagnostics["scene2_slow_cyclist"].update({
                 "prestage_progress_m": round(progress_m, 3),
                 "prestage_distance_from_ego_m": round(distance_2d(origin, location), 3),
+                "prestage_phase": "before_capture" if initial_setup else "offscreen_runtime",
                 "activation_location": {
                     "x": round(location.x, 3), "y": round(location.y, 3),
                     "z": round(transform.location.z, 3),
@@ -2532,7 +2846,54 @@ class DeterministicSceneEvents:
             if (event["kind"] == "cyclist" and state == "STAGED"
                     and progress_m >= self._staging_progress(event)):
                 self._stage_cyclist(event, progress_m)
+            if event['kind']=='cyclist' and state in {'STAGED','ACTIVE'}:
+                self._isolate_route_slow_task(event, progress_m)
+            if event['kind'] == 'route_slow_vehicle' and state in {'STAGED', 'ACTIVE'}:
+                self._isolate_route_slow_task(event, progress_m)
+                if state == 'STAGED':
+                    self._stage_route_slow_vehicle(event, progress_m)
+            if (event['kind']=='crossing_pedestrian' and progress_m>=activate_at
+                    and (state in {'STAGED','ACTIVE'} or self._crossing_traffic_priority.held)):
+                crossing=self.scripted_walkers['crosswalk_pedestrian']
+                start=(crossing.activation_transform.location if crossing.activation_transform is not None
+                    else crossing.actor.get_location())
+                excluded={actor.id for actor in self.bindings.values() if actor is not None}
+                if self.ego is not None:excluded.add(self.ego.id)
+                if state=='STAGED':
+                    from scenarios.crosswalk_priority import prune_unrelated_crossing_blockers
+                    protected={str(role) for configured in self.events
+                        for role in configured.get('ground_truth',{}).get('actor_roles',[])}
+                    removed=prune_unrelated_crossing_blockers(start,crossing.target,
+                        self.world.get_actors().filter('vehicle.*'),
+                        owned_ids=[actor.id for actor in self.registry.actors if actor.is_alive]
+                            if self.registry is not None else [],
+                        excluded_ids=excluded,protected_roles=protected)
+                    if removed:
+                        for item in removed:item['ego_trigger_progress_m']=float(progress_m)
+                        self.spawn_diagnostics['scene2_crosswalk_pedestrian'].setdefault(
+                            'background_conflict_removals',[]).extend(removed)
+                priority=self._crossing_traffic_priority.update(start,crossing.target,
+                    self.world.get_actors().filter('vehicle.*'),self.traffic_manager,
+                    excluded_ids=excluded,finished=crossing.completed,crossing_active=state=='ACTIVE')
+                self.spawn_diagnostics['scene2_crosswalk_pedestrian']['background_priority']=priority
             if state == "STAGED" and progress_m >= activate_at:
+                if event['kind']=='crossing_pedestrian':
+                    from scenarios.crosswalk_start_gate import crossing_start_observation
+                    crossing=self.scripted_walkers['crosswalk_pedestrian']
+                    start=(crossing.activation_transform.location if crossing.activation_transform is not None
+                        else crossing.actor.get_location())
+                    observation=crossing_start_observation(start,crossing.target,
+                        self.world.get_actors().filter('vehicle.*'))
+                    now=float(self.world.get_snapshot().timestamp.elapsed_seconds)
+                    since=getattr(self,'_crosswalk_clear_since_s',None)
+                    if not observation['clear'] or not priority['held_vehicles_settled']:since=None
+                    elif since is None:since=now
+                    self._crosswalk_clear_since_s=since
+                    ready=since is not None and now-since>=.5
+                    self.spawn_diagnostics['scene2_crosswalk_pedestrian']['activation_clearance']={
+                        **observation,'observed_at_s':now,'clear_since_s':since,'ready':ready,
+                        'trigger_progress_m':activate_at}
+                    if not ready:continue
                 self.states[event_id] = "ACTIVE"
                 changes.append(
                     {
@@ -2547,6 +2908,13 @@ class DeterministicSceneEvents:
                 elif event['kind'] == 'route_slow_vehicle':
                     self._activate_route_slow_vehicle(event)
                 elif event["kind"] == "crossing_pedestrian":
+                    changes[-1].update({
+                        "trigger_source": "ego_route_progress",
+                        "trigger_progress_m": activate_at,
+                        "trigger_location": self.spawn_diagnostics.get(
+                            "scene2_crosswalk_pedestrian", {}
+                        ).get("trigger_location"),
+                    })
                     self.scripted_walkers[
                         "crosswalk_pedestrian"
                     ].start()

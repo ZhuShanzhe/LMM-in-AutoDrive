@@ -1,7 +1,12 @@
 {
   "schema_version": "challenge_runtime_assets/1.0",
-  "version": "signal-generalization-v2-phase-recovery-v1",
+  "version": "signal-generalization-v2-phase-recovery-v1-pedestrian-identity-v1",
   "files": [
+    {
+      "path": "pretrained/yolo11s.pt",
+      "bytes": 19313732,
+      "sha256": "85a76fe86dd8afe384648546b56a7a78580c7cb7b404fc595f97969322d502d5"
+    },
     {
       "path": "challenge/lamp_state_v2.pt",
       "bytes": 229109,

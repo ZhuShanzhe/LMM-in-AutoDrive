@@ -1,0 +1,95 @@
+{
+  "reason": "User-authorized actual speed-limit and topology alignment; old logs retained separately.",
+  "task_ids_preserved": true,
+  "safety_thresholds_unchanged": true,
+  "changes": [
+    {
+      "scene": "scene_1",
+      "task": "c01_depart_30",
+      "field": "target_speed_kmh",
+      "old": 20,
+      "new": 20
+    },
+    {
+      "scene": "scene_1",
+      "task": "c02_cruise_60",
+      "field": "target_speed_kmh",
+      "old": 30,
+      "new": 30
+    },
+    {
+      "scene": "scene_1",
+      "task": "c03_reduce_for_right_turn",
+      "field": "target_speed_kmh",
+      "old": 20,
+      "new": 20
+    },
+    {
+      "scene": "scene_1",
+      "task": "c04_change_left",
+      "field": "target_speed_kmh",
+      "old": 30,
+      "new": 30
+    },
+    {
+      "scene": "scene_1",
+      "task": "c05_change_right",
+      "field": "target_speed_kmh",
+      "old": 30,
+      "new": 30
+    },
+    {
+      "scene": "scene_1",
+      "task": "c06_hold_45",
+      "field": "target_speed_kmh",
+      "old": 30,
+      "new": 30
+    },
+    {
+      "scene": "scene_1",
+      "task": "c08_keep_50",
+      "field": "target_speed_kmh",
+      "old": 30,
+      "new": 30
+    },
+    {
+      "scene": "scene_1",
+      "task": "c09_reduce_for_turn",
+      "field": "target_speed_kmh",
+      "old": 20,
+      "new": 20
+    },
+    {
+      "scene": "scene_1",
+      "task": "c11_accelerate_50",
+      "field": "target_speed_kmh",
+      "old": 30,
+      "new": 30
+    },
+    {
+      "scene": "scene_3",
+      "task": "scene3_general_hazard",
+      "field": "window_m",
+      "old": [
+        900,
+        1250
+      ],
+      "new": [
+        800,
+        1150
+      ]
+    },
+    {
+      "scene": "scene_3",
+      "task": "scene3_resume_normal_driving",
+      "field": "text",
+      "old": "危险路段结束，在安全且不超速的前提下逐步恢复至30公里每小时，沿规划路线行驶至终点。",
+      "new": "危险路段结束，在安全且不超速的前提下逐步恢复至30公里每小时，沿规划路线行驶至终点。"
+    }
+  ],
+  "source_sha256": {
+    "scene_1": "b0612dd4c3438fef5ef5f571597ceab732c6f9ac752de491040ea557778023f5",
+    "scene_2": "4e6d41634235c5938fd1eb8de650d3b33d5ec1e6dfdfcea6154c12b7d2e413be",
+    "scene_3": "c0b36a89e65ff870ca8805ba20e63d7cffb60e323ef053a4f9788700cbfd0916"
+  }
+}

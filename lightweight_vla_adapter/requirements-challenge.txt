@@ -12,3 +12,5 @@ pillow==12.3.0
 jsonschema==4.26.0
 carla==0.9.16
 pytest==9.1.1
+ultralytics==8.4.104
+supervision==0.27.0.post2

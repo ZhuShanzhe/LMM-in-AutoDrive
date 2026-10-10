@@ -987,7 +987,7 @@ def main():
             from benchmark.episode import attach_episode
             benchmark_assessment = attach_episode('scene_1',scenario.route_manager.route,world,ego,
                 Path(output_dir)/'benchmark',
-                args.scenario_config or scenario_config_path or getattr(scenario, 'config_path', None),
+                scenario_config_path or args.scenario_config or getattr(scenario, 'config_path', None),
                 initial_route_s_m=float(scenario.route_manager.progress_m),
                 task_selector=args.benchmark_task,
                 run_metadata=dict(decision_source=args.decision_source,

@@ -310,9 +310,22 @@ class GenericInstructionFSM:
     def enforce_parse_status(decision, parsed):
         if parsed.parse_status == 'VALID':
             return decision, False
-        return dict(action='stop', target_speed_kmh=0.,
-                    reason='instruction_requires_clarification',
-                    parse_status=parsed.parse_status), True
+        result = dict(decision)
+        emergency = bool(result.get('emergency')) or result.get('action') == 'emergency_brake'
+        result.update(action='emergency_brake' if emergency else 'stop',
+                      target_speed_kmh=0., emergency=emergency,
+                      target_lane=None, target_location=None,
+                      decision_status='BLOCKED',
+                      reason='instruction_requires_clarification',
+                      parse_status=parsed.parse_status,
+                      longitudinal_control_mode='STOP',
+                      allow_positive_acceleration=False)
+        result['blocked_reason_codes'] = list(dict.fromkeys(
+            list(result.get('blocked_reason_codes') or []) + ['instruction_requires_clarification']))
+        for key in ('longitudinal_sequence_schema', 'target_acceleration_mps2',
+                    'sequence_valid_until_s', 'risk_motion_permission'):
+            result.pop(key, None)
+        return result, True
 
     @staticmethod
     def _merge_structured_command(
@@ -479,22 +492,62 @@ class GenericInstructionFSM:
             r"(?:\s+at\s+\d+(?:\.\d+)?\s*(?:km/?h|kph|kilomet(?:er|re)s?\s+per\s+hour))?[.!]?\s*",
             text,re.IGNORECASE))
 
-    def driving_intent(self,command):
-        """Retain a supplied plan or a multi-step result already parsed this frame."""
+    def driving_intent(self,command,parsed=None):
+        """Retain parsed plans and ground single maneuvers through one executor."""
         if isinstance(command.get('driving_intent'),Mapping):
             return copy.deepcopy(command['driving_intent'])
         text=str(command.get('text') or command.get('source_text') or command.get('voice_text')
                  or command.get('normalized_text') or command.get('parser_text_en') or '')
         cached=self._parse_cache.get(self._parse_key(command, text)) or {}
         intent=cached.get('intent') or {}
-        if cached.get('status') != 'VALID' or len(intent.get('steps') or [])<2:return None
+        steps=intent.get('steps') or []
+        single_turn=(len(steps)==1 and steps[0].get('action')=='TURN')
+        single_speed=(len(steps)==1 and steps[0].get('action') in {'SET_SPEED','ADJUST_SPEED'})
+        if single_turn:
+            intent=copy.deepcopy(intent)
+            intent['steps'][0].setdefault('completion',dict(type='JUNCTION_EXITED'))
+        if single_speed:
+            intent=copy.deepcopy(intent)
+            if parsed is not None and parsed.target_speed_kmh is not None:
+                parameters=intent['steps'][0].setdefault('parameters',{})
+                parameters['target_speed_mps']=parsed.target_speed_kmh/3.6
+            intent['steps'][0].setdefault('completion',dict(type='TARGET_SPEED_REACHED'))
+        if cached.get('status') != 'VALID' or (len(steps)<2 and not single_turn and not single_speed):
+            if (parsed is None or parsed.parse_status!='VALID'
+                    or parsed.parsed_intent not in {'TURN_LEFT','TURN_RIGHT','SET_SPEED','DECELERATE'}
+                    or self._requires_plan(text)):
+                return None
+            speed_step=parsed.parsed_intent in {'SET_SPEED','DECELERATE'}
+            if speed_step and parsed.target_speed_kmh is None:
+                return None
+            intent=dict(category='NAVIGATION',urgency='NORMAL',steps=[dict(
+                step_id='step_1',action='SET_SPEED' if speed_step else 'TURN',
+                parameters=dict(target_speed_mps=parsed.target_speed_kmh/3.6) if speed_step
+                    else dict(direction=parsed.parsed_intent.removeprefix('TURN_')),
+                trigger=dict(type='IMMEDIATE'),depends_on=[],preconditions=[],
+                on_blocked='SAFE_STOP',completion=dict(type='TARGET_SPEED_REACHED' if speed_step else 'JUNCTION_EXITED'))],
+                constraints=dict(safety_first=True,obey_traffic_rules=True,driving_style='NORMAL'))
+            cached=dict(status='VALID',confidence=parsed.confidence,
+                source=parsed.parse_source or 'generic_instruction_rules',
+                source_kind='SINGLE_SPEED_ADAPTER' if speed_step else 'SINGLE_TURN_ADAPTER',model_prediction=False)
         result=copy.deepcopy(cached);result.pop('intent',None)
         normalized_text = result.pop('_normalized_text', text)
         result.setdefault('source','structured_command_parser')
-        result['source_kind']='TEXT_MODEL_PARSE'
-        result['model_prediction']=True
+        result.setdefault('source_kind','TEXT_MODEL_PARSE')
+        result.setdefault('model_prediction',True)
+        if (parsed is not None and parsed.speed_reference_kmh is not None
+                and parsed.speed_delta_kmh is None and parsed.speed_change=='DECREASE'):
+            result['speed_target_policy']=dict(type='QUALITATIVE_CRUISE_BOUND',
+                reference_kmh=parsed.speed_reference_kmh,target_kmh=parsed.target_speed_kmh,
+                user_supplied_numeric_target=False)
+        elif (parsed is not None and parsed.parsed_intent=='DECELERATE'
+                and result.get('source_kind')=='SINGLE_SPEED_ADAPTER'
+                and self._extract_speed(text) is None and not re.search(r'\d',text)):
+            result['speed_target_policy']=dict(type='QUALITATIVE_CRUISE_BOUND',
+                reference_kmh=None,target_kmh=parsed.target_speed_kmh,
+                user_supplied_numeric_target=False)
         return dict(schema_version='1.2.0',request_id=str(command.get('id') or 'plan-'+hashlib.sha256(text.encode()).hexdigest()[:16]),
-            input=dict(modality='TEXT',language='zh-CN' if re.search(r'[\u4e00-\u9fff]',text) else 'en-US',raw_text=text,normalized_text=normalized_text),
+            input=dict(modality='TEXT',language='zh-CN' if re.search(r'[\u4e00-\u9fff]',text) else 'en-US',raw_text=command.get('original_source_text',text),normalized_text=normalized_text),
             intent=copy.deepcopy(intent),parse_result=result)
 
     def parsed_step(self,step,source_text):
@@ -508,6 +561,7 @@ class GenericInstructionFSM:
         parsed: ParsedInstruction,
         *,
         ego_speed_kmh: float,
+        cruise_speed_kmh: float | None = None,
     ) -> ParsedInstruction:
         """Latch one absolute target for a qualitative speed instruction."""
 
@@ -524,6 +578,11 @@ class GenericInstructionFSM:
         speed = float(ego_speed_kmh)
         if not math.isfinite(speed) or speed < 0.0:
             raise ValueError("ego_speed_kmh must be finite and non-negative")
+        qualitative = change == 'DECREASE' and parsed.speed_delta_kmh is None and cruise_speed_kmh is not None
+        if qualitative:
+            cruise=float(cruise_speed_kmh)
+            if not math.isfinite(cruise) or cruise<0.:
+                raise ValueError('cruise_speed_kmh must be finite and non-negative')
         delta = (
             float(parsed.speed_delta_kmh)
             if parsed.speed_delta_kmh is not None
@@ -540,7 +599,13 @@ class GenericInstructionFSM:
         key = (identity, parsed.parsed_intent, change, round(delta, 6))
         cached = self._speed_target_cache.get(key)
         if cached is None:
-            _, target = resolve_step_speed_target(
+            if qualitative:
+                # A brief red-light stop is not the requested cruising pace.
+                reference=max(speed,cruise)
+                target=min(reference,30.,max(min(5.,reference),reference*.75))
+            else:
+                reference=speed
+                _, target = resolve_step_speed_target(
                 {
                     "action": "ADJUST_SPEED",
                     "parameters": {
@@ -548,9 +613,9 @@ class GenericInstructionFSM:
                         "speed_delta_kmh": delta,
                     },
                 },
-                speed,
-            )
-            cached = (round(speed, 6), round(target, 6))
+                    speed,
+                )
+            cached = (round(reference, 6), round(target, 6))
             self._cache_put(self._speed_target_cache, key, cached)
         else:
             self._speed_target_cache.move_to_end(key)
@@ -582,13 +647,20 @@ class GenericInstructionFSM:
             return self._parse_cache[key]
         try:
             model_text = command.get('parser_text_en') or source_text
-            result = self.parser.parse_text(
-                model_text,
-                request_id=f"fsm-{command.get('id') or source_text}",
-                modality="TEXT",
-                source_text=source_text,
-                source_language="zh-CN" if re.search(r"[\u4e00-\u9fff]",source_text) else "en-US",
-            )
+            source_parser = getattr(self.parser, 'parse_source_text', None)
+            if (not command.get('parser_text_en') and re.search(r"[\u4e00-\u9fff]", source_text)
+                    and callable(source_parser)):
+                result = source_parser(source_text, request_id=f"fsm-{command.get('id') or source_text}",
+                    modality='TEXT')
+                model_text = result.get('input', {}).get('normalized_text', source_text)
+            else:
+                result = self.parser.parse_text(
+                    model_text,
+                    request_id=f"fsm-{command.get('id') or source_text}",
+                    modality="TEXT",
+                    source_text=source_text,
+                    source_language="zh-CN" if re.search(r"[\u4e00-\u9fff]",source_text) else "en-US",
+                )
         except Exception:
             # Transient inference failure must not poison subsequent retries.
             return {}
@@ -783,10 +855,14 @@ class GenericInstructionFSM:
             )
 
         recommended = str(risk.get("recommended_action") or "")
+        from lightweight_vla_adapter.src.task_feasibility import task_permission
+        authorized_lateral = (action in {'lane_change_left','lane_change_right'}
+            and task_permission(risk,'CHANGE_LANE',frame_id=frame_id)
+            and task_permission(risk,'PATH_CLEAR',frame_id=frame_id))
         if recommended == "emergency_brake":
             action = "emergency_brake"
             target_speed = 0.0
-        elif recommended == "decelerate" and action in {
+        elif recommended == "decelerate" and not authorized_lateral and action in {
             "accelerate",
             "keep_lane",
             "lane_change_left",

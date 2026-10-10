@@ -245,7 +245,6 @@ class Scene2Town05Tests(unittest.TestCase):
                 "stop",
                 "accelerate",
                 "lane_change_left",
-                "lane_change_right",
                 "turn_right",
             }.issubset(normalized_actions)
         )
@@ -556,6 +555,25 @@ class Scene2Town05Tests(unittest.TestCase):
         )
         for event in config["special_events"]:
             self.assertGreaterEqual(len(event["variants"]), 2)
+        cyclist = next(
+            event for event in config["special_events"]
+            if event["id"] == "slow_cyclist"
+        )
+        self.assertLessEqual(
+            cyclist["anchor_progress_m"] - cyclist["activate_progress_m"],
+            40.0,
+        )
+        self.assertLessEqual(cyclist["target_speed_kmh"], 13.0)
+        self.assertGreaterEqual(cyclist["traffic_spawn_exclusion_before_m"], 40.0)
+        self.assertGreaterEqual(cyclist["traffic_spawn_exclusion_after_m"], 80.0)
+        cyclist_command = next(
+            command for command in config["commands"]
+            if command["id"] == "s2_t05_cmd_07"
+        )
+        self.assertLessEqual(
+            cyclist["resolve_progress_m"],
+            cyclist_command["announce_at_m"] + 520.0,
+        )
         self.assertEqual(config["weather"]["preset"], "cloudy-evening")
         self.assertLessEqual(
             config["weather"]["sun_altitude_angle"],

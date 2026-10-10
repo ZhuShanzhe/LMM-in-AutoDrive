@@ -55,25 +55,25 @@ EGO_BLUEPRINTS = (
 )
 
 COMMAND_HUD_FALLBACKS = {
-    "s2_t05_cmd_01": "Keep lane, slow to 45 km/h, then continue straight",
-    "s2_t05_cmd_02": "Check the road, keep right and resume 50 km/h",
+    "s2_t05_cmd_01": "Keep lane, set 30 km/h, turn right, then keep lane",
+    "s2_t05_cmd_02": "Check the road, keep right and hold 30 km/h",
     "s2_t05_cmd_03": "Yield to the pedestrian, then pass the slow car left",
     "s2_t05_cmd_04": (
-        "After the pedestrian clears, return right and resume 45"
+        "After the pedestrian clears, return right and resume 30"
     ),
     "s2_t05_cmd_05": "Bus stop ahead: slow to 30 km/h and yield to passengers",
-    "s2_t05_cmd_06": "Wait for passengers, then continue in the right lane",
-    "s2_t05_cmd_07": "Pass the cyclist on the left, then return right",
+    "s2_t05_cmd_06": "Check the clear passage, then continue in the right lane",
+    "s2_t05_cmd_07": "Pass the predicted cyclist encounter window safely",
     "s2_t05_cmd_08": (
-        "After passing the cyclist, return right and keep a safe gap"
+        "Keep the current lane and continue safely along the route"
     ),
-    "s2_t05_cmd_09": "Go straight, move left safely and hold 40 km/h",
-    "s2_t05_cmd_10": "After the junction and lane change, resume 45 km/h",
+    "s2_t05_cmd_09": "Go straight, move left safely and hold 30 km/h",
+    "s2_t05_cmd_10": "After the junction and lane change, hold 30 km/h",
     "s2_t05_cmd_11": "Slow to 30 km/h before turning right",
     "s2_t05_cmd_12": "Change left safely, keep a gap, then return",
-    "s2_t05_cmd_13": "Keep a gap, turn right, straight, right, then resume 45",
-    "s2_t05_cmd_14": "Slow to 30, check the crosswalk, then go straight",
-    "s2_t05_cmd_15": "Go straight, turn right twice, then continue to finish",
+    "s2_t05_cmd_13": "Keep a gap, turn right at three consecutive junctions, then hold 30",
+    "s2_t05_cmd_14": "Slow to 30, check the crosswalk, then turn right",
+    "s2_t05_cmd_15": "Go straight, turn left, then right, and follow the route to finish",
 }
 
 RESTRICTED_LANE_MARKINGS = {
@@ -382,12 +382,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument('--benchmark-assessment', action='store_true', help='Record independent scene_2 task assessment')
     parser.add_argument('--benchmark-task', default='all', help='Assessment target ID or activation-order number; does not change driving route')
+    parser.add_argument('--stop-after-selected-task', action='store_true',
+                        help='Diagnostic only: stop 50 m and at least 3 s after selected parsed-plan completion; independent criteria are assessed on close')
     parser.add_argument('--vla-record-sensors', action='store_true', help='Save lossless actual VLA sensor inputs for offline replay')
     parser.add_argument('--benchmark-compound-driver', action='store_true',
                         help='Explicit truth-based task-3 control baseline, not model evaluation')
     args = parser.parse_args()
     from benchmark.selection import validate_assessment_args
     validate_assessment_args(args, 'scene_2')
+    if args.stop_after_selected_task and (not args.benchmark_assessment or args.benchmark_task == 'all'):
+        parser.error('--stop-after-selected-task requires one explicit benchmark task')
     return args
 
 
@@ -416,6 +420,7 @@ def build_vla_command_schedule(
                 ),
                 "action": "keep_lane",
                 "driving_intent": intent,
+                "execution_timeout_s": command.get("execution_timeout_s", 180.0),
             }
         )
     return result
@@ -471,12 +476,20 @@ def load_config(path: Path) -> dict[str, Any]:
         raise ValueError("Scene 2 route must be at least 8 km")
     if float(route.get("minimum_curvature_degrees", 0.0)) < 180.0:
         raise ValueError("Scene 2 route must require visible curved driving")
-    if route.get("strategy", "repeated") not in ("repeated", "coverage_greedy_v1"):
+    if route.get("strategy", "repeated") not in (
+        "repeated", "coverage_greedy_v1", "event_corridor_v2"
+    ):
         raise ValueError("unsupported Scene 2 route strategy")
     if route.get("strategy") == "coverage_greedy_v1" and not 1400.0 <= float(
         route.get("preserve_event_prefix_m", 0.0)
     ) < float(route["target_length_m"]):
         raise ValueError("coverage route must preserve the staged event region")
+    if route.get("strategy") == "event_corridor_v2":
+        corridor_start = float(route.get("corridor_start_m", 0.0))
+        event_end = max(float(event.get("resolve_progress_m", event["anchor_progress_m"]))
+            for event in payload.get("special_events", []))
+        if not event_end <= corridor_start < float(route["target_length_m"]):
+            raise ValueError("event corridor must preserve every staged event region")
     if len(payload.get("commands", [])) != 15:
         raise ValueError("Scene 2 requires exactly 15 demonstration commands")
     for command in payload["commands"]:
@@ -1629,9 +1642,10 @@ def main() -> int:
                 run_metadata=dict(traffic_seed=int(config['traffic']['seed']),
                                   traffic_replenishment_settings=dict(traffic.replenishment_settings),
                                   vla_enabled=bool(vla_enabled),
-                                  policy_source=('EXTERNAL' if args.external_ego_control else
-                                                 'VLA_MODEL' if vla_enabled else 'NON_VLA_CONTROL'),
+                                  policy_source=('VLA_MODEL' if vla_enabled else
+                                                 'EXTERNAL' if args.external_ego_control else 'NON_VLA_CONTROL'),
                                   external_ego_control=bool(args.external_ego_control),
+                                  external_ego_control_effective=bool(args.external_ego_control and not vla_enabled),
                                   sensor_recording=bool(args.vla_record_sensors)))
         start_time = float(start_snapshot.timestamp.elapsed_seconds)
         frame_counter = 0
@@ -1639,6 +1653,8 @@ def main() -> int:
         best_progress_m = start_progress_m
         last_advance_s = 0.0
         stop_reason = 'duration_limit'
+        completed_fragment_plans = set()
+        fragment_completion_at = None
         turn_centering_active = False
         while True:
             snapshot = world.get_snapshot()
@@ -1910,6 +1926,27 @@ def main() -> int:
                 )
             frame_counter += 1
 
+            if args.stop_after_selected_task and benchmark_assessment is not None:
+                from benchmark.fragment_completion import remember_completed_plans, fragment_tail_stop_reason
+                selected = [task.task_id for task in benchmark_assessment.selected_tasks]
+                runtime = unified_vla.driving_plan if unified_vla is not None else None
+                document = runtime.document if runtime is not None else None
+                state = runtime.state if runtime is not None else None
+                request_id = str((document or {}).get('request_id', ''))
+                plan_status = (state or {}).get('plan_status') if any(
+                    request_id.startswith(identity) for identity in selected) else None
+                completed_fragment_plans = remember_completed_plans(
+                    completed_fragment_plans, selected, request_id, plan_status)
+                if fragment_completion_at is None and selected and all(
+                        identity in completed_fragment_plans for identity in selected):
+                    fragment_completion_at = (simulation_time_s, progress_m)
+                fragment_reason = fragment_tail_stop_reason(fragment_completion_at,
+                                                            simulation_time_s, progress_m)
+                if fragment_reason is not None:
+                    stop_reason = fragment_reason
+                    print('Diagnostic fragment stopped: ' + fragment_reason)
+                    break
+
             if progress_m >= float(config["route"]["target_length_m"]):
                 print("Town05 Scene 2 route completed")
                 stop_reason = 'route_completed'
@@ -1960,6 +1997,11 @@ def main() -> int:
             "traffic_replenishment_count": len(traffic.replenishment_events),
             "traffic_replenishment_events": list(traffic.replenishment_events),
             "ambient_walkers_spawned": len(traffic.walkers),
+            "ambient_walker_controller": config["traffic"].get("ambient_walker_controller", "carla_ai"),
+            "sidewalk_patrols_spawned": len(traffic.sidewalk_patrols),
+            "sidewalk_patrol_motion": [dict(actor_id=patrol.actor.id,
+                observed_walked_m=patrol.walked_m,disabled=patrol.disabled)
+                for patrol in traffic.sidewalk_patrols],
             "traffic_hybrid_physics": {
                 "enabled": bool(args.traffic_hybrid_physics),
                 "radius_m": float(args.traffic_hybrid_radius_m),

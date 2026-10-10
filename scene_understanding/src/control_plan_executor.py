@@ -576,9 +576,14 @@ def advance_control_plan(
             reasons = list(decision["blocked_reason_codes"])
             policy = _blocked_policy(step)
             if (transient_risk_wait and policy == "STOP" and reasons
-                    and set(reasons) <= {"risk_requires_emergency_brake", "risk_requires_deceleration"}):
-                # A physical risk pause is not task failure. Keep the same step
-                # and latched speed; the online caller must gate safe recovery.
+                    and (set(reasons) <= {"risk_requires_emergency_brake", "risk_requires_deceleration"}
+                         or (step.get("action") == "CHANGE_LANE" and set(reasons) <= {
+                             "await_fresh_continuous_lane_clearance", "stale_lane_observation",
+                             "visual_target_lane_not_clear", "physical_target_lane_occupied"})
+                         or (step.get("action") == "TURN" and "turn_target_location_missing" in reasons
+                             and set(reasons) <= {"turn_target_location_missing", "safe_stop"}))):
+                # Known transient evidence gaps preserve the active step.
+                # Recovery still requires a fresh, executable decision.
                 policy = "WAIT"
             if policy == "WAIT":
                 state["step_states"][index]["status"] = "WAITING"

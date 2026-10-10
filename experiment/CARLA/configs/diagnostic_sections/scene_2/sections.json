@@ -1,0 +1,6113 @@
+{
+  "schema_version": "diagnostic_route_sections/1.0",
+  "scene_id": "scene_2",
+  "map_name": "Town05_Opt",
+  "route_length_m": 8000.0,
+  "source_file": "scene_2_town05_runtime.json",
+  "source_sha256": "203889584f05d9d7b6440d499128cd63319d0d0d67d4af449386ad00d3eb0686",
+  "maximum_section_m": 400.0,
+  "warmup_m": 150.0,
+  "postroll_m": 50.0,
+  "tasks": [
+    {
+      "task_id": "s2_t05_cmd_01",
+      "instruction": "保持当前车道，将车速调整至30公里每小时，在前方路口右转，然后保持车道继续行驶。",
+      "announce_m": 0.0,
+      "activate_m": 0.0,
+      "diagnostic_end_m": 370.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_02",
+      "instruction": "确认前方道路安全，保持右侧车道，并以30公里每小时继续行驶。",
+      "announce_m": 370.0,
+      "activate_m": 370.0,
+      "diagnostic_end_m": 880.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_03",
+      "instruction": "前方有慢车且路口有横穿行人，先减速礼让行人，确认安全后向左变道超越慢车。",
+      "announce_m": 880.0,
+      "activate_m": 880.0,
+      "diagnostic_end_m": 1260.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_04",
+      "instruction": "确认行人离开车道后保持右侧车道，并恢复到30公里每小时。",
+      "announce_m": 1260.0,
+      "activate_m": 1260.0,
+      "diagnostic_end_m": 1460.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {
+        "crosswalk_pedestrian": "RESOLVED"
+      },
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_05",
+      "instruction": "前方公交站附近有行人，保持当前最右侧车道，减速至30公里每小时，确认前方通道畅通后继续行驶。",
+      "announce_m": 1460.0,
+      "activate_m": 1460.0,
+      "diagnostic_end_m": 1640.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {
+        "crosswalk_pedestrian": "RESOLVED"
+      },
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_06",
+      "instruction": "确认前方通道畅通后，保持右侧车道继续行驶。",
+      "announce_m": 1640.0,
+      "activate_m": 1640.0,
+      "diagnostic_end_m": 1760.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {
+        "bus_stop_passengers": "RESOLVED"
+      },
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_07",
+      "instruction": "注意右侧自行车，安全通过预计相遇时段后继续行驶。",
+      "announce_m": 1760.0,
+      "activate_m": 1760.0,
+      "diagnostic_end_m": 2260.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {
+        "bus_stop_passengers": "RESOLVED"
+      },
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_08",
+      "instruction": "保持当前车道，沿路线安全继续行驶。",
+      "announce_m": 2260.0,
+      "activate_m": 2260.0,
+      "diagnostic_end_m": 2560.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {
+        "slow_cyclist": "RESOLVED"
+      },
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_09",
+      "instruction": "确认前方通道畅通后，保持当前车道安全继续行驶。",
+      "announce_m": 2560.0,
+      "activate_m": 2560.0,
+      "diagnostic_end_m": 2700.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_10",
+      "instruction": "通过路口后确认前方安全，按导航路线继续行驶，遵守道路限速并根据路况调整车速。",
+      "announce_m": 2700.0,
+      "activate_m": 2700.0,
+      "diagnostic_end_m": 4340.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_11",
+      "instruction": "确认前方安全，保持当前车道，将车速调整至30公里每小时继续行驶。",
+      "announce_m": 4340.0,
+      "activate_m": 4340.0,
+      "diagnostic_end_m": 4596.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_12",
+      "instruction": "保持当前车道与安全车距，确认前方通道畅通后继续行驶。",
+      "announce_m": 4596.0,
+      "activate_m": 4596.0,
+      "diagnostic_end_m": 5200.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_13",
+      "instruction": "保持安全车距，确认前方通道畅通后以30公里每小时继续行驶。",
+      "announce_m": 5200.0,
+      "activate_m": 5200.0,
+      "diagnostic_end_m": 6050.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_14",
+      "instruction": "确认前方通道可通行，将车速调整至30公里每小时，并保持当前车道。",
+      "announce_m": 6050.0,
+      "activate_m": 6050.0,
+      "diagnostic_end_m": 6964.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "s2_t05_cmd_15",
+      "instruction": "确认前方通道安全，沿当前规划路线以30公里每小时行驶至终点，遵守道路限速。",
+      "announce_m": 6964.0,
+      "activate_m": 6964.0,
+      "diagnostic_end_m": 8000.0,
+      "end_source": "next_task_boundary",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": []
+    }
+  ],
+  "events": [
+    {
+      "event_id": "slow_vehicle",
+      "kind": "slow_vehicle",
+      "start_m": 380.0,
+      "focus_end_m": 820.0,
+      "explicit_end_m": 820.0,
+      "retain_after_completion": false,
+      "end_is_completion_criterion": false,
+      "positions": [
+        [
+          500.0,
+          "anchor_progress_m"
+        ],
+        [
+          380.0,
+          "activate_progress_m"
+        ],
+        [
+          820.0,
+          "resolve_progress_m"
+        ]
+      ]
+    },
+    {
+      "event_id": "compound_slow_vehicle",
+      "kind": "route_slow_vehicle",
+      "start_m": 940.0,
+      "focus_end_m": 955.0,
+      "explicit_end_m": null,
+      "retain_after_completion": false,
+      "end_is_completion_criterion": false,
+      "positions": [
+        [
+          955.0,
+          "anchor_progress_m"
+        ],
+        [
+          940.0,
+          "activate_progress_m"
+        ]
+      ]
+    },
+    {
+      "event_id": "crosswalk_pedestrian",
+      "kind": "crossing_pedestrian",
+      "start_m": 910.0417,
+      "focus_end_m": 932.4278,
+      "explicit_end_m": null,
+      "retain_after_completion": true,
+      "end_is_completion_criterion": false,
+      "positions": [
+        [
+          932.4278,
+          "anchor_progress_m"
+        ],
+        [
+          910.0417,
+          "activate_progress_m"
+        ]
+      ]
+    },
+    {
+      "event_id": "bus_stop_passengers",
+      "kind": "bus_stop",
+      "start_m": 1460.0,
+      "focus_end_m": 1515.0,
+      "explicit_end_m": null,
+      "retain_after_completion": true,
+      "end_is_completion_criterion": false,
+      "positions": [
+        [
+          1515.0,
+          "anchor_progress_m"
+        ],
+        [
+          1460.0,
+          "activate_progress_m"
+        ]
+      ]
+    },
+    {
+      "event_id": "slow_cyclist",
+      "kind": "cyclist",
+      "start_m": 1760.0,
+      "focus_end_m": 2260.0,
+      "explicit_end_m": 2260.0,
+      "retain_after_completion": true,
+      "end_is_completion_criterion": false,
+      "positions": [
+        [
+          1782.0,
+          "anchor_progress_m"
+        ],
+        [
+          1760.0,
+          "activate_progress_m"
+        ],
+        [
+          2260.0,
+          "resolve_progress_m"
+        ]
+      ]
+    }
+  ],
+  "geometry_features": [
+    {
+      "kind": "traffic_signal",
+      "start_m": 287.485,
+      "end_m": 305.727
+    },
+    {
+      "kind": "lane_count_change",
+      "start_m": 305.727,
+      "end_m": 305.727,
+      "before": 3,
+      "after": 1
+    },
+    {
+      "kind": "junction",
+      "start_m": 305.727,
+      "end_m": 321.676
+    },
+    {
+      "kind": "curve",
+      "start_m": 307.457,
+      "end_m": 321.676
+    },
+    {
+      "kind": "lane_count_change",
+      "start_m": 321.676,
+      "end_m": 321.676,
+      "before": 1,
+      "after": 2
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 321.676,
+      "end_m": 337.676
+    },
+    {
+      "kind": "junction",
+      "start_m": 343.346,
+      "end_m": 368.366
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 378.366,
+      "end_m": 396.286
+    },
+    {
+      "kind": "junction",
+      "start_m": 396.286,
+      "end_m": 423.866
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 423.866,
+      "end_m": 441.866
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 468.883,
+      "end_m": 485.962
+    },
+    {
+      "kind": "lane_count_change",
+      "start_m": 485.962,
+      "end_m": 485.962,
+      "before": 2,
+      "after": 1
+    },
+    {
+      "kind": "junction",
+      "start_m": 485.962,
+      "end_m": 498.439
+    },
+    {
+      "kind": "curve",
+      "start_m": 487.768,
+      "end_m": 500.439
+    },
+    {
+      "kind": "lane_count_change",
+      "start_m": 498.439,
+      "end_m": 498.439,
+      "before": 1,
+      "after": 2
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 498.439,
+      "end_m": 514.439
+    },
+    {
+      "kind": "lane_count_change",
+      "start_m": 545.099,
+      "end_m": 545.099,
+      "before": 2,
+      "after": 1
+    },
+    {
+      "kind": "junction",
+      "start_m": 545.099,
+      "end_m": 557.031
+    },
+    {
+      "kind": "curve",
+      "start_m": 546.94,
+      "end_m": 557.141
+    },
+    {
+      "kind": "lane_count_change",
+      "start_m": 557.031,
+      "end_m": 557.031,
+      "before": 1,
+      "after": 2
+    },
+    {
+      "kind": "curve",
+      "start_m": 590.941,
+      "end_m": 652.992
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 647.558,
+      "end_m": 662.122
+    },
+    {
+      "kind": "lane_count_change",
+      "start_m": 662.122,
+      "end_m": 662.122,
+      "before": 2,
+      "after": 1
+    },
+    {
+      "kind": "junction",
+      "start_m": 662.122,
+      "end_m": 681.351
+    },
+    {
+      "kind": "curve",
+      "start_m": 667.643,
+      "end_m": 683.351
+    },
+    {
+      "kind": "lane_count_change",
+      "start_m": 681.351,
+      "end_m": 681.351,
+      "before": 1,
+      "after": 2
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 681.351,
+      "end_m": 697.351
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 724.368,
+      "end_m": 741.447
+    },
+    {
+      "kind": "junction",
+      "start_m": 741.447,
+      "end_m": 767.114
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 767.114,
+      "end_m": 784.574
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 812.574,
+      "end_m": 831.213
+    },
+    {
+      "kind": "junction",
+      "start_m": 831.213,
+      "end_m": 856.668
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 858.908,
+      "end_m": 874.908
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 876.908,
+      "end_m": 890.038
+    },
+    {
+      "kind": "junction",
+      "start_m": 890.038,
+      "end_m": 915.068
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 915.068,
+      "end_m": 930.449
+    },
+    {
+      "kind": "lane_count_change",
+      "start_m": 930.449,
+      "end_m": 930.449,
+      "before": 2,
+      "after": 1
+    },
+    {
+      "kind": "junction",
+      "start_m": 930.449,
+      "end_m": 946.532
+    },
+    {
+      "kind": "curve",
+      "start_m": 934.109,
+      "end_m": 948.532
+    },
+    {
+      "kind": "lane_count_change",
+      "start_m": 946.532,
+      "end_m": 946.532,
+      "before": 1,
+      "after": 3
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 1512.133,
+      "end_m": 1530.376
+    },
+    {
+      "kind": "junction",
+      "start_m": 1530.376,
+      "end_m": 1559.376
+    },
+    {
+      "kind": "grade",
+      "start_m": 1589.444,
+      "end_m": 1673.444
+    },
+    {
+      "kind": "grade",
+      "start_m": 2238.932,
+      "end_m": 2333.0
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 2337.0,
+      "end_m": 2349.0
+    },
+    {
+      "kind": "junction",
+      "start_m": 2349.0,
+      "end_m": 2379.0
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 2942.399,
+      "end_m": 2962.399
+    },
+    {
+      "kind": "junction",
+      "start_m": 2962.399,
+      "end_m": 2990.399
+    },
+    {
+      "kind": "grade",
+      "start_m": 3020.467,
+      "end_m": 3104.467
+    },
+    {
+      "kind": "grade",
+      "start_m": 3669.955,
+      "end_m": 3764.023
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 3768.023,
+      "end_m": 3780.023
+    },
+    {
+      "kind": "junction",
+      "start_m": 3780.023,
+      "end_m": 3808.023
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 4373.422,
+      "end_m": 4393.422
+    },
+    {
+      "kind": "junction",
+      "start_m": 4393.422,
+      "end_m": 4421.422
+    },
+    {
+      "kind": "grade",
+      "start_m": 4449.489,
+      "end_m": 4535.489
+    },
+    {
+      "kind": "grade",
+      "start_m": 5098.978,
+      "end_m": 5195.046
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 5197.046,
+      "end_m": 5211.046
+    },
+    {
+      "kind": "junction",
+      "start_m": 5211.046,
+      "end_m": 5239.046
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 5804.444,
+      "end_m": 5822.444
+    },
+    {
+      "kind": "junction",
+      "start_m": 5822.444,
+      "end_m": 5852.444
+    },
+    {
+      "kind": "grade",
+      "start_m": 5880.512,
+      "end_m": 5966.512
+    },
+    {
+      "kind": "grade",
+      "start_m": 6530.0,
+      "end_m": 6626.069
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 6628.069,
+      "end_m": 6640.069
+    },
+    {
+      "kind": "junction",
+      "start_m": 6640.069,
+      "end_m": 6670.069
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 7235.467,
+      "end_m": 7253.467
+    },
+    {
+      "kind": "junction",
+      "start_m": 7253.467,
+      "end_m": 7283.467
+    },
+    {
+      "kind": "grade",
+      "start_m": 7311.535,
+      "end_m": 7395.535
+    },
+    {
+      "kind": "grade",
+      "start_m": 7961.023,
+      "end_m": 8000.0
+    }
+  ],
+  "breakpoints": [
+    {
+      "s_m": 0.0,
+      "kind": "route_start",
+      "source_id": "scene_2"
+    },
+    {
+      "s_m": 0.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_01"
+    },
+    {
+      "s_m": 0.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_01"
+    },
+    {
+      "s_m": 287.485,
+      "kind": "geometry_start",
+      "source_id": "geometry_000",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 305.727,
+      "kind": "geometry_end",
+      "source_id": "geometry_000",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 305.727,
+      "kind": "geometry_start",
+      "source_id": "geometry_001",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 305.727,
+      "kind": "geometry_end",
+      "source_id": "geometry_001",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 305.727,
+      "kind": "geometry_start",
+      "source_id": "geometry_002",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 307.457,
+      "kind": "geometry_start",
+      "source_id": "geometry_003",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 321.676,
+      "kind": "geometry_end",
+      "source_id": "geometry_002",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 321.676,
+      "kind": "geometry_end",
+      "source_id": "geometry_003",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 321.676,
+      "kind": "geometry_start",
+      "source_id": "geometry_004",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 321.676,
+      "kind": "geometry_end",
+      "source_id": "geometry_004",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 321.676,
+      "kind": "geometry_start",
+      "source_id": "geometry_005",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 337.676,
+      "kind": "geometry_end",
+      "source_id": "geometry_005",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 343.346,
+      "kind": "geometry_start",
+      "source_id": "geometry_006",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 368.366,
+      "kind": "geometry_end",
+      "source_id": "geometry_006",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 370.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_02"
+    },
+    {
+      "s_m": 370.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_02"
+    },
+    {
+      "s_m": 378.366,
+      "kind": "geometry_start",
+      "source_id": "geometry_007",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 380.0,
+      "kind": "event_position",
+      "source_id": "slow_vehicle",
+      "field": "activate_progress_m"
+    },
+    {
+      "s_m": 396.286,
+      "kind": "geometry_end",
+      "source_id": "geometry_007",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 396.286,
+      "kind": "geometry_start",
+      "source_id": "geometry_008",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 423.866,
+      "kind": "geometry_end",
+      "source_id": "geometry_008",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 423.866,
+      "kind": "geometry_start",
+      "source_id": "geometry_009",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 441.866,
+      "kind": "geometry_end",
+      "source_id": "geometry_009",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 468.883,
+      "kind": "geometry_start",
+      "source_id": "geometry_010",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 485.962,
+      "kind": "geometry_end",
+      "source_id": "geometry_010",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 485.962,
+      "kind": "geometry_start",
+      "source_id": "geometry_011",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 485.962,
+      "kind": "geometry_end",
+      "source_id": "geometry_011",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 485.962,
+      "kind": "geometry_start",
+      "source_id": "geometry_012",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 487.768,
+      "kind": "geometry_start",
+      "source_id": "geometry_013",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 498.439,
+      "kind": "geometry_end",
+      "source_id": "geometry_012",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 498.439,
+      "kind": "geometry_start",
+      "source_id": "geometry_014",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 498.439,
+      "kind": "geometry_end",
+      "source_id": "geometry_014",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 498.439,
+      "kind": "geometry_start",
+      "source_id": "geometry_015",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 500.0,
+      "kind": "event_position",
+      "source_id": "slow_vehicle",
+      "field": "anchor_progress_m"
+    },
+    {
+      "s_m": 500.439,
+      "kind": "geometry_end",
+      "source_id": "geometry_013",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 514.439,
+      "kind": "geometry_end",
+      "source_id": "geometry_015",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 545.099,
+      "kind": "geometry_start",
+      "source_id": "geometry_016",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 545.099,
+      "kind": "geometry_end",
+      "source_id": "geometry_016",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 545.099,
+      "kind": "geometry_start",
+      "source_id": "geometry_017",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 546.94,
+      "kind": "geometry_start",
+      "source_id": "geometry_018",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 557.031,
+      "kind": "geometry_end",
+      "source_id": "geometry_017",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 557.031,
+      "kind": "geometry_start",
+      "source_id": "geometry_019",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 557.031,
+      "kind": "geometry_end",
+      "source_id": "geometry_019",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 557.141,
+      "kind": "geometry_end",
+      "source_id": "geometry_018",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 590.941,
+      "kind": "geometry_start",
+      "source_id": "geometry_020",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 647.558,
+      "kind": "geometry_start",
+      "source_id": "geometry_021",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 652.992,
+      "kind": "geometry_end",
+      "source_id": "geometry_020",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 662.122,
+      "kind": "geometry_end",
+      "source_id": "geometry_021",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 662.122,
+      "kind": "geometry_start",
+      "source_id": "geometry_022",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 662.122,
+      "kind": "geometry_end",
+      "source_id": "geometry_022",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 662.122,
+      "kind": "geometry_start",
+      "source_id": "geometry_023",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 667.643,
+      "kind": "geometry_start",
+      "source_id": "geometry_024",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 681.351,
+      "kind": "geometry_end",
+      "source_id": "geometry_023",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 681.351,
+      "kind": "geometry_start",
+      "source_id": "geometry_025",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 681.351,
+      "kind": "geometry_end",
+      "source_id": "geometry_025",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 681.351,
+      "kind": "geometry_start",
+      "source_id": "geometry_026",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 683.351,
+      "kind": "geometry_end",
+      "source_id": "geometry_024",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 697.351,
+      "kind": "geometry_end",
+      "source_id": "geometry_026",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 724.368,
+      "kind": "geometry_start",
+      "source_id": "geometry_027",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 741.447,
+      "kind": "geometry_end",
+      "source_id": "geometry_027",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 741.447,
+      "kind": "geometry_start",
+      "source_id": "geometry_028",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 767.114,
+      "kind": "geometry_end",
+      "source_id": "geometry_028",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 767.114,
+      "kind": "geometry_start",
+      "source_id": "geometry_029",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 784.574,
+      "kind": "geometry_end",
+      "source_id": "geometry_029",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 812.574,
+      "kind": "geometry_start",
+      "source_id": "geometry_030",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 820.0,
+      "kind": "event_position",
+      "source_id": "slow_vehicle",
+      "field": "resolve_progress_m"
+    },
+    {
+      "s_m": 831.213,
+      "kind": "geometry_end",
+      "source_id": "geometry_030",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 831.213,
+      "kind": "geometry_start",
+      "source_id": "geometry_031",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 856.668,
+      "kind": "geometry_end",
+      "source_id": "geometry_031",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 858.908,
+      "kind": "geometry_start",
+      "source_id": "geometry_032",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 874.908,
+      "kind": "geometry_end",
+      "source_id": "geometry_032",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 876.908,
+      "kind": "geometry_start",
+      "source_id": "geometry_033",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 880.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_03"
+    },
+    {
+      "s_m": 880.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_03"
+    },
+    {
+      "s_m": 890.038,
+      "kind": "geometry_end",
+      "source_id": "geometry_033",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 890.038,
+      "kind": "geometry_start",
+      "source_id": "geometry_034",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 910.042,
+      "kind": "event_position",
+      "source_id": "crosswalk_pedestrian",
+      "field": "activate_progress_m"
+    },
+    {
+      "s_m": 915.068,
+      "kind": "geometry_end",
+      "source_id": "geometry_034",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 915.068,
+      "kind": "geometry_start",
+      "source_id": "geometry_035",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 930.449,
+      "kind": "geometry_end",
+      "source_id": "geometry_035",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 930.449,
+      "kind": "geometry_start",
+      "source_id": "geometry_036",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 930.449,
+      "kind": "geometry_end",
+      "source_id": "geometry_036",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 930.449,
+      "kind": "geometry_start",
+      "source_id": "geometry_037",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 932.428,
+      "kind": "event_position",
+      "source_id": "crosswalk_pedestrian",
+      "field": "anchor_progress_m"
+    },
+    {
+      "s_m": 934.109,
+      "kind": "geometry_start",
+      "source_id": "geometry_038",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 940.0,
+      "kind": "event_position",
+      "source_id": "compound_slow_vehicle",
+      "field": "activate_progress_m"
+    },
+    {
+      "s_m": 946.532,
+      "kind": "geometry_end",
+      "source_id": "geometry_037",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 946.532,
+      "kind": "geometry_start",
+      "source_id": "geometry_039",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 946.532,
+      "kind": "geometry_end",
+      "source_id": "geometry_039",
+      "geometry_kind": "lane_count_change"
+    },
+    {
+      "s_m": 948.532,
+      "kind": "geometry_end",
+      "source_id": "geometry_038",
+      "geometry_kind": "curve"
+    },
+    {
+      "s_m": 955.0,
+      "kind": "event_position",
+      "source_id": "compound_slow_vehicle",
+      "field": "anchor_progress_m"
+    },
+    {
+      "s_m": 1260.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_04"
+    },
+    {
+      "s_m": 1260.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_04"
+    },
+    {
+      "s_m": 1460.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_05"
+    },
+    {
+      "s_m": 1460.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_05"
+    },
+    {
+      "s_m": 1460.0,
+      "kind": "event_position",
+      "source_id": "bus_stop_passengers",
+      "field": "activate_progress_m"
+    },
+    {
+      "s_m": 1512.133,
+      "kind": "geometry_start",
+      "source_id": "geometry_040",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 1515.0,
+      "kind": "event_position",
+      "source_id": "bus_stop_passengers",
+      "field": "anchor_progress_m"
+    },
+    {
+      "s_m": 1530.376,
+      "kind": "geometry_end",
+      "source_id": "geometry_040",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 1530.376,
+      "kind": "geometry_start",
+      "source_id": "geometry_041",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 1559.376,
+      "kind": "geometry_end",
+      "source_id": "geometry_041",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 1589.444,
+      "kind": "geometry_start",
+      "source_id": "geometry_042",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 1640.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_06"
+    },
+    {
+      "s_m": 1640.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_06"
+    },
+    {
+      "s_m": 1673.444,
+      "kind": "geometry_end",
+      "source_id": "geometry_042",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 1760.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_07"
+    },
+    {
+      "s_m": 1760.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_07"
+    },
+    {
+      "s_m": 1760.0,
+      "kind": "event_position",
+      "source_id": "slow_cyclist",
+      "field": "activate_progress_m"
+    },
+    {
+      "s_m": 1782.0,
+      "kind": "event_position",
+      "source_id": "slow_cyclist",
+      "field": "anchor_progress_m"
+    },
+    {
+      "s_m": 2238.932,
+      "kind": "geometry_start",
+      "source_id": "geometry_043",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 2260.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_08"
+    },
+    {
+      "s_m": 2260.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_08"
+    },
+    {
+      "s_m": 2260.0,
+      "kind": "event_position",
+      "source_id": "slow_cyclist",
+      "field": "resolve_progress_m"
+    },
+    {
+      "s_m": 2333.0,
+      "kind": "geometry_end",
+      "source_id": "geometry_043",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 2337.0,
+      "kind": "geometry_start",
+      "source_id": "geometry_044",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 2349.0,
+      "kind": "geometry_end",
+      "source_id": "geometry_044",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 2349.0,
+      "kind": "geometry_start",
+      "source_id": "geometry_045",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 2379.0,
+      "kind": "geometry_end",
+      "source_id": "geometry_045",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 2560.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_09"
+    },
+    {
+      "s_m": 2560.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_09"
+    },
+    {
+      "s_m": 2700.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_10"
+    },
+    {
+      "s_m": 2700.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_10"
+    },
+    {
+      "s_m": 2942.399,
+      "kind": "geometry_start",
+      "source_id": "geometry_046",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 2962.399,
+      "kind": "geometry_end",
+      "source_id": "geometry_046",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 2962.399,
+      "kind": "geometry_start",
+      "source_id": "geometry_047",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 2990.399,
+      "kind": "geometry_end",
+      "source_id": "geometry_047",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 3020.467,
+      "kind": "geometry_start",
+      "source_id": "geometry_048",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 3104.467,
+      "kind": "geometry_end",
+      "source_id": "geometry_048",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 3669.955,
+      "kind": "geometry_start",
+      "source_id": "geometry_049",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 3764.023,
+      "kind": "geometry_end",
+      "source_id": "geometry_049",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 3768.023,
+      "kind": "geometry_start",
+      "source_id": "geometry_050",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 3780.023,
+      "kind": "geometry_end",
+      "source_id": "geometry_050",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 3780.023,
+      "kind": "geometry_start",
+      "source_id": "geometry_051",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 3808.023,
+      "kind": "geometry_end",
+      "source_id": "geometry_051",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 4340.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_11"
+    },
+    {
+      "s_m": 4340.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_11"
+    },
+    {
+      "s_m": 4373.422,
+      "kind": "geometry_start",
+      "source_id": "geometry_052",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 4393.422,
+      "kind": "geometry_end",
+      "source_id": "geometry_052",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 4393.422,
+      "kind": "geometry_start",
+      "source_id": "geometry_053",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 4421.422,
+      "kind": "geometry_end",
+      "source_id": "geometry_053",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 4449.489,
+      "kind": "geometry_start",
+      "source_id": "geometry_054",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 4535.489,
+      "kind": "geometry_end",
+      "source_id": "geometry_054",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 4596.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_12"
+    },
+    {
+      "s_m": 4596.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_12"
+    },
+    {
+      "s_m": 5098.978,
+      "kind": "geometry_start",
+      "source_id": "geometry_055",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 5195.046,
+      "kind": "geometry_end",
+      "source_id": "geometry_055",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 5197.046,
+      "kind": "geometry_start",
+      "source_id": "geometry_056",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 5200.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_13"
+    },
+    {
+      "s_m": 5200.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_13"
+    },
+    {
+      "s_m": 5211.046,
+      "kind": "geometry_end",
+      "source_id": "geometry_056",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 5211.046,
+      "kind": "geometry_start",
+      "source_id": "geometry_057",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 5239.046,
+      "kind": "geometry_end",
+      "source_id": "geometry_057",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 5804.444,
+      "kind": "geometry_start",
+      "source_id": "geometry_058",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 5822.444,
+      "kind": "geometry_end",
+      "source_id": "geometry_058",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 5822.444,
+      "kind": "geometry_start",
+      "source_id": "geometry_059",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 5852.444,
+      "kind": "geometry_end",
+      "source_id": "geometry_059",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 5880.512,
+      "kind": "geometry_start",
+      "source_id": "geometry_060",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 5966.512,
+      "kind": "geometry_end",
+      "source_id": "geometry_060",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 6050.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_14"
+    },
+    {
+      "s_m": 6050.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_14"
+    },
+    {
+      "s_m": 6530.0,
+      "kind": "geometry_start",
+      "source_id": "geometry_061",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 6626.069,
+      "kind": "geometry_end",
+      "source_id": "geometry_061",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 6628.069,
+      "kind": "geometry_start",
+      "source_id": "geometry_062",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 6640.069,
+      "kind": "geometry_end",
+      "source_id": "geometry_062",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 6640.069,
+      "kind": "geometry_start",
+      "source_id": "geometry_063",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 6670.069,
+      "kind": "geometry_end",
+      "source_id": "geometry_063",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 6964.0,
+      "kind": "task_announce",
+      "source_id": "s2_t05_cmd_15"
+    },
+    {
+      "s_m": 6964.0,
+      "kind": "task_activate",
+      "source_id": "s2_t05_cmd_15"
+    },
+    {
+      "s_m": 7235.467,
+      "kind": "geometry_start",
+      "source_id": "geometry_064",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 7253.467,
+      "kind": "geometry_end",
+      "source_id": "geometry_064",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 7253.467,
+      "kind": "geometry_start",
+      "source_id": "geometry_065",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 7283.467,
+      "kind": "geometry_end",
+      "source_id": "geometry_065",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 7311.535,
+      "kind": "geometry_start",
+      "source_id": "geometry_066",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 7395.535,
+      "kind": "geometry_end",
+      "source_id": "geometry_066",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 7961.023,
+      "kind": "geometry_start",
+      "source_id": "geometry_067",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 8000.0,
+      "kind": "route_end",
+      "source_id": "scene_2"
+    },
+    {
+      "s_m": 8000.0,
+      "kind": "geometry_end",
+      "source_id": "geometry_067",
+      "geometry_kind": "grade"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "S2-P01",
+      "start_m": 0.0,
+      "end_m": 370.0,
+      "section_ids": [
+        "S2-001",
+        "S2-002"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_01"
+      ],
+      "event_ids": [],
+      "replay_start_m": 0.0,
+      "stop_after_m": 420.0
+    },
+    {
+      "phase_id": "S2-P02",
+      "start_m": 370.0,
+      "end_m": 880.0,
+      "section_ids": [
+        "S2-003",
+        "S2-004",
+        "S2-005",
+        "S2-006",
+        "S2-007",
+        "S2-008",
+        "S2-009"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_02"
+      ],
+      "event_ids": [
+        "slow_vehicle"
+      ],
+      "replay_start_m": 219.702,
+      "stop_after_m": 930.0
+    },
+    {
+      "phase_id": "S2-P03",
+      "start_m": 880.0,
+      "end_m": 1260.0,
+      "section_ids": [
+        "S2-010",
+        "S2-011",
+        "S2-012",
+        "S2-013",
+        "S2-014"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_03"
+      ],
+      "event_ids": [
+        "compound_slow_vehicle",
+        "crosswalk_pedestrian"
+      ],
+      "replay_start_m": 728.368,
+      "stop_after_m": 1310.0
+    },
+    {
+      "phase_id": "S2-P04",
+      "start_m": 1260.0,
+      "end_m": 1460.0,
+      "section_ids": [
+        "S2-015"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_04"
+      ],
+      "event_ids": [
+        "bus_stop_passengers",
+        "crosswalk_pedestrian"
+      ],
+      "replay_start_m": 738.381,
+      "stop_after_m": 1510.0
+    },
+    {
+      "phase_id": "S2-P05",
+      "start_m": 1460.0,
+      "end_m": 1640.0,
+      "section_ids": [
+        "S2-016",
+        "S2-017"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_05"
+      ],
+      "event_ids": [
+        "bus_stop_passengers",
+        "crosswalk_pedestrian"
+      ],
+      "replay_start_m": 738.381,
+      "stop_after_m": 1690.0
+    },
+    {
+      "phase_id": "S2-P06",
+      "start_m": 1640.0,
+      "end_m": 1760.0,
+      "section_ids": [
+        "S2-018"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_06"
+      ],
+      "event_ids": [
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "replay_start_m": 1309.297,
+      "stop_after_m": 1810.0
+    },
+    {
+      "phase_id": "S2-P07",
+      "start_m": 1760.0,
+      "end_m": 2260.0,
+      "section_ids": [
+        "S2-019",
+        "S2-020",
+        "S2-021"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_07"
+      ],
+      "event_ids": [
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "replay_start_m": 1309.297,
+      "stop_after_m": 2310.0
+    },
+    {
+      "phase_id": "S2-P08",
+      "start_m": 2260.0,
+      "end_m": 2560.0,
+      "section_ids": [
+        "S2-022",
+        "S2-023"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_08"
+      ],
+      "event_ids": [
+        "slow_cyclist"
+      ],
+      "replay_start_m": 1609.444,
+      "stop_after_m": 2610.0
+    },
+    {
+      "phase_id": "S2-P09",
+      "start_m": 2560.0,
+      "end_m": 2700.0,
+      "section_ids": [
+        "S2-024"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_09"
+      ],
+      "event_ids": [],
+      "replay_start_m": 2409.0,
+      "stop_after_m": 2750.0
+    },
+    {
+      "phase_id": "S2-P10",
+      "start_m": 2700.0,
+      "end_m": 4340.0,
+      "section_ids": [
+        "S2-025",
+        "S2-026",
+        "S2-027",
+        "S2-028",
+        "S2-029",
+        "S2-030",
+        "S2-031",
+        "S2-032",
+        "S2-033"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_10"
+      ],
+      "event_ids": [],
+      "replay_start_m": 2548.417,
+      "stop_after_m": 4390.0
+    },
+    {
+      "phase_id": "S2-P11",
+      "start_m": 4340.0,
+      "end_m": 4596.0,
+      "section_ids": [
+        "S2-034",
+        "S2-035"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_11"
+      ],
+      "event_ids": [],
+      "replay_start_m": 4188.586,
+      "stop_after_m": 4646.0
+    },
+    {
+      "phase_id": "S2-P12",
+      "start_m": 4596.0,
+      "end_m": 5200.0,
+      "section_ids": [
+        "S2-036",
+        "S2-037",
+        "S2-038"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_12"
+      ],
+      "event_ids": [],
+      "replay_start_m": 4445.489,
+      "stop_after_m": 5250.0
+    },
+    {
+      "phase_id": "S2-P13",
+      "start_m": 5200.0,
+      "end_m": 6050.0,
+      "section_ids": [
+        "S2-039",
+        "S2-040",
+        "S2-041",
+        "S2-042",
+        "S2-043"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_13"
+      ],
+      "event_ids": [],
+      "replay_start_m": 5049.102,
+      "stop_after_m": 6100.0
+    },
+    {
+      "phase_id": "S2-P14",
+      "start_m": 6050.0,
+      "end_m": 6964.0,
+      "section_ids": [
+        "S2-044",
+        "S2-045",
+        "S2-046",
+        "S2-047",
+        "S2-048"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_14"
+      ],
+      "event_ids": [],
+      "replay_start_m": 5898.512,
+      "stop_after_m": 7014.0
+    },
+    {
+      "phase_id": "S2-P15",
+      "start_m": 6964.0,
+      "end_m": 8000.0,
+      "section_ids": [
+        "S2-049",
+        "S2-050",
+        "S2-051",
+        "S2-052",
+        "S2-053",
+        "S2-054"
+      ],
+      "task_ids": [
+        "s2_t05_cmd_15"
+      ],
+      "event_ids": [],
+      "replay_start_m": 6813.187,
+      "stop_after_m": 8000.0
+    }
+  ],
+  "sections": [
+    {
+      "section_id": "S2-001",
+      "start_m": 0.0,
+      "end_m": 247.485,
+      "task_ids": [
+        "s2_t05_cmd_01"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 0.0,
+      "stop_after_m": 297.485,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 189.74082946777344,
+        "y": -11.026934623718262,
+        "z": 0.0,
+        "yaw_deg": 89.33090209960938,
+        "road_id": 12,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 0.0,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 0.0,
+          "kind": "route_start",
+          "source_id": "scene_2"
+        },
+        {
+          "s_m": 0.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_01"
+        },
+        {
+          "s_m": 0.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_01"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-002",
+      "start_m": 247.485,
+      "end_m": 370.0,
+      "task_ids": [
+        "s2_t05_cmd_01"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "curve",
+        "junction",
+        "lane_count_change",
+        "traffic_signal"
+      ],
+      "replay_start_m": 0.0,
+      "stop_after_m": 420.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 189.74082946777344,
+        "y": -11.026934623718262,
+        "z": 0.0,
+        "yaw_deg": 89.33090209960938,
+        "road_id": 12,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 0.0,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 287.485,
+          "kind": "geometry_start",
+          "source_id": "geometry_000",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 305.727,
+          "kind": "geometry_end",
+          "source_id": "geometry_000",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 305.727,
+          "kind": "geometry_start",
+          "source_id": "geometry_001",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 305.727,
+          "kind": "geometry_end",
+          "source_id": "geometry_001",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 305.727,
+          "kind": "geometry_start",
+          "source_id": "geometry_002",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 321.676,
+          "kind": "geometry_end",
+          "source_id": "geometry_002",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 307.457,
+          "kind": "geometry_start",
+          "source_id": "geometry_003",
+          "geometry_kind": "curve"
+        },
+        {
+          "s_m": 321.676,
+          "kind": "geometry_end",
+          "source_id": "geometry_003",
+          "geometry_kind": "curve"
+        },
+        {
+          "s_m": 321.676,
+          "kind": "geometry_start",
+          "source_id": "geometry_004",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 321.676,
+          "kind": "geometry_end",
+          "source_id": "geometry_004",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 321.676,
+          "kind": "geometry_start",
+          "source_id": "geometry_005",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 337.676,
+          "kind": "geometry_end",
+          "source_id": "geometry_005",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 343.346,
+          "kind": "geometry_start",
+          "source_id": "geometry_006",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 368.366,
+          "kind": "geometry_end",
+          "source_id": "geometry_006",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-003",
+      "start_m": 370.0,
+      "end_m": 380.0,
+      "task_ids": [
+        "s2_t05_cmd_02"
+      ],
+      "event_ids": [
+        "slow_vehicle"
+      ],
+      "geometry_kinds": [
+        "traffic_signal"
+      ],
+      "replay_start_m": 219.702,
+      "stop_after_m": 430.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 129.69093322753906,
+        "y": 182.9990997314453,
+        "z": 0.0,
+        "yaw_deg": 160.56675720214844,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 219.702,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 370.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_02"
+        },
+        {
+          "s_m": 370.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_02"
+        },
+        {
+          "s_m": 378.366,
+          "kind": "geometry_start",
+          "source_id": "geometry_007",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-004",
+      "start_m": 380.0,
+      "end_m": 463.866,
+      "task_ids": [
+        "s2_t05_cmd_02"
+      ],
+      "event_ids": [
+        "slow_vehicle"
+      ],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 219.702,
+      "stop_after_m": 513.866,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 129.69093322753906,
+        "y": 182.9990997314453,
+        "z": 0.0,
+        "yaw_deg": 160.56675720214844,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 219.702,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 380.0,
+          "kind": "event_position",
+          "source_id": "slow_vehicle",
+          "field": "activate_progress_m"
+        },
+        {
+          "s_m": 396.286,
+          "kind": "geometry_end",
+          "source_id": "geometry_007",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 396.286,
+          "kind": "geometry_start",
+          "source_id": "geometry_008",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 423.866,
+          "kind": "geometry_end",
+          "source_id": "geometry_008",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 423.866,
+          "kind": "geometry_start",
+          "source_id": "geometry_009",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 441.866,
+          "kind": "geometry_end",
+          "source_id": "geometry_009",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-005",
+      "start_m": 463.866,
+      "end_m": 525.962,
+      "task_ids": [
+        "s2_t05_cmd_02"
+      ],
+      "event_ids": [
+        "slow_vehicle"
+      ],
+      "geometry_kinds": [
+        "curve",
+        "junction",
+        "lane_count_change",
+        "traffic_signal"
+      ],
+      "replay_start_m": 219.702,
+      "stop_after_m": 575.962,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 129.69093322753906,
+        "y": 182.9990997314453,
+        "z": 0.0,
+        "yaw_deg": 160.56675720214844,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 219.702,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 500.0,
+          "kind": "event_position",
+          "source_id": "slow_vehicle",
+          "field": "anchor_progress_m"
+        },
+        {
+          "s_m": 468.883,
+          "kind": "geometry_start",
+          "source_id": "geometry_010",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 485.962,
+          "kind": "geometry_end",
+          "source_id": "geometry_010",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 485.962,
+          "kind": "geometry_start",
+          "source_id": "geometry_011",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 485.962,
+          "kind": "geometry_end",
+          "source_id": "geometry_011",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 485.962,
+          "kind": "geometry_start",
+          "source_id": "geometry_012",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 498.439,
+          "kind": "geometry_end",
+          "source_id": "geometry_012",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 487.768,
+          "kind": "geometry_start",
+          "source_id": "geometry_013",
+          "geometry_kind": "curve"
+        },
+        {
+          "s_m": 500.439,
+          "kind": "geometry_end",
+          "source_id": "geometry_013",
+          "geometry_kind": "curve"
+        },
+        {
+          "s_m": 498.439,
+          "kind": "geometry_start",
+          "source_id": "geometry_014",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 498.439,
+          "kind": "geometry_end",
+          "source_id": "geometry_014",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 498.439,
+          "kind": "geometry_start",
+          "source_id": "geometry_015",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 514.439,
+          "kind": "geometry_end",
+          "source_id": "geometry_015",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-006",
+      "start_m": 525.962,
+      "end_m": 597.031,
+      "task_ids": [
+        "s2_t05_cmd_02"
+      ],
+      "event_ids": [
+        "slow_vehicle"
+      ],
+      "geometry_kinds": [
+        "curve",
+        "junction",
+        "lane_count_change"
+      ],
+      "replay_start_m": 219.702,
+      "stop_after_m": 647.031,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 129.69093322753906,
+        "y": 182.9990997314453,
+        "z": 0.0,
+        "yaw_deg": 160.56675720214844,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 219.702,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 545.099,
+          "kind": "geometry_start",
+          "source_id": "geometry_016",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 545.099,
+          "kind": "geometry_end",
+          "source_id": "geometry_016",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 545.099,
+          "kind": "geometry_start",
+          "source_id": "geometry_017",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 557.031,
+          "kind": "geometry_end",
+          "source_id": "geometry_017",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 546.94,
+          "kind": "geometry_start",
+          "source_id": "geometry_018",
+          "geometry_kind": "curve"
+        },
+        {
+          "s_m": 557.141,
+          "kind": "geometry_end",
+          "source_id": "geometry_018",
+          "geometry_kind": "curve"
+        },
+        {
+          "s_m": 557.031,
+          "kind": "geometry_start",
+          "source_id": "geometry_019",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 557.031,
+          "kind": "geometry_end",
+          "source_id": "geometry_019",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 590.941,
+          "kind": "geometry_start",
+          "source_id": "geometry_020",
+          "geometry_kind": "curve"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-007",
+      "start_m": 597.031,
+      "end_m": 692.992,
+      "task_ids": [
+        "s2_t05_cmd_02"
+      ],
+      "event_ids": [
+        "slow_vehicle"
+      ],
+      "geometry_kinds": [
+        "curve",
+        "junction",
+        "lane_count_change",
+        "traffic_signal"
+      ],
+      "replay_start_m": 219.702,
+      "stop_after_m": 742.992,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 129.69093322753906,
+        "y": 182.9990997314453,
+        "z": 0.0,
+        "yaw_deg": 160.56675720214844,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 219.702,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 652.992,
+          "kind": "geometry_end",
+          "source_id": "geometry_020",
+          "geometry_kind": "curve"
+        },
+        {
+          "s_m": 647.558,
+          "kind": "geometry_start",
+          "source_id": "geometry_021",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 662.122,
+          "kind": "geometry_end",
+          "source_id": "geometry_021",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 662.122,
+          "kind": "geometry_start",
+          "source_id": "geometry_022",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 662.122,
+          "kind": "geometry_end",
+          "source_id": "geometry_022",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 662.122,
+          "kind": "geometry_start",
+          "source_id": "geometry_023",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 681.351,
+          "kind": "geometry_end",
+          "source_id": "geometry_023",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 667.643,
+          "kind": "geometry_start",
+          "source_id": "geometry_024",
+          "geometry_kind": "curve"
+        },
+        {
+          "s_m": 683.351,
+          "kind": "geometry_end",
+          "source_id": "geometry_024",
+          "geometry_kind": "curve"
+        },
+        {
+          "s_m": 681.351,
+          "kind": "geometry_start",
+          "source_id": "geometry_025",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 681.351,
+          "kind": "geometry_end",
+          "source_id": "geometry_025",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 681.351,
+          "kind": "geometry_start",
+          "source_id": "geometry_026",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-008",
+      "start_m": 692.992,
+      "end_m": 820.0,
+      "task_ids": [
+        "s2_t05_cmd_02"
+      ],
+      "event_ids": [
+        "slow_vehicle"
+      ],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 219.702,
+      "stop_after_m": 870.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 129.69093322753906,
+        "y": 182.9990997314453,
+        "z": 0.0,
+        "yaw_deg": 160.56675720214844,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 219.702,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 697.351,
+          "kind": "geometry_end",
+          "source_id": "geometry_026",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 724.368,
+          "kind": "geometry_start",
+          "source_id": "geometry_027",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 741.447,
+          "kind": "geometry_end",
+          "source_id": "geometry_027",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 741.447,
+          "kind": "geometry_start",
+          "source_id": "geometry_028",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 767.114,
+          "kind": "geometry_end",
+          "source_id": "geometry_028",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 767.114,
+          "kind": "geometry_start",
+          "source_id": "geometry_029",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 784.574,
+          "kind": "geometry_end",
+          "source_id": "geometry_029",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 812.574,
+          "kind": "geometry_start",
+          "source_id": "geometry_030",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-009",
+      "start_m": 820.0,
+      "end_m": 880.0,
+      "task_ids": [
+        "s2_t05_cmd_02"
+      ],
+      "event_ids": [
+        "slow_vehicle"
+      ],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 219.702,
+      "stop_after_m": 930.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 129.69093322753906,
+        "y": 182.9990997314453,
+        "z": 0.0,
+        "yaw_deg": 160.56675720214844,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 219.702,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 820.0,
+          "kind": "event_position",
+          "source_id": "slow_vehicle",
+          "field": "resolve_progress_m"
+        },
+        {
+          "s_m": 831.213,
+          "kind": "geometry_end",
+          "source_id": "geometry_030",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 831.213,
+          "kind": "geometry_start",
+          "source_id": "geometry_031",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 856.668,
+          "kind": "geometry_end",
+          "source_id": "geometry_031",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 858.908,
+          "kind": "geometry_start",
+          "source_id": "geometry_032",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 874.908,
+          "kind": "geometry_end",
+          "source_id": "geometry_032",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 876.908,
+          "kind": "geometry_start",
+          "source_id": "geometry_033",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-010",
+      "start_m": 880.0,
+      "end_m": 910.042,
+      "task_ids": [
+        "s2_t05_cmd_03"
+      ],
+      "event_ids": [
+        "crosswalk_pedestrian"
+      ],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 728.368,
+      "stop_after_m": 960.042,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 35.10159683227539,
+        "y": 26.202091217041016,
+        "z": 1.52587890625e-05,
+        "yaw_deg": 270.02288818359375,
+        "road_id": 26,
+        "lane_id": 2
+      },
+      "start_pose_route_m": 728.368,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 880.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_03"
+        },
+        {
+          "s_m": 880.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_03"
+        },
+        {
+          "s_m": 890.038,
+          "kind": "geometry_end",
+          "source_id": "geometry_033",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 890.038,
+          "kind": "geometry_start",
+          "source_id": "geometry_034",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-011",
+      "start_m": 910.042,
+      "end_m": 932.428,
+      "task_ids": [
+        "s2_t05_cmd_03"
+      ],
+      "event_ids": [
+        "crosswalk_pedestrian"
+      ],
+      "geometry_kinds": [
+        "junction",
+        "lane_count_change",
+        "traffic_signal"
+      ],
+      "replay_start_m": 728.368,
+      "stop_after_m": 982.428,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 35.10159683227539,
+        "y": 26.202091217041016,
+        "z": 1.52587890625e-05,
+        "yaw_deg": 270.02288818359375,
+        "road_id": 26,
+        "lane_id": 2
+      },
+      "start_pose_route_m": 728.368,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 910.042,
+          "kind": "event_position",
+          "source_id": "crosswalk_pedestrian",
+          "field": "activate_progress_m"
+        },
+        {
+          "s_m": 915.068,
+          "kind": "geometry_end",
+          "source_id": "geometry_034",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 915.068,
+          "kind": "geometry_start",
+          "source_id": "geometry_035",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 930.449,
+          "kind": "geometry_end",
+          "source_id": "geometry_035",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 930.449,
+          "kind": "geometry_start",
+          "source_id": "geometry_036",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 930.449,
+          "kind": "geometry_end",
+          "source_id": "geometry_036",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 930.449,
+          "kind": "geometry_start",
+          "source_id": "geometry_037",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-012",
+      "start_m": 932.428,
+      "end_m": 940.0,
+      "task_ids": [
+        "s2_t05_cmd_03"
+      ],
+      "event_ids": [
+        "compound_slow_vehicle"
+      ],
+      "geometry_kinds": [
+        "curve",
+        "junction"
+      ],
+      "replay_start_m": 728.368,
+      "stop_after_m": 990.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 35.10159683227539,
+        "y": 26.202091217041016,
+        "z": 1.52587890625e-05,
+        "yaw_deg": 270.02288818359375,
+        "road_id": 26,
+        "lane_id": 2
+      },
+      "start_pose_route_m": 728.368,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 932.428,
+          "kind": "event_position",
+          "source_id": "crosswalk_pedestrian",
+          "field": "anchor_progress_m"
+        },
+        {
+          "s_m": 934.109,
+          "kind": "geometry_start",
+          "source_id": "geometry_038",
+          "geometry_kind": "curve"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-013",
+      "start_m": 940.0,
+      "end_m": 955.0,
+      "task_ids": [
+        "s2_t05_cmd_03"
+      ],
+      "event_ids": [
+        "compound_slow_vehicle"
+      ],
+      "geometry_kinds": [
+        "curve",
+        "junction",
+        "lane_count_change"
+      ],
+      "replay_start_m": 728.368,
+      "stop_after_m": 1005.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 35.10159683227539,
+        "y": 26.202091217041016,
+        "z": 1.52587890625e-05,
+        "yaw_deg": 270.02288818359375,
+        "road_id": 26,
+        "lane_id": 2
+      },
+      "start_pose_route_m": 728.368,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 940.0,
+          "kind": "event_position",
+          "source_id": "compound_slow_vehicle",
+          "field": "activate_progress_m"
+        },
+        {
+          "s_m": 946.532,
+          "kind": "geometry_end",
+          "source_id": "geometry_037",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 948.532,
+          "kind": "geometry_end",
+          "source_id": "geometry_038",
+          "geometry_kind": "curve"
+        },
+        {
+          "s_m": 946.532,
+          "kind": "geometry_start",
+          "source_id": "geometry_039",
+          "geometry_kind": "lane_count_change"
+        },
+        {
+          "s_m": 946.532,
+          "kind": "geometry_end",
+          "source_id": "geometry_039",
+          "geometry_kind": "lane_count_change"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-014",
+      "start_m": 955.0,
+      "end_m": 1260.0,
+      "task_ids": [
+        "s2_t05_cmd_03"
+      ],
+      "event_ids": [
+        "compound_slow_vehicle"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 728.368,
+      "stop_after_m": 1310.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 35.10159683227539,
+        "y": 26.202091217041016,
+        "z": 1.52587890625e-05,
+        "yaw_deg": 270.02288818359375,
+        "road_id": 26,
+        "lane_id": 2
+      },
+      "start_pose_route_m": 728.368,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 955.0,
+          "kind": "event_position",
+          "source_id": "compound_slow_vehicle",
+          "field": "anchor_progress_m"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-015",
+      "start_m": 1260.0,
+      "end_m": 1460.0,
+      "task_ids": [
+        "s2_t05_cmd_04"
+      ],
+      "event_ids": [
+        "bus_stop_passengers",
+        "crosswalk_pedestrian"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 738.381,
+      "stop_after_m": 1510.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {
+        "crosswalk_pedestrian": "RESOLVED"
+      },
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 35.10405349731445,
+        "y": 16.18918228149414,
+        "z": 1.52587890625e-05,
+        "yaw_deg": 269.8819580078125,
+        "road_id": 26,
+        "lane_id": 2
+      },
+      "start_pose_route_m": 738.381,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 1260.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_04"
+        },
+        {
+          "s_m": 1260.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_04"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-016",
+      "start_m": 1460.0,
+      "end_m": 1515.0,
+      "task_ids": [
+        "s2_t05_cmd_05"
+      ],
+      "event_ids": [
+        "bus_stop_passengers",
+        "crosswalk_pedestrian"
+      ],
+      "geometry_kinds": [
+        "traffic_signal"
+      ],
+      "replay_start_m": 738.381,
+      "stop_after_m": 1565.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {
+        "crosswalk_pedestrian": "RESOLVED"
+      },
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 35.10405349731445,
+        "y": 16.18918228149414,
+        "z": 1.52587890625e-05,
+        "yaw_deg": 269.8819580078125,
+        "road_id": 26,
+        "lane_id": 2
+      },
+      "start_pose_route_m": 738.381,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 1460.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_05"
+        },
+        {
+          "s_m": 1460.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_05"
+        },
+        {
+          "s_m": 1460.0,
+          "kind": "event_position",
+          "source_id": "bus_stop_passengers",
+          "field": "activate_progress_m"
+        },
+        {
+          "s_m": 1512.133,
+          "kind": "geometry_start",
+          "source_id": "geometry_040",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-017",
+      "start_m": 1515.0,
+      "end_m": 1640.0,
+      "task_ids": [
+        "s2_t05_cmd_05"
+      ],
+      "event_ids": [
+        "bus_stop_passengers",
+        "crosswalk_pedestrian"
+      ],
+      "geometry_kinds": [
+        "grade",
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 738.381,
+      "stop_after_m": 1690.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {
+        "crosswalk_pedestrian": "RESOLVED"
+      },
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 35.10405349731445,
+        "y": 16.18918228149414,
+        "z": 1.52587890625e-05,
+        "yaw_deg": 269.8819580078125,
+        "road_id": 26,
+        "lane_id": 2
+      },
+      "start_pose_route_m": 738.381,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 1515.0,
+          "kind": "event_position",
+          "source_id": "bus_stop_passengers",
+          "field": "anchor_progress_m"
+        },
+        {
+          "s_m": 1530.376,
+          "kind": "geometry_end",
+          "source_id": "geometry_040",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 1530.376,
+          "kind": "geometry_start",
+          "source_id": "geometry_041",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 1559.376,
+          "kind": "geometry_end",
+          "source_id": "geometry_041",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 1589.444,
+          "kind": "geometry_start",
+          "source_id": "geometry_042",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-018",
+      "start_m": 1640.0,
+      "end_m": 1760.0,
+      "task_ids": [
+        "s2_t05_cmd_06"
+      ],
+      "event_ids": [
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 1309.297,
+      "stop_after_m": 1810.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {
+        "bus_stop_passengers": "RESOLVED"
+      },
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 189.34481811523438,
+        "y": 73.61486053466797,
+        "z": 0.0,
+        "yaw_deg": 90.66463470458984,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 1309.297,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 1640.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_06"
+        },
+        {
+          "s_m": 1640.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_06"
+        },
+        {
+          "s_m": 1673.444,
+          "kind": "geometry_end",
+          "source_id": "geometry_042",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-019",
+      "start_m": 1760.0,
+      "end_m": 1979.466,
+      "task_ids": [
+        "s2_t05_cmd_07"
+      ],
+      "event_ids": [
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 1309.297,
+      "stop_after_m": 2029.466,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {
+        "bus_stop_passengers": "RESOLVED"
+      },
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 189.34481811523438,
+        "y": 73.61486053466797,
+        "z": 0.0,
+        "yaw_deg": 90.66463470458984,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 1309.297,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 1760.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_07"
+        },
+        {
+          "s_m": 1760.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_07"
+        },
+        {
+          "s_m": 1782.0,
+          "kind": "event_position",
+          "source_id": "slow_cyclist",
+          "field": "anchor_progress_m"
+        },
+        {
+          "s_m": 1760.0,
+          "kind": "event_position",
+          "source_id": "slow_cyclist",
+          "field": "activate_progress_m"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-020",
+      "start_m": 1979.466,
+      "end_m": 2198.932,
+      "task_ids": [
+        "s2_t05_cmd_07"
+      ],
+      "event_ids": [
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 1309.297,
+      "stop_after_m": 2248.932,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {
+        "bus_stop_passengers": "RESOLVED"
+      },
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 189.34481811523438,
+        "y": 73.61486053466797,
+        "z": 0.0,
+        "yaw_deg": 90.66463470458984,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 1309.297,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-021",
+      "start_m": 2198.932,
+      "end_m": 2260.0,
+      "task_ids": [
+        "s2_t05_cmd_07"
+      ],
+      "event_ids": [
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 1309.297,
+      "stop_after_m": 2310.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {
+        "bus_stop_passengers": "RESOLVED"
+      },
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 189.34481811523438,
+        "y": 73.61486053466797,
+        "z": 0.0,
+        "yaw_deg": 90.66463470458984,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 1309.297,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 2238.932,
+          "kind": "geometry_start",
+          "source_id": "geometry_043",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-022",
+      "start_m": 2260.0,
+      "end_m": 2373.0,
+      "task_ids": [
+        "s2_t05_cmd_08"
+      ],
+      "event_ids": [
+        "slow_cyclist"
+      ],
+      "geometry_kinds": [
+        "grade",
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 1609.444,
+      "stop_after_m": 2423.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {
+        "slow_cyclist": "RESOLVED"
+      },
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -34.82670211791992,
+        "y": 187.5769805908203,
+        "z": 1.7507246732711792,
+        "yaw_deg": 179.97128295898438,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 1609.444,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 2260.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_08"
+        },
+        {
+          "s_m": 2260.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_08"
+        },
+        {
+          "s_m": 2260.0,
+          "kind": "event_position",
+          "source_id": "slow_cyclist",
+          "field": "resolve_progress_m"
+        },
+        {
+          "s_m": 2333.0,
+          "kind": "geometry_end",
+          "source_id": "geometry_043",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 2337.0,
+          "kind": "geometry_start",
+          "source_id": "geometry_044",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 2349.0,
+          "kind": "geometry_end",
+          "source_id": "geometry_044",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 2349.0,
+          "kind": "geometry_start",
+          "source_id": "geometry_045",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-023",
+      "start_m": 2373.0,
+      "end_m": 2560.0,
+      "task_ids": [
+        "s2_t05_cmd_08"
+      ],
+      "event_ids": [
+        "slow_cyclist"
+      ],
+      "geometry_kinds": [
+        "junction"
+      ],
+      "replay_start_m": 1609.444,
+      "stop_after_m": 2610.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {
+        "slow_cyclist": "RESOLVED"
+      },
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -34.82670211791992,
+        "y": 187.5769805908203,
+        "z": 1.7507246732711792,
+        "yaw_deg": 179.97128295898438,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 1609.444,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 2379.0,
+          "kind": "geometry_end",
+          "source_id": "geometry_045",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-024",
+      "start_m": 2560.0,
+      "end_m": 2700.0,
+      "task_ids": [
+        "s2_t05_cmd_09"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 2409.0,
+      "stop_after_m": 2750.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 80.30437469482422,
+        "y": -186.79331970214844,
+        "z": 0.0,
+        "yaw_deg": 359.757080078125,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 2409.0,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 2560.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_09"
+        },
+        {
+          "s_m": 2560.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_09"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-025",
+      "start_m": 2700.0,
+      "end_m": 2902.399,
+      "task_ids": [
+        "s2_t05_cmd_10"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 2548.417,
+      "stop_after_m": 2952.399,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 186.5509033203125,
+        "y": -117.62141418457031,
+        "z": 0.0,
+        "yaw_deg": 77.31340789794922,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 2548.417,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 2700.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_10"
+        },
+        {
+          "s_m": 2700.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_10"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-026",
+      "start_m": 2902.399,
+      "end_m": 3002.399,
+      "task_ids": [
+        "s2_t05_cmd_10"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 2548.417,
+      "stop_after_m": 3052.399,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 186.5509033203125,
+        "y": -117.62141418457031,
+        "z": 0.0,
+        "yaw_deg": 77.31340789794922,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 2548.417,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 2942.399,
+          "kind": "geometry_start",
+          "source_id": "geometry_046",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 2962.399,
+          "kind": "geometry_end",
+          "source_id": "geometry_046",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 2962.399,
+          "kind": "geometry_start",
+          "source_id": "geometry_047",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 2990.399,
+          "kind": "geometry_end",
+          "source_id": "geometry_047",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-027",
+      "start_m": 3002.399,
+      "end_m": 3144.467,
+      "task_ids": [
+        "s2_t05_cmd_10"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 2548.417,
+      "stop_after_m": 3194.467,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 186.5509033203125,
+        "y": -117.62141418457031,
+        "z": 0.0,
+        "yaw_deg": 77.31340789794922,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 2548.417,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 3020.467,
+          "kind": "geometry_start",
+          "source_id": "geometry_048",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 3104.467,
+          "kind": "geometry_end",
+          "source_id": "geometry_048",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-028",
+      "start_m": 3144.467,
+      "end_m": 3387.211,
+      "task_ids": [
+        "s2_t05_cmd_10"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 2548.417,
+      "stop_after_m": 3437.211,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 186.5509033203125,
+        "y": -117.62141418457031,
+        "z": 0.0,
+        "yaw_deg": 77.31340789794922,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 2548.417,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-029",
+      "start_m": 3387.211,
+      "end_m": 3629.955,
+      "task_ids": [
+        "s2_t05_cmd_10"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 2548.417,
+      "stop_after_m": 3679.955,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 186.5509033203125,
+        "y": -117.62141418457031,
+        "z": 0.0,
+        "yaw_deg": 77.31340789794922,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 2548.417,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-030",
+      "start_m": 3629.955,
+      "end_m": 3728.023,
+      "task_ids": [
+        "s2_t05_cmd_10"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 2548.417,
+      "stop_after_m": 3778.023,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 186.5509033203125,
+        "y": -117.62141418457031,
+        "z": 0.0,
+        "yaw_deg": 77.31340789794922,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 2548.417,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 3669.955,
+          "kind": "geometry_start",
+          "source_id": "geometry_049",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-031",
+      "start_m": 3728.023,
+      "end_m": 3804.023,
+      "task_ids": [
+        "s2_t05_cmd_10"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade",
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 2548.417,
+      "stop_after_m": 3854.023,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 186.5509033203125,
+        "y": -117.62141418457031,
+        "z": 0.0,
+        "yaw_deg": 77.31340789794922,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 2548.417,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 3764.023,
+          "kind": "geometry_end",
+          "source_id": "geometry_049",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 3768.023,
+          "kind": "geometry_start",
+          "source_id": "geometry_050",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 3780.023,
+          "kind": "geometry_end",
+          "source_id": "geometry_050",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 3780.023,
+          "kind": "geometry_start",
+          "source_id": "geometry_051",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-032",
+      "start_m": 3804.023,
+      "end_m": 4072.012,
+      "task_ids": [
+        "s2_t05_cmd_10"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "junction"
+      ],
+      "replay_start_m": 2548.417,
+      "stop_after_m": 4122.012000000001,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 186.5509033203125,
+        "y": -117.62141418457031,
+        "z": 0.0,
+        "yaw_deg": 77.31340789794922,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 2548.417,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 3808.023,
+          "kind": "geometry_end",
+          "source_id": "geometry_051",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-033",
+      "start_m": 4072.012,
+      "end_m": 4340.0,
+      "task_ids": [
+        "s2_t05_cmd_10"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 2548.417,
+      "stop_after_m": 4390.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 186.5509033203125,
+        "y": -117.62141418457031,
+        "z": 0.0,
+        "yaw_deg": 77.31340789794922,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 2548.417,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-034",
+      "start_m": 4340.0,
+      "end_m": 4433.422,
+      "task_ids": [
+        "s2_t05_cmd_11"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 4188.586,
+      "stop_after_m": 4483.422,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 189.1333465576172,
+        "y": 91.84483337402344,
+        "z": 0.0,
+        "yaw_deg": 90.66463470458984,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 4188.586,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 4340.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_11"
+        },
+        {
+          "s_m": 4340.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_11"
+        },
+        {
+          "s_m": 4373.422,
+          "kind": "geometry_start",
+          "source_id": "geometry_052",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 4393.422,
+          "kind": "geometry_end",
+          "source_id": "geometry_052",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 4393.422,
+          "kind": "geometry_start",
+          "source_id": "geometry_053",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 4421.422,
+          "kind": "geometry_end",
+          "source_id": "geometry_053",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-035",
+      "start_m": 4433.422,
+      "end_m": 4596.0,
+      "task_ids": [
+        "s2_t05_cmd_11"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 4188.586,
+      "stop_after_m": 4646.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 189.1333465576172,
+        "y": 91.84483337402344,
+        "z": 0.0,
+        "yaw_deg": 90.66463470458984,
+        "road_id": 38,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 4188.586,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 4449.489,
+          "kind": "geometry_start",
+          "source_id": "geometry_054",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 4535.489,
+          "kind": "geometry_end",
+          "source_id": "geometry_054",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-036",
+      "start_m": 4596.0,
+      "end_m": 4827.489,
+      "task_ids": [
+        "s2_t05_cmd_12"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 4445.489,
+      "stop_after_m": 4877.489,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -9.815159797668457,
+        "y": 187.56443786621094,
+        "z": 0.050033681094646454,
+        "yaw_deg": 179.97128295898438,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 4445.489,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 4596.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_12"
+        },
+        {
+          "s_m": 4596.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_12"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-037",
+      "start_m": 4827.489,
+      "end_m": 5058.978,
+      "task_ids": [
+        "s2_t05_cmd_12"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 4445.489,
+      "stop_after_m": 5108.978,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -9.815159797668457,
+        "y": 187.56443786621094,
+        "z": 0.050033681094646454,
+        "yaw_deg": 179.97128295898438,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 4445.489,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-038",
+      "start_m": 5058.978,
+      "end_m": 5200.0,
+      "task_ids": [
+        "s2_t05_cmd_12"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade",
+        "traffic_signal"
+      ],
+      "replay_start_m": 4445.489,
+      "stop_after_m": 5250.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -9.815159797668457,
+        "y": 187.56443786621094,
+        "z": 0.050033681094646454,
+        "yaw_deg": 179.97128295898438,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 4445.489,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 5098.978,
+          "kind": "geometry_start",
+          "source_id": "geometry_055",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 5195.046,
+          "kind": "geometry_end",
+          "source_id": "geometry_055",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 5197.046,
+          "kind": "geometry_start",
+          "source_id": "geometry_056",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-039",
+      "start_m": 5200.0,
+      "end_m": 5279.046,
+      "task_ids": [
+        "s2_t05_cmd_13"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 5049.102,
+      "stop_after_m": 5329.046,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -140.65061950683594,
+        "y": -186.63223266601562,
+        "z": 10.018418312072754,
+        "yaw_deg": 359.49652099609375,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 5049.102,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 5200.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_13"
+        },
+        {
+          "s_m": 5200.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_13"
+        },
+        {
+          "s_m": 5211.046,
+          "kind": "geometry_end",
+          "source_id": "geometry_056",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 5211.046,
+          "kind": "geometry_start",
+          "source_id": "geometry_057",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 5239.046,
+          "kind": "geometry_end",
+          "source_id": "geometry_057",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-040",
+      "start_m": 5279.046,
+      "end_m": 5521.745,
+      "task_ids": [
+        "s2_t05_cmd_13"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 5049.102,
+      "stop_after_m": 5571.745,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -140.65061950683594,
+        "y": -186.63223266601562,
+        "z": 10.018418312072754,
+        "yaw_deg": 359.49652099609375,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 5049.102,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-041",
+      "start_m": 5521.745,
+      "end_m": 5764.444,
+      "task_ids": [
+        "s2_t05_cmd_13"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 5049.102,
+      "stop_after_m": 5814.444,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -140.65061950683594,
+        "y": -186.63223266601562,
+        "z": 10.018418312072754,
+        "yaw_deg": 359.49652099609375,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 5049.102,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-042",
+      "start_m": 5764.444,
+      "end_m": 5862.444,
+      "task_ids": [
+        "s2_t05_cmd_13"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 5049.102,
+      "stop_after_m": 5912.444,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -140.65061950683594,
+        "y": -186.63223266601562,
+        "z": 10.018418312072754,
+        "yaw_deg": 359.49652099609375,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 5049.102,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 5804.444,
+          "kind": "geometry_start",
+          "source_id": "geometry_058",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 5822.444,
+          "kind": "geometry_end",
+          "source_id": "geometry_058",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 5822.444,
+          "kind": "geometry_start",
+          "source_id": "geometry_059",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 5852.444,
+          "kind": "geometry_end",
+          "source_id": "geometry_059",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-043",
+      "start_m": 5862.444,
+      "end_m": 6050.0,
+      "task_ids": [
+        "s2_t05_cmd_13"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 5049.102,
+      "stop_after_m": 6100.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -140.65061950683594,
+        "y": -186.63223266601562,
+        "z": 10.018418312072754,
+        "yaw_deg": 359.49652099609375,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 5049.102,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 5880.512,
+          "kind": "geometry_start",
+          "source_id": "geometry_060",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 5966.512,
+          "kind": "geometry_end",
+          "source_id": "geometry_060",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-044",
+      "start_m": 6050.0,
+      "end_m": 6270.0,
+      "task_ids": [
+        "s2_t05_cmd_14"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 5898.512,
+      "stop_after_m": 6320.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -32.309391021728516,
+        "y": 187.57571411132812,
+        "z": 1.4701542854309082,
+        "yaw_deg": 179.97128295898438,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 5898.512,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 6050.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_14"
+        },
+        {
+          "s_m": 6050.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_14"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-045",
+      "start_m": 6270.0,
+      "end_m": 6490.0,
+      "task_ids": [
+        "s2_t05_cmd_14"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 5898.512,
+      "stop_after_m": 6540.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -32.309391021728516,
+        "y": 187.57571411132812,
+        "z": 1.4701542854309082,
+        "yaw_deg": 179.97128295898438,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 5898.512,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-046",
+      "start_m": 6490.0,
+      "end_m": 6588.069,
+      "task_ids": [
+        "s2_t05_cmd_14"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 5898.512,
+      "stop_after_m": 6638.069,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -32.309391021728516,
+        "y": 187.57571411132812,
+        "z": 1.4701542854309082,
+        "yaw_deg": 179.97128295898438,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 5898.512,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 6530.0,
+          "kind": "geometry_start",
+          "source_id": "geometry_061",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-047",
+      "start_m": 6588.069,
+      "end_m": 6666.069,
+      "task_ids": [
+        "s2_t05_cmd_14"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade",
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 5898.512,
+      "stop_after_m": 6716.069,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -32.309391021728516,
+        "y": 187.57571411132812,
+        "z": 1.4701542854309082,
+        "yaw_deg": 179.97128295898438,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 5898.512,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 6626.069,
+          "kind": "geometry_end",
+          "source_id": "geometry_061",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 6628.069,
+          "kind": "geometry_start",
+          "source_id": "geometry_062",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 6640.069,
+          "kind": "geometry_end",
+          "source_id": "geometry_062",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 6640.069,
+          "kind": "geometry_start",
+          "source_id": "geometry_063",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-048",
+      "start_m": 6666.069,
+      "end_m": 6964.0,
+      "task_ids": [
+        "s2_t05_cmd_14"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "junction"
+      ],
+      "replay_start_m": 5898.512,
+      "stop_after_m": 7014.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -32.309391021728516,
+        "y": 187.57571411132812,
+        "z": 1.4701542854309082,
+        "yaw_deg": 179.97128295898438,
+        "road_id": 37,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 5898.512,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 6670.069,
+          "kind": "geometry_end",
+          "source_id": "geometry_063",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-049",
+      "start_m": 6964.0,
+      "end_m": 7195.467,
+      "task_ids": [
+        "s2_t05_cmd_15"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 6813.187,
+      "stop_after_m": 7245.467,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 176.828369140625,
+        "y": -142.50315856933594,
+        "z": 0.0,
+        "yaw_deg": 60.00042724609375,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 6813.187,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 6964.0,
+          "kind": "task_announce",
+          "source_id": "s2_t05_cmd_15"
+        },
+        {
+          "s_m": 6964.0,
+          "kind": "task_activate",
+          "source_id": "s2_t05_cmd_15"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-050",
+      "start_m": 7195.467,
+      "end_m": 7293.467,
+      "task_ids": [
+        "s2_t05_cmd_15"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 6813.187,
+      "stop_after_m": 7343.467,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 176.828369140625,
+        "y": -142.50315856933594,
+        "z": 0.0,
+        "yaw_deg": 60.00042724609375,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 6813.187,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 7235.467,
+          "kind": "geometry_start",
+          "source_id": "geometry_064",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 7253.467,
+          "kind": "geometry_end",
+          "source_id": "geometry_064",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 7253.467,
+          "kind": "geometry_start",
+          "source_id": "geometry_065",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 7283.467,
+          "kind": "geometry_end",
+          "source_id": "geometry_065",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-051",
+      "start_m": 7293.467,
+      "end_m": 7435.535,
+      "task_ids": [
+        "s2_t05_cmd_15"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 6813.187,
+      "stop_after_m": 7485.535,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 176.828369140625,
+        "y": -142.50315856933594,
+        "z": 0.0,
+        "yaw_deg": 60.00042724609375,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 6813.187,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 7311.535,
+          "kind": "geometry_start",
+          "source_id": "geometry_066",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 7395.535,
+          "kind": "geometry_end",
+          "source_id": "geometry_066",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-052",
+      "start_m": 7435.535,
+      "end_m": 7678.279,
+      "task_ids": [
+        "s2_t05_cmd_15"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 6813.187,
+      "stop_after_m": 7728.279,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 176.828369140625,
+        "y": -142.50315856933594,
+        "z": 0.0,
+        "yaw_deg": 60.00042724609375,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 6813.187,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-053",
+      "start_m": 7678.279,
+      "end_m": 7921.023,
+      "task_ids": [
+        "s2_t05_cmd_15"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 6813.187,
+      "stop_after_m": 7971.023,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 176.828369140625,
+        "y": -142.50315856933594,
+        "z": 0.0,
+        "yaw_deg": 60.00042724609375,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 6813.187,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S2-054",
+      "start_m": 7921.023,
+      "end_m": 8000.0,
+      "task_ids": [
+        "s2_t05_cmd_15"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 6813.187,
+      "stop_after_m": 8000.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [
+        "crosswalk_pedestrian",
+        "bus_stop_passengers",
+        "slow_cyclist"
+      ],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 176.828369140625,
+        "y": -142.50315856933594,
+        "z": 0.0,
+        "yaw_deg": 60.00042724609375,
+        "road_id": 34,
+        "lane_id": 4
+      },
+      "start_pose_route_m": 6813.187,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 7961.023,
+          "kind": "geometry_start",
+          "source_id": "geometry_067",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    }
+  ],
+  "assessment_passed": false,
+  "scope": "Diagnostic route partition; not a change to scenario or policy",
+  "map_sha256": "7edc53b0be840e177598da7a4ed9571146d7b2595ce280d154c90f92e8a48851",
+  "route_geometry_sha256": "8dcd8416d04bd20f2967a47b0be4253814f7cb6cc61fee96cde98642ba56bcfe",
+  "geometry_source": "CARLA official map via event_corridor_v2 route constructor",
+  "environment_context": {
+    "weather": {
+      "preset": "cloudy-evening",
+      "cloudiness": 60.0,
+      "precipitation": 0.0,
+      "precipitation_deposits": 0.0,
+      "wetness": 0.0,
+      "wind_intensity": 10.0,
+      "sun_azimuth_angle": -1.0,
+      "sun_altitude_angle": 15.0,
+      "fog_density": 3.0,
+      "fog_distance": 0.75,
+      "fog_falloff": 0.1,
+      "scattering_intensity": 1.0,
+      "mie_scattering_scale": 0.03,
+      "rayleigh_scattering_scale": 0.0331
+    }
+  }
+}

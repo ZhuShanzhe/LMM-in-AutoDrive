@@ -65,3 +65,44 @@ def test_stop_line_on_next_road_is_associated_through_route_landmark():
     current.get_landmarks_of_type=lambda *args:[]
     observation=observer.observe(ego,np.zeros((16,16,3),dtype=np.uint8),frame=2,timestamp_s=.1)
     assert observation['applicable'] and observation['stop_distance_m']==18.
+
+
+def test_verified_line_survives_connecting_road_without_landmark_or_topology_match(monkeypatch):
+    from types import SimpleNamespace as Obj
+    import control.map_signal_observer as module
+    effective=Obj(road_id=1,section_id=0,lane_id=-1)
+    landmark=Obj(waypoint=effective,distance=20.,id='a',get_lane_validities=lambda:[(-1,-1)],
+        transform=Obj(location=Obj(x=20.,y=0.,z=0.)))
+    current=Obj(road_id=1,section_id=0,lane_id=-1,get_landmarks_of_type=lambda *args:[landmark])
+    observer=module.MapSignalObserver.__new__(module.MapSignalObserver)
+    observer.world_map=Obj(get_waypoint=lambda _:current)
+    observer.camera=Obj(attributes={'fov':'100'})
+    observer.last_frame=None;observer.last_observation=None;observer.debug_directory=None
+    observer.state_classifier=object()
+    observer._observe_static_heads=lambda *args:('GREEN',.99,[])
+    observer.stop_lines={'a':[dict(road_id=2,section_id=0,lane_id=-1,position=[20.,0.,0.],forward=[1.,0.,0.])]}
+    location=Obj(x=0.,y=0.,z=0.)
+    transform=Obj(location=location,get_forward_vector=lambda:Obj(x=1.,y=0.,z=0.))
+    ego=Obj(get_location=lambda:location,get_transform=lambda:transform,bounding_box=Obj(extent=Obj(x=2.)))
+    monkeypatch.setattr(module,'connected_stop_distance',lambda entries,waypoint,front:18. if waypoint.road_id==1 else None)
+    first=observer.observe(ego,np.zeros((16,16,3),dtype=np.uint8),frame=1,timestamp_s=0.,camera_inverse=np.eye(4))
+    assert first['stop_distance_m']==18.
+    current.road_id=99;current.get_landmarks_of_type=lambda *args:[]
+    location.x=2.
+    second=observer.observe(ego,np.zeros((16,16,3),dtype=np.uint8),frame=2,timestamp_s=.1,camera_inverse=np.eye(4))
+    assert second['applicable'] and second['signal_id']=='a' and second['state']=='GREEN'
+    assert second['stop_distance_m']==16. and second['retired_signals']==[]
+    location.x=20.
+    passed=observer.observe(ego,np.zeros((16,16,3),dtype=np.uint8),frame=3,timestamp_s=.2,camera_inverse=np.eye(4))
+    assert not passed['applicable']
+    assert passed['retired_signals'][0]['remaining_m']==-2.
+    assert passed['retired_signals'][0]['signal_id']=='a'
+
+
+def test_geometric_reassociation_cannot_use_opposite_or_distant_lane():
+    from control.map_signal_observer import aligned_stop_line
+    entries=[dict(position=[20.,0.,0.],forward=[1.,0.,0.])]
+    assert aligned_stop_line(entries,[0.,0.,0.],[1.,0.,0.])['remaining_m']==20.
+    assert aligned_stop_line(entries,[0.,4.,0.],[1.,0.,0.]) is None
+    assert aligned_stop_line(entries,[0.,0.,0.],[-1.,0.,0.]) is None
+    assert aligned_stop_line(entries,[-100.,0.,0.],[1.,0.,0.]) is None

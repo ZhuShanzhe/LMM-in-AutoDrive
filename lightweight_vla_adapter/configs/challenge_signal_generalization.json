@@ -1,9 +1,17 @@
 {
+  "rear_approach_risk_enabled": false,
+  "speed_target_supersession_enabled": true,
+  "command_failure_policy": "RETIRE_AND_CONTINUE",
   "schema_version": "5.0.0",
   "model_name": "phase-recovery-epoch_06",
   "sensor_requirements": {
     "cameras": ["front", "left", "right", "rear"],
     "lidar": true
+  },
+  "physical_lidar_sampling": {
+    "channels": 128,
+    "range_m": 100.0,
+    "points_per_second": 896000
   },
   "traffic_signal_observer": {
     "capture_size": 1280,
@@ -96,7 +104,7 @@
       "rear_radar"
     ],
     "forward_collision_safety_source": "physical_forward_radar_stopping_envelope",
-    "rear_collision_safety_source": "physical_rear_radar_ttc_speed_or_legal_lane_escape"
+    "rear_collision_safety_source": "disabled_rear_approach; rear_occupancy_retained_for_requested_lane_checks"
   },
   "deployment": {
     "precision": "fp32",
@@ -106,11 +114,16 @@
       "learned_visual_collision_risk",
       "learned_visual_lane_change_risk",
       "physical_forward_radar_collision_envelope",
-      "physical_rear_radar_ttc_envelope",
       "physical_speed_bound"
     ]
   },
   "sensor_tick_s": 0.05,
+  "risk_behavior": {
+    "max_speed_kmh": 30,
+    "confirmation_s": 0.5,
+    "high_speed_kmh": 10,
+    "high_confirmation_s": 1.0
+  },
   "event_radar_corridor": "planner_route",
   "simulation_only": true
 }

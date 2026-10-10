@@ -7,6 +7,7 @@ import json
 from .catalog import CONFIG_ROOT, ConfigError, number
 from . import extended_criteria
 from .coverage import profile_coverage, instruction_status
+from .junction_alias import coincident_junction_alias_matches
 
 
 KINDS = {'speed', 'lane_change', 'turn', 'yield_pedestrian', 'overtake', 'passed_target', 'progress', 'destination'} | extended_criteria.KINDS
@@ -135,6 +136,17 @@ def validate_spec(spec):
         if kind == 'yield_pedestrian' and step.get('require_stop', True) is False:
             if number(step.get('min_speed_drop_kmh'), 'min_speed_drop_kmh') <= 0:
                 raise ConfigError('positive speed decrease required for rolling yield')
+        if kind == 'yield_pedestrian':
+            mode = step.get('yield_mode', 'REQUIRE_STOP')
+            if mode not in {'REQUIRE_STOP', 'STOP_AT_BOUNDARY'}:
+                raise ConfigError('unsupported pedestrian yield mode')
+            if mode == 'STOP_AT_BOUNDARY':
+                if step.get('require_stop', True) is not True:
+                    raise ConfigError('boundary yield retains occupied-boundary stop requirement')
+                if number(step.get('max_approach_kmh'), 'max_approach_kmh') <= step['stopped_kmh']:
+                    raise ConfigError('approach speed must exceed stopped threshold')
+                if number(step.get('approach_hold_s'), 'approach_hold_s') <= 0:
+                    raise ConfigError('positive slow approach hold required')
         if kind=='speed':
             if 'keep_lane' in step and not isinstance(step['keep_lane'],bool):
                 raise ConfigError('keep_lane must be boolean')
@@ -143,6 +155,15 @@ def validate_spec(spec):
                     raise ConfigError('speed lane bounds require keep_lane and positive thresholds')
         if kind=='destination' and any(step[k]<=0 for k in ('max_distance_m','max_remaining_m')):
             raise ConfigError('destination tolerances must be positive')
+        if kind=='destination' and 'allow_adjacent_destination_lanes' in step:
+            if type(step['allow_adjacent_destination_lanes']) is not bool:
+                raise ConfigError('allow_adjacent_destination_lanes must be boolean')
+            if step['allow_adjacent_destination_lanes']:
+                if step.get('keep_lane'):
+                    raise ConfigError('a fixed-lane destination cannot allow adjacent endpoints')
+                for key in ('max_lateral_error_m','max_heading_error_deg'):
+                    if number(step.get(key),key)<=0:
+                        raise ConfigError('positive terminal lane geometry bounds required')
         if kind=='destination' and 'keep_lane' in step:
             if not isinstance(step['keep_lane'],bool):
                 raise ConfigError('keep_lane must be boolean')
@@ -260,14 +281,26 @@ class TaskOracle:
                     not isinstance(ego.get('road_key'),str) or not ego['road_key'] or ego.get('in_junction') is not False):
                     raise ConfigError('original lane requires non-junction task entry')
                 self.original_lane=dict(lane_key=ego['lane_key'],road_key=ego['road_key'],frame=frame)
+                corridor=obs.get('fixture',{}).get('original_lane_corridor')
+                if corridor is not None:
+                    if not corridor.get('lane_corridor'):
+                        raise ConfigError('original lane corridor is empty')
+                    self.original_lane['corridor']=copy.deepcopy(corridor)
                 self.evidence.append(dict(event='ORIGINAL_LANE_BOUND',**self.original_lane))
             self.evidence.append(dict(event='START', frame=frame, sim_time_s=now))
-        if self.requires_original_lane and (ego['road_key']!=self.original_lane['road_key'] or ego['in_junction']):
-            raise ConfigError('original lane continuation across road/junction not verified')
-        if now - self.started > self.spec['timeout_s']:
+        if self._deadline_elapsed(obs,now) > self.spec['timeout_s']:
             return self.finish('TIMEOUT', 'task_deadline', frame)
         if 'end_route_s_m' in self.spec and progress>=self.spec['end_route_s_m']:
             return self.finish('TIMEOUT','task_distance_window_closed',frame)
+        if self.requires_original_lane:
+            corridor=self.original_lane.get('corridor')
+            if corridor:
+                if obs.get('fixture',{}).get('original_lane_corridor')!=corridor:
+                    raise ConfigError('original lane corridor changed during task')
+                if not any(s['start_m']<=progress<=s['end_m'] for s in corridor['lane_corridor']):
+                    raise ConfigError('original lane continuation outside verified corridor')
+            elif ego['road_key']!=self.original_lane['road_key'] or ego['in_junction']:
+                raise ConfigError('original lane continuation across road/junction not verified')
         for key, oracle in self.constraints.items():
             constraint_obs = dict(obs)
             fixture = dict(obs.get('fixture', {}))
@@ -303,6 +336,9 @@ class TaskOracle:
         start = self.state.setdefault(key, now)
         return now - start + 1e-8 >= duration
 
+    def _deadline_elapsed(self,obs,now):
+        return now-self.started
+
     def _target(self, step, obs):
         role = step['target_role']
         target = obs['actors'][role]
@@ -326,6 +362,13 @@ class TaskOracle:
         speed = number(ego['speed_kmh'], 'speed_kmh')
         kind = step['kind']
         progress = number(ego['route_s_m'], 'route_s_m')
+        pending = obs.get('fixture', {}).get('steps', {}).get(str(self.index), {})
+        if pending.get('deferred_until_step_entry') is True:
+            if kind=='lane_hold':return False
+            if (self.index <= 0 or kind not in {'lane_change', 'guarded_lane_change'}
+                    or ego.get('in_junction') is not True):
+                raise ConfigError('deferred lane fixture not bound at legal entry')
+            return False
         if kind in extended_criteria.KINDS:
             return extended_criteria.evaluate(self, step, obs, now)
         if kind == 'speed':
@@ -372,6 +415,11 @@ class TaskOracle:
             if not isinstance(ego['in_junction'], bool):
                 raise ConfigError('invalid junction flag')
             fixture = self._fixture(obs)
+            if ('lane_change_window_end_m' in fixture
+                    and number(ego['route_s_m'], 'route_s_m') >= number(
+                        fixture['lane_change_window_end_m'], 'lane_change_window_end_m')):
+                self.finish('TIMEOUT', 'lane_change_window_closed', obs['frame'])
+                return False
             if fixture['direction'] != step['direction'] or fixture['legal'] is not True:
                 raise ConfigError('invalid lane-change fixture')
             if any(not isinstance(value, str) or not value for value in (
@@ -405,9 +453,24 @@ class TaskOracle:
                 raise ConfigError('invalid road identity')
             if not state:
                 if ego['road_key'] != fixture['entry_road_key'] or ego['in_junction']:
+                    start = fixture.get('junction_start_m')
+                    if (start is not None and number(ego['route_s_m'], 'route_s_m')
+                            < number(start, 'junction_start_m') - 2.):
+                        return False
                     raise ConfigError('incorrect turn entry')
                 state.update(entry_yaw=number(ego['yaw_deg'], 'yaw_deg'), saw_junction=False)
-            state['saw_junction'] |= ego['in_junction'] is True
+            # The approach road can itself curve. Measure the requested turn
+            # from its final observed approach heading, not step activation.
+            if not state['saw_junction']:
+                if not ego['in_junction'] and ego['road_key'] == fixture['entry_road_key']:
+                    state['entry_yaw'] = number(ego['yaw_deg'], 'yaw_deg')
+                elif ego['in_junction']:
+                    start = fixture.get('junction_start_m')
+                    end = fixture.get('junction_end_m')
+                    progress = number(ego['route_s_m'], 'route_s_m')
+                    in_window = ((start is None or progress >= number(start, 'junction_start_m') - 2.)
+                                 and (end is None or progress <= number(end, 'junction_end_m') + 2.))
+                    state['saw_junction'] = in_window
             delta = (number(ego['yaw_deg'], 'yaw_deg') - state['entry_yaw'] + 180) % 360 - 180
             angle = step['min_heading_change_deg']
             # CARLA yaw increases clockwise: positive is right.
@@ -430,6 +493,18 @@ class TaskOracle:
                 state.pop('clear', None)
                 if number(ego.get('front_route_s_m',progress),'front_route_s_m') > stop_line:
                     self.finish('FAILURE', 'crossed_stop_line_while_pedestrian_conflict', obs['frame'])
+                    return False
+                if step.get('yield_mode') == 'STOP_AT_BOUNDARY':
+                    front = number(ego.get('front_route_s_m', progress), 'front_route_s_m')
+                    if front >= stop_line and speed > step['stopped_kmh']:
+                        self.finish('FAILURE', 'moving_at_occupied_pedestrian_stop_line', obs['frame'])
+                        return False
+                    # Already-slow approach is valid; no artificial speed drop is needed.
+                    slow = self._hold('slow_approach', speed <= step['max_approach_kmh'],
+                                      now, step['approach_hold_s'])
+                    stopped = self._hold('stopped', speed <= step['stopped_kmh'],
+                                         now, step['stop_hold_s'])
+                    state['yielded'] = slow or stopped
                     return False
                 yielding = speed <= step['stopped_kmh']
                 if step.get('require_stop', True) is False:
@@ -465,15 +540,30 @@ class TaskOracle:
                 if not segments:
                     raise ConfigError('destination lane corridor does not cover current progress')
                 allowed={key for s in segments for key in s['lane_keys']}
-                if (ego['lane_key'] not in allowed or
+                alias=coincident_junction_alias_matches(ego,segments,
+                    step['max_lateral_error_m'],step['max_heading_error_deg'])
+                if ((ego['lane_key'] not in allowed and not alias) or (not alias and (
                     abs(number(ego['lateral_error_m'],'lateral_error_m'))>step['max_lateral_error_m'] or
-                    abs(number(ego['heading_error_deg'],'heading_error_deg'))>step['max_heading_error_deg']):
+                    abs(number(ego['heading_error_deg'],'heading_error_deg'))>step['max_heading_error_deg']))):
                     self.finish('FAILURE','left_destination_lane_corridor',obs['frame'])
                     return False
             end=number(fixture['route_end_s_m'],'route_end_s_m')
             if end<=self.spec['activate_m']:
                 raise ConfigError('destination must follow task activation')
             point=fixture['position_m']
+            if step.get('allow_adjacent_destination_lanes'):
+                from .destination_fixture import SOURCE
+                cross_section=fixture.get('terminal_cross_section') or {}
+                if cross_section.get('source')!=SOURCE:
+                    raise ConfigError('verified static terminal lane centers required')
+                candidates=[p for p in cross_section.get('lane_points',[])
+                            if p['lane_key']==ego['lane_key']]
+                if len(candidates)!=1 or ego['in_junction']:
+                    return False
+                if (abs(number(ego['lateral_error_m'],'lateral_error_m'))>step['max_lateral_error_m'] or
+                    abs(number(ego['heading_error_deg'],'heading_error_deg'))>step['max_heading_error_deg']):
+                    return False
+                point=candidates[0]['position_m']
             actual=ego['position_m']
             squared=sum((number(actual[k],'ego '+k)-number(point[k],'destination '+k))**2
                         for k in ('x','y','z'))

@@ -10,7 +10,7 @@ def test_selected_compound_task_includes_prior_evidence():
     assert {task.task_id for task in evidence} == {'s2_t05_cmd_03', 's2_t05_cmd_04'}
 
 
-@pytest.mark.parametrize('scene,count',[('scene_1',15),('scene_2',15),('scene_3',8)])
+@pytest.mark.parametrize('scene,count',[('scene_1',15),('scene_2',15),('scene_3',7)])
 def test_default_keeps_full_catalog(scene,count):
     selected,evidence=assessment_selection(load_catalog(scene))
     assert len(selected)==len(evidence)==count

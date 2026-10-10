@@ -197,7 +197,7 @@ class GroundTruthRecorderTests(unittest.TestCase):
                 ]
                 for event in scene3["events"]
             ],
-            ["observed"] * 7,
+            ["observed"] * 6,
         )
 
     def test_observed_actor_relation_and_ttc(self) -> None:

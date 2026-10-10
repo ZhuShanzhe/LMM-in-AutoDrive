@@ -170,3 +170,25 @@ class UltralyticsTrafficDetector:
             self.torch.cuda.synchronize()
         latency_ms = (perf_counter() - started) * 1000
         return output, latency_ms
+
+    def detect_many(self, images: list[Any]) -> tuple[list[list[Detection]], float]:
+        """Batch same-exposure views without changing category filtering."""
+        import numpy as np
+
+        if not images:
+            return [], 0.0
+        if self.infrastructure_tiles:
+            measured=[self.detect(image) for image in images]
+            return [output for output, _ in measured], sum(ms for _, ms in measured)
+        sources=[np.asarray(image) for image in images]
+        if self.device == 'cuda':
+            self.torch.cuda.synchronize()
+        started=perf_counter()
+        results=self.model.predict(source=sources, imgsz=self.image_size,
+            conf=self.score_threshold, iou=self.iou_threshold, device=self.device, verbose=False)
+        if len(results)!=len(sources):
+            raise RuntimeError('Detector batch does not match input views')
+        outputs=[self._decode(result) for result in results]
+        if self.device == 'cuda':
+            self.torch.cuda.synchronize()
+        return outputs, (perf_counter()-started)*1000.

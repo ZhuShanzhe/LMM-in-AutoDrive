@@ -61,6 +61,31 @@ def test_bad_compound_cannot_leak_cached_plan(fault):
     assert 'target_acceleration_mps2' not in issued
 
 
+@pytest.mark.parametrize('emergency', [False, True])
+def test_clarification_preserves_output_contract_and_removes_motion(emergency):
+    fsm = GenericInstructionFSM(parser=Parser([], 'NEEDS_CLARIFICATION'))
+    parsed = fsm.parse(dict(text='Ambiguous driving instruction.'))
+    original = dict(schema_version='decision/1.0', request_id='request-1', frame=123,
+        action='accelerate', target_speed_kmh=40., emergency=emergency,
+        blocked_reason_codes=['existing_constraint'], target_lane='left',
+        target_location=[1., 2.], target_acceleration_mps2=2.,
+        longitudinal_sequence_schema='sequence/1.0', sequence_valid_until_s=10.,
+        risk_motion_permission={'max_speed_kmh': 6.})
+    issued, blocked = fsm.enforce_parse_status(original, parsed)
+    assert blocked and issued['emergency'] is emergency
+    assert issued['action'] == ('emergency_brake' if emergency else 'stop')
+    assert issued['target_speed_kmh'] == 0. and not issued['allow_positive_acceleration']
+    assert issued['decision_status'] == 'BLOCKED'
+    assert issued['schema_version'] == original['schema_version']
+    assert issued['request_id'] == 'request-1' and issued['frame'] == 123
+    assert issued['target_lane'] is None and issued['target_location'] is None
+    assert issued['blocked_reason_codes'] == ['existing_constraint', 'instruction_requires_clarification']
+    for key in ('target_acceleration_mps2', 'longitudinal_sequence_schema',
+                'sequence_valid_until_s', 'risk_motion_permission'):
+        assert key not in issued
+    assert original['action'] == 'accelerate'
+
+
 def test_translated_input_preserves_original_and_uses_english():
     class EnglishParser(Parser):
         def parse_text(self, text, **kwargs):

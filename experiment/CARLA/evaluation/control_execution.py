@@ -1,6 +1,7 @@
 """Separate command submission evidence from subsequent physical response."""
 import json
 import math
+import time
 
 
 def control_values(control):
@@ -42,7 +43,7 @@ class ControlExecutionJournal:
                 interpretation='later physical state; not proof of task success or exact actuation latency')
         self.pending=None
 
-    def apply(self, world, ego, control, decision_frame):
+    def apply(self, world, ego, control, decision_frame, *, response_started_ns=None):
         self.observe(world,ego)
         if self.pending is not None:
             self._write(status='SUPERSEDED_BEFORE_PHYSICS_OBSERVATION',**self.pending)
@@ -58,8 +59,13 @@ class ControlExecutionJournal:
         except Exception as error:
             self._write(status='SUBMISSION_FAILED',**record,error_type=type(error).__name__,error=str(error))
             raise
-        self._write(status='SUBMITTED',**record)
+        submission_completed_ns=time.perf_counter_ns()
+        timing=(submission_completed_ns-response_started_ns)/1e6 if response_started_ns is not None else None
+        self._write(status='SUBMITTED',**record,
+            policy_to_control_submission_wall_ms=timing,
+            latency_scope='host policy-cycle entry through apply_control return; excludes ASR and next physics state')
         self.pending=record
+        return timing
 
     def close(self):
         if self.stream.closed:

@@ -175,10 +175,10 @@ class EmergencyRuntimeConfigTests(unittest.TestCase):
             config["scene_id"],
             "scene_3_emergency_6km",
         )
-        self.assertEqual(len(config["events"]), 7)
+        self.assertEqual(len(config["events"]), 6)
         self.assertEqual(
             [event["order"] for event in config["events"]],
-            list(range(1, 8)),
+            list(range(1, 7)),
         )
         self.assertTrue(
             all(
@@ -197,11 +197,13 @@ class EmergencyRuntimeConfigTests(unittest.TestCase):
                 "private_vehicle_count", "work_vehicle_count",
                 "maintenance_vehicle_count", "worker_count",
                 "minimum_ego_spawn_clearance_m",
+                "reserved_gap_vehicle_count",
             )},
             {
-                "private_vehicle_count": 18,
+                "private_vehicle_count": 16,
+                "reserved_gap_vehicle_count": 0,
                 "work_vehicle_count": 2,
-                "maintenance_vehicle_count": 1,
+                "maintenance_vehicle_count": 0,
                 "worker_count": 2,
                 "minimum_ego_spawn_clearance_m": 35.0,
             },
@@ -210,7 +212,8 @@ class EmergencyRuntimeConfigTests(unittest.TestCase):
             len(scene_events.BACKGROUND_TRAFFIC_PLAN),
             16,
         )
-        self.assertEqual(config["traffic"]["following_source_max_actors"], 6)
+        self.assertEqual(config["traffic"]["following_source_max_actors"], 0)
+        self.assertEqual(config["traffic"]["rear_following_distance_m"], 60.0)
 
     def test_work_zone_boundary_cones_leave_exit_handoff_clear(self):
         positions = scene_events.work_zone_boundary_positions(
@@ -581,7 +584,7 @@ class EmergencyRoadContractTests(unittest.TestCase):
     def test_route_does_not_preselect_work_zone_avoidance(self):
         distances = [0.0, 2800.0, 2900.0, 3100.0, 3400.0, 5200.0, 5300.0, 5400.0]
         route = [
-            (SimpleNamespace(is_junction=False), None)
+            (SimpleNamespace(is_junction=False, lane_id=-2), None)
             for _ in distances
         ]
         adapter = mock.Mock()
@@ -594,6 +597,16 @@ class EmergencyRoadContractTests(unittest.TestCase):
         default = runner.build_ego_route_plan(context, events)
         self.assertEqual([point.lane_id for point, _ in default], [-2] * len(distances))
         self.assertEqual(default, runner.build_ego_route_plan(context, []))
+        adapter.logical_waypoint.assert_not_called()
+
+    def test_route_keeps_physical_lane_when_lane_rank_changes(self):
+        route = [(SimpleNamespace(is_junction=False, lane_id=lane), None)
+                 for lane in (-2, -2, -1, -1)]
+        adapter = mock.Mock()
+        adapter.logical_waypoint.return_value = SimpleNamespace(lane_id=-3)
+        context = SimpleNamespace(route=route, distances_m=[0., 2., 4., 6.], adapter=adapter)
+        self.assertEqual(runner.build_ego_route_plan(context, []), route)
+        adapter.logical_waypoint.assert_not_called()
 
     def test_fixture_route_rejects_vla_controller(self):
         with self.assertRaises(SystemExit) as caught:
@@ -747,7 +760,7 @@ class Scene3VideoPreviewTests(unittest.TestCase):
 
 
 class EmergencyEventSchedulerTests(unittest.TestCase):
-    def test_all_seven_events_activate_and_resolve(self):
+    def test_all_required_events_activate_and_resolve(self):
         config = runner.load_runtime_config(
             CONFIG_PATH
         )
@@ -773,18 +786,18 @@ class EmergencyEventSchedulerTests(unittest.TestCase):
                 {
                     "PENDING": 0,
                     "ACTIVE": 0,
-                    "RESOLVED": 7,
+                    "RESOLVED": 6,
                 },
             )
-            self.assertEqual(len(handler.activated), 7)
-            self.assertEqual(len(handler.resolved), 7)
+            self.assertEqual(len(handler.activated), 6)
+            self.assertEqual(len(handler.resolved), 6)
             records = [
                 json.loads(line)
                 for line in timeline.read_text(
                     encoding="utf-8"
                 ).splitlines()
             ]
-            self.assertEqual(len(records), 14)
+            self.assertEqual(len(records), 12)
 
 
 class EmergencyActorRuntimeTests(unittest.TestCase):
@@ -1188,6 +1201,7 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         runtime._walker_blueprint_candidates = [
             mock.Mock()
         ]
+        runtime._map.route_waypoint.return_value = mock.Mock()
         runtime._spawn_work_zone_worker = mock.Mock(
             return_value=worker
         )
@@ -1198,10 +1212,14 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         )
         runtime._spawn_work_zone_worker.assert_not_called()
 
-        runtime._update_worker_crossing(
-            ego_route_s_m=3200.0,
-            elapsed_s=1.0,
-        )
+        with mock.patch(
+            "worker_clearance.worker_clear_of_lane",
+            return_value={"lateral_offset_m": 5.0},
+        ):
+            runtime._update_worker_crossing(
+                ego_route_s_m=3200.0,
+                elapsed_s=1.0,
+            )
 
         runtime._spawn_work_zone_worker.assert_not_called()
         worker.apply_control.assert_called_once()
@@ -1211,10 +1229,14 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         )
         self.assertEqual(actor_sink, [worker])
 
-        runtime._update_worker_crossing(
-            ego_route_s_m=3235.0,
-            elapsed_s=5.0,
-        )
+        with mock.patch(
+            "worker_clearance.worker_clear_of_lane",
+            return_value={"clear": False, "lateral_offset_m": 4.0},
+        ):
+            runtime._update_worker_crossing(
+                ego_route_s_m=3235.0,
+                elapsed_s=5.0,
+            )
 
         worker.set_location.assert_not_called()
         self.assertEqual(runtime._worker_phase, "CROSSING")
@@ -1238,8 +1260,10 @@ class EmergencyActorRuntimeTests(unittest.TestCase):
         runtime._crossing_worker_start_location = SimpleNamespace(x=0.0, y=0.0)
         runtime._crossing_worker_start_elapsed_s = 1.0
         runtime._crossing_worker_target_location = SimpleNamespace(x=10.0, y=0.0)
+        runtime._worker_start_lateral_m = 5.0
         with mock.patch(
-            "worker_clearance.worker_clear_of_lane", return_value={"clear": True}
+            "worker_clearance.worker_clear_of_lane",
+            return_value={"clear": True, "lateral_offset_m": -4.9},
         ) as clearance:
             runtime._update_worker_crossing(ego_route_s_m=3380.0, elapsed_s=8.0)
 

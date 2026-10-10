@@ -3,7 +3,7 @@
 The runner loads the official town asset (buildings, vegetation, streetlights
 and road furniture), builds a route-progress coordinate system over a 6 km
 urban expressway corridor, applies physical rain/fog/wet-friction settings,
-and reuses the seven recoverable emergency event controllers.
+and reuses the required recoverable emergency event controllers.
 """
 
 from __future__ import annotations
@@ -38,6 +38,7 @@ from scene3_town05_route import (
     LOGICAL_ROUTE_ID,
     Town05RouteContext,
     build_town05_route_context,
+    continuous_corridor_waypoint,
     validate_scene3_event_anchors,
 )
 
@@ -615,6 +616,7 @@ class EmergencyEventScheduler:
         *,
         output_path: Path,
         event_handler: Any | None = None,
+        initial_route_s_m: float = 0.0,
     ) -> None:
         self._events = [
             dict(event)
@@ -634,6 +636,14 @@ class EmergencyEventScheduler:
             "",
             encoding="utf-8",
         )
+        if not math.isfinite(initial_route_s_m) or initial_route_s_m < 0:
+            raise ValueError("initial route progress must be finite and nonnegative")
+        if initial_route_s_m > 0:
+            for event in self._events:
+                if float(event["resolve_after_m"]) <= initial_route_s_m:
+                    self._states[event["id"]] = "SKIPPED"
+                    self._record(event=event, state="SKIPPED", route_s_m=initial_route_s_m,
+                                 simulation_frame=-1, elapsed_s=0.0)
 
     def _record(
         self,
@@ -738,7 +748,7 @@ class EmergencyEventScheduler:
                 )
 
     def summary(self) -> dict[str, int]:
-        return {
+        result = {
             state: sum(
                 current == state
                 for current in self._states.values()
@@ -749,6 +759,10 @@ class EmergencyEventScheduler:
                 "RESOLVED",
             )
         }
+        skipped = sum(state == "SKIPPED" for state in self._states.values())
+        if skipped:
+            result["SKIPPED"] = skipped
+        return result
 
     def active_event(
         self,
@@ -1073,9 +1087,14 @@ def load_runtime_config(
         raise ValueError(
             "runtime config events must be an array"
         )
-    if len(events) != 7:
+    required_events = {'scene3_cut_in', 'scene3_advance_warning', 'scene3_cone_taper',
+                       'scene3_work_zone', 'scene3_temporary_pedestrian', 'scene3_work_zone_exit'}
+    declared_events = {event.get('id') for event in events if isinstance(event, dict)}
+    if len(declared_events) != len(events):
+        raise ValueError('invalid or duplicate event id')
+    if declared_events != required_events:
         raise ValueError(
-            "runtime config must declare 7 events"
+            "runtime config must declare the six required emergency events"
         )
 
     event_ids: set[str] = set()
@@ -1164,9 +1183,9 @@ def load_runtime_config(
 
     traffic = data.get("traffic")
     expected_counts = {
-        "private_vehicle_count": 18,
+        "private_vehicle_count": 16,
         "work_vehicle_count": 2,
-        "maintenance_vehicle_count": 1,
+        "maintenance_vehicle_count": 0,
         "worker_count": 2,
     }
     if not isinstance(traffic, dict):
@@ -1231,6 +1250,18 @@ def load_runtime_config(
     return data
 
 
+def diagnostic_start_index(distances, start):
+    if not math.isfinite(start) or start < 0 or not distances or start >= distances[-1]:
+        raise ValueError('Diagnostic start must be within the route')
+    return min(range(len(distances)), key=lambda index: abs(distances[index] - start))
+
+
+def diagnostic_command_window(commands, start):
+    if start <= 0:
+        return list(commands)
+    return [command for command in commands if float(command['end_progress_m']) > start]
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -1275,6 +1306,10 @@ def build_parser() -> argparse.ArgumentParser:
             "Simulation duration in seconds; "
             "use 0 to run until Ctrl+C"
         ),
+    )
+    parser.add_argument(
+        "--diagnostic-start-progress-m", type=float, default=0.0,
+        help="Cold-start a route fragment; no past task, event or memory state is restored",
     )
     parser.add_argument(
         "--max-stall-s",
@@ -1568,6 +1603,9 @@ def write_text_command_schedule(
 def validate_args(
     args: argparse.Namespace,
 ) -> None:
+    start = getattr(args, 'diagnostic_start_progress_m', 0.0)
+    if not math.isfinite(start) or start < 0.0:
+        raise ValueError('--diagnostic-start-progress-m must be finite and non-negative')
     if args.duration < 0.0:
         raise ValueError(
             "--duration must be non-negative"
@@ -1946,19 +1984,19 @@ def build_ego_route_plan(
     """
 
     plan: list[tuple[Any, Any]] = []
+    previous_progress=None
     for (waypoint, road_option), progress_m in zip(
         route_context.route,
         route_context.distances_m,
     ):
         selected = waypoint
-        if not bool(getattr(waypoint, "is_junction", False)):
-            corridor = route_context.adapter.logical_waypoint(
-                EGO_LANE_ID,
-                float(progress_m),
-            )
-            if corridor is not None:
-                selected = corridor
+        # A lane's rank can change at a road seam without a lane change.
+        # Preserve the planned topology instead of reselecting a middle lane.
+        if plan:
+            selected=continuous_corridor_waypoint(plan[-1][0],selected,
+                max(0.,float(progress_m)-previous_progress))
         plan.append((selected, road_option))
+        previous_progress=float(progress_m)
     if len(plan) < 2:
         raise RuntimeError("Town05 ego route plan is too short")
     return plan
@@ -2520,6 +2558,7 @@ def main(
         return 0
 
     output_dir = args.output_dir.expanduser().resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     try:
         carla = load_carla_api()
@@ -2577,6 +2616,15 @@ def main(
             official_map,
             runtime_config["map"]["route"],
         )
+        start_index = diagnostic_start_index(route_context.distances_m, args.diagnostic_start_progress_m)
+        route_context.tracker.index = start_index
+        if args.diagnostic_start_progress_m > 0:
+            (output_dir / 'diagnostic_start.json').write_text(json.dumps(dict(
+                scope='cold-start route fragment; not full-route acceptance',
+                requested_progress_m=args.diagnostic_start_progress_m,
+                actual_progress_m=float(route_context.distances_m[start_index]),
+                history_restored=False, task_completion_restored=False,
+                events_restored=False, route_modified=False), indent=2) + '\n')
         validate_scene3_event_anchors(
             route_context,
             runtime_config["events"],
@@ -2631,6 +2679,9 @@ def main(
                 )
             ),
         )
+        if args.ego_controller == 'vla-route-pid':
+            # The shared decision layer applies the road/weather bound once.
+            effective_ego_speed_kmh = float(args.ego_speed_kmh)
         print(
             "Wet-weather ego speed cap: "
             f"requested={args.ego_speed_kmh:.1f}, "
@@ -2654,7 +2705,7 @@ def main(
             target_speed_kmh=effective_ego_speed_kmh,
             stationary=args.stationary_ego,
             autopilot=False,
-            spawn_waypoint=route_context.route[0][0],
+            spawn_waypoint=route_context.route[start_index][0],
             color=(
                 "40,100,180"
                 if args.presentation_lighting
@@ -2842,7 +2893,8 @@ def main(
             runtime_config["traffic"]
         )
         for event in runtime_config['events']:
-            if event['id'] == 'scene3_temporary_pedestrian':
+            if (event['id'] == 'scene3_temporary_pedestrian'
+                    and float(event['resolve_after_m']) > args.diagnostic_start_progress_m):
                 event_actor_runtime.prepare_temporary_pedestrian(event)
         scheduler = EmergencyEventScheduler(
             runtime_config["events"],
@@ -2851,6 +2903,7 @@ def main(
                 / "event_timeline.jsonl"
             ),
             event_handler=event_actor_runtime,
+            initial_route_s_m=args.diagnostic_start_progress_m,
         )
         if args.ego_controller == "vla-route-pid":
             from universal_vla_controller import UniversalVLAController
@@ -2859,7 +2912,8 @@ def main(
                 world=world,
                 ego=ego,
                 route_controller=ego_controller,
-                commands=runtime_config["voice_input"]["commands"],
+                commands=diagnostic_command_window(runtime_config["voice_input"]["commands"],
+                    args.diagnostic_start_progress_m),
                 checkpoint_path=args.vla_checkpoint.expanduser().resolve(),
                 config_path=args.vla_config.expanduser().resolve(),
                 parser_model_path=args.vla_parser_model.expanduser().resolve(),
@@ -2917,7 +2971,10 @@ def main(
             )
             benchmark_assessment = attach_episode('scene_3',assessment_route,world,ego,
                 output_dir/'benchmark',runtime_config_path,task_selector=args.benchmark_task,
+                initial_route_s_m=float(route_context.distances_m[start_index]),
                 run_metadata=dict(traffic_seed=args.seed,controller=args.ego_controller,
+                                  diagnostic_cold_start=bool(args.diagnostic_start_progress_m > 0),
+                                  restored_task_state=False,
                                   policy_source='VLA_MODEL' if args.ego_controller=='vla-route-pid' else 'NON_VLA_CONTROL',
                                   sensor_recording=bool(args.vla_record_sensors),
                                   standard_multimodal_recording=bool(args.record_multimodal)))

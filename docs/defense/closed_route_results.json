@@ -1,0 +1,1200 @@
+{
+  "scope": "Three routes completed; Scene2 strict failures and supplementary human engineering review both retained",
+  "scenes": {
+    "scene1": {
+      "run": "s1_full_v92_attempt10",
+      "final_route_s_m": 4997.063540560936,
+      "registered_criteria_success": 15,
+      "registered_criteria_total": 15,
+      "task_success_scope": "registered_criteria_not_full_instruction_semantics",
+      "independent_semantic_verified_count": 0,
+      "counts": {
+        "decision_frames": 6842,
+        "physical_stop_frames": 6,
+        "policy_truth_access_frames": 0,
+        "unsafe_positive_stop_outputs": 0,
+        "missing_turn_targets": 0
+      },
+      "latency_ms": {
+        "full_decision_latency_ms": {
+          "n": 6842,
+          "p50": 110.8175,
+          "p95": 148.8565,
+          "maximum": 567.306,
+          "over_150ms": 318
+        },
+        "text_to_control_command_wall_ms": {
+          "n": 6842,
+          "p50": 110.8175,
+          "p95": 148.8565,
+          "maximum": 567.306,
+          "over_150ms": 318
+        },
+        "sensor_to_decision_response_ms": {
+          "n": 6842,
+          "p50": 110.8175,
+          "p95": 148.8565,
+          "maximum": 567.306,
+          "over_150ms": 318
+        }
+      },
+      "execution_wall_seconds": 1890.2045261859894,
+      "decision_log_sha256": "db6792369a44c9d63440d0291757e6d0d1896fd8ac411ebd4a3605fe52db609f",
+      "runner_exit_code": 0,
+      "evidence_files": [
+        "source_files_sha256.json",
+        "source_changes.patch",
+        "runtime.json",
+        "runner_help.log",
+        "preflight.json",
+        "runner.log",
+        "independent_collector.log",
+        "runner_pid.json",
+        "independent_nearby_actor_truth.jsonl",
+        "independent_nearby_actor_truth_manifest.json",
+        "source_files_at_close.json",
+        "full_execution.json",
+        "full_summary.json",
+        "run/scenario_config.map_bound.json",
+        "run/vla_control_decisions.jsonl",
+        "run/frames.jsonl",
+        "run/events.jsonl",
+        "run/run_manifest.json",
+        "run/vla_control_decisions_resources.jsonl",
+        "run/vla_control_decisions_execution.jsonl",
+        "run/metrics.json",
+        "run/metrics.csv",
+        "run/vla_control_decisions_resources_summary.json",
+        "run/benchmark/episode_truth.jsonl",
+        "run/benchmark/route.json",
+        "run/benchmark/manifest.json",
+        "run/benchmark/summary.json",
+        "run/benchmark/run_outcome.json",
+        "run/benchmark/tasks/c01_depart_30/spec.json",
+        "run/benchmark/tasks/c01_depart_30/route.json",
+        "run/benchmark/tasks/c01_depart_30/fixture.json",
+        "run/benchmark/tasks/c01_depart_30/manifest.json",
+        "run/benchmark/tasks/c01_depart_30/task_truth.jsonl",
+        "run/benchmark/tasks/c01_depart_30/task_result.json",
+        "run/benchmark/tasks/c02_cruise_60/spec.json",
+        "run/benchmark/tasks/c02_cruise_60/route.json",
+        "run/benchmark/tasks/c02_cruise_60/fixture.json",
+        "run/benchmark/tasks/c02_cruise_60/manifest.json",
+        "run/benchmark/tasks/c02_cruise_60/task_truth.jsonl",
+        "run/benchmark/tasks/c02_cruise_60/task_result.json",
+        "run/benchmark/tasks/c03_reduce_for_right_turn/spec.json",
+        "run/benchmark/tasks/c03_reduce_for_right_turn/route.json",
+        "run/benchmark/tasks/c03_reduce_for_right_turn/fixture.json",
+        "run/benchmark/tasks/c03_reduce_for_right_turn/manifest.json",
+        "run/benchmark/tasks/c03_reduce_for_right_turn/task_truth.jsonl",
+        "run/benchmark/tasks/c03_reduce_for_right_turn/task_result.json",
+        "run/benchmark/tasks/c08_keep_50/spec.json",
+        "run/benchmark/tasks/c08_keep_50/route.json",
+        "run/benchmark/tasks/c08_keep_50/fixture.json",
+        "run/benchmark/tasks/c08_keep_50/manifest.json",
+        "run/benchmark/tasks/c08_keep_50/task_truth.jsonl",
+        "run/benchmark/tasks/c08_keep_50/task_result.json",
+        "run/benchmark/tasks/c04_change_left/spec.json",
+        "run/benchmark/tasks/c04_change_left/route.json",
+        "run/benchmark/tasks/c04_change_left/fixture.json",
+        "run/benchmark/tasks/c04_change_left/manifest.json",
+        "run/benchmark/tasks/c04_change_left/task_truth.jsonl",
+        "run/benchmark/tasks/c04_change_left/task_result.json",
+        "run/benchmark/tasks/c05_change_right/spec.json",
+        "run/benchmark/tasks/c05_change_right/route.json",
+        "run/benchmark/tasks/c05_change_right/fixture.json",
+        "run/benchmark/tasks/c05_change_right/manifest.json",
+        "run/benchmark/tasks/c05_change_right/task_truth.jsonl",
+        "run/benchmark/tasks/c05_change_right/task_result.json",
+        "run/benchmark/tasks/c06_hold_45/spec.json",
+        "run/benchmark/tasks/c06_hold_45/route.json",
+        "run/benchmark/tasks/c06_hold_45/fixture.json",
+        "run/benchmark/tasks/c06_hold_45/manifest.json",
+        "run/benchmark/tasks/c06_hold_45/task_truth.jsonl",
+        "run/benchmark/tasks/c06_hold_45/task_result.json",
+        "run/benchmark/tasks/c11_accelerate_50/spec.json",
+        "run/benchmark/tasks/c11_accelerate_50/route.json",
+        "run/benchmark/tasks/c11_accelerate_50/fixture.json",
+        "run/benchmark/tasks/c11_accelerate_50/manifest.json",
+        "run/benchmark/tasks/c11_accelerate_50/task_truth.jsonl",
+        "run/benchmark/tasks/c11_accelerate_50/task_result.json",
+        "run/benchmark/tasks/c09_reduce_for_turn/spec.json",
+        "run/benchmark/tasks/c09_reduce_for_turn/route.json",
+        "run/benchmark/tasks/c09_reduce_for_turn/fixture.json",
+        "run/benchmark/tasks/c09_reduce_for_turn/manifest.json",
+        "run/benchmark/tasks/c09_reduce_for_turn/task_truth.jsonl",
+        "run/benchmark/tasks/c09_reduce_for_turn/task_result.json",
+        "run/benchmark/tasks/c07_turn_right/spec.json",
+        "run/benchmark/tasks/c07_turn_right/route.json",
+        "run/benchmark/tasks/c07_turn_right/fixture.json",
+        "run/benchmark/tasks/c07_turn_right/manifest.json",
+        "run/benchmark/tasks/c07_turn_right/task_truth.jsonl",
+        "run/benchmark/tasks/c07_turn_right/task_result.json",
+        "run/benchmark/tasks/c10_keep_30/spec.json",
+        "run/benchmark/tasks/c10_keep_30/route.json",
+        "run/benchmark/tasks/c10_keep_30/fixture.json",
+        "run/benchmark/tasks/c10_keep_30/manifest.json",
+        "run/benchmark/tasks/c10_keep_30/task_truth.jsonl",
+        "run/benchmark/tasks/c10_keep_30/task_result.json",
+        "run/benchmark/tasks/c12_keep_30/spec.json",
+        "run/benchmark/tasks/c12_keep_30/route.json",
+        "run/benchmark/tasks/c12_keep_30/fixture.json",
+        "run/benchmark/tasks/c12_keep_30/manifest.json",
+        "run/benchmark/tasks/c12_keep_30/task_truth.jsonl",
+        "run/benchmark/tasks/c12_keep_30/task_result.json",
+        "run/benchmark/tasks/c13_reduce_25/spec.json",
+        "run/benchmark/tasks/c13_reduce_25/route.json",
+        "run/benchmark/tasks/c13_reduce_25/fixture.json",
+        "run/benchmark/tasks/c13_reduce_25/manifest.json",
+        "run/benchmark/tasks/c13_reduce_25/task_truth.jsonl",
+        "run/benchmark/tasks/c13_reduce_25/task_result.json",
+        "run/benchmark/tasks/c14_accelerate_30/spec.json",
+        "run/benchmark/tasks/c14_accelerate_30/route.json",
+        "run/benchmark/tasks/c14_accelerate_30/fixture.json",
+        "run/benchmark/tasks/c14_accelerate_30/manifest.json",
+        "run/benchmark/tasks/c14_accelerate_30/task_truth.jsonl",
+        "run/benchmark/tasks/c14_accelerate_30/task_result.json",
+        "run/benchmark/tasks/c15_keep_to_goal/spec.json",
+        "run/benchmark/tasks/c15_keep_to_goal/route.json",
+        "run/benchmark/tasks/c15_keep_to_goal/fixture.json",
+        "run/benchmark/tasks/c15_keep_to_goal/manifest.json",
+        "run/benchmark/tasks/c15_keep_to_goal/task_truth.jsonl",
+        "run/benchmark/tasks/c15_keep_to_goal/task_result.json"
+      ],
+      "traffic_compliance": {
+        "scope": "Independent snapshot speed and front-bumper stop-line crossing audit; not policy input",
+        "status": "NO_RECORDED_VIOLATION",
+        "frames": 20526,
+        "speed_limit_valid_frames": 20526,
+        "speeding_frames": 0,
+        "max_speed_excess_kmh": 0.0,
+        "red_light_violations": 0,
+        "stop_line_count": 111,
+        "crossings": [
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_14",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.06421411968995784,
+            "previous_front_distance_m": -0.07024185260021423,
+            "current_front_distance_m": 0.017404466241211808,
+            "frame": 3689402,
+            "sim_time_s": 3101.4983938690275,
+            "traffic_light_actor_ids": [
+              4647
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_12",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.05021674437041677,
+            "previous_front_distance_m": -0.11471337467059145,
+            "current_front_distance_m": 0.14913410466025656,
+            "frame": 3691877,
+            "sim_time_s": 3225.248395713046,
+            "traffic_light_actor_ids": [
+              4648
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_17",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.06698589570918281,
+            "previous_front_distance_m": -0.030559629907157614,
+            "current_front_distance_m": 0.30496162828574214,
+            "frame": 3694500,
+            "sim_time_s": 3356.3983976673335,
+            "traffic_light_actor_ids": [
+              4646
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_12",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.08790190045468067,
+            "previous_front_distance_m": -0.20149260034889255,
+            "current_front_distance_m": 0.00019203686049751518,
+            "frame": 3697205,
+            "sim_time_s": 3491.6483996827155,
+            "traffic_light_actor_ids": [
+              4648
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_17",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.028573780209925577,
+            "previous_front_distance_m": -0.0360239803129268,
+            "current_front_distance_m": 0.04238419984732152,
+            "frame": 3699098,
+            "sim_time_s": 3586.2984010931104,
+            "traffic_light_actor_ids": [
+              4646
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_65",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.036310034631571134,
+            "previous_front_distance_m": -0.25382618737900514,
+            "current_front_distance_m": 0.001727587474586864,
+            "frame": 3699936,
+            "sim_time_s": 3628.198401717469,
+            "traffic_light_actor_ids": [
+              4623
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_5",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.040081841698095644,
+            "previous_front_distance_m": -0.2061398082920227,
+            "current_front_distance_m": 0.04937025770138043,
+            "frame": 3701142,
+            "sim_time_s": 3688.498402616009,
+            "traffic_light_actor_ids": [
+              4651
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_103",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.01921483373022798,
+            "previous_front_distance_m": -0.04932421011051744,
+            "current_front_distance_m": 0.20861446748770995,
+            "frame": 3702352,
+            "sim_time_s": 3748.9984035175294,
+            "traffic_light_actor_ids": [
+              4604
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_109",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.02282976163573751,
+            "previous_front_distance_m": -0.09553177089781627,
+            "current_front_distance_m": 0.16173523842107074,
+            "frame": 3702955,
+            "sim_time_s": 3779.1484039667994,
+            "traffic_light_actor_ids": [
+              4601
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_9",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.07569094210175924,
+            "previous_front_distance_m": -0.06284167407928044,
+            "current_front_distance_m": 0.0238414724706202,
+            "frame": 3703896,
+            "sim_time_s": 3826.198404667899,
+            "traffic_light_actor_ids": [
+              4649
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_17",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.01738247128466085,
+            "previous_front_distance_m": -0.30817537188769595,
+            "current_front_distance_m": 0.010944942870160302,
+            "frame": 3706277,
+            "sim_time_s": 3945.2484064418823,
+            "traffic_light_actor_ids": [
+              4646
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_12",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.09260054042066526,
+            "previous_front_distance_m": -0.06112736426181235,
+            "current_front_distance_m": 0.16926425753410299,
+            "frame": 3708985,
+            "sim_time_s": 4080.6484084594995,
+            "traffic_light_actor_ids": [
+              4648
+            ]
+          }
+        ],
+        "uncertain_crossings": [],
+        "capture_errors": [],
+        "speed_tolerance_kmh": 0.0001,
+        "limitations": [
+          "speed limit uses simulator vehicle API, not independently reconstructed sign history",
+          "stop-line signal transitions remain explicit ambiguous evidence",
+          "does not cover every traffic-rule category"
+        ]
+      },
+      "safety": {
+        "events": [
+          {
+            "kind": "lane_invasion",
+            "frame": 3693031,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693054,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693078,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693104,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693105,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693481,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693482,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693505,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693506,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693544,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693545,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693566,
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3693568,
+            "illegal": false
+          }
+        ],
+        "late_events": [],
+        "sealed": true,
+        "coverage": [
+          "collision",
+          "solid_lane_marking"
+        ],
+        "limitations": [
+          "no_transport_ack",
+          "red_light_and_other_violations_not_measured"
+        ]
+      },
+      "source_changes_at_runner_close": []
+    },
+    "scene3": {
+      "run": "s3_full_v103_attempt27",
+      "final_route_s_m": 5999.955726844868,
+      "registered_criteria_success": 7,
+      "registered_criteria_total": 7,
+      "task_success_scope": "registered_criteria_not_full_instruction_semantics",
+      "independent_semantic_verified_count": 0,
+      "counts": {
+        "decision_frames": 38970,
+        "physical_stop_frames": 229,
+        "policy_truth_access_frames": 0,
+        "unsafe_positive_stop_outputs": 0,
+        "missing_turn_targets": 0
+      },
+      "latency_ms": {
+        "full_decision_latency_ms": {
+          "n": 38970,
+          "p50": 72.55,
+          "p95": 103.93964999999999,
+          "maximum": 413.019,
+          "over_150ms": 63
+        },
+        "text_to_control_command_wall_ms": {
+          "n": 38970,
+          "p50": 72.55,
+          "p95": 103.93964999999999,
+          "maximum": 413.019,
+          "over_150ms": 63
+        },
+        "sensor_to_decision_response_ms": {
+          "n": 38970,
+          "p50": 72.55,
+          "p95": 103.93964999999999,
+          "maximum": 413.019,
+          "over_150ms": 63
+        }
+      },
+      "execution_wall_seconds": 4117.731986284256,
+      "decision_log_sha256": "307101322416a4dba0993d98818bc2e32c1c566089ff752da3d389c6b65cc6e7",
+      "runner_exit_code": 0,
+      "evidence_files": [
+        "source_files_sha256.json",
+        "source_changes.patch",
+        "runtime.json",
+        "runner_help.log",
+        "preflight.json",
+        "runner.log",
+        "independent_collector.log",
+        "runner_pid.json",
+        "independent_nearby_actor_truth.jsonl",
+        "actual_background_workload.json",
+        "independent_nearby_actor_truth_manifest.json",
+        "source_files_at_close.json",
+        "full_execution.json",
+        "full_summary.json",
+        "run/text_command_schedule.jsonl",
+        "run/vehicle_state.jsonl",
+        "run/runtime_config_snapshot.json",
+        "run/event_timeline.jsonl",
+        "run/frame_ground_truth.jsonl",
+        "run/vla_control_decisions_resources.jsonl",
+        "run/vla_control_decisions_execution.jsonl",
+        "run/scene_summary.json",
+        "run/vla_control_decisions_resources_summary.json",
+        "run/vla_control_decisions.jsonl.gz",
+        "run/decision_log_archive_manifest.json",
+        "run/benchmark/episode_truth.jsonl",
+        "run/benchmark/route.json",
+        "run/benchmark/manifest.json",
+        "run/benchmark/summary.json",
+        "run/benchmark/run_outcome.json",
+        "run/benchmark/tasks/scene3_general_hazard/spec.json",
+        "run/benchmark/tasks/scene3_general_hazard/route.json",
+        "run/benchmark/tasks/scene3_general_hazard/fixture.json",
+        "run/benchmark/tasks/scene3_general_hazard/manifest.json",
+        "run/benchmark/tasks/scene3_general_hazard/task_truth.jsonl",
+        "run/benchmark/tasks/scene3_general_hazard/task_result.json",
+        "run/benchmark/tasks/scene3_cut_in_decelerate/spec.json",
+        "run/benchmark/tasks/scene3_cut_in_decelerate/route.json",
+        "run/benchmark/tasks/scene3_cut_in_decelerate/fixture.json",
+        "run/benchmark/tasks/scene3_cut_in_decelerate/manifest.json",
+        "run/benchmark/tasks/scene3_cut_in_decelerate/task_truth.jsonl",
+        "run/benchmark/tasks/scene3_cut_in_decelerate/task_result.json",
+        "run/benchmark/tasks/scene3_work_zone_warning/spec.json",
+        "run/benchmark/tasks/scene3_work_zone_warning/route.json",
+        "run/benchmark/tasks/scene3_work_zone_warning/fixture.json",
+        "run/benchmark/tasks/scene3_work_zone_warning/manifest.json",
+        "run/benchmark/tasks/scene3_work_zone_warning/task_truth.jsonl",
+        "run/benchmark/tasks/scene3_work_zone_warning/task_result.json",
+        "run/benchmark/tasks/scene3_right_lane_closure/spec.json",
+        "run/benchmark/tasks/scene3_right_lane_closure/route.json",
+        "run/benchmark/tasks/scene3_right_lane_closure/fixture.json",
+        "run/benchmark/tasks/scene3_right_lane_closure/manifest.json",
+        "run/benchmark/tasks/scene3_right_lane_closure/task_truth.jsonl",
+        "run/benchmark/tasks/scene3_right_lane_closure/task_result.json",
+        "run/benchmark/tasks/scene3_pass_work_zone/spec.json",
+        "run/benchmark/tasks/scene3_pass_work_zone/route.json",
+        "run/benchmark/tasks/scene3_pass_work_zone/fixture.json",
+        "run/benchmark/tasks/scene3_pass_work_zone/manifest.json",
+        "run/benchmark/tasks/scene3_pass_work_zone/task_truth.jsonl",
+        "run/benchmark/tasks/scene3_pass_work_zone/task_result.json",
+        "run/benchmark/tasks/scene3_worker_crossing/spec.json",
+        "run/benchmark/tasks/scene3_worker_crossing/route.json",
+        "run/benchmark/tasks/scene3_worker_crossing/fixture.json",
+        "run/benchmark/tasks/scene3_worker_crossing/manifest.json",
+        "run/benchmark/tasks/scene3_worker_crossing/task_truth.jsonl",
+        "run/benchmark/tasks/scene3_worker_crossing/task_result.json",
+        "run/benchmark/tasks/scene3_resume_normal_driving/spec.json",
+        "run/benchmark/tasks/scene3_resume_normal_driving/route.json",
+        "run/benchmark/tasks/scene3_resume_normal_driving/fixture.json",
+        "run/benchmark/tasks/scene3_resume_normal_driving/manifest.json",
+        "run/benchmark/tasks/scene3_resume_normal_driving/task_truth.jsonl",
+        "run/benchmark/tasks/scene3_resume_normal_driving/task_result.json"
+      ],
+      "traffic_compliance": {
+        "scope": "Independent snapshot speed and front-bumper stop-line crossing audit; not policy input",
+        "status": "NO_RECORDED_VIOLATION",
+        "frames": 38970,
+        "speed_limit_valid_frames": 38970,
+        "speeding_frames": 0,
+        "max_speed_excess_kmh": 0.0,
+        "red_light_violations": 0,
+        "stop_line_count": 111,
+        "crossings": [
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_23",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.057386489586344326,
+            "previous_front_distance_m": -0.1578171071663495,
+            "current_front_distance_m": 0.14399751039633055,
+            "frame": 9995371,
+            "sim_time_s": 279.061051229015,
+            "traffic_light_actor_ids": [
+              9221
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_21",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.0784945141827082,
+            "previous_front_distance_m": -0.0518644945224062,
+            "current_front_distance_m": 0.05421182751003597,
+            "frame": 9999928,
+            "sim_time_s": 506.91105462424457,
+            "traffic_light_actor_ids": [
+              9222
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_23",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.07583411669113271,
+            "previous_front_distance_m": -0.23273864650256887,
+            "current_front_distance_m": 0.06938039810825164,
+            "frame": 10005337,
+            "sim_time_s": 777.3610586542636,
+            "traffic_light_actor_ids": [
+              9221
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_20",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.005802562087527841,
+            "previous_front_distance_m": -0.005607587339367313,
+            "current_front_distance_m": 0.12301988753496182,
+            "frame": 10008985,
+            "sim_time_s": 959.7610613722354,
+            "traffic_light_actor_ids": [
+              9222
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_23",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.054302547811998995,
+            "previous_front_distance_m": -0.1333974130004301,
+            "current_front_distance_m": 0.1631987416659146,
+            "frame": 10016211,
+            "sim_time_s": 1321.061066756025,
+            "traffic_light_actor_ids": [
+              9221
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_20",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.0789806068364944,
+            "previous_front_distance_m": -0.021701472898794646,
+            "current_front_distance_m": 0.10668353273594633,
+            "frame": 10020778,
+            "sim_time_s": 1549.4110701587051,
+            "traffic_light_actor_ids": [
+              9222
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_23",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.04208604694538059,
+            "previous_front_distance_m": -0.20117040076610918,
+            "current_front_distance_m": 0.10577341364341708,
+            "frame": 10026193,
+            "sim_time_s": 1820.1610741931945,
+            "traffic_light_actor_ids": [
+              9221
+            ]
+          }
+        ],
+        "uncertain_crossings": [],
+        "capture_errors": [],
+        "speed_tolerance_kmh": 0.0001,
+        "limitations": [
+          "speed limit uses simulator vehicle API, not independently reconstructed sign history",
+          "stop-line signal transitions remain explicit ambiguous evidence",
+          "does not cover every traffic-rule category"
+        ]
+      },
+      "safety": {
+        "events": [
+          {
+            "kind": "lane_invasion",
+            "frame": 9997075,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 9997116,
+            "markings": [
+              "Broken",
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 9997142,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10000359,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10000402,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10000412,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10000453,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10007386,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10007420,
+            "markings": [
+              "Broken",
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10007444,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10007445,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10008612,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10008643,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10008663,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 10008690,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          }
+        ],
+        "late_events": [],
+        "sealed": true,
+        "coverage": [
+          "collision",
+          "solid_lane_marking"
+        ],
+        "limitations": [
+          "no_transport_ack",
+          "red_light_and_other_violations_not_measured"
+        ]
+      },
+      "source_changes_at_runner_close": []
+    },
+    "scene2": {
+      "run": "s2_full_v140_newhost_attempt41",
+      "final_route_s_m": 8001.023122243642,
+      "raw_benchmark_final_route_s_m": 8004.824186630504,
+      "route_progress_note": "Runner route completion and independent benchmark projection are different coordinates",
+      "registered_criteria_success": 11,
+      "registered_criteria_total": 15,
+      "task_success_scope": "Original strict registered criteria; supplementary manual review kept separately",
+      "independent_semantic_verified_count": 0,
+      "supplementary_engineering_pass": 15,
+      "supplementary_engineering_total": 15,
+      "invalid_excluded": [],
+      "counts": {
+        "decision_frames": 48857,
+        "physical_stop_frames": 121,
+        "policy_truth_access_frames": 0,
+        "unsafe_positive_stop_outputs": 0,
+        "missing_turn_targets": 0
+      },
+      "latency_ms": {
+        "full_decision_latency_ms": {
+          "n": 48857,
+          "p50": 72.736,
+          "p95": 140.8284,
+          "maximum": 1181.54,
+          "over_150ms": 1496
+        },
+        "text_to_control_command_wall_ms": {
+          "n": 48857,
+          "p50": 72.736,
+          "p95": 140.8284,
+          "maximum": 1181.54,
+          "over_150ms": 1496
+        },
+        "sensor_to_decision_response_ms": {
+          "n": 48857,
+          "p50": 72.736,
+          "p95": 140.8284,
+          "maximum": 1181.54,
+          "over_150ms": 1496
+        }
+      },
+      "execution_wall_seconds": 7484.7152099609375,
+      "simulation_duration_s": 2442.85,
+      "decision_log_sha256": "df610cf1b8552341a39947f81f0e6c884d62877ec1f3bd5dd9be274f126ab18b",
+      "runner_exit_code": 2,
+      "engineering_endpoint_completed": true,
+      "traffic_compliance": {
+        "scope": "Independent snapshot speed and front-bumper stop-line crossing audit; not policy input",
+        "status": "NO_RECORDED_VIOLATION",
+        "frames": 48857,
+        "speed_limit_valid_frames": 48857,
+        "speeding_frames": 0,
+        "max_speed_excess_kmh": 0.0,
+        "red_light_violations": 0,
+        "stop_line_count": 111,
+        "crossings": [
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_17",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.000899624711873844,
+            "previous_front_distance_m": -0.006866010417327144,
+            "current_front_distance_m": 0.06527021439169425,
+            "frame": 3010483,
+            "sim_time_s": 28979.182237189263,
+            "traffic_light_actor_ids": [
+              107
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_65",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.028804047081921177,
+            "previous_front_distance_m": -0.2089194432630019,
+            "current_front_distance_m": 0.06656236255610987,
+            "frame": 3011893,
+            "sim_time_s": 29049.682238239795,
+            "traffic_light_actor_ids": [
+              84
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_5",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.07966192572438556,
+            "previous_front_distance_m": -0.048411295720076936,
+            "current_front_distance_m": 0.03275019051868726,
+            "frame": 3013150,
+            "sim_time_s": 29112.532239176333,
+            "traffic_light_actor_ids": [
+              112
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_43",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.0007256973983608436,
+            "previous_front_distance_m": -0.04135591807228754,
+            "current_front_distance_m": 0.04011734529222049,
+            "frame": 3014661,
+            "sim_time_s": 29188.082240302116,
+            "traffic_light_actor_ids": [
+              95
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_5",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.06811480684093786,
+            "previous_front_distance_m": -0.23596580974280595,
+            "current_front_distance_m": 0.03950474946103975,
+            "frame": 3016725,
+            "sim_time_s": 29291.282241839916,
+            "traffic_light_actor_ids": [
+              112
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_103",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.021276839477051144,
+            "previous_front_distance_m": -0.21690453955850836,
+            "current_front_distance_m": 0.058577643669762626,
+            "frame": 3017933,
+            "sim_time_s": 29351.682242739946,
+            "traffic_light_actor_ids": [
+              65
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_109",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.021996010650048397,
+            "previous_front_distance_m": -0.07308120393220453,
+            "current_front_distance_m": 0.023043571992331206,
+            "frame": 3018565,
+            "sim_time_s": 29383.282243210822,
+            "traffic_light_actor_ids": [
+              62
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_9",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.0713608039494546,
+            "previous_front_distance_m": -0.07791022337590704,
+            "current_front_distance_m": 0.0041558856425358715,
+            "frame": 3018955,
+            "sim_time_s": 29402.782243501395,
+            "traffic_light_actor_ids": [
+              110
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_17",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.0722759451877019,
+            "previous_front_distance_m": -0.10115172311230997,
+            "current_front_distance_m": 0.0058188786199739485,
+            "frame": 3022204,
+            "sim_time_s": 29565.23224592209,
+            "traffic_light_actor_ids": [
+              107
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_12",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.06444969026685735,
+            "previous_front_distance_m": -0.06298026713573472,
+            "current_front_distance_m": 0.147329245633816,
+            "frame": 3026725,
+            "sim_time_s": 29791.282249290496,
+            "traffic_light_actor_ids": [
+              109
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_17",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.07897980072422427,
+            "previous_front_distance_m": -0.10637880697884312,
+            "current_front_distance_m": 0.01757333195018203,
+            "frame": 3030390,
+            "sim_time_s": 29974.532252021134,
+            "traffic_light_actor_ids": [
+              107
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_12",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.039113994403352045,
+            "previous_front_distance_m": -0.10982811512000358,
+            "current_front_distance_m": 0.1692318992572934,
+            "frame": 3037563,
+            "sim_time_s": 30333.182257365435,
+            "traffic_light_actor_ids": [
+              109
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_17",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.07680035147722554,
+            "previous_front_distance_m": -0.02524375027353503,
+            "current_front_distance_m": 0.07013574640540907,
+            "frame": 3040315,
+            "sim_time_s": 30470.782259415835,
+            "traffic_light_actor_ids": [
+              107
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_12",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": 0.025709128867155644,
+            "previous_front_distance_m": -0.17112015423549884,
+            "current_front_distance_m": 0.09120047441842374,
+            "frame": 3046621,
+            "sim_time_s": 30786.08226411417,
+            "traffic_light_actor_ids": [
+              109
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_17",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.028384723063244594,
+            "previous_front_distance_m": -0.013089779368026081,
+            "current_front_distance_m": 0.07540864281675928,
+            "frame": 3049356,
+            "sim_time_s": 30922.832266151905,
+            "traffic_light_actor_ids": [
+              107
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_12",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.023742310643491863,
+            "previous_front_distance_m": -0.005498000309198553,
+            "current_front_distance_m": 0.26076951610378096,
+            "frame": 3053015,
+            "sim_time_s": 31105.782268878073,
+            "traffic_light_actor_ids": [
+              109
+            ]
+          },
+          {
+            "status": "PERMITTED_CROSSING",
+            "line_id": "stopline_17",
+            "previous_signal": "Green",
+            "current_signal": "Green",
+            "lateral_at_crossing_m": -0.05105653077561002,
+            "previous_front_distance_m": -0.06389269658001372,
+            "current_front_distance_m": 0.03743409696808743,
+            "frame": 3055724,
+            "sim_time_s": 31241.232270896435,
+            "traffic_light_actor_ids": [
+              107
+            ]
+          }
+        ],
+        "uncertain_crossings": [],
+        "capture_errors": [],
+        "speed_tolerance_kmh": 0.0001,
+        "limitations": [
+          "speed limit uses simulator vehicle API, not independently reconstructed sign history",
+          "stop-line signal transitions remain explicit ambiguous evidence",
+          "does not cover every traffic-rule category"
+        ]
+      },
+      "safety": {
+        "events": [
+          {
+            "kind": "lane_invasion",
+            "frame": 3020108,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3020140,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3020175,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3020205,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3020473,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3020474,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3020500,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3020522,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          },
+          {
+            "kind": "lane_invasion",
+            "frame": 3020551,
+            "markings": [
+              "Broken"
+            ],
+            "illegal": false
+          }
+        ],
+        "late_events": [],
+        "sealed": true,
+        "coverage": [
+          "collision",
+          "solid_lane_marking"
+        ],
+        "limitations": [
+          "no_transport_ack",
+          "red_light_and_other_violations_not_measured"
+        ]
+      },
+      "source_changes_at_runner_close": []
+    }
+  },
+  "complete_three_scenes": false,
+  "complete_three_routes": true,
+  "all_three_raw_strict_assessments_passed": false
+}

@@ -95,7 +95,7 @@ def test_scene3_static_roles_use_their_actual_configured_route_anchor():
     from benchmark.catalog import load_catalog
     anchors=configured_role_anchors(load_catalog('scene_3').events)
     assert anchors['scene3_crossing_worker']==3345
-    assert anchors['scene3_maintenance_vehicle']==4850
+    assert 'scene3_maintenance_vehicle' not in anchors
     # These actors are spawned relative to ego, not at the static obstacle.
     assert 'scene3_gap_front_vehicle' not in anchors
 
@@ -115,3 +115,66 @@ def test_distant_actor_uses_own_anchor_and_tracks_current_progress():
     states,_=recorder.capture(snapshot,metadata,RouteProjector(route),10,pack_actor)
     assert states['lead']['binding']['initial_route_s_m']==1020
     assert states['lead']['route_s_m']==1040
+
+
+def crossing_route():
+    points=[(-20,0),(20,0),(20,20),(0,20),(0,-20)]
+    distance=0.
+    result=[]
+    for i,(x,y) in enumerate(points):
+        if i:
+            old=points[i-1]
+            distance+=((x-old[0])**2+(y-old[1])**2)**.5
+        result.append(dict(x=x,y=y,z=0.,distance_m=distance))
+    return result
+
+
+def test_crossing_projection_requires_measured_unique_heading():
+    projector=RouteProjector(crossing_route())
+    position=NS(x=0.,y=0.,z=0.)
+    with pytest.raises(ConfigError,match='ambiguous'):
+        projector.project(position,60.)
+    assert projector.project(position,60.,heading_deg=0.)['route_s_m']==20.
+    assert projector.project(position,60.,heading_deg=-90.)['route_s_m']==100.
+    with pytest.raises(ConfigError,match='measured branch evidence'):
+        projector.project(position,60.,heading_deg=90.)
+
+
+def test_same_heading_repeated_route_needs_motion_evidence():
+    route=[dict(x=x,y=y,z=0.,distance_m=s) for x,y,s in
+        [(-20,0,0),(20,0,40),(20,20,60),(-20,20,100),(-20,0,120),(20,0,160)]]
+    projector=RouteProjector(route)
+    position=NS(x=0.,y=0.,z=0.)
+    with pytest.raises(ConfigError,match='remains'):
+        projector.project(position,70.,window=160.,heading_deg=0.)
+    assert projector.project(position,20.,window=160.,heading_deg=0.,maximum_offset_m=2.)['route_s_m']==20.
+    with pytest.raises(ConfigError,match='without measured'):
+        projector.project(position,70.,window=160.,heading_deg=0.,maximum_offset_m=2.)
+
+
+def test_actor_projection_same_snapshot_reuses_verified_branch():
+    projector=RouteProjector(crossing_route())
+    state={}
+    frozen=NS(get_transform=lambda:NS(location=NS(x=0.,y=0.,z=0.),rotation=NS(yaw=0.)),
+              get_velocity=lambda:NS(x=2.,y=0.,z=0.))
+    result=projector.project_actor(frozen,60.,1.,motion_state=state)
+    assert projector.project_actor(frozen,20.,1.,motion_state=state)==result
+
+
+def test_unresolved_projection_is_recorded_without_rebinding_or_crashing():
+    recorder=journal()
+    capture(recorder,[actor()],[2])
+    class Ambiguous(RouteProjector):
+        def project(self,*args,**kwargs):
+            raise ConfigError('ambiguous route projection')
+    frozen=NS(get_transform=lambda:NS(location=NS(x=10.,y=0.,z=0.),rotation=NS(yaw=0.)),
+              get_velocity=lambda:NS(x=1.,y=0.,z=0.))
+    snapshot=NS(find=lambda identity:frozen if identity==2 else None)
+    states,packed=recorder.capture(snapshot,[actor()],Ambiguous(crossing_route()),10.,pack_actor)
+    assert states['pedestrian']['status']=='INVALID'
+    assert states['pedestrian']['reason']=='actor_route_projection_unresolved'
+    assert states['pedestrian']['binding']['actor_id']==2
+    assert packed['2']['vx']==1.
+    states,_=capture(recorder,[actor()],[2])
+    assert states['pedestrian']['status']=='BOUND'
+    assert states['pedestrian']['binding']['actor_id']==2

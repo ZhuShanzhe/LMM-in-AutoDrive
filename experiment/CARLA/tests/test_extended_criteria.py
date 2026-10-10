@@ -154,6 +154,40 @@ def test_interval_lane_violation_fails_not_resets_hold():
     assert result['status']=='FAILURE'
 
 
+def junction_interval_row(t, **changes):
+    row = observation(t, route_s_m=t*10, speed_kmh=30, lane_key='overlapping_connector',
+        in_junction=True, junction_id=42, route_error_m=.05, route_yaw_deg=0,
+        lateral_error_m=.01, heading_error_deg=-4.7, **changes)
+    row['fixture']['steps']['0'] = {'lane_corridor': [dict(start_m=0, end_m=30,
+        lane_keys=['planned_connector'], verified_junction_ids=[42],
+        junction_geometry_source='static_topology_verified_route_projection')]}
+    return row
+
+
+def test_interval_geometrically_verified_connector_id_alias():
+    oracle = interval(keep_lane=True, max_lateral_error_m=.35, max_heading_error_deg=5)
+    for t in range(4):
+        result = oracle.update(junction_interval_row(t))
+    assert result['status'] == 'SUCCESS'
+
+
+@pytest.mark.parametrize('field,value', [('junction_id', 43), ('route_error_m', .36),
+    ('route_error_m', None), ('yaw_deg', 6), ('in_junction', False)])
+def test_interval_alias_never_accepts_wrong_junction_or_off_route(field, value):
+    oracle = interval(keep_lane=True, max_lateral_error_m=.35, max_heading_error_deg=5)
+    row = junction_interval_row(0)
+    row['ego'][field] = value
+    expected = 'SCENE_INVALID' if field == 'route_error_m' and value is None else 'FAILURE'
+    assert oracle.update(row)['status'] == expected
+
+
+def test_interval_alias_cannot_hide_speed_violation():
+    oracle = interval(keep_lane=True, max_lateral_error_m=.35, max_heading_error_deg=5)
+    row = junction_interval_row(0)
+    row['ego']['speed_kmh'] = 41
+    assert oracle.update(row)['status'] == 'FAILURE'
+
+
 def test_interval_cannot_end_on_timeout_boundary():
     definition=spec(dict(kind='maintain_interval',from_route_s_m=0,until_route_s_m=30,
                          max_sample_distance_m=12,max_speed_kmh=40))
@@ -177,4 +211,8 @@ def test_scene2_new_profiles_match_current_source():
     for task_id in ('s2_t05_cmd_01','s2_t05_cmd_09','s2_t05_cmd_11'):
         profile=load_profile(catalog,catalog.select(task_id)[0])
         assert profile is not None
-        assert len(profile['steps'])==3
+        if task_id == 's2_t05_cmd_11':
+            assert [step['kind'] for step in profile['steps']] == [
+                'speed', 'lane_hold', 'progress']
+        else:
+            assert len(profile['steps']) == 3

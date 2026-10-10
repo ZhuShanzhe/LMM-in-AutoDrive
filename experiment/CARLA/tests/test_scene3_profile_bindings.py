@@ -7,7 +7,7 @@ def test_new_scene3_profiles_bind_and_do_not_claim_full_coverage():
     catalog = load_catalog("scene_3")
     for task_id, kinds in (
         ("scene3_right_lane_closure", ["speed_ceiling", "lane_change"]),
-        ("scene3_resume_normal_driving", ["speed_change", "destination"]),
+        ("scene3_resume_normal_driving", ["speed", "destination"]),
     ):
         task = catalog.select(task_id)[0]
         profile = load_profile(catalog, task)
@@ -19,7 +19,7 @@ def test_new_scene3_profiles_bind_and_do_not_claim_full_coverage():
 
 
 def test_all_formal_tasks_have_source_bound_profiles():
-    for scene, count in (("scene_1",15),("scene_2",15),("scene_3",8)):
+    for scene, count in (("scene_1",15),("scene_2",15),("scene_3",7)):
         catalog=load_catalog(scene)
         assert len(catalog.tasks)==count
         assert build_plan(catalog,'all')['missing_oracle_profiles']==[]

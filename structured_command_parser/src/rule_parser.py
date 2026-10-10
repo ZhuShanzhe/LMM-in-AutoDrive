@@ -60,6 +60,16 @@ class RuleIntentParser:
                 warnings=["该指令要求主动碰撞道路参与者或物体。"],
             )
 
+        if re.fullmatch(
+            r"(?:(?:前方|前面|当前)?(?:路况|道路|路面)(?:危险|有危险|湿滑|复杂|不佳)[,，。;； ]*)?"
+            r"(?:请)?(?:保持|维持)(?:安全|谨慎)(?:车速|速度)(?:行驶)?[。.!！ ]*", text
+        ):
+            return make_document(raw_text=raw_text, normalized_text=text, modality=modality,
+                category='EMERGENCY_RESPONSE', urgency='NORMAL',
+                steps=[make_step('step_1', 'KEEP_LANE')], status='VALID', method='RULE',
+                model=None, confidence=0.98, latency_ms=(perf_counter()-started)*1000,
+                request_id=request_id, driving_style='CONSERVATIVE')
+
         if re.search(
             r"不管限速|无视限速|违反限速|开到最快|能多快开多快|超速|"
             r"无视红灯|闯红灯|逆行|人行道上(?:超过|超越|超车)",

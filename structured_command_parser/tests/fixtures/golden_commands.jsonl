@@ -18,7 +18,7 @@
 {"sample_id":"llm-003","parser_path":"LLM","text":"避让前方施工锥桶并回归原车道","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["AVOID","RESUME"]}}
 {"sample_id":"llm-004","parser_path":"LLM","text":"绕开前方慢车后提速","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions":["OVERTAKE","ADJUST_SPEED"]}}
 {"sample_id":"llm-005","parser_path":"LLM","text":"突发车辆加塞，紧急避让","expected":{"status":"VALID","category":"EMERGENCY_RESPONSE","actions":["AVOID"]}}
-{"sample_id":"llm-006","parser_path":"LLM","text":"前方路况危险，保持安全车速","expected":{"status":"VALID","category":"EMERGENCY_RESPONSE","actions":["ADJUST_SPEED"]}}
+{"sample_id":"llm-006","parser_path":"LLM","text":"前方路况危险，保持安全车速","expected":{"status":"VALID","category":"EMERGENCY_RESPONSE","actions":["KEEP_LANE"]}}
 {"sample_id":"llm-007","parser_path":"LLM","text":"施工路段，减速并道至左侧车道","expected":{"status":"VALID","category":"EMERGENCY_RESPONSE","actions":["ADJUST_SPEED","CHANGE_LANE"],"directions":["LEFT"]}}
 {"sample_id":"llm-008","parser_path":"LLM","text":"雨天绕开前方施工区域并减速","expected":{"status":"VALID","category":"COMPLEX_OBSTACLE_AVOIDANCE","actions_unordered":["AVOID","ADJUST_SPEED"]}}
 {"sample_id":"llm-009","parser_path":"LLM","text":"夜间前方突然出现行人，立即停车","expected":{"status":"VALID","category":"EMERGENCY_RESPONSE","actions":["EMERGENCY_BRAKE"]}}

@@ -30,7 +30,8 @@ class RouteProjector:
             if b['distance_m'] <= a['distance_m'] or math.hypot(b['x']-a['x'], b['y']-a['y']) < 1e-5:
                 raise ConfigError('route must have nondegenerate ordered segments')
 
-    def project(self, location, hint, window=80.0):
+    def project(self, location, hint, window=80.0, *, heading_deg=None, maximum_offset_m=None,
+                require_route_heading=True):
         hint = number(hint, 'route hint')
         if not self.route[0]['distance_m'] <= hint <= self.route[-1]['distance_m']:
             raise ConfigError('route hint outside route')
@@ -47,11 +48,74 @@ class RouteProjector:
             candidates.append((error, s, math.degrees(math.atan2(dy, dx))))
         if not candidates:
             raise ConfigError('no route segment near hint')
+        if maximum_offset_m is not None:
+            bound=number(maximum_offset_m,'actor motion bound')
+            if bound<=0:raise ConfigError('positive actor motion bound required')
+            heading=number(heading_deg,'measured actor heading') if require_route_heading else None
+            # A later lap can be geometrically closer after a legal lane change.
+            # Prefer snapshot-verified reachability; retain the actual lateral error.
+            nearby=candidates
+            candidates=[candidate for candidate in candidates
+                if abs(candidate[1]-hint)<=bound and (not require_route_heading
+                    or abs(angle_delta(heading,candidate[2]))<=45.)]
+            if not candidates:
+                closest=sorted(nearby,key=lambda candidate:candidate[0])[:3]
+                raise ConfigError('route projection without measured branch evidence: '
+                    f'hint={hint:.3f}, pose=({location.x:.3f},{location.y:.3f},{location.z:.3f}), '
+                    f'heading={heading}, bound={bound:.3f}, closest={closest}')
         candidates.sort()
         best = candidates[0]
-        if any(error <= best[0]+.25 and abs(s-best[1]) > 25 for error,s,yaw in candidates[1:]):
-            raise ConfigError('ambiguous route projection')
+        ambiguous = any(error <= best[0]+.25 and abs(s-best[1]) > 25
+                        for error,s,yaw in candidates[1:])
+        if ambiguous:
+            if heading_deg is None and (require_route_heading or maximum_offset_m is None):
+                raise ConfigError('ambiguous route projection')
+            heading = number(heading_deg, 'measured actor heading') if require_route_heading else None
+            bound = None if maximum_offset_m is None else number(maximum_offset_m, 'actor motion bound')
+            if bound is not None and bound <= 0:
+                raise ConfigError('positive actor motion bound required')
+            compatible = [candidate for candidate in candidates
+                if (bound is not None or candidate[0] <= best[0]+.25)
+                and (not require_route_heading or abs(angle_delta(heading, candidate[2])) <= 45.)
+                and (bound is None or abs(candidate[1]-hint) <= bound)]
+            if not compatible:
+                raise ConfigError('ambiguous route projection without measured branch evidence')
+            best = compatible[0]
+            if any(candidate[0]<=best[0]+.25 and abs(candidate[1]-best[1]) > 25
+                   for candidate in compatible[1:]):
+                raise ConfigError('ambiguous route projection remains after measured branch evidence')
         return dict(route_s_m=best[1], route_error_m=best[0], route_yaw_deg=best[2])
+
+    def project_actor(self, frozen, hint, timestamp_s=None, *, motion_state=None,
+                      require_route_heading=True):
+        pose, velocity = frozen.get_transform(), frozen.get_velocity()
+        speed = math.sqrt(velocity.x**2+velocity.y**2+velocity.z**2)
+        current = dict(x=pose.location.x, y=pose.location.y, z=pose.location.z,
+                       yaw=pose.rotation.yaw, speed_mps=speed, timestamp_s=timestamp_s)
+        stamp_valid = (isinstance(timestamp_s, (int, float)) and not isinstance(timestamp_s, bool)
+                       and math.isfinite(timestamp_s))
+        previous = motion_state or {}
+        bound = None
+        if stamp_valid and previous.get('timestamp_s') is not None:
+            age = timestamp_s-previous['timestamp_s']
+            if age == 0 and all(current[k] == previous[k] for k in ('x', 'y', 'z', 'yaw')):
+                return dict(previous['projection'])
+            displacement = math.sqrt(sum((current[k]-previous[k])**2 for k in ('x', 'y', 'z')))
+            reachable = (max(speed, previous['speed_mps'])+3.)*age+.75
+            if 0 < age <= 1. and math.isfinite(speed) and displacement <= reachable:
+                # A legal adjacent lane can cross a diagonal route connector.
+                # The nearest route foot then moves farther than the actor;
+                # bounded, measured cross-track slack prevents a frozen cursor.
+                previous_error = previous.get('projection', {}).get('route_error_m', 0.)
+                slack = (2.*min(4., previous_error) if isinstance(previous_error, (int, float))
+                         and math.isfinite(previous_error) and previous_error >= 0. else 0.)
+                bound = max(2., reachable) + slack
+        projection = self.project(pose.location, hint, heading_deg=pose.rotation.yaw,
+                                  maximum_offset_m=bound, require_route_heading=require_route_heading)
+        if stamp_valid and motion_state is not None and math.isfinite(speed):
+            motion_state.clear()
+            motion_state.update(current, projection=dict(projection))
+        return projection
 
 
 def validate_polygon(vertices):
@@ -182,8 +246,64 @@ class SnapshotTruthCollector:
                         self.zones[role] = polygon
         self.hints = {role:b.initial_route_s_m for role,b in self.bindings.items()}
         self.previous = {}
+        self.projection_motion = {}
         self.last_frame = None
         self.last_time = None
+
+    def bind_step_fixture(self, snapshot, index):
+        value = self.fixture.get('steps', {}).get(str(index), {})
+        if value.get('deferred_until_step_entry') is not True:
+            return
+        step = self.spec['steps'][index]
+        if (step['kind'] not in {'lane_change', 'guarded_lane_change','lane_hold'}
+                or index <= 0 and step['kind']!='lane_hold'):
+            raise ConfigError('invalid deferred lane fixture')
+        actor = snapshot.find(self.bindings['ego'].actor_id)
+        if actor is None:
+            raise ConfigError('deferred lane entry ego absent')
+        pose = actor.get_transform()
+        waypoint = self.world_map.get_waypoint(pose.location)
+        if waypoint is None:
+            raise ConfigError('deferred lane entry waypoint absent')
+        # Let the preceding yield finish in a junction without certifying a
+        # lane change there. Bind the legal origin only after junction exit.
+        if waypoint.is_junction:
+            return
+        center = waypoint.transform.location
+        yaw = math.radians(waypoint.transform.rotation.yaw)
+        lateral = -(pose.location.x-center.x)*math.sin(yaw)+(pose.location.y-center.y)*math.cos(yaw)
+        if (abs(lateral) > step['max_lateral_error_m'] or
+                abs(angle_delta(pose.rotation.yaw, waypoint.transform.rotation.yaw)) > step['max_heading_error_deg']):
+            if step['kind']=='lane_hold':return
+            raise ConfigError('deferred lane entry already outside centered origin lane')
+        progress = self.projector.project_actor(actor, self.hints['ego'],
+            snapshot.timestamp.elapsed_seconds,
+            motion_state=self.projection_motion.setdefault('ego', {}))['route_s_m']
+        if step['kind']=='lane_hold':
+            from .lane_continuity import trace_lane_corridor
+            end=min(value['corridor_end_m'],self.projector.route[-1]['distance_m'])
+            evidence=trace_lane_corridor(self.world_map,self.projector.route,progress,
+                type(pose.location),end,follow_published_route=True)
+            allowed={key for segment in evidence['lane_corridor']
+                if segment['start_m']<=progress<=segment['end_m'] for key in segment['lane_keys']}
+            if lane_key(waypoint) not in allowed:
+                raise ConfigError('lane hold entry differs from verified route corridor')
+            self.fixture['steps'][str(index)]=dict(evidence,binding_evidence=dict(
+                source='independent_lane_hold_entry',frame=snapshot.frame,
+                sim_time_s=snapshot.timestamp.elapsed_seconds,route_s_m=progress,
+                lane_key=lane_key(waypoint)))
+            return
+        fixture = prepare_lane_fixture(self.world_map, pose.location, step['direction'])
+        from .lane_continuity import trace_lane_change_keys
+        end = min(value['corridor_end_m'], progress + 350, self.projector.route[-1]['distance_m'])
+        fixture.update(trace_lane_change_keys(self.world_map, self.projector.route, progress,
+                       end, step['direction'], type(pose.location), fixture,
+                       stop_before_junction=True))
+        fixture['binding_evidence'] = dict(source='independent_previous_step_completion',
+            frame=snapshot.frame, sim_time_s=snapshot.timestamp.elapsed_seconds,
+            route_s_m=progress, previous_step_index=index-1,
+            lateral_error_m=lateral, heading_error_deg=angle_delta(pose.rotation.yaw, waypoint.transform.rotation.yaw))
+        self.fixture['steps'][str(index)] = fixture
 
     def collect(self, snapshot, safety, validity):
         frame = snapshot.frame
@@ -223,7 +343,13 @@ class SnapshotTruthCollector:
                 distance = math.sqrt(sum((a-b)**2 for a,b in zip((location.x,location.y,location.z),old)))
                 if distance > max(old_speed,speed)*(now-self.last_time)+3:
                     raise ConfigError(f'abnormal actor displacement: {role}')
-            projection = self.projector.project(location,self.hints[role])
+            try:
+                projection = self.projector.project_actor(actor, self.hints[role], now,
+                    motion_state=self.projection_motion.setdefault(role, {}),
+                    require_route_heading=role not in self.zones)
+            except ConfigError as error:
+                raise ConfigError(f'actor route projection failed: role={role}, '
+                    f'hint={self.hints[role]:.3f}, frame={frame}: {error}') from error
             waypoint = self.world_map.get_waypoint(location)
             if waypoint is None:
                 raise ConfigError(f'map waypoint unavailable: {role}')

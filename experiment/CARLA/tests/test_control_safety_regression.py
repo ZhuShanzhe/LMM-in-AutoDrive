@@ -23,6 +23,7 @@ class FakeWaypoint:
     lane_type = carla.LaneType.Driving
     road_id = 1
     is_junction = False
+    lane_width = 3.5
 
     def __init__(self, value, next_waypoint=None, lane_id=1, road_id=1):
         self.transform = value
@@ -46,6 +47,7 @@ class FakeVehicle:
     def __init__(self):
         self.current_transform = transform(yaw=0.0)
         self.current_velocity = carla.Vector3D()
+        self.bounding_box = SimpleNamespace(extent=SimpleNamespace(x=2.2, y=.85))
 
     def get_transform(self):
         return self.current_transform
@@ -66,6 +68,49 @@ class FakeMap:
 
 
 class ControlSafetyRegressionTests(unittest.TestCase):
+    def test_adjacent_lane_guidance_is_not_overridden_by_old_route_curvature(self):
+        for direction, offset, stale_yaw in (('left',-3.5,45.),('right',3.5,-45.)):
+            with self.subTest(direction=direction):
+                vehicle=FakeVehicle()
+                current=FakeWaypoint(transform(),lane_id=4)
+                target=FakeWaypoint(transform(y=offset),
+                    FakeWaypoint(transform(x=12.,y=offset)),lane_id=3 if direction=='left' else 5)
+                setattr(current,'_'+direction+'_lane',target)
+                plain=EgoPIDController(vehicle,FakeMap(current))
+                stale=EgoPIDController(vehicle,FakeMap(current))
+                intent=dict(action='lane_change_'+direction,command_id='merge-'+direction)
+                old_route=dict(x=12.,y=0.,z=0.,yaw=stale_yaw,
+                    reference=dict(x=0.,y=0.,z=0.,yaw=0.))
+                for _ in range(5):
+                    expected=plain._lateral_control(intent,.05)
+                    actual=stale._lateral_control(dict(intent,route_target_trusted=True,
+                        target_location=old_route),.05)
+                self.assertAlmostEqual(actual,expected,places=6)
+                self.assertGreater(actual*(1 if direction=='right' else -1),.05)
+
+    def test_predecessor_corridor_collects_branches_but_rejects_turns(self):
+        def waypoint(road, yaw=0., parents=None):
+            return SimpleNamespace(road_id=road,section_id=0,lane_id=-2,
+                lane_type=carla.LaneType.Driving,transform=transform(yaw=yaw),
+                previous=lambda distance: parents or [])
+        first=waypoint(42)
+        second=waypoint(693,parents=[first])
+        self.assertEqual(EgoPIDController._lane_predecessor_refs(second),
+            [dict(road_id=42,section_id=0,lane_id=-2)])
+        self.assertEqual(EgoPIDController._lane_predecessor_refs(
+            waypoint(43,parents=[first,second])),[
+                dict(road_id=42,section_id=0,lane_id=-2),
+                dict(road_id=693,section_id=0,lane_id=-2)])
+        self.assertEqual(EgoPIDController._lane_predecessor_refs(
+            waypoint(43,parents=[waypoint(42,yaw=90.)])),[])
+
+    def test_predecessor_branch_budget_fails_closed(self):
+        parents=[SimpleNamespace(road_id=i,section_id=0,lane_id=-1,
+            lane_type=carla.LaneType.Driving,transform=transform(),
+            previous=lambda distance:[]) for i in range(33)]
+        origin=SimpleNamespace(transform=transform(),previous=lambda distance:parents)
+        self.assertEqual(EgoPIDController._lane_predecessor_refs(origin),[])
+
     def test_output_directory_exists_before_controller_log_open(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "nested" / "scene1"
@@ -398,6 +443,68 @@ class ControlSafetyRegressionTests(unittest.TestCase):
         self.assertIs(selected_left, vehicle_left)
         self.assertIs(selected_right, vehicle_right)
 
+    def test_explicit_turns_track_trusted_route_curvature_and_centerline(self):
+        for action, sign in (("turn_left", -1.0), ("turn_right", 1.0)):
+            with self.subTest(action=action):
+                vehicle = FakeVehicle()
+                vehicle.current_transform = transform(y=0.6, yaw=0.0)
+                controller = EgoPIDController(vehicle, FakeMap(FakeWaypoint(transform())))
+                steer = controller._lateral_control({"action": action,
+                    "route_target_trusted": True,
+                    "target_location": {"x": 12., "y": sign*3., "z": 0., "yaw": sign*30.,
+                        "reference": {"x": 0., "y": 0., "yaw": 0.}}}, .05)
+                self.assertEqual(controller._last_lateral_debug["mode"], "stanley_route")
+                self.assertLess(controller._last_lateral_debug["cross_track_term"], 0.)
+                self.assertGreater(sign*controller._last_lateral_debug["feed_forward"], 0.)
+                self.assertTrue(math.isfinite(steer))
+
+    def test_lane_change_recenters_from_far_boundary_for_both_directions(self):
+        current = SimpleNamespace(transform=transform(yaw=0.0), lane_width=3.5)
+        left = SimpleNamespace(transform=transform(y= -3.5, yaw=0.0))
+        right = SimpleNamespace(transform=transform(y=3.5, yaw=0.0))
+        left_needed, left_details = EgoPIDController._lane_change_recenter_required(
+            current, left, carla.Location(x=0.0, y=.9, z=0.0), .85)
+        right_needed, right_details = EgoPIDController._lane_change_recenter_required(
+            current, right, carla.Location(x=0.0, y=-.9, z=0.0), .85)
+        self.assertTrue(left_needed)
+        self.assertTrue(right_needed)
+        self.assertEqual(left_details['reason'], 'recover_opposite_boundary_clearance')
+        self.assertEqual(right_details['reason'], 'recover_opposite_boundary_clearance')
+
+    def test_lane_change_recentering_has_clearance_hysteresis_and_narrow_lane_fail_safe(self):
+        current = SimpleNamespace(transform=transform(yaw=0.0), lane_width=3.5)
+        left = SimpleNamespace(transform=transform(y=-3.5, yaw=0.0))
+        loc = carla.Location(x=0.0, y=.6, z=0.0)
+        active, _ = EgoPIDController._lane_change_recenter_required(
+            current, left, loc, .85, active=True)
+        released, _ = EgoPIDController._lane_change_recenter_required(
+            current, left, carla.Location(x=0.0, y=.45, z=0.0), .85, active=True)
+        self.assertTrue(active)
+        self.assertFalse(released)
+        narrow = SimpleNamespace(transform=transform(yaw=0.0), lane_width=2.0)
+        required, details = EgoPIDController._lane_change_recenter_required(
+            narrow, left, carla.Location(x=0.0, y=0.0, z=0.0), .9)
+        self.assertTrue(required)
+        self.assertEqual(details['reason'], 'vehicle_envelope_exceeds_lane_clearance')
+
+    def test_lane_change_recentering_tracks_current_lane_before_target(self):
+        vehicle = FakeVehicle()
+        vehicle.current_transform = transform(y=.9, yaw=0.0)
+        current_forward = FakeWaypoint(transform(x=12.0, y=0.0, yaw=0.0), lane_id=4)
+        target_forward = FakeWaypoint(transform(x=12.0, y=-3.5, yaw=0.0), lane_id=3)
+        current = FakeWaypoint(transform(yaw=0.0), current_forward, lane_id=4)
+        target = FakeWaypoint(transform(y=-3.5, yaw=0.0), target_forward, lane_id=3)
+        current._left_lane = target
+        controller = EgoPIDController(vehicle, FakeMap(current))
+
+        controller._lateral_control({'action': 'lane_change_left', 'command_id': 'left-guard'}, .05)
+
+        self.assertTrue(controller._lane_change_recenter_active)
+        self.assertEqual(controller._lane_change_target_lane_id, 3)
+        self.assertEqual(controller._last_lateral_debug['mode'], 'stanley_route')
+        self.assertEqual(controller._last_lateral_debug['lane_change_recenter']['reason'],
+            'recover_opposite_boundary_clearance')
+
     def test_lane_change_completes_only_after_centering_and_heading_settle(self):
         vehicle = FakeVehicle()
         target = FakeWaypoint(transform(y=-5.25, yaw=-180.0), lane_id=-2)
@@ -408,6 +515,10 @@ class ControlSafetyRegressionTests(unittest.TestCase):
         self.assertFalse(controller.get_execution_state()["lane_change_completed"])
 
         controller._lane_change_target_lane_id = -2
+        vehicle.current_transform = transform(y=-4.2, yaw=-160.)
+        for _ in range(12):
+            self.assertFalse(controller.get_execution_state()["lane_change_completed"])
+        vehicle.current_transform = transform(y=-5.25, yaw=-180.)
         for _ in range(9):
             self.assertFalse(controller.get_execution_state()["lane_change_completed"])
         self.assertTrue(controller.get_execution_state()["lane_change_completed"])

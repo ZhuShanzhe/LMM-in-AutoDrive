@@ -1,10 +1,10 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_3",
-  "source_sha256": "e5c9e8816dde8911f56914f441e570c5b7b0eb7a81682f0e7f289d62f2392294",
+  "source_sha256": "a45d4d338b56430d973a42b29777729055b166b73c8e784f439cb371f47005b2",
   "task_id": "scene3_general_hazard",
-  "activate_m": 900.0,
-  "end_route_s_m": 1250,
+  "activate_m": 800.0,
+  "end_route_s_m": 1150,
   "timeout_s": 120,
   "max_frame_gap_s": 0.15,
   "violation_budget": 0,
@@ -18,7 +18,7 @@
     ]
   },
   "threshold_notes": {
-    "max_speed_kmh": "Source surface_and_visibility.wet_speed_limit_kmh=32; upper bound only, not a commanded speed or proof of safety at that speed."
+    "max_speed_kmh": "32 km/h diagnostic safe-speed ceiling; actual wet-road limit is 50 km/h and local road limits remain mandatory."
   },
   "steps": [
     {
@@ -28,8 +28,8 @@
     },
     {
       "kind": "maintain_interval",
-      "from_route_s_m": 950,
-      "until_route_s_m": 1245,
+      "from_route_s_m": 850,
+      "until_route_s_m": 1145,
       "max_sample_distance_m": 5,
       "max_speed_kmh": 32,
       "keep_lane": true,

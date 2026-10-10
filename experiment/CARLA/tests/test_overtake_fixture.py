@@ -16,6 +16,12 @@ def prepare(monkeypatch):
                   lane_pairs=[dict(distance_m=0,outgoing=pair)])
     monkeypatch.setattr('benchmark.overtake_fixture.build_overtake_geometry',lambda *a,**kw:geometry)
     spec=json.loads((CONFIG_ROOT/'benchmark/s2_t05_cmd_07.json').read_text())
+    spec['steps']=[
+        dict(kind='speed_change',direction='DECREASE',delta_kmh=5,hold_s=.5),
+        dict(kind='lane_change',direction='LEFT',hold_s=1,max_lateral_error_m=.35,
+             max_heading_error_deg=5,bind_after_previous_step=True),
+        dict(kind='overtake',target_role='scene2_slow_cyclist',rear_clearance_m=8,hold_s=1),
+        dict(kind='return_original_lane',hold_s=1,max_lateral_error_m=.35,max_heading_error_deg=5)]
     events=[dict(kind='cyclist',target_speed_kmh=14,
                  ground_truth={'actor_roles':['scene2_slow_cyclist']})]
     return NS(get_map=lambda:NS()),spec,events

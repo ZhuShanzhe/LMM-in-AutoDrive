@@ -1,7 +1,7 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_3",
-  "source_sha256": "e5c9e8816dde8911f56914f441e570c5b7b0eb7a81682f0e7f289d62f2392294",
+  "source_sha256": "a45d4d338b56430d973a42b29777729055b166b73c8e784f439cb371f47005b2",
   "task_id": "scene3_worker_crossing",
   "activate_m": 3250.0,
   "end_route_s_m": 3425,
@@ -13,6 +13,9 @@
       "kind": "yield_pedestrian",
       "target_role": "scene3_crossing_worker",
       "require_stop": true,
+      "yield_mode": "STOP_AT_BOUNDARY",
+      "max_approach_kmh": 10.0,
+      "approach_hold_s": 0.5,
       "stop_hold_s": 0.5,
       "stopped_kmh": 0.5,
       "clear_hold_s": 0.5

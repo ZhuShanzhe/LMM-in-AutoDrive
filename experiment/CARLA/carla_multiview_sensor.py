@@ -15,6 +15,39 @@ import torch
 CAMERA_ORDER = ("front", "left", "right", "rear")
 
 
+def resolve_physical_lidar_sampling(config):
+    sampling = config.get('physical_lidar_sampling', {})
+    if not isinstance(sampling, dict):
+        raise ValueError('physical_lidar_sampling must be an object')
+    if set(sampling) - {'channels', 'range_m', 'points_per_second'}:
+        raise ValueError('Unknown physical LiDAR sampling option')
+    result = dict(lidar_channels=sampling.get('channels', 32),
+                  lidar_range_m=sampling.get('range_m', 80.),
+                  lidar_points_per_second=sampling.get('points_per_second',
+                      config.get('lidar_points_per_second', 224000)))
+    physical_lidar_attributes(.05, result['lidar_channels'], result['lidar_range_m'],
+                              result['lidar_points_per_second'])
+    return result
+
+
+def physical_lidar_attributes(sensor_tick, channels, range_m, points_per_second=224000):
+    if (not math.isfinite(float(sensor_tick)) or float(sensor_tick) <= 0
+            or not math.isfinite(float(range_m)) or float(range_m) <= 0
+            or isinstance(channels, bool) or not math.isfinite(float(channels))
+            or int(channels) != channels or channels <= 0
+            or isinstance(points_per_second, bool)
+            or not math.isfinite(float(points_per_second))
+            or int(points_per_second) != points_per_second or points_per_second <= 0):
+        raise ValueError("Invalid physical LiDAR sampling configuration")
+    return {
+        "sensor_tick": str(float(sensor_tick)),
+        "channels": str(int(channels)),
+        "range": str(float(range_m)),
+        "points_per_second": str(int(points_per_second)),
+        "rotation_frequency": str(1.0 / float(sensor_tick)),
+    }
+
+
 def camera_rgb_tensor(rgb, width, height, *, resize=False):
     if resize:
         import cv2
@@ -74,12 +107,15 @@ class SynchronizedMultiviewCameraRig:
         sensor_tick: float = 0.05,
         camera_attributes: dict[str, Any] | None = None,
         front_capture_size: int | None = None,
+        side_capture_size: int | None = None,
+        signal_camera_attributes: dict[str, Any] | None = None,
         retained_frames: int = 12,
         enable_lidar: bool = False,
         lidar_range_m: float = 80.0,
         enable_radar: bool = True,
         radar_range_m: float = 80.0,
         lidar_channels: int = 32,
+        lidar_points_per_second: int = 224000,
         available_cameras: Sequence[str] | None = None,
         recording_dir: str | None = None,
         recording_limits: dict | None = None,
@@ -91,8 +127,17 @@ class SynchronizedMultiviewCameraRig:
         self.width = int(width)
         self.height = int(height)
         self.front_capture_size=int(front_capture_size) if front_capture_size is not None else None
+        if side_capture_size is not None and (type(side_capture_size) is not int or not 224<=side_capture_size<=2048):
+            raise ValueError('side_capture_size must be an integer from 224 to 2048')
+        self.side_capture_size=side_capture_size
         self._front_images: OrderedDict[int,np.ndarray] = OrderedDict()
         self._front_poses: OrderedDict[int,np.ndarray] = OrderedDict()
+        self._view_images = {name: OrderedDict() for name in CAMERA_ORDER}
+        self._view_poses = {name: OrderedDict() for name in CAMERA_ORDER}
+        self._camera_fov = float(fov)
+        self._signal_images = OrderedDict()
+        self._signal_poses = OrderedDict()
+        self.signal_camera = None
         self._condition = threading.Condition()
         self._frames: OrderedDict[int, dict[str, torch.Tensor]] = OrderedDict()
         self._latest_complete_frame = -1
@@ -126,6 +171,8 @@ class SynchronizedMultiviewCameraRig:
             }
             if name=='front' and self.front_capture_size is not None:
                 standard.update(image_size_x=str(self.front_capture_size),image_size_y=str(self.front_capture_size))
+            elif name!='front' and self.side_capture_size is not None:
+                standard.update(image_size_x=str(self.side_capture_size),image_size_y=str(self.side_capture_size))
             for key, value in {**attributes, **standard}.items():
                 if key != "enabled" and blueprint.has_attribute(key):
                     blueprint.set_attribute(key, str(value))
@@ -142,15 +189,29 @@ class SynchronizedMultiviewCameraRig:
             self.sensors.append(sensor)
             if self._capture is not None:
                 self._capture.register(name, sensor, mounting)
+        if signal_camera_attributes is not None and 'front' in self.available_cameras:
+            blueprint = library.find('sensor.camera.rgb')
+            size = self.front_capture_size or self.width
+            for key, value in {**attributes, **signal_camera_attributes,
+                'image_size_x': size, 'image_size_y': size,
+                'fov': float(fov), 'sensor_tick': float(sensor_tick)}.items():
+                if key != 'enabled' and blueprint.has_attribute(key):
+                    blueprint.set_attribute(key, str(value))
+            x, y, z, pitch, yaw = CAMERA_TRANSFORMS['front']
+            mounting = carla.Transform(carla.Location(x=x, y=y, z=z),
+                carla.Rotation(pitch=pitch, yaw=yaw, roll=0.))
+            self.signal_camera = world.spawn_actor(blueprint, mounting,
+                attach_to=ego, attachment_type=carla.AttachmentType.Rigid)
+            self.signal_camera.listen(self._signal_callback)
+            self.sensors.append(self.signal_camera)
+            if self._capture is not None:
+                self._capture.register('signal_front', self.signal_camera, mounting)
+
         if self.enable_lidar:
             blueprint = library.find("sensor.lidar.ray_cast")
-            lidar_attributes = {
-                "sensor_tick": str(float(sensor_tick)),
-                "channels": str(int(lidar_channels)),
-                "range": str(float(lidar_range_m)),
-                "points_per_second": "56000",
-                "rotation_frequency": str(1.0 / max(float(sensor_tick), 1e-3)),
-            }
+            lidar_attributes = physical_lidar_attributes(
+                sensor_tick, lidar_channels, lidar_range_m, lidar_points_per_second
+            )
             for key, value in lidar_attributes.items():
                 if blueprint.has_attribute(key):
                     blueprint.set_attribute(key, value)
@@ -161,6 +222,9 @@ class SynchronizedMultiviewCameraRig:
                 attach_to=ego,
                 attachment_type=carla.AttachmentType.Rigid,
             )
+            self.physical_lidar_attributes = {
+                key: lidar.attributes.get(key) for key in lidar_attributes
+            }
             lidar.listen(self._lidar_callback)
             self.sensors.append(lidar)
             if self._capture is not None:
@@ -418,9 +482,19 @@ class SynchronizedMultiviewCameraRig:
             )
             rgb = np.ascontiguousarray(bgra[:, :, 2::-1])
             front_rgb=rgb if name=='front' and getattr(self,'front_capture_size',None) is not None else None
-            tensor = camera_rgb_tensor(rgb, self.width, self.height, resize=front_rgb is not None)
+            tensor = camera_rgb_tensor(rgb, self.width, self.height,
+                resize=rgb.shape[:2]!=(self.height,self.width))
             frame = int(image.frame)
             with self._condition:
+                if not hasattr(self,'_view_images'):
+                    self._view_images={view:OrderedDict() for view in CAMERA_ORDER}
+                    self._view_poses={view:OrderedDict() for view in CAMERA_ORDER}
+                self._view_images[name][frame]=rgb
+                if getattr(image,'transform',None) is not None:
+                    self._view_poses[name][frame]=np.asarray(image.transform.get_inverse_matrix(),dtype=np.float64)
+                while len(self._view_images[name])>self._retained_frames:
+                    expired,_=self._view_images[name].popitem(last=False)
+                    self._view_poses[name].pop(expired,None)
                 if front_rgb is not None:
                     self._front_images[frame]=front_rgb
                     if not hasattr(self,'_front_poses'):self._front_poses=OrderedDict()
@@ -452,10 +526,54 @@ class SynchronizedMultiviewCameraRig:
 
         return receive
 
+    def _signal_callback(self, image):
+        bgra = np.frombuffer(image.raw_data, dtype=np.uint8).reshape(image.height, image.width, 4)
+        rgb = np.ascontiguousarray(bgra[:, :, 2::-1])
+        if self._capture is not None:
+            self._capture.record('signal_front', image, 'uint8_bgra',
+                width=int(image.width), height=int(image.height))
+        with self._condition:
+            frame = int(image.frame)
+            self._signal_images[frame] = rgb
+            self._signal_poses[frame] = np.asarray(image.transform.get_inverse_matrix(), dtype=np.float64)
+            while len(self._signal_images) > self._retained_frames:
+                expired, _ = self._signal_images.popitem(last=False)
+                self._signal_poses.pop(expired, None)
+            self._condition.notify_all()
+
+    def signal_capture(self, frame, timeout_s=.02):
+        """Exposure-bracketed RGB and its own pose from the exact requested frame."""
+        if self.signal_camera is None:
+            return self.front_capture(frame), self.front_capture_inverse(frame)
+        started = time.monotonic()
+        with self._condition:
+            while int(frame) not in self._signal_images:
+                remaining = timeout_s-(time.monotonic()-started)
+                if remaining <= 0:
+                    return None, None
+                self._condition.wait(remaining)
+            return self._signal_images[int(frame)], self._signal_poses[int(frame)].copy()
+
     def front_capture(self,frame):
         """Return only the exact synchronized front frame, never a newer image."""
         with self._condition:
             return self._front_images.get(int(frame))
+
+    def view_capture(self,frame,name):
+        """Raw pixels and calibration from one exact camera exposure."""
+        if name not in CAMERA_ORDER:
+            raise ValueError('Unknown camera view')
+        with self._condition:
+            rgb=getattr(self,'_view_images',{}).get(name,{}).get(int(frame))
+            pose=getattr(self,'_view_poses',{}).get(name,{}).get(int(frame))
+            return rgb,None if pose is None else pose.copy(),getattr(self,'_camera_fov',None)
+
+    def lidar_world_capture(self, frame):
+        """Return the exact-frame physical cloud and exposure time only."""
+        with self._condition:
+            bundle = self._frames.get(int(frame)) or {}
+            points = bundle.get('ground_points_world')
+            return (None if points is None else points.copy(), bundle.get('ground_timestamp_s'))
 
     def front_capture_inverse(self,frame):
         """Camera extrinsics at exposure time, not the vehicle's later pose."""
@@ -519,21 +637,29 @@ class SynchronizedMultiviewCameraRig:
         minimum_frame: int | None = None,
         timeout_s: float = 0.08,
     ) -> tuple[int, torch.Tensor, torch.Tensor, torch.Tensor, float]:
-        """Return exact-frame four-view RGB and a real LiDAR point-cloud BEV."""
+        """Return a common RGB/LiDAR/radar frame, never mix capture times."""
 
         if not self.enable_lidar:
             raise RuntimeError("LiDAR was not enabled for this sensor rig")
         started = time.monotonic()
         required = -1 if minimum_frame is None else int(minimum_frame)
         with self._condition:
-            while self._latest_multisensor_frame < required:
+            def common_frame():
+                if not getattr(self,'enable_radar',False):
+                    return self._latest_multisensor_frame
+                frames=[f for f,b in self._frames.items()
+                    if 'lidar_bev' in b and all(name in b for name in self.available_cameras)
+                    and all(f in self._radar_observations[direction] for direction in ('front','rear'))]
+                return max(frames,default=-1)
+            frame=common_frame()
+            while frame < required:
                 remaining = timeout_s - (time.monotonic() - started)
                 if remaining <= 0:
                     break
                 self._condition.wait(remaining)
-            frame = self._latest_multisensor_frame
+                frame=common_frame()
             if frame < 0 or frame not in self._frames:
-                raise RuntimeError("no synchronized RGB/LiDAR frame is available")
+                raise RuntimeError("no synchronized RGB/LiDAR/radar frame is available")
             bundle = self._frames[frame]
             if "lidar_bev" not in bundle or any(
                 name not in bundle for name in self.available_cameras
@@ -577,27 +703,55 @@ class SynchronizedMultiviewCameraRig:
                 "nearest_closing_velocity_mps": None,
             }
         limit = math.inf if maximum_frame is None else int(maximum_frame)
+        selected = None
         with self._condition:
             observations = self._radar_observations[direction]
-            for frame, observation in reversed(observations.items()):
+            # Callback arrival order is not guaranteed to be capture order.
+            for frame in sorted(observations,reverse=True):
+                observation=observations[frame]
                 if frame <= limit:
-                    from radar_ground_filter import filter_ground
                     if observation.get('_filtered') is not None:
                         return dict(observation['_filtered'])
                     cloud = self._frames.get(frame, {}).get('ground_points_world')
                     stamp = self._frames.get(frame, {}).get('ground_timestamp_s')
                     if stamp is None or abs(stamp-observation.get('measurement_timestamp_s', -math.inf))>.002:
                         cloud=None
-                    if cloud is not None and stamp is not None:
+                    bundle=self._frames.get(frame,{})
+                    surface=bundle.get('_radar_ground_surface') if cloud is not None else None
+                    if cloud is not None and stamp is not None and surface is None:
                         recent = [b['ground_points_world'] for f,b in self._frames.items()
                             if f<=frame and b.get('ground_points_world') is not None
                             and 0<=stamp-b.get('ground_timestamp_s', -math.inf)<=.2]
-                        cloud = np.concatenate(recent)
-                    filtered = filter_ground(observation, cloud, observation.get('_sensor_matrix'))
-                    filtered['ground_filter']['history_limit_s'] = .2
-                    if cloud is not None:
-                        observation['_filtered'] = filtered
-                    return filtered
+                        # Snapshot immutable callback arrays; expensive filtering
+                        # must not block the next synchronized sensor callback.
+                        recent=tuple(recent)
+                    else:
+                        recent=()
+                    # A cached cropped tree is shared only when it covers both
+                    # directional packets from this exact physical frame.
+                    query_regions=[]
+                    for packets in self._radar_observations.values():
+                        packet=packets.get(frame)
+                        if (stamp is not None and packet is not None and packet.get('_sensor_matrix') is not None
+                                and abs(stamp-packet.get('measurement_timestamp_s', -math.inf))<=.002):
+                            query_regions.append((packet,packet['_sensor_matrix']))
+                    cache_surface=len(query_regions)==len(self._radar_observations)
+                    selected=(observation,bundle,cloud,surface,recent,query_regions,cache_surface)
+                    break
+        if selected is not None:
+            from radar_ground_filter import filter_ground, prepare_ground_surface
+            observation,bundle,cloud,surface,recent,query_regions,cache_surface=selected
+            if recent:
+                cloud=np.concatenate(recent)
+                surface=prepare_ground_surface(cloud,query_regions=query_regions)
+            filtered=filter_ground(observation,cloud,observation.get('_sensor_matrix'),surface=surface)
+            filtered['ground_filter']['history_limit_s']=.2
+            with self._condition:
+                if surface is not None and cache_surface:
+                    bundle['_radar_ground_surface']=surface
+                if cloud is not None:
+                    observation['_filtered']=filtered
+            return filtered
         return {
             "schema_version": f"physical_{direction}_radar/1.0",
             "direction": direction,

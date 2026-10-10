@@ -21,6 +21,7 @@ from control.generic_temporal_risk_supervisor import (  # noqa: E402
     TemporalRiskSupervisorConfig,
 )
 from universal_vla_controller import build_sensor_policy_state  # noqa: E402
+from universal_vla_controller import vehicle_state_tensor  # noqa: E402
 
 
 class GenericControllerTests(unittest.TestCase):
@@ -49,6 +50,20 @@ class GenericControllerTests(unittest.TestCase):
         self.assertEqual(state["ego"]["speed_mps"], 5.0)
         self.assertEqual(state["timestamp_s"], 12.5)
         world.get_actors.assert_not_called()
+        road_map = world.get_map.return_value
+        world.get_map.reset_mock()
+        ego.get_location.return_value = SimpleNamespace(x=12.0, y=8.0, z=0.0)
+        cached = build_sensor_policy_state(world, ego, frame_id="carla_43", road_map=road_map)
+        self.assertEqual(cached["ego"]["speed_mps"], 5.0)
+        world.get_map.assert_not_called()
+        road_map.get_waypoint.assert_called_with(ego.get_location.return_value,
+            project_to_road=True, lane_type=__import__("carla").LaneType.Driving)
+        ego.reset_mock()
+        tensor = vehicle_state_tensor(world, ego, policy_state=cached)
+        self.assertEqual(tuple(tensor.shape), (1, 8))
+        self.assertEqual(tensor[0, 0].item(), 5.0)
+        world.get_map.assert_not_called()
+        ego.get_velocity.assert_not_called()
 
     def test_text_schedule_selects_latest_trigger_generic_fields(self):
         fsm = GenericInstructionFSM(default_speed_kmh=32.0)

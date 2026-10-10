@@ -74,6 +74,10 @@ class ExperimentCamera:
         self.dropped_video_frames = 0
         self._images = queue.Queue()
         self._pending_images = {}
+        self._capture_stride = 1
+        self._capture_phase = None
+        self._video_last_written_frame = -1
+        self._video_overlays = {}
         self._speed_history = deque()
         self._font_cache = {}
         self._hud_font_supports_cjk = None
@@ -196,6 +200,14 @@ class ExperimentCamera:
                 "sensor_tick",
                 str(1.0 / self.video_fps),
             )
+        settings = self.world.get_settings()
+        delta = getattr(settings, "fixed_delta_seconds", None)
+        tick = 1.0 / self.video_fps if self.video_output is not None else float(
+            self.camera_attributes.get("sensor_tick", 0.0))
+        if getattr(settings, "synchronous_mode", False) and delta and tick > delta:
+            stride = tick / delta
+            if math.isclose(stride, round(stride), abs_tol=1e-6):
+                self._capture_stride = max(1, round(stride))
         x, y, z, pitch, yaw = self.camera_pose
         transform = carla.Transform(
             carla.Location(
@@ -226,6 +238,8 @@ class ExperimentCamera:
         self.sensor.listen(self._on_image)
 
     def _on_image(self, image):
+        if self._capture_phase is None:
+            self._capture_phase = int(image.frame)
         if (
             self.save_images
             or self.video_writer is not None
@@ -241,6 +255,11 @@ class ExperimentCamera:
         """Persist the front image belonging to a completed world tick."""
 
         frame = int(frame)
+        if self.video_writer is not None and not self.save_images:
+            return self._save_available_video(frame, overlay)
+        if (self._capture_phase is not None and self._capture_stride > 1
+                and (frame-self._capture_phase) % self._capture_stride):
+            return False
         save_image = (
             self.save_images
             and frame % self.every_n_frames == 0
@@ -293,6 +312,36 @@ class ExperimentCamera:
                 )
             self.video_writer.write_raw(raw_frame)
         return True
+
+    def _save_available_video(self, frame, overlay):
+        """Drain returned GPU frames without waiting for a not-yet-rendered tick."""
+        if overlay is not None:
+            self._video_overlays[frame] = dict(overlay)
+        images = dict(self._pending_images)
+        self._pending_images.clear()
+        while True:
+            try:
+                image = self._images.get_nowait()
+            except queue.Empty:
+                break
+            images[int(image.frame)] = image
+        written = False
+        for image_frame, image in sorted(images.items()):
+            if image_frame > frame:
+                self._pending_images[image_frame] = image
+                continue
+            if image_frame <= self._video_last_written_frame:
+                continue
+            raw = bytes(image.raw_data)
+            matching_overlay = self._video_overlays.get(image_frame)
+            if self.video_overlay and matching_overlay is not None:
+                raw = self._render_overlay(raw, matching_overlay)
+            self.video_writer.write_raw(raw)
+            self._video_last_written_frame = image_frame
+            written = True
+        self._video_overlays = {identity: value for identity, value in self._video_overlays.items()
+                                if identity >= frame-64 and identity > self._video_last_written_frame}
+        return written
 
     def hold_last_video_frame(self, duration_s):
         if self.video_writer is None:

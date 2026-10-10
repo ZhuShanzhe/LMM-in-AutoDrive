@@ -1,7 +1,13 @@
 {
   "schema_version": "challenge_asset_sources/1.0",
-  "manifest_version": "signal-generalization-v2-phase-recovery-v1",
+  "manifest_version": "signal-generalization-v2-phase-recovery-v1-pedestrian-identity-v1",
   "sources": [
+    {
+      "local_prefix": "pretrained/",
+      "remote_prefix": "",
+      "repo_id": "Ultralytics/YOLO11",
+      "revision": "8b8ac7d1fae7468f85dbf89670dd66f41f485aab"
+    },
     {
       "local_prefix": "challenge/",
       "remote_prefix": "challenge/",

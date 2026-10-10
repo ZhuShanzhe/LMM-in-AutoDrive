@@ -1,0 +1,10 @@
+{
+  "status": "requires_physical_retest",
+  "task_id": "s2_t05_cmd_01",
+  "old_window_end_m": 350.0,
+  "new_window_end_m": 380.0,
+  "turn_and_hold_criteria_unchanged": true,
+  "timeout_unchanged": true,
+  "original_evidence": "s2_aligned_v27_attempt10/run/benchmark/tasks/s2_t05_cmd_01/task_result.json",
+  "reason": "The measured turn finished only 1.7 seconds before the old distance window closed; retain the two-second centered hold and provide a usable post-turn road segment."
+}

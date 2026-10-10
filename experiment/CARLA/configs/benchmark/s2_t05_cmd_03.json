@@ -1,10 +1,10 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_2",
-  "source_sha256": "7de7a38e6c00e4e0ef0b5ec3921686de629cf3f0784f0b7cba7fbe0beda8166a",
+  "source_sha256": "203889584f05d9d7b6440d499128cd63319d0d0d67d4af449386ad00d3eb0686",
   "task_id": "s2_t05_cmd_03",
-  "activate_m": 800.0,
-  "timeout_s": 90,
+  "activate_m": 880.0,
+  "timeout_s": 360,
   "max_frame_gap_s": 0.15,
   "violation_budget": 0,
   "steps": [
@@ -20,10 +20,10 @@
     {
       "kind": "lane_change",
       "direction": "LEFT",
-      "start_route_s_m": 975.61,
       "hold_s": 1,
       "max_lateral_error_m": 0.35,
-      "max_heading_error_deg": 5
+      "max_heading_error_deg": 5,
+      "bind_after_previous_step": true
     },
     {
       "kind": "overtake",

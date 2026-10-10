@@ -154,7 +154,7 @@ class Town05Scene3ContractTests(unittest.TestCase):
         commands = config["voice_input"]["commands"]
         texts = {item["text"] for item in commands}
         self.assertIn("前方路况危险，保持安全车速", texts)
-        self.assertIn("突发车辆加塞，紧急避让", texts)
+        self.assertIn("突发车辆加塞，保持安全车距，必要时减速让行。", texts)
         self.assertIn("施工路段，减速并道至左侧车道", texts)
         self.assertLessEqual(
             config["success_conditions"]["maximum_emergency_response_latency_ms"],

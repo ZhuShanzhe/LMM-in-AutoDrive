@@ -22,7 +22,7 @@ class Map:
 
 def snapshot(frame,x):
     pose=NS(location=NS(x=x,y=0,z=0),rotation=NS(yaw=0))
-    actor=NS(get_transform=lambda:pose,get_velocity=lambda:NS(x=30/3.6,y=0,z=0))
+    actor=NS(get_transform=lambda:pose,get_velocity=lambda:NS(x=20/3.6,y=0,z=0))
     return NS(frame=frame,timestamp=NS(elapsed_seconds=frame*.05),find=lambda identity:actor if identity==1 else None)
 
 
@@ -37,7 +37,7 @@ def test_snapshot_journal_reconstructs_kinematics():
     row=dict(frame=10,sim_time_s=.5,actors={'1':pack_actor(snap.find(1))})
     restored=unpack_snapshot(json.loads(json.dumps(row)))
     assert restored.find(1).get_transform().location.x==5
-    assert restored.find(1).get_velocity().x==30/3.6
+    assert restored.find(1).get_velocity().x==20/3.6
     assert restored.find(2) is None
 
 
@@ -49,6 +49,10 @@ def test_dynamic_role_entry_grace_is_bounded():
                roles={'lead':dict(status='BOUND')})
     assert not defer_dynamic_role_entry(profile,row,10.0)
     row.update(sim_time_s=10.3,roles={'lead':dict(status='NOT_SPAWNED')})
+    assert defer_dynamic_role_entry(profile,row,10.0)
+    row.update(sim_time_s=11.0)
+    assert not defer_dynamic_role_entry(profile,row,10.0)
+    row.update(sim_time_s=10.35,route_s_m=1255.0)
     assert not defer_dynamic_role_entry(profile,row,10.0)
 
 

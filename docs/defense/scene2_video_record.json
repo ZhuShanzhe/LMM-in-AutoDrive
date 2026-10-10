@@ -1,0 +1,62 @@
+{
+  "permanent_scope_label": true,
+  "continuous_full_route": false,
+  "continuous_source_full_route": true,
+  "presentation_is_edited": true,
+  "source_run": "s2_full_v140_newhost_attempt41",
+  "edit_plan": {
+    "scope": "Edited presentation from ONE continuous original-start raw run; not uncut evidence",
+    "source": "/root/autodl-tmp/review_logs/20261007/full_routes/s2_full_v140_newhost_attempt41/run/native_demo.mp4",
+    "source_sha256": "c759e33b74078cb0be4d98a96ba7b79e80a8695835071930aad1bcfc7d58ce50",
+    "source_duration_s": 2443.1,
+    "source_video_frames": 24431,
+    "alignment": {
+      "method": "10fps / 0.05s fixed tick, closed frame counts and final decision frame",
+      "reconstructed_video_first_simulation_frame": 3009158,
+      "uncertainty_s": 0.1,
+      "exact_camera_frame_journal_available": false
+    },
+    "standstill": {
+      "route_m": 4387.422,
+      "first_frame": 3040434,
+      "last_frame": 3042735,
+      "source_start_s": 1563.8000000000002,
+      "source_end_s": 1678.8500000000001,
+      "source_duration_s": 115.04999999999995,
+      "retained_s_approximately": 10.150000000000091
+    },
+    "kept_source_segments_s": [
+      [
+        0,
+        1568.9
+      ],
+      [
+        1673.8,
+        2443.1
+      ]
+    ],
+    "omitted_source_segment_s": [
+      1568.9,
+      1673.8
+    ],
+    "omitted_s": 104.89999999999986,
+    "measured_full_wall_seconds_unchanged": 7484.7152099609375,
+    "raw_records_unchanged": true
+  },
+  "verification": {
+    "encoded_video": "/root/autodl-tmp/review_logs/20261007/full_routes/s2_full_v140_newhost_attempt41/presentation_edit_v1/scene2_full41_wait_shortened.mp4",
+    "sha256": "db81de036995a52fcfe871fbaddeef4ed027ef006e7bfb80d08cdc10908ce7b0",
+    "probe": {
+      "width": 640,
+      "height": 360,
+      "r_frame_rate": "10/1",
+      "duration": "2338.200000",
+      "nb_frames": "23382"
+    },
+    "expected_frames": 23382,
+    "full_decode_error_count": 0,
+    "raw_video_hash_unchanged": true
+  },
+  "raw_video": "06_演示视频/scene2_完整原始运行.mp4",
+  "presentation": "06_演示视频/scene2_运行演示.mp4"
+}

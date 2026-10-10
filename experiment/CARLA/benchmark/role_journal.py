@@ -45,11 +45,18 @@ class RoleJournal:
         self.bindings = {}
         self.errors = {}
         self.progress = dict(anchor_hints or {})
+        self.motion = {}
         for profile in profiles:
             for role,prefix in required_role_types(profile).items():
                 if role in self.expected and self.expected[role] != prefix:
                     raise ConfigError(f'inconsistent task role type: {role}')
                 self.expected[role] = prefix
+
+    def _project_actor(self, role, frozen, snapshot, projector, hint):
+        stamp = getattr(getattr(snapshot, 'timestamp', None), 'elapsed_seconds', None)
+        return projector.project_actor(frozen, hint, stamp,
+            motion_state=self.motion.setdefault(role, {}),
+            require_route_heading=self.expected[role] != 'walker.pedestrian.')
 
     def capture(self, snapshot, actors, projector, route_hint, pack):
         matches = {role: [] for role in self.expected}
@@ -61,6 +68,7 @@ class RoleJournal:
         for role, prefix in self.expected.items():
             found = matches[role]
             binding = self.bindings.get(role)
+            projection_error = None
             if len(found) > 1:
                 self.errors.setdefault(role, 'duplicate_role')
             elif found:
@@ -70,24 +78,33 @@ class RoleJournal:
                 elif binding is not None and actor.id != binding.actor_id:
                     self.errors.setdefault(role, 'actor_identity_changed')
                 elif binding is None and role not in self.errors:
-                    location = snapshot.find(actor.id).get_transform().location
-                    progress = projector.project(location, self.progress.get(role,route_hint))['route_s_m']
-                    binding = ActorBinding.from_actor(actor, progress)
-                    self.bindings[role] = binding
+                    try:
+                        projection = self._project_actor(role, snapshot.find(actor.id), snapshot,
+                            projector, self.progress.get(role,route_hint))
+                        binding = ActorBinding.from_actor(actor, projection['route_s_m'])
+                        self.bindings[role] = binding
+                    except ConfigError as error:
+                        projection_error = str(error)
             record = dict(candidate_ids=sorted(a.id for a in found))
             if binding is not None:
                 record['binding'] = asdict(binding)
                 frozen = snapshot.find(binding.actor_id)
                 if frozen is not None:
                     packed[str(binding.actor_id)] = pack(frozen)
-                    projection=projector.project(frozen.get_transform().location,
-                                                  self.progress.get(role,binding.initial_route_s_m))
-                    self.progress[role]=projection['route_s_m']
-                    record.update(projection)
+                    try:
+                        projection = self._project_actor(role, frozen, snapshot, projector,
+                            self.progress.get(role,binding.initial_route_s_m))
+                        self.progress[role]=projection['route_s_m']
+                        record.update(projection)
+                    except ConfigError as error:
+                        projection_error = str(error)
                 else:
                     self.errors.setdefault(role, 'bound_actor_missing')
             if role in self.errors:
                 record.update(status='INVALID', reason=self.errors[role])
+            elif projection_error is not None:
+                record.update(status='INVALID', reason='actor_route_projection_unresolved',
+                    projection_error=projection_error)
             elif binding is None:
                 record.update(status='NOT_SPAWNED', reason='no_matching_actor_in_snapshot')
             elif not found:

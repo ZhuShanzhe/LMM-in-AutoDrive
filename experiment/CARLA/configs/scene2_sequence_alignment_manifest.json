@@ -1,0 +1,70 @@
+{
+  "previous_sha256": "4e6d41634235c5938fd1eb8de650d3b33d5ec1e6dfdfcea6154c12b7d2e413be",
+  "source_sha256": "112d87c8d0523f8f3938ec3b5b0cc1c12523c6344f9f8371aa180c85614a6678",
+  "task_ids_preserved": true,
+  "collision_and_illegal_marking_thresholds_unchanged": true,
+  "policy_truth_access": false,
+  "changes": [
+    {
+      "event": "compound_slow_vehicle",
+      "field": "activate_progress_m",
+      "old": 950.0,
+      "new": 1000
+    },
+    {
+      "event": "bus_stop_passengers",
+      "old": [
+        990.0,
+        1045.0
+      ],
+      "new": [
+        1460,
+        1515
+      ]
+    },
+    {
+      "event": "slow_cyclist",
+      "old": [
+        1500.0,
+        1640.0,
+        1900.0
+      ],
+      "new": [
+        1760,
+        1860,
+        2260
+      ]
+    },
+    {
+      "task": "s2_t05_cmd_04",
+      "field": "announce_at_m",
+      "old": 980.0,
+      "new": 1260
+    },
+    {
+      "task": "s2_t05_cmd_05",
+      "field": "announce_at_m",
+      "old": 1000.0,
+      "new": 1460
+    },
+    {
+      "task": "s2_t05_cmd_06",
+      "field": "announce_at_m",
+      "old": 1180.0,
+      "new": 1640
+    },
+    {
+      "task": "s2_t05_cmd_07",
+      "field": "announce_at_m",
+      "old": 1560.0,
+      "new": 1760
+    },
+    {
+      "task": "s2_t05_cmd_08",
+      "field": "announce_at_m",
+      "old": 1850.0,
+      "new": 2260
+    }
+  ],
+  "rationale": "Slow vehicle was 221 m ahead at ego 980 m after pedestrian yielding; downstream tasks must remain reachable in serial execution. Release now begins after the measured crossing region. Bus/cyclist anchors remain on same-direction three-lane roads with a right shoulder."
+}

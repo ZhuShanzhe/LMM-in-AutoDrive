@@ -29,6 +29,7 @@ def test_scene1_can_stop_recording_after_route_stall(tmp_path):
     command=MODULE['build_command']('scene1',tmp_path,tmp_path/'runtime.json',
         tmp_path/'run','localhost',2000,'cuda',900,stall_timeout_s=120)
     assert command[command.index('--max-stall-s')+1]=='120'
+    assert command[command.index('--target-speed-kmh')+1]=='60'
 
 
 def test_scene3_can_stop_recording_after_route_stall(tmp_path):

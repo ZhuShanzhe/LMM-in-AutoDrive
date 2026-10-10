@@ -44,6 +44,18 @@ def test_speed_requires_continuous_measured_hold():
     assert oracle.update(observation(2.5))['status'] == 'SUCCESS'
 
 
+@pytest.mark.parametrize('progress,expected', [(4, 'SUCCESS'), (5, 'TIMEOUT'), (6, 'TIMEOUT')])
+def test_lane_change_must_finish_before_next_junction_window(progress, expected):
+    oracle = TaskOracle(spec(LANE))
+    for t, distance, lane in ((0, 0, 'a'), (.5, 2, 'b'), (1.5, progress, 'b')):
+        row = observation(t, route_s_m=distance, lane_key=lane)
+        row['fixture']['steps']['0']['lane_change_window_end_m'] = 5
+        result = oracle.update(row)
+    assert result['status'] == expected
+    if expected == 'TIMEOUT':
+        assert result['reason'] == 'lane_change_window_closed'
+
+
 @pytest.mark.parametrize('proof,expected', [(True,'SUCCESS'), (False,'SCENE_INVALID')])
 def test_passed_target_confirmation_requires_prior_evidence_not_second_overtake(proof,expected):
     profile=spec(dict(kind='passed_target',target_role='lead',rear_clearance_m=8,hold_s=1))
@@ -320,6 +332,75 @@ def test_turn_requires_junction_and_new_road():
     assert oracle.update(turn_obs(3,road_key='r2',yaw_deg=90))['status'] == 'SUCCESS'
 
 
+def test_turn_waits_through_preceding_roads_before_registered_entry():
+    oracle = TaskOracle(spec(TURN))
+    def obs(t, progress, **ego):
+        row = turn_obs(t, route_s_m=progress, **ego)
+        row['fixture']['steps']['0'].update(junction_start_m=100, junction_end_m=120)
+        return row
+    assert oracle.update(obs(0, 20, road_key='preceding'))['status'] == 'RUNNING'
+    assert oracle.update(obs(1, 40, road_key='earlier_connector',
+        in_junction=True, yaw_deg=90))['completed_steps'] == 0
+    oracle.update(obs(2, 90, yaw_deg=90))
+    oracle.update(obs(3, 105, in_junction=True, yaw_deg=130))
+    oracle.update(obs(4, 122, road_key='r2', yaw_deg=180))
+    assert oracle.update(obs(5, 125, road_key='r2', yaw_deg=180))['status'] == 'SUCCESS'
+
+
+@pytest.mark.parametrize('progress', [98, 100, 125])
+def test_wrong_turn_entry_is_rejected_at_registered_junction(progress):
+    oracle = TaskOracle(spec(TURN))
+    first = turn_obs(0, route_s_m=0, road_key='wrong_entry')
+    first['fixture']['steps']['0'].update(junction_start_m=100, junction_end_m=120)
+    assert oracle.update(first)['status'] == 'RUNNING'
+    row = turn_obs(1, route_s_m=progress, road_key='wrong_entry')
+    row['fixture']['steps']['0'].update(junction_start_m=100, junction_end_m=120)
+    result = oracle.update(row)
+    assert result['status'] == 'SCENE_INVALID'
+    assert result['reason'] == 'invalid_observation: incorrect turn entry'
+
+
+def test_unknown_turn_window_does_not_permit_an_unverified_entry():
+    oracle = TaskOracle(spec(TURN))
+    assert oracle.update(turn_obs(0, road_key='wrong_entry'))['status'] == 'SCENE_INVALID'
+
+
+@pytest.mark.parametrize('approach,exit_yaw,direction', [
+    (179., -91., 'RIGHT'), (-179., 91., 'LEFT'), (120., -150., 'RIGHT')])
+def test_turn_measures_junction_heading_not_curved_approach(approach,exit_yaw,direction):
+    oracle = TaskOracle(spec(dict(TURN,direction=direction)))
+    def obs(t,**ego):
+        row=turn_obs(t,**ego)
+        row['fixture']['steps']['0']['direction']=direction
+        return row
+    oracle.update(obs(0,yaw_deg=0))
+    oracle.update(obs(1,yaw_deg=approach))
+    oracle.update(obs(2,in_junction=True,yaw_deg=approach))
+    oracle.update(obs(3,road_key='r2',yaw_deg=exit_yaw))
+    assert oracle.update(obs(4,road_key='r2',yaw_deg=exit_yaw))['status']=='SUCCESS'
+
+
+def test_unrelated_earlier_junction_does_not_certify_requested_turn():
+    oracle = TaskOracle(spec(TURN))
+    def obs(t,progress,**ego):
+        row=turn_obs(t,route_s_m=progress,**ego)
+        row['fixture']['steps']['0'].update(junction_start_m=100,junction_end_m=120)
+        return row
+    oracle.update(obs(0,0))
+    oracle.update(obs(1,20,in_junction=True,yaw_deg=60))
+    oracle.update(obs(2,40,yaw_deg=90))
+    assert oracle.update(obs(3,60,road_key='r2',yaw_deg=160))['status']=='RUNNING'
+
+
+def test_curved_approach_does_not_hide_wrong_direction_at_junction():
+    oracle = TaskOracle(spec(TURN))
+    oracle.update(turn_obs(0))
+    oracle.update(turn_obs(1,yaw_deg=170))
+    oracle.update(turn_obs(2,in_junction=True,yaw_deg=150))
+    oracle.update(turn_obs(3,road_key='r2',yaw_deg=80))
+    assert oracle.update(turn_obs(4,road_key='r2',yaw_deg=80))['status']=='RUNNING'
+
+
 @pytest.mark.parametrize('yaw,road', [(90,'r1'),(-90,'r2'),(10,'r2')])
 def test_curve_wrong_turn_or_small_bend_not_success(yaw,road):
     oracle = TaskOracle(spec(TURN))
@@ -436,7 +517,7 @@ def test_plan_preserves_dependencies_and_does_not_claim_execution():
     catalog=load_catalog('scene_2')
     plan=build_plan(catalog,'4',seed=123)
     assert plan['required_event_states']['s2_t05_cmd_04']=={'crosswalk_pedestrian':'RESOLVED'}
-    assert plan['preparation_start_m']==830
+    assert plan['preparation_start_m']==catalog.tasks[3].activate_m-150
     assert not plan['execution_supported']
     assert not plan['history_equivalent_to_full_run']
     assert 'source_command' not in plan['model_commands'][0]
@@ -489,6 +570,74 @@ def test_rolling_yield_does_not_require_full_stop():
         frame['ego']['speed_kmh']=speed
         result=oracle.update(frame)
     assert result['status']=='SUCCESS'
+
+
+def boundary_yield_obs(t, speed, front, conflict=True):
+    row = pedestrian_obs(t, conflict)
+    row['ego'].update(speed_kmh=speed, front_route_s_m=front)
+    return row
+
+
+def boundary_yield_spec(**changes):
+    return spec(dict(YIELD, yield_mode='STOP_AT_BOUNDARY', max_approach_kmh=10,
+                     approach_hold_s=.5, **changes))
+
+
+def test_boundary_yield_slow_far_approach_then_clear_without_forced_stop():
+    oracle = TaskOracle(boundary_yield_spec())
+    for t, speed, front, conflict in [(0,20,-50,True), (1,9,-47,True),
+                                      (2,9,-44,True), (3,12,-41,False), (4,12,-38,False)]:
+        result = oracle.update(boundary_yield_obs(t,speed,front,conflict))
+    assert result['status'] == 'SUCCESS'
+
+
+def test_boundary_yield_already_slow_is_valid_without_speed_drop():
+    oracle = TaskOracle(boundary_yield_spec())
+    for t in range(4):
+        result = oracle.update(boundary_yield_obs(t,9,-40+t,t<2))
+    assert result['status'] == 'SUCCESS'
+
+
+def test_boundary_yield_stops_before_occupied_line_then_waits_for_clear():
+    oracle = TaskOracle(boundary_yield_spec())
+    for t in range(4):
+        result = oracle.update(boundary_yield_obs(t,0,4.8,t<2))
+    assert result['status'] == 'SUCCESS'
+
+
+@pytest.mark.parametrize('front', [5,5.1,6])
+def test_boundary_yield_moving_through_occupied_boundary_fails(front):
+    oracle = TaskOracle(boundary_yield_spec())
+    assert oracle.update(boundary_yield_obs(0,9,front))['status'] == 'FAILURE'
+
+
+def test_boundary_yield_acceleration_during_conflict_cancels_slow_proof():
+    oracle = TaskOracle(boundary_yield_spec())
+    for t,speed,conflict in [(0,9,True),(1,9,True),(2,20,True),(3,9,False),(4,9,False)]:
+        result = oracle.update(boundary_yield_obs(t,speed,-30+t,conflict))
+    assert result['status'] == 'RUNNING'
+
+
+def test_boundary_yield_clear_without_observed_conflict_is_not_success():
+    oracle = TaskOracle(boundary_yield_spec())
+    for t in range(4):
+        assert oracle.update(boundary_yield_obs(t,9,-30+t,False))['status'] == 'RUNNING'
+
+
+def test_boundary_yield_reentry_resets_clear_hold():
+    oracle = TaskOracle(boundary_yield_spec())
+    for t, conflict in [(0,True),(1,True),(2,False),(2.5,True),(3,False)]:
+        assert oracle.update(boundary_yield_obs(t,9,-30+t,conflict))['status'] == 'RUNNING'
+    assert oracle.update(boundary_yield_obs(4,9,-26,False))['status'] == 'SUCCESS'
+
+
+@pytest.mark.parametrize('changes', [dict(yield_mode='unknown'), dict(max_approach_kmh=0),
+    dict(approach_hold_s=0), dict(require_stop=False)])
+def test_boundary_yield_rejects_invalid_configuration(changes):
+    criterion = dict(YIELD, yield_mode='STOP_AT_BOUNDARY', max_approach_kmh=10, approach_hold_s=.5)
+    criterion.update(changes)
+    with pytest.raises(ConfigError):
+        TaskOracle(spec(criterion))
 
 
 def test_complete_three_step_sequence():

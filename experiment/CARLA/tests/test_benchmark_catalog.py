@@ -16,7 +16,7 @@ def altered(tmp_path, scene, change):
     return tmp_path
 
 
-@pytest.mark.parametrize('scene,count,length', [('scene_1', 15, 5000), ('scene_2', 15, 8000), ('scene_3', 8, 6000)])
+@pytest.mark.parametrize('scene,count,length', [('scene_1', 15, 5000), ('scene_2', 15, 8000), ('scene_3', 7, 6000)])
 def test_existing_configs(scene, count, length):
     catalog = load_catalog(scene)
     assert len(catalog.tasks) == count
@@ -54,7 +54,7 @@ def test_scene1_turn_schedule_and_profile_bindings():
     catalog = load_catalog('scene_1')
     tasks = {task.task_id: task for task in catalog.tasks}
     turn = tasks['c07_turn_right']
-    assert turn.activate_m == turn.source_command['route_directive']['distance_m']
+    assert turn.announce_m < turn.activate_m < turn.source_command['route_directive']['distance_m']
     assert tasks['c11_accelerate_50'].announce_m < tasks['c09_reduce_for_turn'].announce_m
     assert tasks['c09_reduce_for_turn'].announce_m < turn.announce_m < turn.activate_m
     assert turn.activate_m < tasks['c10_keep_30'].announce_m < tasks['c12_keep_30'].announce_m
@@ -76,16 +76,15 @@ def test_scene1_runtime_cannot_finish_before_destination_oracle():
     assert 0 < tolerance <= min(step['max_distance_m'], step['max_remaining_m'])
 
 
-def test_scene1_uses_validated_background_traffic_without_preview_commands():
+def test_scene1_matches_required_no_dynamic_interference():
     raw = json.loads((CONFIG_ROOT / SCENES['scene_1'][0]).read_text(encoding='utf-8'))
     preview = json.loads((CONFIG_ROOT / 'basic_voice_traffic_preview.json').read_text(encoding='utf-8'))
     flow = raw['traffic']
-    assert flow == preview['traffic']
-    assert flow['enabled'] and flow['maintenance_mode'] == 'route_density'
-    assert len(flow['vehicles']) == 96
-    assert flow['density_max_actors'] == 24
-    assert flow['density_ahead_start_m'] > flow['lifecycle_protected_radius_m']
-    assert not flow['ignore_traffic_lights'] and not flow['ignore_traffic_signs']
+    assert not flow['enabled']
+    assert flow['vehicles'] == []
+    assert flow['density_max_actors'] == 0
+    assert not flow['recycle_enabled'] and not flow['following_sources_enabled']
+    assert preview['traffic']['enabled']  # Historical optional preview is separate.
     assert len(raw['commands']) == 15
     assert raw['map'] == 'Town05_Opt'
     assert raw['route']['start_location_xyz'] == [36.6, -56.6, 0.0]

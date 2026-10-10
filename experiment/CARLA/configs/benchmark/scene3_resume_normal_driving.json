@@ -1,9 +1,9 @@
 {
   "schema_version": "task_oracle/1.0",
   "scene_id": "scene_3",
-  "source_sha256": "e5c9e8816dde8911f56914f441e570c5b7b0eb7a81682f0e7f289d62f2392294",
+  "source_sha256": "a45d4d338b56430d973a42b29777729055b166b73c8e784f439cb371f47005b2",
   "task_id": "scene3_resume_normal_driving",
-  "activate_m": 5000.0,
+  "activate_m": 5100.0,
   "timeout_s": 240,
   "max_frame_gap_s": 0.15,
   "violation_budget": 0,
@@ -18,20 +18,22 @@
     ]
   },
   "threshold_notes": {
-    "delta_kmh": "A 5 km/h increase is a diagnostic observation, not a fixed commanded cruise speed. Destination distance is measured independently."
+    "target_kmh": "Explicit 30 km/h recovery command; destination follows the published route, not a fixed original lane across route lane changes.",
+    "destination": "No return-to-original-lane instruction is given after the required left merge. Accept only a centered same-direction driving lane at the statically bound terminal cross-section; retain the original 3 m longitudinal and point-distance tolerances."
   },
   "steps": [
     {
-      "kind": "speed_change",
-      "direction": "INCREASE",
-      "delta_kmh": 5,
+      "kind": "speed",
+      "target_kmh": 30,
+      "tolerance_kmh": 2,
       "hold_s": 1
     },
     {
       "kind": "destination",
       "max_distance_m": 3,
       "max_remaining_m": 3,
-      "keep_lane": true,
+      "keep_lane": false,
+      "allow_adjacent_destination_lanes": true,
       "max_lateral_error_m": 0.35,
       "max_heading_error_deg": 5
     }

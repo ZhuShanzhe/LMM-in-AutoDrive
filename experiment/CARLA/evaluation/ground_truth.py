@@ -80,9 +80,10 @@ def _flatten_actor_bindings(
 def _waypoint_for_actor(
     world: Any,
     actor: Any,
+    road_map: Any = None,
 ) -> Any | None:
     try:
-        return world.get_map().get_waypoint(
+        return (road_map if road_map is not None else world.get_map()).get_waypoint(
             actor.get_location(),
             project_to_road=True,
         )
@@ -97,6 +98,7 @@ def _actor_snapshot(
     role: str,
     ego_transform: Any,
     ego_velocity: Any,
+    road_map: Any = None,
 ) -> dict[str, Any] | None:
     if actor is None or not _is_alive(actor):
         return None
@@ -144,7 +146,7 @@ def _actor_snapshot(
             longitudinal_m / closing_speed_mps
         )
 
-    waypoint = _waypoint_for_actor(world, actor)
+    waypoint = _waypoint_for_actor(world, actor, road_map)
     attributes = getattr(actor, "attributes", {}) or {}
     return {
         "role": role,
@@ -210,10 +212,11 @@ def _actor_snapshot(
 def _ego_snapshot(
     world: Any,
     ego: Any,
+    road_map: Any = None,
 ) -> dict[str, Any]:
     transform = ego.get_transform()
     velocity = ego.get_velocity()
-    waypoint = _waypoint_for_actor(world, ego)
+    waypoint = _waypoint_for_actor(world, ego, road_map)
     return {
         "actor_id": int(ego.id),
         "transform": {
@@ -556,6 +559,8 @@ class FrameGroundTruthRecorder:
         self._quality_counts: Counter[str] = Counter()
         self._event_observed_frames: Counter[str] = Counter()
         self._closed = False
+        self._map_world = None
+        self._world_map = None
 
     def record(
         self,
@@ -578,6 +583,12 @@ class FrameGroundTruthRecorder:
                 + str(frame)
             )
         runtime = dict(runtime_state or {})
+        if self._map_world is not world:
+            self._map_world = world
+            try:
+                self._world_map = world.get_map()
+            except (AttributeError, RuntimeError, TypeError):
+                self._world_map = None
         ego_transform = ego.get_transform()
         ego_velocity = ego.get_velocity()
         active_event_definitions = [
@@ -620,6 +631,7 @@ class FrameGroundTruthRecorder:
                 role=role,
                 ego_transform=ego_transform,
                 ego_velocity=ego_velocity,
+                road_map=self._world_map,
             )
             if snapshot is None:
                 unavailable_roles.append(role)
@@ -709,7 +721,7 @@ class FrameGroundTruthRecorder:
             "simulation_frame": frame,
             "timestamp_s": _round(timestamp_s),
             "route_s_m": _round(route_s_m),
-            "ego": _ego_snapshot(world, ego),
+            "ego": _ego_snapshot(world, ego, self._world_map),
             "event_states": {
                 str(key): str(value)
                 for key, value in event_states.items()

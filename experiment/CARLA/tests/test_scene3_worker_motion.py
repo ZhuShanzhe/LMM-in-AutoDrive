@@ -39,6 +39,13 @@ def test_observed_arrival_stops_worker_without_teleport():
     assert controls[-1]['speed']==0
 
 
+def test_observed_lane_clearance_does_not_require_exact_waypoint_arrival():
+    obj,controls=runtime(9.0)
+    obj._update_worker_crossing(ego_route_s_m=3255,elapsed_s=1)
+    assert obj._worker_phase=='YIELDED_CLEAR'
+    assert controls[-1]['speed']==0
+
+
 def test_arrival_inside_route_lane_does_not_report_clearance():
     obj,controls=runtime(9.9)
     obj._map.route_waypoint=lambda anchor:NS(lane_width=3.5,

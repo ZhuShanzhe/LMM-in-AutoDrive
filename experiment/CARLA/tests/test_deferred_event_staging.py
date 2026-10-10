@@ -24,6 +24,7 @@ def test_future_actor_not_staged_on_earlier_pass_and_released_normally(monkeypat
     event=dict(id='cycle_event',kind='cyclist',activate_progress_m=500,
                anchor_progress_m=600,staging_lead_m=100,target_speed_kmh=14)
     manager.events=[event]
+    manager.registry=None
     manager.states={'cycle_event':'STAGED','bus_stop_passengers':'STAGED'}
     manager.selected_variants={'cycle_event':'v'}
     manager.scripted_walkers={}

@@ -33,5 +33,5 @@ def worker_clear_of_lane(worker, waypoint, clearance_m=.2, target_location=None)
     margin=abs(lateral)-radius-width/2
     if not all(math.isfinite(value) for value in (margin,clearance_m)) or clearance_m<0:
         raise ValueError('invalid worker clearance geometry')
-    return dict(clear=margin>=clearance_m,body_clearance_m=margin,required_clearance_m=clearance_m,
+    return dict(clear=margin>=clearance_m,lateral_offset_m=lateral,body_clearance_m=margin,required_clearance_m=clearance_m,
                 geometry='planned_heading_independent_radius' if target_location is not None else 'observed_oriented_box')

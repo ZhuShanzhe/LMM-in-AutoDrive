@@ -1,0 +1,14 @@
+{
+  "status": "deployed_candidate_requires_physical_validation",
+  "previous_source_sha256": "7abcf42ea2220439314ce0e9299d34c6202ec56b42c7d8586654516f0e19cd6c",
+  "source_sha256": "8811c49d1a957b2b1c059d186031e26ea7c5e343f7ada697a4bf0671a4064f63",
+  "old_release_m": 970.0,
+  "new_release_m": 945,
+  "anchor_m": 980.0,
+  "rationale": "A moving slow-vehicle task must present a moving lead at acquisition; parked and transverse vehicles are excluded by measured velocity. Release shortly before the legal post-junction merge corridor.",
+  "task_count": 15,
+  "background_population_unchanged": true,
+  "independent_named_target_requirement_unchanged": true,
+  "collision_and_illegal_line_thresholds_unchanged": true,
+  "inference_deadlines_unchanged": true
+}

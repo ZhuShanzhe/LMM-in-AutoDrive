@@ -49,7 +49,7 @@
   },
   "surface_and_visibility": {
     "wet_road_friction_scale": 0.68,
-    "wet_speed_limit_kmh": 32.0,
+    "wet_speed_limit_kmh": 50.0,
     "standing_water_depth_mm": [
       0.0,
       6.0
@@ -112,8 +112,8 @@
     "commands": [
       {
         "id": "scene3_general_hazard",
-        "trigger_progress_m": 900.0,
-        "end_progress_m": 1250.0,
+        "trigger_progress_m": 800.0,
+        "end_progress_m": 1150.0,
         "text": "前方路况危险，保持安全车速",
         "semantic_goal": [
           "decelerate",
@@ -125,7 +125,7 @@
         "id": "scene3_cut_in_decelerate",
         "trigger_progress_m": 1250.0,
         "end_progress_m": 1550.0,
-        "text": "突发车辆加塞，紧急避让",
+        "text": "突发车辆加塞，保持安全车距，必要时减速让行。",
         "semantic_goal": [
           "decelerate",
           "yield",
@@ -154,7 +154,7 @@
       },
       {
         "id": "scene3_pass_work_zone",
-        "trigger_progress_m": 3100.0,
+        "trigger_progress_m": 3150.0,
         "end_progress_m": 3450.0,
         "text": "前方路况危险，保持安全车速",
         "semantic_goal": [
@@ -175,40 +175,45 @@
         ]
       },
       {
-        "id": "scene3_blocked_lane_change_left",
-        "trigger_progress_m": 4700.0,
-        "end_progress_m": 5000.0,
-        "text": "前方车道受阻，确认安全后向左避让",
-        "semantic_goal": [
-          "decelerate",
-          "wait_for_gap",
-          "lane_change_left"
-        ]
-      },
-      {
         "id": "scene3_resume_normal_driving",
-        "trigger_progress_m": 5000.0,
+        "trigger_progress_m": 5100.0,
         "end_progress_m": 6000.0,
-        "text": "危险路段结束，保持安全并逐步恢复车速",
+        "text": "危险路段结束，在安全且不超速的前提下逐步恢复至30公里每小时，沿规划路线行驶至终点。",
         "semantic_goal": [
-          "keep_lane",
-          "resume_speed"
+          "follow_route",
+          "resume_speed",
+          "reach_destination"
         ]
       }
     ]
   },
   "traffic": {
-    "private_vehicle_count": 18,
-    "following_source_max_actors": 6,
+    "private_vehicle_count": 16,
+    "following_source_max_actors": 0,
+    "rear_following_distance_m": 60.0,
     "following_source_check_ticks": 20,
     "following_source_back_m": 105.0,
     "following_source_spacing_m": 70.0,
     "following_source_speed_kmh": 30.0,
-    "following_source_exclusion_windows_m": [[1150.0, 1600.0], [2750.0, 3550.0], [4600.0, 5300.0]],
+    "following_source_exclusion_windows_m": [
+      [
+        1150.0,
+        1600.0
+      ],
+      [
+        2750.0,
+        3550.0
+      ],
+      [
+        4600.0,
+        5300.0
+      ]
+    ],
     "work_vehicle_count": 2,
-    "maintenance_vehicle_count": 1,
+    "maintenance_vehicle_count": 0,
     "worker_count": 2,
-    "minimum_ego_spawn_clearance_m": 35.0
+    "minimum_ego_spawn_clearance_m": 35.0,
+    "reserved_gap_vehicle_count": 0
   },
   "events": [
     {
@@ -400,7 +405,7 @@
       "scenario": "temporary_worker_crossing",
       "distance_m": 3300.0,
       "activate_at_m": 3250.0,
-      "resolve_after_m": 3425.0,
+      "resolve_after_m": 3475.0,
       "voice_command_id": "scene3_worker_crossing",
       "workers": [
         {
@@ -459,90 +464,8 @@
       }
     },
     {
-      "id": "scene3_blocked_lane",
-      "order": 6,
-      "scenario": "maintenance_vehicle_blockage",
-      "distance_m": 4800.0,
-      "activate_at_m": 4700.0,
-      "resolve_after_m": 5000.0,
-      "voice_command_id": "scene3_blocked_lane_change_left",
-      "blockage": {
-        "role_name": "scene3_maintenance_vehicle",
-        "lane_id": -2,
-        "s_m": 4850.0,
-        "target_lane_id": -1,
-        "initial_target_lane_state": "unsafe",
-        "release_target_lane_after_s": 4.0,
-        "hazard_lights": true,
-        "rear_warning_triangle_distance_m": 25.0
-      },
-      "safety": {
-        "recoverable": true,
-        "must_wait_for_safe_gap": true,
-        "minimum_front_gap_m": 30.0,
-        "minimum_rear_gap_m": 25.0,
-        "expected_actions_before_release": [
-          "decelerate",
-          "wait"
-        ],
-        "expected_actions_after_release": [
-          "lane_change_left"
-        ]
-      },
-      "ground_truth": {
-        "evidence_mode": "observed",
-        "actor_roles": [
-          "scene3_maintenance_vehicle",
-          "scene3_gap_front_vehicle",
-          "scene3_gap_rear_vehicle"
-        ],
-        "runtime_phase_key": "target_lane_released",
-        "risk_labels": [
-          "blocked_lane",
-          "target_lane_gap"
-        ],
-        "allowed_control_actions": [
-          "decelerate",
-          "stop"
-        ],
-        "forbidden_control_actions": [
-          "lane_change_left",
-          "accelerate"
-        ],
-        "conditional": {
-          "runtime_flag": "target_lane_released",
-          "when_false": {
-            "risk_labels": [
-              "blocked_lane",
-              "unsafe_target_lane_gap"
-            ],
-            "allowed_control_actions": [
-              "decelerate",
-              "stop"
-            ],
-            "forbidden_control_actions": [
-              "lane_change_left",
-              "accelerate"
-            ]
-          },
-          "when_true": {
-            "risk_labels": [
-              "blocked_lane",
-              "safe_target_lane_gap"
-            ],
-            "allowed_control_actions": [
-              "lane_change_left"
-            ],
-            "forbidden_control_actions": [
-              "lane_change_right"
-            ]
-          }
-        }
-      }
-    },
-    {
       "id": "scene3_work_zone_exit",
-      "order": 7,
+      "order": 6,
       "scenario": "work_zone_exit",
       "distance_m": 5100.0,
       "activate_at_m": 5000.0,
@@ -625,12 +548,6 @@
             ]
           }
         },
-        "scene3_blocked_lane": {
-          "blockage": {
-            "release_target_lane_after_s": 4.0,
-            "rear_warning_triangle_distance_m": 25.0
-          }
-        },
         "scene3_work_zone_exit": {
           "recovery": {
             "normal_speed_limit_kmh": 60.0
@@ -684,12 +601,6 @@
               0.8,
               1.6
             ]
-          }
-        },
-        "scene3_blocked_lane": {
-          "blockage": {
-            "release_target_lane_after_s": 5.5,
-            "rear_warning_triangle_distance_m": 30.0
           }
         },
         "scene3_work_zone_exit": {
@@ -747,12 +658,6 @@
             ]
           }
         },
-        "scene3_blocked_lane": {
-          "blockage": {
-            "release_target_lane_after_s": 2.5,
-            "rear_warning_triangle_distance_m": 20.0
-          }
-        },
         "scene3_work_zone_exit": {
           "recovery": {
             "normal_speed_limit_kmh": 60.0
@@ -793,5 +698,22 @@
     "maximum_decision_timeouts": 0,
     "maximum_emergency_response_latency_ms": 120,
     "minimum_multimodal_semantic_alignment_accuracy": 0.97
+  },
+  "event_scope": {
+    "source": "XH-202602 scheme pages 7-9; preliminary rules pages 2-4,6",
+    "removed_optional_events": [
+      "scene3_blocked_lane"
+    ],
+    "reason": "Independent maintenance-vehicle blockage and timed gap-release challenge is optional; required construction merge remains in cone-taper event.",
+    "historical_results_unchanged": true,
+    "retained": [
+      "cut_in",
+      "construction_cones",
+      "lane_narrowing",
+      "temporary_pedestrian",
+      "rainy_night",
+      "traffic_compliance",
+      "post_hazard_recovery"
+    ]
   }
 }

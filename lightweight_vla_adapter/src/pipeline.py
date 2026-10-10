@@ -130,6 +130,8 @@ class LightweightVLAPipeline:
         self._risk_history: list[torch.Tensor] = []
         self._risk_history_max = 5
         self.high_confidence_threshold = float(high_confidence_threshold)
+        self.capture_model_boundary = False
+        self.last_captured_model_inputs = None
 
     def _move(self, batch: SensorTensorBatch) -> SensorTensorBatch:
         def floating(tensor: torch.Tensor) -> torch.Tensor:
@@ -222,6 +224,8 @@ class LightweightVLAPipeline:
                 model_inputs["history_risk_features"] = (
                     self._risk_history_tensor()
                 )
+            if self.capture_model_boundary:
+                self.last_captured_model_inputs = dict(model_inputs)
             output = self.model(**model_inputs)
             validate_prediction_output(output)
             from .contracts import ACTION_LABELS
@@ -248,14 +252,17 @@ class LightweightVLAPipeline:
             risk_horizon_logits=output.risk_horizon_logits,
             risk_uncertainty=output.risk_uncertainty,
         )
-        if decision_residual is not None and longitudinal_authorized and bool(
+        if (decision_residual is not None
+                and getattr(decision_residual,'diagnostics',{}).get('risk_residual_applied',True)
+                and longitudinal_authorized and bool(
             motion_inputs["motion_values"][0, 0] * motion_inputs["motion_valid_mask"][0, 0]
         ) and (not getattr(decision_residual, 'diagnostics', None)
-               or decision_residual.diagnostics.get('applied', False)):
+               or decision_residual.diagnostics.get('applied', False))):
             self._last_visual_risk_assessment["source"] = "learned_motion_decision_residual"
         if decision_residual is not None and getattr(decision_residual, "diagnostics", None):
             self._last_visual_risk_assessment["event_memory"] = copy.deepcopy(decision_residual.diagnostics)
-            if decision_residual.diagnostics.get('applied', False):
+            if (decision_residual.diagnostics.get('applied', False)
+                    and decision_residual.diagnostics.get('risk_residual_applied',True)):
                 self._last_visual_risk_assessment["source"] = "event_memory_vla"
                 if 'front_rear_horizon_scores' in decision_residual.diagnostics:
                     self._last_visual_risk_assessment['risk_semantics'] = dict(
@@ -266,11 +273,17 @@ class LightweightVLAPipeline:
                             ('front', 'rear'), decision_residual.diagnostics['front_rear_horizon_scores'])),
                         note='legacy visual reason codes retained; this head is not a front-only visual probability')
         residual_diagnostics = getattr(decision_residual, 'diagnostics', {}) or {}
+        if residual_diagnostics.get('risk_residual_applied') is False:
+            self._last_visual_risk_assessment['risk_semantics']=dict(
+                scope='base_multimodal_without_joint_rear_residual',
+                rear_approach_risk_enabled=False,
+                note='action/sequence residual retained; joint front-rear risk head excluded')
         self._last_visual_risk_assessment['prediction_provenance'] = dict(
             schema_version='vla_prediction_provenance/1.0',
             base=base_prediction, effective=effective_prediction,
             residual_present=decision_residual is not None,
             residual_applied=residual_diagnostics.get('applied'),
+            risk_residual_applied=residual_diagnostics.get('risk_residual_applied',residual_diagnostics.get('applied')),
             effective_action_source=('sequence_first_sample_encoding'
                                      if 'longitudinal_sequence' in residual_diagnostics
                                      else 'effective_action_logits'),

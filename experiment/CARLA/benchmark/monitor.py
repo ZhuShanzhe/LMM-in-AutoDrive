@@ -40,6 +40,9 @@ class TaskMonitor:
             return self.feedback()
         start = time.perf_counter()
         try:
+            binder = getattr(self.collector, 'bind_step_fixture', None)
+            if callable(binder):
+                binder(snapshot, self.oracle.index)
             observation = self.collector.collect(snapshot,safety,validity)
         except (ConfigError,KeyError,TypeError,ValueError) as error:
             raw_time = snapshot.timestamp.elapsed_seconds
@@ -49,7 +52,16 @@ class TaskMonitor:
                                task_id=self.collector.spec['task_id'],
                                source_sha256=self.collector.spec.get('source_sha256'),
                                scenario_valid=False,invalid_reason=str(error))
+        previous_index = self.oracle.index
         self.oracle.update(observation)
+        if self.oracle.index > previous_index and self.oracle.status not in TERMINAL:
+            try:
+                binder = getattr(self.collector, 'bind_step_fixture', None)
+                if callable(binder):
+                    binder(snapshot, self.oracle.index)
+                    observation['next_step_fixture_binding'] = self.collector.fixture['steps'].get(str(self.oracle.index))
+            except (ConfigError, KeyError, TypeError, ValueError) as error:
+                self.oracle.finish('SCENE_INVALID', 'deferred_step_fixture: ' + str(error), snapshot.frame)
         elapsed = (time.perf_counter()-start)*1000
         self.timings.append(elapsed)
         observation['evaluation_wall_ms'] = elapsed

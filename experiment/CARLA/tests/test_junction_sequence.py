@@ -37,8 +37,28 @@ def test_new_profiles_bind_to_source():
     for identity in ('s2_t05_cmd_13','s2_t05_cmd_15'):
         profile=load_profile(catalog,catalog.select(identity)[0])
         assert profile is not None
-        expected=3
+        expected=0
         assert len([s for s in profile['steps'] if s['kind'] in {'turn','straight_junction'}])==expected
+
+
+@pytest.mark.parametrize('identity,expected', [
+    ('s2_t05_cmd_13', []),
+    ('s2_t05_cmd_15', []),
+])
+def test_revised_instruction_and_oracle_share_next_junction_sequence(identity,expected):
+    from pathlib import Path
+    import json
+    catalog=load_catalog('scene_2')
+    command=catalog.select(identity)[0]
+    profile=load_profile(catalog,command)
+    path=Path(__file__).resolve().parents[1]/'configs'/catalog.source_file
+    raw=next(c for c in json.loads(path.read_text())['commands'] if c['id']==identity)
+    actual=[s.split(':',1)[1] if s.startswith('TURN:') else 'STRAIGHT'
+            for s in raw['steps'] if s.startswith('TURN:') or s=='PROCEED:STRAIGHT_THROUGH_JUNCTION']
+    oracle=[s['direction'] if s['kind']=='turn' else 'STRAIGHT'
+            for s in profile['steps'] if s['kind'] in ('turn','straight_junction')]
+    assert actual==oracle==expected
+    assert raw['text']==raw['spoken_text']
 
 
 def test_straight_entry_projection_tie_requires_interior_junction():

@@ -1,0 +1,15 @@
+{
+  "status": "configuration_alignment_requires_new_observed_crossing",
+  "previous_source_sha256": "6576e087b570379fd295a348c2312f10204c67857cfa47d380eb899e141a7f1f",
+  "source_sha256": "0f355bac624ad6c67519d8c617512342092d502af24c4a89f96b43c01504646d",
+  "previous_activation_m": 902.4278,
+  "updated_activation_m": 922.4278,
+  "crosswalk_anchor_m": 932.4278,
+  "reason": "Start the physical crossing on close approach so an intervening queue or red light does not finish the event before its subject can be observed.",
+  "event_count": 5,
+  "task_count": 15,
+  "original_evidence": "s2_aligned_v27_attempt10/persistent_stop_case.json",
+  "actor_removal_or_fake_completion": false,
+  "traffic_population_unchanged": true,
+  "crossing_motion_and_safety_criteria_unchanged": true
+}

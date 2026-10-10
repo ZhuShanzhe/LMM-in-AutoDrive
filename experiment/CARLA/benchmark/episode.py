@@ -7,7 +7,8 @@ from types import SimpleNamespace as NS
 
 from .catalog import ConfigError, load_catalog, load_episode_catalog, source_fingerprint
 from .monitor import TaskMonitor
-from .safety_events import SafetyLedger
+from .safety_events import SafetyLedger, lane_invasion_details
+from .traffic_compliance import TrafficComplianceAudit
 from .task_oracle import load_profile
 from .role_journal import RoleJournal, configured_role_anchors
 from .traffic_observation import observe_traffic, TrafficDensitySummary
@@ -36,7 +37,8 @@ def assessment_outcome(summary):
     safety=summary.get('episode_safety',{}).get('status')
     if summary.get('status')=='ASSESSMENT_ERROR':
         code,status=4,'ASSESSMENT_ERROR'
-    elif safety=='FAILURE' or any(s in {'FAILURE','TIMEOUT'} for s in statuses):
+    elif (safety=='FAILURE' or summary.get('traffic_compliance',{}).get('status')=='FAILURE'
+            or any(s in {'FAILURE','TIMEOUT'} for s in statuses)):
         code,status=2,'CHECK_FAILED'
     elif (not statuses or safety!='NO_RECORDED_VIOLATION' or
           not any(s=='SUCCESS' for s in statuses) or
@@ -100,7 +102,10 @@ def defer_dynamic_role_entry(profile,row,first_seen_s):
     roles=required_task_roles(profile)
     if not roles or all(row.get('roles',{}).get(role,{}).get('status')=='BOUND' for role in roles):
         return False
-    return (row['sim_time_s']-first_seen_s<.25
+    # Dynamically spawned actors may need several physics ticks to enter the
+    # synchronized snapshot. Binding still requires a real actor and all
+    # subsequent transition/safety evidence; this is not completion credit.
+    return (row['sim_time_s']-first_seen_s<1.0
             and row['route_s_m']-profile['activate_m']<5.0)
 
 
@@ -129,6 +134,7 @@ class EpisodeAssessment:
         self.last_frame=None
         self.location_factory=NS
         self.hint=initial_route_s_m
+        self.ego_projection_motion={}
         self.monitors={}
         self.unavailable={}
         self.profiles={}
@@ -144,6 +150,7 @@ class EpisodeAssessment:
         self.role_journal=RoleJournal(self.profiles.values(),anchors)
         self.actor_provider=None
         self.traffic_density=TrafficDensitySummary()
+        self.traffic_compliance=TrafficComplianceAudit(self.ego,self.map,self.binding)
         self.traffic_segments={}
         map_xml=world_map.to_opendrive() if hasattr(world_map,'to_opendrive') else None
         map_hash=hashlib.sha256(map_xml.encode('utf-8')).hexdigest() if map_xml else None
@@ -164,11 +171,13 @@ class EpisodeAssessment:
             map_name=world_map.name,map_geometry_sha256=map_hash,ego_binding=asdict(self.binding),
             mode='formal_runner_observer',policy_inputs=False,
             required_roles=self.role_journal.expected,
-            safety_scope=['collision','solid_lane_marking'])
+            safety_scope=['collision','solid_lane_marking'],
+            supplementary_audit_scope=['vehicle_api_speed_limit','front_bumper_red_light_crossing'])
         (self.output/'manifest.json').write_text(json.dumps(self.manifest,indent=2),encoding='utf-8')
 
     def attach_sensors(self,world):
         import carla
+        self.traffic_compliance.initialize(world)
         try:
             for kind in ('collision','lane_invasion'):
                 sensor=world.spawn_actor(world.get_blueprint_library().find('sensor.other.'+kind),
@@ -178,7 +187,7 @@ class EpisodeAssessment:
                     sensor.listen(lambda e:self.ledger.record('collision',int(e.frame),other_actor_id=e.other_actor.id))
                 else:
                     sensor.listen(lambda e:self.ledger.record('lane_invasion',int(e.frame),
-                        illegal=any('Solid' in str(m.type) or str(m.type)=='Curb' for m in e.crossed_lane_markings)))
+                        **lane_invasion_details(e.crossed_lane_markings)))
         except Exception:
             for sensor in self.sensors:
                 if sensor.is_listening:
@@ -198,9 +207,16 @@ class EpisodeAssessment:
             raise ConfigError('episode ego missing')
         point=actor.get_transform().location
         self.location_factory=type(point)
-        self.hint=self.projector.project(point,self.hint)['route_s_m']
+        try:
+            self.hint=self.projector.project_actor(actor,self.hint,
+                snapshot.timestamp.elapsed_seconds,
+                motion_state=self.ego_projection_motion)['route_s_m']
+        except ConfigError as error:
+            raise ConfigError(f'episode ego route projection failed: frame={snapshot.frame}, '
+                f'hint={self.hint:.3f}: {error}') from error
         row=dict(frame=snapshot.frame,sim_time_s=snapshot.timestamp.elapsed_seconds,
                  route_s_m=self.hint,actors={str(self.binding.actor_id):pack_actor(actor)})
+        row['traffic_compliance']=self.traffic_compliance.observe(snapshot)
         live_actors=list(self.actor_provider()) if self.actor_provider is not None else []
         if self.actor_provider is not None:
             vehicle_ids=[a.id for a in live_actors if getattr(a,'type_id','').startswith('vehicle.')]
@@ -251,8 +267,35 @@ class EpisodeAssessment:
             junction_end=profile.get('end_route_s_m',min(later) if later else self.route[-1]['distance_m'])
             fixture['steps'].update(bind_junction_sequence(self.route,self.map,self.location_factory,
                 profile['steps'],progress,junction_end))
+            if any(step['kind']=='return_original_lane' for step in profile['steps']):
+                from .lane_continuity import trace_lane_corridor
+                from .truth_capture import lane_key
+                end=profile.get('end_route_s_m',self.route[-1]['distance_m'])
+                evidence=trace_lane_corridor(self.map,self.route,progress,self.location_factory,
+                    end,follow_published_route=True)
+                current=self.map.get_waypoint(snapshot.find(self.binding.actor_id).get_transform().location)
+                allowed={key for segment in evidence['lane_corridor']
+                    if segment['start_m']<=progress<=segment['end_m'] for key in segment['lane_keys']}
+                if current is None or lane_key(current) not in allowed:
+                    raise ConfigError('original lane differs from verified route corridor')
+                fixture['original_lane_corridor']=evidence
             for i,step in enumerate(profile['steps']):
-                if step['kind']=='maintain_interval' and step.get('keep_lane'):
+                if step['kind']=='lane_hold':
+                    fixture['steps'][str(i)]=dict(deferred_until_step_entry=True,
+                        binding_source='independent_lane_hold_entry',
+                        corridor_end_m=profile.get('end_route_s_m',self.route[-1]['distance_m']))
+                elif step['kind'] == 'yield_cut_in':
+                    from .lane_continuity import trace_lane_corridor
+                    end = min(self.route[-1]['distance_m'],
+                              profile.get('end_route_s_m', progress+350)+120)
+                    corridor = trace_lane_corridor(self.map, self.route, progress,
+                                                  self.location_factory, end)
+                    if not corridor['lane_corridor']:
+                        raise ConfigError('cut-in has no verified continuous lane')
+                    fixture['steps'][str(i)] = dict(lane_corridor=corridor['lane_corridor'],
+                        binding_source='independent_map_topology',
+                        corridor_stop_reason=corridor['stop_reason'])
+                elif step['kind']=='maintain_interval' and step.get('keep_lane'):
                     from .lane_continuity import build_lane_corridor
                     fixture['steps'][str(i)]=dict(lane_corridor=build_lane_corridor(
                         self.map,self.route,step['from_route_s_m'],self.location_factory,
@@ -275,10 +318,15 @@ class EpisodeAssessment:
                         raise ConfigError('recorded route ends before required scene distance')
                     fixture['steps'][str(i)]=dict(route_end_s_m=end['distance_m'],
                         position_m={key:end[key] for key in ('x','y','z')})
+                    if step.get('allow_adjacent_destination_lanes'):
+                        from .destination_fixture import terminal_lane_centers
+                        fixture['steps'][str(i)]['terminal_cross_section']=terminal_lane_centers(
+                            self.map,end,self.location_factory)
                     if step.get('keep_lane'):
                         from .lane_continuity import build_lane_corridor
                         fixture['steps'][str(i)]['lane_corridor']=build_lane_corridor(
-                            self.map,self.route,profile['activate_m'],self.location_factory)
+                            self.map,self.route,profile['activate_m'],self.location_factory,
+                            follow_published_route=True)
                         current=self.map.get_waypoint(snapshot.find(self.binding.actor_id).get_transform().location)
                         segments=fixture['steps'][str(i)]['lane_corridor']
                         allowed={key for segment in segments if segment['start_m']<=progress<=segment['end_m']
@@ -287,6 +335,14 @@ class EpisodeAssessment:
                         if current is None or lane_key(current) not in allowed:
                             raise ConfigError('current lane differs from destination route corridor')
                 elif step['kind'] in {'lane_change','guarded_lane_change'}:
+                    if step.get('bind_after_previous_step') is True:
+                        if i == 0:
+                            raise ConfigError('deferred lane fixture requires a preceding step')
+                        fixture['steps'][str(i)] = dict(
+                            deferred_until_step_entry=True,
+                            binding_source='independent_previous_step_completion',
+                            corridor_end_m=profile.get('end_route_s_m', self.route[-1]['distance_m']))
+                        continue
                     location=snapshot.find(self.binding.actor_id).get_transform().location
                     anchor=profile['activate_m']
                     if i>0:
@@ -314,7 +370,7 @@ class EpisodeAssessment:
                     from .lane_continuity import trace_lane_change_keys
                     lane_fixture.update(trace_lane_change_keys(
                         self.map,self.route,anchor,corridor_end,step['direction'],
-                        self.location_factory,lane_fixture))
+                        self.location_factory,lane_fixture,stop_before_junction=True))
                     fixture['steps'][str(i)]=lane_fixture
                 elif step['kind'] in {'yield_pedestrian','wait_clear'}:
                     from .event_fixture import crosswalk_fixture, route_crossing_fixture
@@ -429,6 +485,7 @@ class EpisodeAssessment:
                 sampling='each observed frame; frame weighted, not distance weighted'),
             role_capture_errors=self.role_journal.errors,
             episode_safety=self.ledger.episode_result(),safety=self.ledger.export(),
+            traffic_compliance=self.traffic_compliance.result(),
             scope='partial_formal_runner_assessment_not_full_acceptance')
         (self.output/'summary.json').write_text(json.dumps(self.summary,ensure_ascii=False,indent=2),encoding='utf-8')
         self.closed=True

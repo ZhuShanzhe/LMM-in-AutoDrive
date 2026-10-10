@@ -34,6 +34,9 @@ def _scene2_step_contract(
     action, separator, raw_parameter = str(encoded).partition(":")
     action = action.strip().upper()
     parameter = raw_parameter.strip().upper() if separator else ""
+    if action == "COMPLETE" and parameter in {"JUNCTION", "LANE_CHANGE"}:
+        action = "CONFIRM"
+        parameter += "_COMPLETED"
     parameters: dict[str, Any] = {}
     wait_actions = {"CHECK", "WAIT", "CONFIRM", "YIELD"}
 
@@ -59,6 +62,9 @@ def _scene2_step_contract(
     elif parameter:
         parameters["condition"] = parameter
 
+    if action == "YIELD" and parameter == "PEDESTRIAN":
+        parameters["condition"] = "PEDESTRIAN_CLEAR"
+
     on_blocked = (
         "WAIT_FOR_SAFE"
         if action in wait_actions
@@ -67,6 +73,7 @@ def _scene2_step_contract(
     )
     completion_type = {
         "SET_SPEED": "TARGET_SPEED_REACHED",
+        "ADJUST_SPEED": "TARGET_SPEED_REACHED",
         "CHANGE_LANE": "LANE_CHANGE_COMPLETED",
         "PULL_OVER": "LANE_CHANGE_COMPLETED",
         "TURN": "JUNCTION_EXITED",

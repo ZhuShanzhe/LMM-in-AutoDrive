@@ -78,3 +78,125 @@ def test_late_completion_cannot_override_timeout():
     with pytest.raises(ValueError,match='TIMEOUT'):
         queue.select(1,5,dict(request_id='a',plan_status='COMPLETED'))
     assert queue.index==0
+
+
+def test_route_continuity_retires_timeout_without_counting_it_completed():
+    queue=CompletionCommandQueue([command('a',0),command('b',10)],timeout_s=5,
+                                 failure_policy='RETIRE_AND_CONTINUE')
+    queue.select(0,0)
+    assert queue.select(20,5)['id']=='b'
+    status=queue.status()
+    assert status['completed_commands']==0
+    assert status['retired_commands']==1
+    assert status['failure'] is None
+    event=status['events'][1]
+    assert event['status']=='TIMEOUT'
+    assert event['manual_review_status']=='NOT_REVIEWED'
+    assert event['original_plan']['request_id']=='a'
+
+
+def test_route_continuity_retires_safety_wait_but_preserves_observed_plan():
+    queue=CompletionCommandQueue([command('a',0),command('b',10)],
+        safety_wait_timeout_s=1,failure_policy='RETIRE_AND_CONTINUE')
+    queue.select(0,0)
+    state=dict(request_id='a',plan_status='ACTIVE',active_step_id='change-left')
+    feedback=dict(request_id='a',plan_status='ACTIVE',observed_at_s=.5,
+                  safety_wait=True,plan_state=state)
+    queue.select(20,.5,feedback)
+    feedback['observed_at_s']=1.
+    assert queue.select(20,1.,feedback)['id']=='b'
+    event=queue.status()['events'][1]
+    assert event['status']=='SAFETY_WAIT_TIMEOUT'
+    assert event['prior_plan_state']==state
+    assert queue.status()['completed_commands']==0
+
+
+def test_route_continuity_skips_multiple_expired_windows_without_executing_them():
+    a=command('a',0);a['end_progress_m']=5
+    b=command('b',6);b['end_progress_m']=9
+    queue=CompletionCommandQueue([a,b,command('c',10)],
+                                 failure_policy='RETIRE_AND_CONTINUE')
+    assert queue.select(20,0)['id']=='c'
+    status=queue.status()
+    assert status['retired_commands']==2
+    assert status['completed_commands']==0
+    assert [e['status'] for e in status['events'][:2]]==[
+        'MISSED_COMMAND_WINDOW','MISSED_COMMAND_WINDOW']
+
+
+def test_route_continuity_falls_back_to_navigation_after_last_timeout():
+    queue=CompletionCommandQueue([command('a',0)],timeout_s=1,
+                                 failure_policy='RETIRE_AND_CONTINUE')
+    queue.select(0,0)
+    fallback=queue.select(5,1)
+    assert fallback=={'text':'Continue driving safely in the current lane.'}
+    assert queue.status()['retired_commands']==1
+    assert queue.status()['completed_commands']==0
+    assert queue.select(6,2)==fallback
+
+
+@pytest.mark.parametrize('action',['STOP','EMERGENCY_BRAKE','CANCEL','PULL_OVER'])
+def test_route_continuity_never_discards_explicit_stop_mission(action):
+    item=command('a',0)
+    item['driving_intent']['intent']['steps'][0]['action']=action
+    queue=CompletionCommandQueue([item,command('b',10)],timeout_s=1,
+                                 failure_policy='RETIRE_AND_CONTINUE')
+    queue.select(0,0)
+    with pytest.raises(ValueError,match='TIMEOUT'):
+        queue.select(20,1)
+    assert queue.index==0
+    assert queue.status()['retired_commands']==0
+
+
+def test_unknown_failure_policy_is_rejected():
+    with pytest.raises(ValueError,match='failure policy'):
+        CompletionCommandQueue([],failure_policy='IGNORE_EVERYTHING')
+
+
+def test_continuity_does_not_attach_unrelated_plan_feedback():
+    queue=CompletionCommandQueue([command('a',0)],timeout_s=1,
+                                 failure_policy='RETIRE_AND_CONTINUE')
+    queue.select(0,0)
+    queue.select(5,1,dict(request_id='other',plan_state=dict(secret='unrelated')))
+    assert queue.events[-1]['prior_plan_state'] is None
+
+
+def test_controller_retires_old_plan_before_parsing_next_instruction():
+    from types import SimpleNamespace
+    from universal_vla_controller import UniversalVLAController
+    from lightweight_vla_adapter.src.driving_plan_runtime import DrivingPlanRuntime
+
+    class ReachedNextParser(Exception):
+        pass
+
+    queue=CompletionCommandQueue([command('a',0),command('b',10)],timeout_s=1,
+                                 failure_policy='RETIRE_AND_CONTINUE')
+    queue.select(0,0)
+    plan=DrivingPlanRuntime()
+    plan.document=command('a',0)['driving_intent']
+    plan.state=dict(request_id='a',plan_status='ACTIVE',active_step_index=0,
+                    active_step_id='step_1',step_states=[dict(step_id='step_1',status='ACTIVE')])
+    plan.timestamp_s=0.
+    plan.frame_id='carla_1'
+    plan.risk_pause=False
+
+    def parse_next(next_command):
+        assert next_command['id']=='b'
+        assert plan.state['plan_status']=='FAILED'
+        assert plan.state['reason_codes']==['TIMEOUT']
+        raise ReachedNextParser()
+
+    controller=UniversalVLAController.__new__(UniversalVLAController)
+    controller.command_queue=queue
+    controller.driving_plan=plan
+    controller._execution_wait_feedback={}
+    controller._progress_m=lambda: 20.
+    controller.commands=[]
+    controller.route_controller=SimpleNamespace()
+    controller.fsm=SimpleNamespace(active_command=lambda commands,progress: {},parse=parse_next)
+    controller.world=SimpleNamespace(get_snapshot=lambda: SimpleNamespace(
+        timestamp=SimpleNamespace(elapsed_seconds=2.)))
+    with pytest.raises(ReachedNextParser):
+        controller._decide(2)
+    assert queue.status()['completed_commands']==0
+    assert queue.status()['retired_commands']==1

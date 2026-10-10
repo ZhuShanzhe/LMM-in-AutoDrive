@@ -152,6 +152,7 @@ class EmergencySceneActorRuntime:
         self._crossing_worker_start_elapsed_s: (
             float | None
         ) = None
+        self._worker_start_lateral_m: float | None = None
         self._walker_blueprint_candidates: list[Any] = []
         self._worker_phase = "NOT_SPAWNED"
         self._maintenance_vehicle: Any | None = None
@@ -284,7 +285,11 @@ class EmergencySceneActorRuntime:
         simulation_frame: int,
         elapsed_s: float,
     ) -> None:
-        del simulation_frame
+        if (self._ego_actor is not None and simulation_frame % 20 == 0
+                and self._following_source_config.get('rear_following_distance_m',0.)>0.):
+            from control.background_spacing import maintain_rear_spacing
+            maintain_rear_spacing(self._traffic_manager,self._ego_actor,self._background_vehicles,
+                self._following_source_config['rear_following_distance_m'])
         if event["id"] == "scene3_cut_in":
             self._activate_cut_in(
                 event,
@@ -557,7 +562,7 @@ class EmergencySceneActorRuntime:
                 "private_vehicle_count"
             ]
         )
-        reserved_gap_vehicle_count = 2
+        reserved_gap_vehicle_count = int(traffic_config.get('reserved_gap_vehicle_count', 2))
         if (
             len(BACKGROUND_TRAFFIC_PLAN)
             + reserved_gap_vehicle_count
@@ -1623,6 +1628,12 @@ class EmergencySceneActorRuntime:
             self._crossing_worker_start_elapsed_s = (
                 elapsed_s
             )
+            anchor = float(self._crossing_worker_config['start_s_m'])
+            if not hasattr(self._map, 'route_waypoint'):
+                raise RuntimeError('worker clearance requires actual ego route lane geometry')
+            lane = self._map.route_waypoint(anchor)
+            from worker_clearance import worker_clear_of_lane
+            self._worker_start_lateral_m = worker_clear_of_lane(worker, lane)['lateral_offset_m']
             self._worker_phase = "CROSSING"
             print(
                 "STAGED WORKER CROSSING "
@@ -1657,6 +1668,24 @@ class EmergencySceneActorRuntime:
             distance_x = self._crossing_worker_target_location.x - location.x
             distance_y = self._crossing_worker_target_location.y - location.y
             distance = (distance_x * distance_x + distance_y * distance_y) ** 0.5
+            from worker_clearance import worker_clear_of_lane
+            anchor = float(self._crossing_worker_config['start_s_m'])
+            if not hasattr(self._map, 'route_waypoint'):
+                raise RuntimeError('worker clearance requires actual ego route lane geometry')
+            lane = self._map.route_waypoint(anchor)
+            clearance = worker_clear_of_lane(self._crossing_worker, lane)
+            start_lateral = getattr(self, '_worker_start_lateral_m', None)
+            if start_lateral is None and self._crossing_worker_start_location is not None:
+                start_lateral = worker_clear_of_lane(
+                    self._crossing_worker,
+                    lane,
+                    target_location=self._crossing_worker_start_location,
+                )['lateral_offset_m']
+                self._worker_start_lateral_m = start_lateral
+            crossed_route_center = (
+                start_lateral is not None
+                and start_lateral * clearance['lateral_offset_m'] <= 0
+            )
             crossing_speed_mps = float(
                 (self._worker_event or {})
                 .get("crossing_behavior", {})
@@ -1666,17 +1695,7 @@ class EmergencySceneActorRuntime:
             )
             if not math.isfinite(crossing_speed_mps) or crossing_speed_mps <= 0:
                 raise RuntimeError('crossing speed must be finite and positive')
-            if distance <= 0.75:
-                from worker_clearance import worker_clear_of_lane
-                anchor=float(self._crossing_worker_config['start_s_m'])
-                if not hasattr(self._map,'route_waypoint'):
-                    raise RuntimeError('worker clearance requires actual ego route lane geometry')
-                lane=self._map.route_waypoint(anchor)
-                clearance=worker_clear_of_lane(self._crossing_worker,lane)
-                if not clearance['clear']:
-                    self._crossing_worker.apply_control(self._carla.WalkerControl(speed=0.0,jump=False))
-                    raise RuntimeError('worker destination still occupies ego route lane; scene geometry invalid: '
-                                       +str(clearance))
+            if crossed_route_center and clearance['clear']:
                 self._crossing_worker.apply_control(
                     self._carla.WalkerControl(
                         direction=(
@@ -1692,10 +1711,14 @@ class EmergencySceneActorRuntime:
                 )
                 self._worker_phase = "YIELDED_CLEAR"
                 print(
-                    "WORKER CLEARED | "
+                    "WORKER CLEARED | observed physical lane clearance | "
                     f"target=({self._crossing_worker_target_location.x:.2f}, "
                     f"{self._crossing_worker_target_location.y:.2f})"
                 )
+            elif distance <= 0.75:
+                self._crossing_worker.apply_control(self._carla.WalkerControl(speed=0.0,jump=False))
+                raise RuntimeError('worker destination still occupies ego route lane or did not cross its center: '
+                                   +str(clearance))
             else:
                 self._crossing_worker.apply_control(self._carla.WalkerControl(
                     direction=self._carla.Vector3D(x=distance_x/distance,y=distance_y/distance,z=0.0),

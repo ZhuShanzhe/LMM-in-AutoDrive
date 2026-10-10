@@ -1,11 +1,12 @@
 import json
+from pathlib import Path
 
 from benchmark.catalog import CONFIG_ROOT, load_catalog
 from benchmark.task_oracle import TaskOracle, load_profile
 
 
 def oracle():
-    spec=json.loads((CONFIG_ROOT/'benchmark/scene3_blocked_lane_change_left.json').read_text())
+    spec=json.loads((Path(__file__).parent/'fixtures/guarded_lane_unit_fixture.json').read_text())
     return TaskOracle(spec)
 
 
@@ -51,6 +52,6 @@ def test_waiting_alone_is_not_task_success():
     assert result['status']=='RUNNING'
 
 
-def test_profile_is_bound_to_scene3_source():
+def test_optional_blockage_is_not_in_active_scene_catalog():
     catalog=load_catalog('scene_3')
-    assert load_profile(catalog,catalog.select('scene3_blocked_lane_change_left')[0]) is not None
+    assert 'scene3_blocked_lane_change_left' not in {task.task_id for task in catalog.tasks}

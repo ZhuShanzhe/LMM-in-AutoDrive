@@ -56,6 +56,27 @@ def test_target_continuity_and_velocity():
     assert out['selected']['velocity_xy_mps'][0]==pytest.approx(3.,abs=.2)
 
 
+def test_static_surface_does_not_inherit_unobserved_ego_transverse_velocity():
+    tracker=TrackedObservation()
+    angle=20.
+    relative=-5.*math.cos(math.radians(angle))
+    out=update(tracker,radar(1,.1,angle=angle,relative=relative),.1,1)
+    assert np.linalg.norm(out['entities'][0]['velocity_xy_mps']) < .01
+    assert out['entities'][0]['observed_velocity_xy_mps'] is None
+
+
+def test_motion_evidence_uses_distinct_position_measurements():
+    tracker=TrackedObservation()
+    for i in range(1,8):
+        out=update(tracker,radar(i,.1*i,position=20.+.3*i),.1*i,i)
+    entity=out['entities'][0]
+    assert entity['motion_sample_count']>=3
+    assert entity['observed_velocity_xy_mps'][0]==pytest.approx(3.,abs=.02)
+    assert entity['motion_position_residual_m']<.01
+    repeated=update(tracker,radar(7,.1*7,position=22.1),.1*7,7)
+    assert repeated['entities'][0]['motion_sample_count']==entity['motion_sample_count']
+
+
 def test_duplicate_frames_do_not_confirm_track():
     t=TrackedObservation()
     for _ in range(6):out=update(t,radar(1,.1),.1,1)

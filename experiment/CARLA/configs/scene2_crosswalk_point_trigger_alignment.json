@@ -1,0 +1,19 @@
+{
+  "status": "physical_fixture_checked_closed_loop_pending",
+  "source_sha256": "20b73fe7ae0452c4d530ea207dd0ac097a4af40dd4c5367b18c73680e53ac7f7",
+  "previous_source_sha256": "accc3df779fc219e095074fe0d298e95950bb80359f85f4f0e09b70c0b747a1f",
+  "trigger_source": "ego_route_progress",
+  "near_side_trigger_m": 910.0417,
+  "far_side_trigger_m": 880.0417,
+  "crosswalk_anchor_m": 932.4278,
+  "endpoint_inset_m": 1.0,
+  "endpoint_clearance_m": 0.0,
+  "original_failure": "s2_aligned_v29_attempt11/controlled_abort.json",
+  "physical_test": "physical_crosswalk_v30_verified.json",
+  "exit_walk_m": 4.0,
+  "event_and_command_counts_unchanged": true,
+  "actor_motion_is_physical": true,
+  "inference_and_safety_thresholds_unchanged": true,
+  "event_completion_distance_m": 0.3,
+  "unobserved_event_credit": false
+}

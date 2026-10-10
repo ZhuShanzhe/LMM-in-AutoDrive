@@ -58,6 +58,8 @@ def validate(step):
         raise ConfigError('follow_distance requires a target role')
     if kind in {'follow_distance','yield_cut_in'} and not step['target_role']:
         raise ConfigError('empty target role')
+    if kind == 'yield_cut_in' and type(step.get('allow_already_safe_speed', False)) is not bool:
+        raise ConfigError('allow_already_safe_speed must be boolean')
     if kind == 'wait_clear':
         for key in ('require_stop', 'require_observed_conflict'):
             if key in step and type(step[key]) is not bool:
@@ -81,28 +83,40 @@ def evaluate(oracle, step, obs, now):
         origin=oracle.original_lane
         if origin is None:
             raise ConfigError('original lane was not recorded at task entry')
+        corridor=origin.get('corridor',{}).get('lane_corridor')
+        in_original=(any(segment['start_m']<=progress<=segment['end_m']
+            and ego['lane_key'] in segment['lane_keys'] for segment in corridor)
+            if corridor else ego['lane_key']==origin['lane_key'])
         if not state:
-            if ego['lane_key']==origin['lane_key']:
+            if in_original:
                 oracle.finish('FAILURE','already_returned_before_return_step',obs['frame'])
                 return False
             state['started_outside_original']=True
-        condition=(ego['lane_key']==origin['lane_key'] and not ego['in_junction']
+        condition=(in_original and not ego['in_junction']
                    and abs(number(ego['lateral_error_m'],'lateral error'))<=step['max_lateral_error_m']
                    and abs(number(ego['heading_error_deg'],'heading error'))<=step['max_heading_error_deg'])
         return oracle._hold('returned',condition,now,step['hold_s'])
     if kind == 'yield_cut_in':
         target=oracle._target(step,obs)
+        corridor = obs.get('fixture', {}).get('steps', {}).get(str(oracle.index), {}).get('lane_corridor')
+        def in_continuous_lane(actor):
+            route_s = number(actor['route_s_m'], 'cut-in actor route progress')
+            return any(segment['start_m'] <= route_s <= segment['end_m']
+                       and actor['lane_key'] in segment['lane_keys'] for segment in corridor)
         if not state:
-            state.update(entry_lane=ego['lane_key'],entry_road=ego['road_key'],entry_speed=speed)
-        if ego['road_key']!=state['entry_road'] or ego['in_junction']:
+            state.update(entry_lane=ego['lane_key'],entry_road=ego['road_key'],entry_speed=speed,
+                         entry_target_speed=number(target['speed_kmh'], 'entry target speed'))
+        if ego['in_junction'] or (not corridor and ego['road_key']!=state['entry_road']):
             raise ConfigError('cut-in criterion needs a continuous non-junction lane segment')
-        if ego['lane_key']!=state['entry_lane']:
+        if (corridor and not in_continuous_lane(ego)) or (not corridor and ego['lane_key']!=state['entry_lane']):
             oracle.finish('FAILURE','left_lane_during_cut_in_yield',obs['frame'])
             return False
         if target['route_corridor_id']!=ego['route_corridor_id']:
             raise ConfigError('cut-in target outside shared route corridor')
         gap=number(target['rear_route_s_m'],'target rear')-number(ego['front_route_s_m'],'ego front')
-        same_lane=target['lane_key']==ego['lane_key']
+        same_lane=(in_continuous_lane(target) if corridor else target['lane_key']==ego['lane_key'])
+        if corridor and target.get('in_junction'):
+            raise ConfigError('cut-in target entered junction before assessment completed')
         if 'merge_time' not in state:
             if not same_lane:
                 state['seen_adjacent']=True
@@ -112,6 +126,8 @@ def evaluate(oracle, step, obs, now):
             if gap<=0:
                 raise ConfigError('cut-in occurred behind or overlapping ego')
             state['merge_time']=now
+            state['merge_ego_speed']=speed
+            state['merge_target_speed']=number(target['speed_kmh'], 'merge target speed')
             oracle.evidence.append(dict(event='CUT_IN_LANE_ENTRY',frame=obs['frame'],sim_time_s=now,
                                         target_actor_id=target['actor_id'],net_gap_m=gap))
         if not same_lane:
@@ -124,9 +140,19 @@ def evaluate(oracle, step, obs, now):
                 timing_scope='physical_speed_response_not_model_inference_latency'))
         closing=max(0,(speed-number(target['speed_kmh'],'target speed'))/3.6)
         safe=(gap>=step['min_gap_m'] and (closing==0 or gap/closing>=step['min_ttc_s']))
+        already_safe = (step.get('allow_already_safe_speed') is True and closing == 0 and safe
+                        and state['merge_ego_speed'] <= state['merge_target_speed']
+                        and speed <= state['merge_ego_speed']+.5)
+        if already_safe and 'already_safe_response' not in state:
+            state['already_safe_response'] = True
+            oracle.evidence.append(dict(event='ALREADY_SLOW_SAFE_YIELD', frame=obs['frame'],
+                entry_speed_kmh=state['entry_speed'], speed_kmh=speed,
+                merge_ego_speed_kmh=state['merge_ego_speed'],
+                merge_target_speed_kmh=state['merge_target_speed'],
+                target_speed_kmh=target['speed_kmh'], net_gap_m=gap))
         centered=(abs(number(ego['lateral_error_m'],'lateral error'))<=step['max_lateral_error_m']
                   and abs(number(ego['heading_error_deg'],'heading error'))<=step['max_heading_error_deg'])
-        return oracle._hold('yielded',reduced and safe and centered,now,step['hold_s'])
+        return oracle._hold('yielded',(reduced or already_safe) and safe and centered,now,step['hold_s'])
     if kind == 'guarded_lane_change':
         fixture=oracle._fixture(obs)
         if fixture.get('legal') is not True or fixture.get('direction') != step['direction']:
@@ -186,7 +212,15 @@ def evaluate(oracle, step, obs, now):
             if ego['in_junction']:
                 raise ConfigError('lane hold must start outside junction')
             state['entry_lane'] = lane
-        condition = (not ego['in_junction'] and lane == state['entry_lane']
+        evidence=obs.get('fixture',{}).get('steps',{}).get(str(oracle.index),{})
+        if evidence.get('lane_corridor'):
+            corridor=oracle._fixture(obs)['lane_corridor']
+            segments=[s for s in corridor if s['start_m']<=progress<=s['end_m']]
+            if not segments:raise ConfigError('lane hold outside verified corridor')
+            same_lane=any(lane in s['lane_keys'] for s in segments)
+        else:
+            same_lane=lane==state['entry_lane']
+        condition = (not ego['in_junction'] and same_lane
                      and abs(number(ego['lateral_error_m'], 'lateral error')) <= step['max_lateral_error_m']
                      and abs(number(ego['heading_error_deg'], 'heading error')) <= step['max_heading_error_deg'])
         return oracle._hold('stable_lane', condition, now, step['hold_s'])
@@ -229,9 +263,13 @@ def evaluate(oracle, step, obs, now):
             if not segments:
                 raise ConfigError('required interval outside verified lane corridor')
             allowed = {key for s in segments for key in s['lane_keys']}
-            if (ego['lane_key'] not in allowed or
-                    abs(number(ego['lateral_error_m'], 'lateral error')) > step['max_lateral_error_m'] or
-                    abs(number(ego['heading_error_deg'], 'heading error')) > step['max_heading_error_deg']):
+            from .junction_alias import coincident_junction_alias_matches
+            alias = coincident_junction_alias_matches(ego, segments,
+                step['max_lateral_error_m'], step['max_heading_error_deg'])
+            centered = (ego['lane_key'] in allowed and
+                abs(number(ego['lateral_error_m'], 'lateral error')) <= step['max_lateral_error_m'] and
+                abs(number(ego['heading_error_deg'], 'heading error')) <= step['max_heading_error_deg'])
+            if not (centered or alias):
                 oracle.finish('FAILURE', 'interval_lane_constraint_violated', obs['frame'])
                 return False
         return progress >= end and obs['frame'] > state['entry_frame']

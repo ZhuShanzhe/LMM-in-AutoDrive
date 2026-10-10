@@ -27,6 +27,8 @@ class EgoPIDController:
         self._lane_change_command_id = None
         self._lane_change_target_lane_id = None
         self._lane_change_stable_frames = 0
+        self._lane_change_recenter_active = False
+        self._lane_change_recenter_debug = {}
         self._last_lane_change_intent = None
         self._lane_change_settle_frames = 0
         self._emergency_latched = False
@@ -51,6 +53,12 @@ class EgoPIDController:
 
     def run_step(self, intent, dt):
         risk_speed_cap=isinstance(intent,dict) and not intent.get('allow_positive_acceleration',True)
+        guarded_crawl=(isinstance(intent,dict)
+            and intent.get('longitudinal_control_mode') in {'GUARDED_CRAWL','CAUTIOUS_SPEED_CAP'})
+        explicit_goal=(isinstance(intent,dict)
+            and intent.get('speed_tracking_mode')=='EXPLICIT_CRUISE'
+            and intent.get('longitudinal_control_mode') in {'ABSOLUTE_SPEED','CAUTIOUS_SPEED_CAP'}
+            and not risk_speed_cap)
         requested_step_speed = float(
             intent.get('requested_step_speed_kmh', intent.get('target_speed_kmh', 0.0))
         ) if isinstance(intent, dict) else 0.0
@@ -91,6 +99,11 @@ class EgoPIDController:
             control = carla.VehicleControl(throttle=0.0, brake=1.0, steer=steer)
             self._last_applied_steer = steer
             self._last_control = control
+            self._last_requested_step_speed_kmh = requested_step_speed
+            self._last_controller_requested_speed_kmh = controller_requested_speed
+            self._last_effective_target_speed_kmh = 0.0
+            self._last_speed_constraint_codes = list(dict.fromkeys(
+                speed_constraint_codes + ['emergency_brake']))
             return control, intent
 
         target_speed = self._resolve_target_speed(intent)
@@ -112,7 +125,8 @@ class EgoPIDController:
         self._crawl_active = (
             target_speed <= 16.0 and current_speed < 2.0
         )
-        throttle, brake = self._longitudinal_control(target_speed, current_speed, dt)
+        throttle, brake = self._longitudinal_control(target_speed, current_speed, dt,
+            explicit_goal=explicit_goal)
         if sequence_acceleration is not None:
             from lightweight_vla_adapter.src.sequence_tracker import SequenceLongitudinalTracker
             if tracker is None:
@@ -131,6 +145,8 @@ class EgoPIDController:
             throttle, brake, steer, dt, lateral_intent["action"]
         )
         if risk_speed_cap:control.throttle=0.
+        if guarded_crawl:
+            self._enforce_guarded_crawl_ceiling(control, target_speed, current_speed)
         self._last_control = control
         self._last_requested_step_speed_kmh = requested_step_speed
         self._last_controller_requested_speed_kmh = controller_requested_speed
@@ -139,6 +155,18 @@ class EgoPIDController:
             speed_constraint_codes
         ))
         return control, intent
+
+    def _enforce_guarded_crawl_ceiling(self, control, target_speed, current_speed):
+        # Safety speed bounds take priority over nominal actuator smoothing.
+        if target_speed <= 16.:
+            # Torque is not vehicle speed: the proportional torque ceiling
+            # prevented some vehicles from overcoming idle drivetrain drag.
+            control.throttle = min(control.throttle, .45)
+        if current_speed >= max(0., target_speed - .3):
+            control.throttle = 0.
+            self._speed_integral = min(self._speed_integral, 0.)
+        if current_speed > target_speed:
+            control.brake = max(control.brake, min(.8, max(.1, .2 * (current_speed - target_speed))))
 
     def _resolve_target_speed(self, intent):
         action = intent["action"]
@@ -407,7 +435,7 @@ class EgoPIDController:
                     curvature = math.radians(heading_change_deg) / 30.0
         return self._dynamic_curve_speed_cap(curvature, requested)
 
-    def _longitudinal_control(self, target_speed, current_speed, dt):
+    def _longitudinal_control(self, target_speed, current_speed, dt, *, explicit_goal=False):
         error = target_speed - current_speed
         safe_dt = max(float(dt), 1e-3)
         # Avoid throttle/brake chatter around the target speed.
@@ -427,11 +455,11 @@ class EgoPIDController:
         gain = (
             self.speed_kp_crawl
             if self._crawl_active
-            else self.speed_kp
+            else max(self.speed_kp,.10) if explicit_goal else self.speed_kp
         )
         command = (
             gain * error
-            + self.speed_ki * self._speed_integral
+            + (max(self.speed_ki,.02) if explicit_goal else self.speed_ki) * self._speed_integral
             + self.speed_kd * derivative
         )
 
@@ -479,6 +507,10 @@ class EgoPIDController:
 
     def _lateral_intent_for_control(self, intent):
         """Hold the target-lane heading briefly after a merge is reported done."""
+        if intent['action'] in {'turn_left','turn_right'}:
+            self._last_lane_change_intent=None
+            self._lane_change_settle_frames=0
+            return intent
         if intent["action"] in ("lane_change_left", "lane_change_right"):
             self._last_lane_change_intent = dict(intent)
             self._lane_change_settle_frames = 20
@@ -503,18 +535,37 @@ class EgoPIDController:
         if waypoint is None:
             return 0.0
 
+        lane_change_action = intent["action"] in ("lane_change_left", "lane_change_right")
+        self._lane_change_recenter_debug = {}
+        if lane_change_action:
+            self._lane_change_waypoint(waypoint, intent)
+            target_lane = self._lane_with_id(waypoint, self._lane_change_target_lane_id)
+            if target_lane is not None and waypoint.lane_id != target_lane.lane_id:
+                try:
+                    half_width = float(self.vehicle.bounding_box.extent.y)
+                except (AttributeError, TypeError, ValueError):
+                    half_width = 1.0
+                recenter, self._lane_change_recenter_debug = self._lane_change_recenter_required(
+                    waypoint, target_lane, vehicle_transform.location, half_width,
+                    active=self._lane_change_recenter_active)
+                self._lane_change_recenter_active = recenter
+            else:
+                self._lane_change_recenter_active = False
+        else:
+            self._lane_change_recenter_active = False
+
         lane_change_target_hold = (
-            intent["action"] in ("lane_change_left", "lane_change_right")
+            lane_change_action
             and (intent.get("command_id") or intent["action"]) == self._lane_change_command_id
             and self._lane_change_target_lane_id is not None
             and waypoint.lane_id == self._lane_change_target_lane_id
         )
-        local_lane_hold = lane_change_target_hold or (
+        local_lane_hold = lane_change_target_hold or self._lane_change_recenter_active or (
             intent["action"] in ("keep_lane", "accelerate", "decelerate")
             and not bool(intent.get("route_target_trusted", False))
         )
         if local_lane_hold:
-            if self._lane_change_target_lane_id is not None:
+            if self._lane_change_target_lane_id is not None and not self._lane_change_recenter_active:
                 held_waypoint = (
                     waypoint
                     if waypoint.lane_id == self._lane_change_target_lane_id
@@ -526,7 +577,9 @@ class EgoPIDController:
                     waypoint = held_waypoint
             target_waypoint = self._target_waypoint(
                 waypoint,
-                {**intent, "target_location": None},
+                {**intent,
+                 "action": "keep_lane" if self._lane_change_recenter_active else intent["action"],
+                 "target_location": None},
             )
             if target_waypoint is not None:
                 lane_yaw = math.radians(waypoint.transform.rotation.yaw)
@@ -575,6 +628,9 @@ class EgoPIDController:
                     lateral_error_m,
                     intent["action"],
                 )
+                if self._lane_change_recenter_active:
+                    self._last_lateral_debug["lane_change_recenter"] = dict(
+                        active=True, **self._lane_change_recenter_debug)
                 return self._filter_steering(
                     _clamp(raw_steer, -steering_limit, steering_limit),
                     intent["action"],
@@ -591,7 +647,8 @@ class EgoPIDController:
         current_yaw = math.radians(vehicle_transform.rotation.yaw)
         angle = math.atan2(math.sin(desired_yaw - current_yaw), math.cos(desired_yaw - current_yaw))
         trusted_route_active = (
-            bool(intent.get("route_target_trusted", False))
+            not lane_change_action
+            and bool(intent.get("route_target_trusted", False))
             and isinstance(intent.get("target_location"), dict)
         )
         route_yaw_deg = (
@@ -669,7 +726,6 @@ class EgoPIDController:
         current_speed_kmh = self._get_speed_kmh()
         planned_route_active = (
             route_reference_active
-            and not route_turn_active
             and intent["action"] not in ("lane_change_left", "lane_change_right")
         )
         if planned_route_active:
@@ -822,6 +878,74 @@ class EgoPIDController:
         )
         raw_steer = _clamp(raw_steer, -steering_limit, steering_limit)
         return self._filter_steering(raw_steer, intent["action"], dt)
+
+    @staticmethod
+    def _lane_change_recenter_required(current, target, location, half_width_m,
+                                       *, active=False, clearance_m=.2, hysteresis_m=.2):
+        """Center within the current vehicle envelope before crossing the far boundary."""
+        current_location = current.transform.location
+        target_location = target.transform.location
+        yaw = math.radians(float(current.transform.rotation.yaw))
+        right_axis = (-math.sin(yaw), math.cos(yaw))
+        target_offset = ((target_location.x-current_location.x)*right_axis[0]
+                         +(target_location.y-current_location.y)*right_axis[1])
+        if abs(target_offset) < 1.0:
+            return False, dict(reason="adjacent_lane_side_unresolved")
+        lane_width = float(getattr(current, "lane_width", 3.5) or 3.5)
+        ego_offset = ((location.x-current_location.x)*right_axis[0]
+                      +(location.y-current_location.y)*right_axis[1])
+        toward_target = ego_offset * (1.0 if target_offset > 0.0 else -1.0)
+        center_limit = lane_width/2.0-float(half_width_m)-float(clearance_m)
+        details = dict(toward_target_m=round(toward_target, 4),
+            center_limit_m=round(center_limit, 4),lane_width_m=round(lane_width, 4),
+            vehicle_half_width_m=round(float(half_width_m), 4),
+            clearance_m=round(float(clearance_m), 4))
+        if center_limit <= 0.0:
+            return True, dict(reason="vehicle_envelope_exceeds_lane_clearance", **details)
+        threshold = -center_limit + (float(hysteresis_m) if active else 0.0)
+        recenter = toward_target < threshold
+        details["reason"] = "recover_opposite_boundary_clearance" if recenter else "clearance_ok"
+        return recenter, details
+
+    @staticmethod
+    def _lane_predecessor_refs(waypoint):
+        """Collect bounded near-straight ancestry; the caller resolves uniquely."""
+        if waypoint is None or not callable(getattr(waypoint, 'previous', None)):
+            return []
+        result = []
+        origin_yaw = float(waypoint.transform.rotation.yaw)
+        frontier = [waypoint]
+        visited = set()
+        for _ in range(24):
+            following = []
+            for current in frontier:
+                try:
+                    options = current.previous(5.)
+                    if len(options) > 32:
+                        return []
+                    for previous in options:
+                        yaw = float(previous.transform.rotation.yaw)
+                        delta = abs((yaw-origin_yaw+180.)%360.-180.)
+                        if previous.lane_type != carla.LaneType.Driving or delta > 20.:
+                            continue
+                        identity = (previous.road_id, previous.section_id, previous.lane_id,
+                            round(float(previous.s), 3) if hasattr(previous, 's') else id(previous))
+                        if identity in visited:
+                            continue
+                        visited.add(identity)
+                        key = dict(road_id=previous.road_id,
+                            section_id=previous.section_id,lane_id=previous.lane_id)
+                        if key not in result:
+                            result.append(key)
+                        following.append(previous)
+                except (RuntimeError, AttributeError, TypeError, ValueError):
+                    return []
+            if len(following) > 32:
+                return []
+            frontier = following
+            if not frontier:
+                break
+        return result
 
     def _planned_route_steer(
         self,
@@ -1117,6 +1241,7 @@ class EgoPIDController:
                 "section_id": getattr(candidate, "section_id", None),
                 "lane_id": getattr(candidate, "lane_id", None),
             }
+        lane_topology_valid = waypoint is not None
         try:
             left_lane = (
                 self._adjacent_driving_lane(waypoint, "lane_change_left")
@@ -1128,6 +1253,7 @@ class EgoPIDController:
             )
         except (RuntimeError,AttributeError,TypeError):
             left_lane=right_lane=None
+            lane_topology_valid=False
         try:lane_permission=int(waypoint.lane_change) if waypoint is not None else 0
         except (TypeError,ValueError,AttributeError):lane_permission=0
         pose = self.vehicle.get_transform()
@@ -1143,7 +1269,9 @@ class EgoPIDController:
             self._lane_change_target_lane_id is not None
             and current_lane_id == self._lane_change_target_lane_id
         )
-        if in_target_lane:
+        centered=(lateral_error is not None and heading_error is not None
+            and abs(lateral_error)<=.35 and abs(heading_error)<=5.)
+        if in_target_lane and centered:
             self._lane_change_stable_frames += 1
         else:
             self._lane_change_stable_frames = 0
@@ -1153,8 +1281,13 @@ class EgoPIDController:
             "current_lane_ref": lane_ref(waypoint),
             "left_lane_ref": lane_ref(left_lane),
             "right_lane_ref": lane_ref(right_lane),
-            "left_lane_change_allowed": bool(lane_permission & 1),
-            "right_lane_change_allowed": bool(lane_permission & 2),
+            "lane_predecessor_refs": {
+                name: self._lane_predecessor_refs(candidate)
+                for name, candidate in (("current", waypoint), ("left", left_lane), ("right", right_lane))
+            },
+            "lane_topology_valid": lane_topology_valid,
+            "left_lane_change_allowed": bool(lane_permission & int(carla.LaneChange.Left)),
+            "right_lane_change_allowed": bool(lane_permission & int(carla.LaneChange.Right)),
             "lane_change_command_id": self._lane_change_command_id,
             "in_junction": bool(waypoint.is_junction) if waypoint is not None else None,
             "lateral_error_m": lateral_error,

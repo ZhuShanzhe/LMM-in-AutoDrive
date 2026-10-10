@@ -18,11 +18,14 @@ def test_actual_scene2_uses_separate_long_lived_compound_role():
 def test_old_scene2_lifetime_conflict_still_detected():
     spec={'activate_m':800,'steps':[{'target_role':'scene2_crosswalk_pedestrian'},
                                    {'target_role':'scene2_slow_vehicle'}]}
-    audit=audit_event_dependencies(spec,load_catalog('scene_2').events)
+    events=load_catalog('scene_2').events
+    audit=audit_event_dependencies(spec,events)
     assert not audit['compatible']
     finding=audit['findings'][0]
     assert finding['role']=='scene2_slow_vehicle'
-    assert finding['resolve_m']==820 and finding['earliest_start_m']==830
+    crossing=next(event for event in events if event['kind']=='crossing_pedestrian')
+    assert finding['resolve_m']==820
+    assert finding['earliest_start_m']==crossing['activate_progress_m']
 
 
 def test_no_role_is_not_reported_as_conflict():
@@ -34,7 +37,11 @@ def test_retained_cyclist_available_to_followup_assessment():
     plan=build_plan(load_catalog('scene_2'),'s2_t05_cmd_08')
     audit=plan['event_dependency_audits']['s2_t05_cmd_08']
     assert audit['compatible']
-    assert 'scene2_slow_cyclist' in audit['required_preserved_roles']
+    assert 'scene2_slow_cyclist' not in audit['required_preserved_roles']
+    retained=audit_event_dependencies(dict(activate_m=2260,steps=[
+        dict(target_role='scene2_slow_cyclist')]),load_catalog('scene_2').events)
+    assert retained['compatible']
+    assert 'scene2_slow_cyclist' in retained['required_preserved_roles']
 
 
 def test_retention_requires_explicit_boolean():
@@ -77,9 +84,12 @@ def test_route_slow_vehicle_parks_and_releases_without_transform(monkeypatch):
              set_autopilot=lambda *args:calls.append(('autopilot',args)),
              apply_control=lambda control:calls.append(('control',vars(control))))
     tm=NS(get_port=lambda:8000,set_desired_speed=lambda *args:calls.append(('speed',args[1])),
-          auto_lane_change=lambda *args:None,update_vehicle_lights=lambda *args:None)
-    manager=DeterministicSceneEvents(None,tm,None,[],[],[],42)
-    event=dict(id='compound',actor_role='lead',anchor_progress_m=1020,target_speed_kmh=20)
+          auto_lane_change=lambda *args:None,update_vehicle_lights=lambda *args:None,
+          set_path=lambda actor,path:calls.append(('path',len(path))))
+    route=[(NS(transform=NS(location=i)),None) for i in range(1100)]
+    manager=DeterministicSceneEvents(None,tm,None,route,list(range(1100)),[],42)
+    event=dict(id='compound',actor_role='lead',anchor_progress_m=1020,target_speed_kmh=20,
+               complete_progress_m=1090,activate_progress_m=900)
     manager._waypoint=lambda s:s
     def spawn(blueprints,waypoint,role,hidden_staging):
         assert waypoint==1020 and role=='lead' and hidden_staging is False
@@ -102,20 +112,24 @@ def test_route_slow_event_completes_without_hiding_actor():
     manager.states['bus_stop_passengers']='STAGED'
     calls=[]
     manager._activate_route_slow_vehicle=lambda e:calls.append('release')
+    manager._stage_route_slow_vehicle=lambda e,p:None
     manager._retire_event_actors=lambda e:calls.append('hide')
-    assert manager.update(949.9)==[]
-    manager.update(950)
-    manager.update(1100)
-    manager.update(1350)
-    manager.update(1400)
+    activation=event['activate_progress_m']
+    completion=event['complete_progress_m']
+    assert manager.update(activation-.1)==[]
+    manager.update(activation)
+    manager.update((activation+completion)/2)
+    manager.update(completion)
+    manager.update(completion+50)
     assert calls==['release']
     assert manager.states[event['id']]=='RESOLVED'
 
 
-def test_source_crossing_is_physical_and_not_retired_underground():
+def test_source_crossing_waits_physically_outside_crosswalk_and_is_retained():
     events=load_catalog('scene_2').events
     crossing=next(e for e in events if e['kind']=='crossing_pedestrian')
-    assert crossing['physical_staging'] and crossing['retain_after_completion']
+    assert crossing['physical_staging'] is True and crossing['retain_after_completion']
+    assert crossing['entry_staging_m'] >= crossing['endpoint_inset_m'] + 1.5
     manager=DeterministicSceneEvents(None,None,None,[],[],events,42)
     calls=[]
     manager._retire_actor=lambda role,actor:calls.append(role)

@@ -251,6 +251,15 @@ def _map_step_action(
             action = f"lane_change_{target_lane}"
         else:
             action = "decelerate"
+            if parser_action == "YIELD":
+                # Yield is a bounded approach, not a permanent zero setpoint
+                # inherited from a previous traffic-light stop.
+                target_speed_kmh = 10.0
+                for name, scale in (("target_speed_mps", 3.6), ("target_speed_kmh", 1.0)):
+                    if name in parameters:
+                        if not _is_number(parameters[name]) or parameters[name] < 0:
+                            raise ValueError("YIELD target speed must be finite and nonnegative")
+                        target_speed_kmh = min(target_speed_kmh, float(parameters[name]) * scale)
 
     if action not in CONTROL_ACTIONS:
         raise ValueError(f"unsupported DrivingIntent action {parser_action!r}")

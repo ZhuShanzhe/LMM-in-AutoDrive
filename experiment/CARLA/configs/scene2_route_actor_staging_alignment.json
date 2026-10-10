@@ -1,0 +1,13 @@
+{
+  "status": "requires_physical_retest",
+  "previous_release_m": 945.0,
+  "updated_release_m": 880.0,
+  "physical_spawn_progress_m": 800.0,
+  "anchor_m": 980.0,
+  "reason": "Avoid a progress-trigger circular dependency caused by a parked actor queuing traffic before the ego reaches its release point.",
+  "public_route_path": true,
+  "retains_physical_actor": true,
+  "no_runtime_relocation": true,
+  "original_evidence": "s2_aligned_v27_attempt10/persistent_stop_native_snapshot_initialized.json",
+  "population_and_safety_limits_unchanged": true
+}

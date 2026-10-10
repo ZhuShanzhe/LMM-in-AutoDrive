@@ -46,3 +46,20 @@ def test_failed_submission_and_unobserved_end_are_explicit(tmp_path):
     journal.apply(world,ego,control,8)
     journal.close()
     assert json.loads(path.read_text().splitlines()[-1])['status']=='NO_LATER_PHYSICS_OBSERVATION'
+
+
+def test_control_submission_timing_ends_after_actual_rpc(tmp_path,monkeypatch):
+    import evaluation.control_execution as module
+    control,_,world,ego=setup()
+    returned=[]
+    ego.apply_control=lambda value:returned.append(True)
+    def finished():
+        assert returned
+        return 250_000_000
+    monkeypatch.setattr(module.time,'perf_counter_ns',finished)
+    path=tmp_path/'timed.jsonl';journal=ControlExecutionJournal(path)
+    assert journal.apply(world,ego,control,8,response_started_ns=100_000_000)==150.
+    journal.close()
+    row=next(json.loads(line) for line in path.read_text().splitlines() if json.loads(line)['status']=='SUBMITTED')
+    assert row['policy_to_control_submission_wall_ms']==150.
+    assert 'excludes ASR' in row['latency_scope']

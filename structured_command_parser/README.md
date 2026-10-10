@@ -667,3 +667,11 @@ ModernBERT 默认后端、伪标签防泄漏切分、规则短路、模型服务
 
 以上结果验证的是 ASR 文本进入结构化解析后的动作、实体、约束与接口一致性，不包含
 ASR 识别准确率、中文到英文翻译时延或 CARLA 闭环任务成功率。
+
+## 2026-10-04 CARLA 源语言入口修复
+
+ModernBERT 的 `parse_text()` 仍接收英文。CARLA 已提供 `parser_text_en` 时优先使用该英文文本；未提供翻译且原文包含中文时，通过新增 `parse_source_text()` 使用现有中文规则解析，不再把中文送入英文 ModernBERT。该方法不加载新权重；返回结果记录 `source_kind=SOURCE_LANGUAGE_RULE` 与 `model_prediction=False`。不被规则覆盖的中文返回 `NEEDS_CLARIFICATION`，不能静默当作继续行驶。
+
+“前方路况危险，保持安全车速”现在解析为 `KEEP_LANE` 与 `driving_style=CONSERVATIVE`，不虚构数值速度，也不等同于持续降低到零；明确“减速”“停车”“避让”等动作仍沿用各自动作规则。该谨慎巡航规则整句匹配，不吞掉附加动作、否定或组合指令。已更新对应回归期望，旧实验结果没有改写。
+
+源语言边界、英文优先、未知中文澄清及动作不被替换的验证见 `experiment/CARLA/tests/test_source_language_contract.py`；实际闭环范围与失败项见 [背景交通诊断记录](../test/10_04/traffic_recovery/README.md)。这些修复不代表中文模型训练或三场景验收通过。

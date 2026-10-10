@@ -28,12 +28,25 @@ def record_source_version(output, report):
                                  capture_output=True, text=True, check=True)
         diff = subprocess.run(['git', 'diff', '--binary'], cwd=ROOT,
                               capture_output=True, check=True)
+        inventory = subprocess.run(['git','ls-files','-z','--cached','--others','--exclude-standard'],
+            cwd=ROOT,capture_output=True,check=True)
     except (OSError, subprocess.CalledProcessError):
         report['code_revision'] = None
         report['working_tree_dirty'] = None
         return
     report['code_revision'] = revision.stdout.strip()
     report['working_tree_dirty'] = bool(changed.stdout.strip())
+    records={}
+    prefixes=('experiment/CARLA/','lightweight_vla_adapter/','structured_command_parser/','scene_understanding/')
+    for raw in sorted(set(inventory.stdout.split(b'\0'))):
+        name=os.fsdecode(raw)
+        path=ROOT/name
+        if name.startswith(prefixes) and path.suffix in {'.py','.json','.toml','.yaml','.yml'} and path.is_file():
+            records[name]=hashlib.sha256(path.read_bytes()).hexdigest()
+    version_path=output/'source_files_sha256.json'
+    version_path.write_text(json.dumps(dict(code_revision=report['code_revision'],
+        scope='tracked and nonignored untracked runtime/config/test source',files=records),indent=2)+'\n')
+    report['source_inventory']=version_path.name
     if diff.stdout:
         path = output/'source_changes.patch'
         path.write_bytes(diff.stdout)
@@ -80,6 +93,7 @@ def build_command(scene, model_root, config, output, host, port, device, seconds
         options = ['basic_voice_urban_5km', '--map', SCENES[scene] + '_Opt', '--bind-task-geometry', '--scenario-config',
                    str(ROOT/'experiment/CARLA/configs/basic_voice_urban_5km.json'),
                    '--duration-s', str(seconds), '--decision-source', 'vla_scene_bridge',
+                   '--target-speed-kmh', '60',
                    '--command-parser-model', parser_model, '--command-parser-device', device]
         if stall_timeout_s > 0:
             options.extend(['--max-stall-s', str(stall_timeout_s)])
@@ -93,6 +107,7 @@ def build_command(scene, model_root, config, output, host, port, device, seconds
     else:
         runner = 'run_emergency_response_6km.py'
         options = ['--duration', str(seconds), '--event-variant', 'auto', '--seed', '42',
+                   '--ego-speed-kmh', '60',
                    '--record-ground-truth', '--ground-truth-every-n', '1',
                    '--ego-controller', 'vla-route-pid', '--vla-parser-model', parser_model,
                    '--vla-decision-every-n', '1']

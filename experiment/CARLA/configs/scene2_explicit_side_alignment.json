@@ -1,0 +1,14 @@
+{
+  "status": "configuration_alignment_requires_physical_retest",
+  "source_sha256": "6576e087b570379fd295a348c2312f10204c67857cfa47d380eb899e141a7f1f",
+  "previous_source_sha256": "8811c49d1a957b2b1c059d186031e26ea7c5e343f7ada697a4bf0671a4064f63",
+  "task_id": "s2_t05_cmd_04",
+  "original_step": "CHANGE_LANE:RETURN_WHEN_SAFE",
+  "updated_step": "CHANGE_LANE:RIGHT_WHEN_SAFE",
+  "reason": "Match the existing explicit right-side text and independently assessed RIGHT lane change; do not demand obsolete road-key equality.",
+  "task_count": 15,
+  "instruction_text_unchanged": true,
+  "independent_step_criteria_unchanged": true,
+  "runtime_original_lane_resolution_not_overridden": true,
+  "inference_deadlines_unchanged": true
+}

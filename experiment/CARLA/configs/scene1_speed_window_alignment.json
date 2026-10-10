@@ -1,0 +1,17 @@
+{
+  "status": "aligned_configuration_requires_new_physical_run",
+  "source_sha256": "abaaa6b58b77d78c856a8bf43d92d7d87bbb0cccdf808ec0032e21bbfa06c905",
+  "previous_source_sha256": "cef163f514e2438d3be2c5646678919c5e5b533c29e6d995322b7123b9796a7e",
+  "original_source_sha256": "b0612dd4c3438fef5ef5f571597ceab732c6f9ac752de491040ea557778023f5",
+  "task_id": "c10_keep_30",
+  "previous_trigger_m": 3400,
+  "updated_trigger_m": 3500,
+  "next_same_speed_task_trigger_m": 3600,
+  "reason": "Place the two speed-hold tasks on the verified continuous road after both junctions, preserving their separate two-second holds.",
+  "original_evidence": "s1_aligned_v28_attempt7/scene1_failures_audit.json",
+  "task_count": 15,
+  "timeout_unchanged": true,
+  "hold_and_speed_bounds_unchanged": true,
+  "route_unchanged": true,
+  "safety_and_inference_limits_unchanged": true
+}

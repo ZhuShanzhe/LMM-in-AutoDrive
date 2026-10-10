@@ -10,7 +10,7 @@ from .catalog import CONFIG_ROOT, ConfigError, load_catalog
 from .task_oracle import load_profile
 from .truth_capture import ActorBinding, SnapshotTruthCollector, RouteProjector
 from .monitor import TaskMonitor
-from .safety_events import SafetyLedger
+from .safety_events import SafetyLedger, lane_invasion_details
 
 
 def run_fixture(scene, selector, route_path, traffic_config_path, output, *,
@@ -181,9 +181,8 @@ def run_fixture(scene, selector, route_path, traffic_config_path, output, *,
                     other_actor_id=e.other_actor.id,other_actor_type=e.other_actor.type_id))
             else:
                 def on_lane(e):
-                    markings=[str(m.type) for m in e.crossed_lane_markings]
-                    ledger.record('lane_invasion',int(e.frame),markings=markings,
-                                  illegal=any('Solid' in m or m=='Curb' for m in markings))
+                    ledger.record('lane_invasion',int(e.frame),
+                                  **lane_invasion_details(e.crossed_lane_markings))
                 sensor.listen(on_lane)
         # RGB provides a frame heartbeat, not proof that event callbacks are complete.
         bp=world.get_blueprint_library().find('sensor.camera.rgb')

@@ -223,6 +223,10 @@ class FixedRouteTraffic:
     def tick(self, ego_vehicle, ego_progress_m=0.0):
         """Update scripted behavior and keep a stable visible traffic buffer."""
         self._tick_count += 1
+        if self._tick_count % 20 == 0 and self.config.get('rear_following_distance_m',0.)>0.:
+            from control.background_spacing import maintain_rear_spacing
+            maintain_rear_spacing(self.traffic_manager,ego_vehicle,self.actors,
+                self.config['rear_following_distance_m'])
         for item in self._scripted:
             if item["triggered"] or float(ego_progress_m) < item["trigger_at_progress_m"]:
                 continue

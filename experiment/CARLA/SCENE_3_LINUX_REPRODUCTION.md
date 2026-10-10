@@ -26,4 +26,4 @@ EGO_CONTROLLER=external bash experiment/CARLA/tools/run_scene3_linux.sh --durati
 
 `external` 模式不会由场景脚本施加车辆控制，模型/ROS/CARLA 客户端接管 `role_name=hero` 的 ego。默认 `route-pid` 用于验证场景自身；`behavior-agent` 仅用于 CARLA 基线对照。
 
-已有 7 个事件保持固定，不会在运行时随机新增变体。普通背景流只在切入到施工区窗口内活动；阻塞车道事件使用独立的前后间隙车辆，避免不同事件互相污染。
+当前保留 6 个工程分解事件用于覆盖赛事场景能力，不会在运行时随机新增事件。2026-10-06 移除了赛事文件未单独要求的维修车封路及定时释放换道间隙任务，关联维修车和两辆间隙车辆不再生成。施工锥桶、车道收窄、施工车辆、横穿行人与切入车辆仍保留；原始失败记录不改写为成功。详见 `docs/EVENT_SCOPE_AUDIT_20261006.md`。

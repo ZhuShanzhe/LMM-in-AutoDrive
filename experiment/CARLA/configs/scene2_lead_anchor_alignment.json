@@ -1,0 +1,20 @@
+{
+  "status": "candidate_not_yet_physically_validated",
+  "previous_source_sha256": "112d87c8d0523f8f3938ec3b5b0cc1c12523c6344f9f8371aa180c85614a6678",
+  "source_sha256": "7abcf42ea2220439314ce0e9299d34c6202ec56b42c7d8586654516f0e19cd6c",
+  "changes": {
+    "old_anchor_m": 1020.0,
+    "old_release_m": 1000.0,
+    "new_anchor_m": 980,
+    "new_release_m": 970,
+    "old_instruction_trigger_m": 800.0,
+    "new_instruction_trigger_m": 880
+  },
+  "instruction_trigger_m": 880,
+  "rationale": "Place the designated slow car ahead of the crossing exit and legal merge corridor, closer than the unrelated vehicle observed near 990 m. Target binding remains perception-only and independent truth continues to require the designated actor.",
+  "collision_threshold_unchanged": true,
+  "illegal_marking_threshold_unchanged": true,
+  "background_population_unchanged": true,
+  "task_count_unchanged": true,
+  "inference_deadlines_unchanged": true
+}

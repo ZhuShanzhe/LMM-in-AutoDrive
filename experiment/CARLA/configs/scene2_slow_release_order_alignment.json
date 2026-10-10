@@ -1,0 +1,19 @@
+{
+  "source_sha256": "cb2cb8fc616ec3119c10ec3f2f52710c6f956ebcd9aebb98ef8de428e0675f47",
+  "anchor_m": 955.0,
+  "release_m": 930.0,
+  "ambient_spawn_reservation_m": [
+    900.0,
+    1015.0
+  ],
+  "rationale": "Reserve initial ambient spawns near designated slow-car release. Actual generic passing target is acquired from RGB/LiDAR motion and may be another physical slow vehicle; nearest designated actor is not guaranteed.",
+  "evidence": "V50 observed binding was 16.05 m from designated role actor; episode truth contains configured roles only and cannot identify all ambient traffic. Independent binding images/body records are retained.",
+  "unchanged": [
+    "physical LiDAR/radar gating",
+    "speed limit",
+    "collision and illegal crossing thresholds",
+    "fresh target binding",
+    "rear clearance completion"
+  ],
+  "binding_artifacts": "First measured binding image/box/body saved independently of completion; diagnostic only."
+}

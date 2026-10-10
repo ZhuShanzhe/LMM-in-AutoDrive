@@ -1,0 +1,2351 @@
+{
+  "run": "s2_full_v140_newhost_attempt41",
+  "scope": "Post-hoc human engineering review, not official strict acceptance",
+  "raw_results_unchanged": true,
+  "human_requested_pass": [
+    "02",
+    "03",
+    "04",
+    "11"
+  ],
+  "raw_success": 11,
+  "raw_total": 15,
+  "supplementary_pass": 4,
+  "invalid_excluded": [],
+  "effective_pass": 15,
+  "effective_total": 15,
+  "independent_full_semantic_accuracy": null,
+  "competition_acceptance": false,
+  "criteria_changed_after_run": true,
+  "tasks": {
+    "s2_t05_cmd_01": {
+      "raw_status": "SUCCESS",
+      "raw_reason": "all_criteria_satisfied",
+      "supplementary_status": "RAW_REGISTERED_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_02": {
+      "raw_status": "TIMEOUT",
+      "raw_reason": "task_deadline",
+      "supplementary_status": "SUPPLEMENTARY_ENGINEERING_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_03": {
+      "raw_status": "TIMEOUT",
+      "raw_reason": "lane_change_window_closed",
+      "supplementary_status": "SUPPLEMENTARY_ENGINEERING_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_04": {
+      "raw_status": "SCENE_INVALID",
+      "raw_reason": "invalid_entry_fixture: prerequisite not independently completed: s2_t05_cmd_03",
+      "supplementary_status": "SUPPLEMENTARY_ENGINEERING_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_05": {
+      "raw_status": "SUCCESS",
+      "raw_reason": "all_criteria_satisfied",
+      "supplementary_status": "RAW_REGISTERED_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_06": {
+      "raw_status": "SUCCESS",
+      "raw_reason": "all_criteria_satisfied",
+      "supplementary_status": "RAW_REGISTERED_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_07": {
+      "raw_status": "SUCCESS",
+      "raw_reason": "all_criteria_satisfied",
+      "supplementary_status": "RAW_REGISTERED_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_08": {
+      "raw_status": "SUCCESS",
+      "raw_reason": "all_criteria_satisfied",
+      "supplementary_status": "RAW_REGISTERED_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_09": {
+      "raw_status": "SUCCESS",
+      "raw_reason": "all_criteria_satisfied",
+      "supplementary_status": "RAW_REGISTERED_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_10": {
+      "raw_status": "SUCCESS",
+      "raw_reason": "all_criteria_satisfied",
+      "supplementary_status": "RAW_REGISTERED_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_11": {
+      "raw_status": "TIMEOUT",
+      "raw_reason": "task_deadline",
+      "supplementary_status": "SUPPLEMENTARY_ENGINEERING_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_12": {
+      "raw_status": "SUCCESS",
+      "raw_reason": "all_criteria_satisfied",
+      "supplementary_status": "RAW_REGISTERED_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_13": {
+      "raw_status": "SUCCESS",
+      "raw_reason": "all_criteria_satisfied",
+      "supplementary_status": "RAW_REGISTERED_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_14": {
+      "raw_status": "SUCCESS",
+      "raw_reason": "all_criteria_satisfied",
+      "supplementary_status": "RAW_REGISTERED_PASS",
+      "included_in_effective_denominator": true
+    },
+    "s2_t05_cmd_15": {
+      "raw_status": "SUCCESS",
+      "raw_reason": "all_criteria_satisfied",
+      "supplementary_status": "RAW_REGISTERED_PASS",
+      "included_in_effective_denominator": true
+    }
+  },
+  "review_basis": {
+    "02": {
+      "original_instruction": "确认前方道路安全，保持右侧车道，并以30公里每小时继续行驶。",
+      "reason": "Traffic-constrained safety waiting, achieved near-target speed briefly; hold relaxed",
+      "strict_hold_s": 2,
+      "observed_ge28_hold_s": 0.7,
+      "maximum_kmh": 29.158296,
+      "near_stopped_s_in_180s": 87.85,
+      "evidence_frames": [
+        3011180,
+        3012060,
+        3014580
+      ]
+    },
+    "03": {
+      "original_instruction": "前方有慢车且路口有横穿行人，先减速礼让行人，确认安全后向左变道超越慢车。",
+      "reason": "Yielded first, then legal left lane change and overtaking after strict pre-junction window",
+      "strict_window_end_m": 930.4485,
+      "yield_pass_frame": 3019210,
+      "lane_change_frames": [
+        3020077,
+        3020252
+      ],
+      "passed_frame": 3020439,
+      "observed_rear_clearance_m_approximately": 16.17,
+      "expanded_window": "Until next command; original task TIMEOUT preserved"
+    },
+    "11": {
+      "original_instruction": "确认前方安全，保持当前车道，将车速调整至30公里每小时继续行驶。",
+      "reason": "Red signal and real transverse traffic blocked motion; resumed and held near target before next command",
+      "valid": true,
+      "near_stopped_s_in_180s": 151.85,
+      "observed_later_ge28_hold_s": 4.3,
+      "evidence_frames": [
+        3040600,
+        3042140,
+        3043340
+      ],
+      "completed_after_strict_deadline": true
+    },
+    "04": {
+      "original_instruction": "确认行人离开车道后保持右侧车道，并恢复到30公里每小时。",
+      "raw_status": "SCENE_INVALID",
+      "raw_reason": "prerequisite cmd03 not independently strictly completed",
+      "supplementary_status": "SUPPLEMENTARY_ENGINEERING_PASS",
+      "actual_behavior_completed": true,
+      "command_window_frames": [
+        3021193,
+        3021719
+      ],
+      "rightmost_aligned_speed_30_plusminus2_hold_s": 18.3,
+      "hold_frames": [
+        3021352,
+        3021718
+      ],
+      "command_transitions": [
+        {
+          "line": 12032,
+          "frame": 3021193,
+          "progress_m": 1261.297,
+          "speed_kmh": 28.265,
+          "ego_heading_deg": 90.54290008544922,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "plan_status": "ACTIVE",
+          "active_step_id": "s2_t05_cmd_04_step_01",
+          "steps": [
+            {
+              "step_id": "s2_t05_cmd_04_step_01",
+              "action": "WAIT",
+              "status": "ACTIVE",
+              "activation_frame_id": "carla_3021193",
+              "terminal_frame_id": null,
+              "reason_codes": [],
+              "speed_reference_kmh": null,
+              "resolved_target_speed_kmh": null
+            },
+            {
+              "step_id": "s2_t05_cmd_04_step_02",
+              "action": "KEEP_LANE",
+              "status": "PENDING",
+              "activation_frame_id": null,
+              "terminal_frame_id": null,
+              "reason_codes": [],
+              "speed_reference_kmh": null,
+              "resolved_target_speed_kmh": null
+            },
+            {
+              "step_id": "s2_t05_cmd_04_step_03",
+              "action": "SET_SPEED",
+              "status": "PENDING",
+              "activation_frame_id": null,
+              "terminal_frame_id": null,
+              "reason_codes": [],
+              "speed_reference_kmh": null,
+              "resolved_target_speed_kmh": null
+            }
+          ],
+          "instruction_contract": {
+            "schema_version": "active_instruction_contract/1.0",
+            "parsed_intent": "SET_SPEED",
+            "active_stop": false,
+            "speed_bound_kmh": 29.988,
+            "speed_contract_mode": "ABSOLUTE_SETPOINT",
+            "input_action": "stop",
+            "input_target_speed_kmh": 0.0,
+            "issued_action": "stop",
+            "issued_target_speed_kmh": 0.0,
+            "changed": false,
+            "policy_safety_credit": false,
+            "original_parsed_intent": "KEEP_LANE",
+            "inherited_cruise_goal": true,
+            "explicit_cruise_target_kmh": 29.988
+          },
+          "decision": {
+            "action": "stop",
+            "target_speed_kmh": 0.0,
+            "target_lane": null,
+            "reason": "active_plan_not_ready",
+            "source_step_action": "WAIT",
+            "blocked_reason_codes": [
+              "await_verified_wait_condition"
+            ]
+          }
+        },
+        {
+          "line": 12043,
+          "frame": 3021204,
+          "progress_m": 1263.297,
+          "speed_kmh": 15.737,
+          "ego_heading_deg": 90.61882781982422,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "plan_status": "ACTIVE",
+          "active_step_id": "s2_t05_cmd_04_step_02",
+          "steps": [
+            {
+              "step_id": "s2_t05_cmd_04_step_01",
+              "action": "WAIT",
+              "status": "COMPLETED",
+              "activation_frame_id": "carla_3021193",
+              "terminal_frame_id": "carla_3021204",
+              "reason_codes": [
+                "observed_condition_completed"
+              ],
+              "speed_reference_kmh": null,
+              "resolved_target_speed_kmh": null
+            },
+            {
+              "step_id": "s2_t05_cmd_04_step_02",
+              "action": "KEEP_LANE",
+              "status": "ACTIVE",
+              "activation_frame_id": "carla_3021204",
+              "terminal_frame_id": null,
+              "reason_codes": [],
+              "speed_reference_kmh": null,
+              "resolved_target_speed_kmh": null
+            },
+            {
+              "step_id": "s2_t05_cmd_04_step_03",
+              "action": "SET_SPEED",
+              "status": "PENDING",
+              "activation_frame_id": null,
+              "terminal_frame_id": null,
+              "reason_codes": [],
+              "speed_reference_kmh": null,
+              "resolved_target_speed_kmh": null
+            }
+          ],
+          "instruction_contract": {
+            "schema_version": "active_instruction_contract/1.0",
+            "parsed_intent": "SET_SPEED",
+            "active_stop": false,
+            "speed_bound_kmh": 29.988,
+            "speed_contract_mode": "ABSOLUTE_SETPOINT",
+            "input_action": "keep_lane",
+            "input_target_speed_kmh": 29.988,
+            "issued_action": "keep_lane",
+            "issued_target_speed_kmh": 29.988,
+            "changed": true,
+            "policy_safety_credit": false,
+            "original_parsed_intent": "KEEP_LANE",
+            "inherited_cruise_goal": true,
+            "explicit_cruise_target_kmh": 29.988
+          },
+          "decision": {
+            "action": "keep_lane",
+            "target_speed_kmh": 29.988,
+            "target_lane": null,
+            "reason": "active_instruction_speed_setpoint",
+            "source_step_action": "KEEP_LANE",
+            "blocked_reason_codes": []
+          }
+        },
+        {
+          "line": 12054,
+          "frame": 3021215,
+          "progress_m": 1265.297,
+          "speed_kmh": 11.037,
+          "ego_heading_deg": 90.63136291503906,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "plan_status": "ACTIVE",
+          "active_step_id": "s2_t05_cmd_04_step_03",
+          "steps": [
+            {
+              "step_id": "s2_t05_cmd_04_step_01",
+              "action": "WAIT",
+              "status": "COMPLETED",
+              "activation_frame_id": "carla_3021193",
+              "terminal_frame_id": "carla_3021204",
+              "reason_codes": [
+                "observed_condition_completed"
+              ],
+              "speed_reference_kmh": null,
+              "resolved_target_speed_kmh": null
+            },
+            {
+              "step_id": "s2_t05_cmd_04_step_02",
+              "action": "KEEP_LANE",
+              "status": "COMPLETED",
+              "activation_frame_id": "carla_3021204",
+              "terminal_frame_id": "carla_3021215",
+              "reason_codes": [
+                "observed_physical_completion",
+                "observed_lane_position_right"
+              ],
+              "speed_reference_kmh": null,
+              "resolved_target_speed_kmh": null
+            },
+            {
+              "step_id": "s2_t05_cmd_04_step_03",
+              "action": "SET_SPEED",
+              "status": "ACTIVE",
+              "activation_frame_id": "carla_3021215",
+              "terminal_frame_id": null,
+              "reason_codes": [],
+              "speed_reference_kmh": 11.036981,
+              "resolved_target_speed_kmh": 29.988
+            }
+          ],
+          "instruction_contract": {
+            "schema_version": "active_instruction_contract/1.0",
+            "parsed_intent": "SET_SPEED",
+            "active_stop": false,
+            "speed_bound_kmh": 29.988,
+            "speed_contract_mode": "ABSOLUTE_SETPOINT",
+            "input_action": "keep_lane",
+            "input_target_speed_kmh": 29.988,
+            "issued_action": "keep_lane",
+            "issued_target_speed_kmh": 29.988,
+            "changed": true,
+            "policy_safety_credit": false,
+            "original_parsed_intent": "SET_SPEED",
+            "inherited_cruise_goal": false,
+            "explicit_cruise_target_kmh": 29.988
+          },
+          "decision": {
+            "action": "keep_lane",
+            "target_speed_kmh": 29.988,
+            "target_lane": null,
+            "reason": "active_instruction_speed_setpoint",
+            "source_step_action": "SET_SPEED",
+            "blocked_reason_codes": []
+          }
+        },
+        {
+          "line": 12189,
+          "frame": 3021350,
+          "progress_m": 1311.297,
+          "speed_kmh": 28.103,
+          "ego_heading_deg": 90.85779571533203,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "plan_status": "COMPLETED",
+          "active_step_id": null,
+          "steps": [
+            {
+              "step_id": "s2_t05_cmd_04_step_01",
+              "action": "WAIT",
+              "status": "COMPLETED",
+              "activation_frame_id": "carla_3021193",
+              "terminal_frame_id": "carla_3021204",
+              "reason_codes": [
+                "observed_condition_completed"
+              ],
+              "speed_reference_kmh": null,
+              "resolved_target_speed_kmh": null
+            },
+            {
+              "step_id": "s2_t05_cmd_04_step_02",
+              "action": "KEEP_LANE",
+              "status": "COMPLETED",
+              "activation_frame_id": "carla_3021204",
+              "terminal_frame_id": "carla_3021215",
+              "reason_codes": [
+                "observed_physical_completion",
+                "observed_lane_position_right"
+              ],
+              "speed_reference_kmh": null,
+              "resolved_target_speed_kmh": null
+            },
+            {
+              "step_id": "s2_t05_cmd_04_step_03",
+              "action": "SET_SPEED",
+              "status": "COMPLETED",
+              "activation_frame_id": "carla_3021215",
+              "terminal_frame_id": "carla_3021350",
+              "reason_codes": [
+                "observed_physical_completion"
+              ],
+              "speed_reference_kmh": 11.036981,
+              "resolved_target_speed_kmh": 29.988
+            }
+          ],
+          "instruction_contract": {
+            "schema_version": "active_instruction_contract/1.0",
+            "parsed_intent": "SET_SPEED",
+            "active_stop": false,
+            "speed_bound_kmh": 29.988,
+            "speed_contract_mode": "ABSOLUTE_SETPOINT",
+            "input_action": "keep_lane",
+            "input_target_speed_kmh": 29.988,
+            "issued_action": "keep_lane",
+            "issued_target_speed_kmh": 29.988,
+            "changed": true,
+            "policy_safety_credit": false,
+            "original_parsed_intent": "SET_SPEED",
+            "inherited_cruise_goal": false,
+            "explicit_cruise_target_kmh": 29.988
+          },
+          "decision": {
+            "action": "keep_lane",
+            "target_speed_kmh": 29.988,
+            "target_lane": null,
+            "reason": "active_instruction_speed_setpoint",
+            "source_step_action": "KEEP_LANE",
+            "blocked_reason_codes": []
+          }
+        }
+      ],
+      "independently_observed_pedestrian_outside_route": true,
+      "samples": [
+        {
+          "frame": 3021193,
+          "route_m": 1261.297,
+          "speed_kmh": 28.264742530167226,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.002960470537832752,
+          "heading_error_deg": -0.1217346191406203,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.264742530167226,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021200,
+          "route_m": 1263.297,
+          "speed_kmh": 22.962636335164184,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": -0.0019685389795348566,
+          "heading_error_deg": -0.1755142211914068,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 22.962636335164184,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021204,
+          "route_m": 1263.297,
+          "speed_kmh": 15.737369262101678,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": -0.00566140423990323,
+          "heading_error_deg": -0.04580688476562347,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 15.737369262101678,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021215,
+          "route_m": 1265.297,
+          "speed_kmh": 11.036980513063646,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": -0.006989050821870978,
+          "heading_error_deg": -0.0332717895507852,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 11.036980513063646,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021220,
+          "route_m": 1267.297,
+          "speed_kmh": 13.646113645278962,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": -0.007477365594924385,
+          "heading_error_deg": -0.033210754394524554,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 13.646113645278962,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021240,
+          "route_m": 1271.297,
+          "speed_kmh": 26.720612826277904,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": -0.010468329532790022,
+          "heading_error_deg": -0.03279876708983518,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 26.720612826277904,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021260,
+          "route_m": 1279.297,
+          "speed_kmh": 22.976031422165203,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": -0.01332197360859333,
+          "heading_error_deg": 0.021133422851564766,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 22.976031422165203,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021280,
+          "route_m": 1285.297,
+          "speed_kmh": 24.933587642698335,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": -0.007431636557309984,
+          "heading_error_deg": 0.0844116210937505,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 24.933587642698335,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021300,
+          "route_m": 1293.297,
+          "speed_kmh": 26.893830777046254,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.00619544805057104,
+          "heading_error_deg": 0.12413024902343708,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 26.893830777046254,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021320,
+          "route_m": 1301.297,
+          "speed_kmh": 27.424768713363274,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.024995577875562176,
+          "heading_error_deg": 0.15620422363282024,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 27.424768713363274,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021340,
+          "route_m": 1307.297,
+          "speed_kmh": 27.89962494487686,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.04803807365786956,
+          "heading_error_deg": 0.18209075927733978,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 27.89962494487686,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021350,
+          "route_m": 1311.297,
+          "speed_kmh": 28.10328869263324,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.06099377246815058,
+          "heading_error_deg": 0.19316101074218978,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.10328869263324,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021360,
+          "route_m": 1315.297,
+          "speed_kmh": 28.287618490352816,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.07474296342538227,
+          "heading_error_deg": 0.20314788818359783,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.287618490352816,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021380,
+          "route_m": 1323.297,
+          "speed_kmh": 28.60536184706805,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.057178712358952125,
+          "heading_error_deg": -0.3372421264648357,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.60536184706805,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021400,
+          "route_m": 1331.297,
+          "speed_kmh": 28.86505635290747,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.0854706749198456,
+          "heading_error_deg": 0.8227310180664128,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.86505635290747,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 90.66463470458984
+          }
+        },
+        {
+          "frame": 3021420,
+          "route_m": 1340.636,
+          "speed_kmh": 29.06783868609534,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.035686582362200216,
+          "heading_error_deg": -2.0290832519531232,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 29.06783868609534,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 93.20201873779297
+          }
+        },
+        {
+          "frame": 3021440,
+          "route_m": 1347.668,
+          "speed_kmh": 28.7244410846339,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.06551500280459749,
+          "heading_error_deg": 0.7608489990234316,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.7244410846339,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 98.31527709960938
+          }
+        },
+        {
+          "frame": 3021460,
+          "route_m": 1356.457,
+          "speed_kmh": 28.601150970067355,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.03878086042905601,
+          "heading_error_deg": -0.9527816772460891,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.601150970067355,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 103.3367691040039
+          }
+        },
+        {
+          "frame": 3021480,
+          "route_m": 1363.489,
+          "speed_kmh": 28.882311128047263,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.10688653613885063,
+          "heading_error_deg": 0.1635665893554659,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.882311128047263,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 108.67469787597656
+          }
+        },
+        {
+          "frame": 3021500,
+          "route_m": 1372.278,
+          "speed_kmh": 29.084362998384645,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.03826458095550096,
+          "heading_error_deg": 0.11991882324217784,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 29.084362998384645,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 113.77275848388672
+          }
+        },
+        {
+          "frame": 3021520,
+          "route_m": 1379.309,
+          "speed_kmh": 28.559972446176882,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.07443781501829187,
+          "heading_error_deg": -1.3003921508789174,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.559972446176882,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 118.88273620605469
+          }
+        },
+        {
+          "frame": 3021540,
+          "route_m": 1388.099,
+          "speed_kmh": 28.645699492095222,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.07538996086823907,
+          "heading_error_deg": 0.77570343017578,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.645699492095222,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 123.90025329589844
+          }
+        },
+        {
+          "frame": 3021560,
+          "route_m": 1395.13,
+          "speed_kmh": 28.88584716758178,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.03137574078802648,
+          "heading_error_deg": -0.933517456054679,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.88584716758178,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 129.24290466308594
+          }
+        },
+        {
+          "frame": 3021580,
+          "route_m": 1403.919,
+          "speed_kmh": 29.110236289358387,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.10516498995751859,
+          "heading_error_deg": 0.024505615234361025,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 29.110236289358387,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 134.3450927734375
+          }
+        },
+        {
+          "frame": 3021600,
+          "route_m": 1412.709,
+          "speed_kmh": 28.567169547394652,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.052100332242214414,
+          "heading_error_deg": 0.3986358642578207,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.567169547394652,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 139.4550323486328
+          }
+        },
+        {
+          "frame": 3021620,
+          "route_m": 1419.74,
+          "speed_kmh": 28.65104613622442,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.05818600454839898,
+          "heading_error_deg": -1.5629730224609546,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.65104613622442,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 144.75332641601562
+          }
+        },
+        {
+          "frame": 3021640,
+          "route_m": 1428.53,
+          "speed_kmh": 28.899559904735483,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.0915243523985957,
+          "heading_error_deg": 0.648406982421885,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.899559904735483,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 149.81924438476562
+          }
+        },
+        {
+          "frame": 3021660,
+          "route_m": 1435.561,
+          "speed_kmh": 29.105514932357764,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.03340588190343349,
+          "heading_error_deg": -0.45947265625000056,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 29.105514932357764,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 154.92071533203125
+          }
+        },
+        {
+          "frame": 3021680,
+          "route_m": 1444.35,
+          "speed_kmh": 28.458811968445975,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.09523554099900905,
+          "heading_error_deg": -0.5565338134765494,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.458811968445975,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 160.02090454101562
+          }
+        },
+        {
+          "frame": 3021700,
+          "route_m": 1451.382,
+          "speed_kmh": 28.679471482074764,
+          "lane": {
+            "road_id": 38,
+            "section_id": 0,
+            "lane_id": 4
+          },
+          "right_lane_ref": null,
+          "lateral_error_m": 0.05824943840355702,
+          "heading_error_deg": 0.3766021728515705,
+          "rightmost_aligned": true,
+          "independent_speed_kmh": 28.679471482074764,
+          "pedestrian_role": {
+            "candidate_ids": [
+              7118
+            ],
+            "binding": {
+              "actor_id": 7118,
+              "half_length_m": 0.18767888844013214,
+              "half_width_m": 0.18767888844013214,
+              "initial_route_s_m": 936.6706434478765,
+              "offset_x_m": 0.0,
+              "offset_y_m": 0.0,
+              "box_yaw_deg": 0.0
+            },
+            "route_s_m": 929.7050292567144,
+            "route_error_m": 15.118161045625754,
+            "route_yaw_deg": -88.46799018953591,
+            "status": "BOUND"
+          },
+          "independent_ego_lane": {
+            "key": [
+              38,
+              0,
+              4
+            ],
+            "junction": false,
+            "yaw": 165.31797790527344
+          }
+        }
+      ],
+      "raw_result_unchanged": true,
+      "limitations": [
+        "Not a rerun of original strict oracle; actual execution and independent snapshots reviewed"
+      ]
+    }
+  },
+  "engineering_endpoint": {
+    "engineering_endpoint_completed": true,
+    "route_progress_m": 8001.023122243642,
+    "route_length_m": 8001.023122243642,
+    "original_start": true,
+    "restart_or_world_intervention": false,
+    "ground_truth_contiguous_frames": 48857,
+    "ground_truth_first_frame": 3009163,
+    "ground_truth_last_frame": 3058019,
+    "simulation_duration_s": 2442.85,
+    "wall_seconds": 7484.7152099609375,
+    "raw_runner_exit_code": 2,
+    "raw_strict_tasks": {
+      "s2_t05_cmd_01": {
+        "task_id": "s2_t05_cmd_01",
+        "status": "SUCCESS",
+        "completed_steps": 3,
+        "reason": "all_criteria_satisfied",
+        "instruction_status": "UNVERIFIED",
+        "coverage": {
+          "status": "NOT_REVIEWED",
+          "missing": [
+            "semantic_coverage_review"
+          ]
+        }
+      },
+      "s2_t05_cmd_02": {
+        "task_id": "s2_t05_cmd_02",
+        "status": "TIMEOUT",
+        "completed_steps": 1,
+        "reason": "task_deadline",
+        "instruction_status": "TIMEOUT",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "all_background_actor_path_clearance",
+            "continuous_right_lane_requirement"
+          ]
+        }
+      },
+      "s2_t05_cmd_03": {
+        "task_id": "s2_t05_cmd_03",
+        "status": "TIMEOUT",
+        "completed_steps": 1,
+        "reason": "lane_change_window_closed",
+        "instruction_status": "TIMEOUT",
+        "coverage": {
+          "status": "NOT_REVIEWED",
+          "missing": [
+            "semantic_coverage_review"
+          ]
+        }
+      },
+      "s2_t05_cmd_04": {
+        "status": "SCENE_INVALID",
+        "reason": "invalid_entry_fixture: prerequisite not independently completed: s2_t05_cmd_03"
+      },
+      "s2_t05_cmd_05": {
+        "task_id": "s2_t05_cmd_05",
+        "status": "SUCCESS",
+        "completed_steps": 4,
+        "reason": "all_criteria_satisfied",
+        "instruction_status": "UNVERIFIED",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "curb_pull_over_geometry",
+            "continuous_conflict_monitoring_before_wait_step",
+            "overlapping_command_arbitration",
+            "all_background_actor_safety"
+          ]
+        }
+      },
+      "s2_t05_cmd_06": {
+        "task_id": "s2_t05_cmd_06",
+        "status": "SUCCESS",
+        "completed_steps": 3,
+        "reason": "all_criteria_satisfied",
+        "instruction_status": "UNVERIFIED",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "continuous_right_lane_until_next_command",
+            "all_background_actor_safety"
+          ]
+        }
+      },
+      "s2_t05_cmd_07": {
+        "task_id": "s2_t05_cmd_07",
+        "status": "SUCCESS",
+        "completed_steps": 1,
+        "reason": "all_criteria_satisfied",
+        "instruction_status": "UNVERIFIED",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "semantic_caution_response_not_independently_scored"
+          ]
+        }
+      },
+      "s2_t05_cmd_08": {
+        "task_id": "s2_t05_cmd_08",
+        "status": "SUCCESS",
+        "completed_steps": 1,
+        "reason": "all_criteria_satisfied",
+        "instruction_status": "UNVERIFIED",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "continuous_following_distance_not_independently_scored"
+          ]
+        }
+      },
+      "s2_t05_cmd_09": {
+        "task_id": "s2_t05_cmd_09",
+        "status": "SUCCESS",
+        "completed_steps": 3,
+        "reason": "all_criteria_satisfied",
+        "instruction_status": "UNVERIFIED",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "independent_full_instruction_semantic_review",
+            "continuous_all_background_actor_path_clearance"
+          ]
+        }
+      },
+      "s2_t05_cmd_10": {
+        "task_id": "s2_t05_cmd_10",
+        "status": "SUCCESS",
+        "completed_steps": 2,
+        "reason": "all_criteria_satisfied",
+        "instruction_status": "UNVERIFIED",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "all_background_actor_path_clearance",
+            "continuous_lane_requirement"
+          ]
+        }
+      },
+      "s2_t05_cmd_11": {
+        "task_id": "s2_t05_cmd_11",
+        "status": "TIMEOUT",
+        "completed_steps": 0,
+        "reason": "task_deadline",
+        "instruction_status": "TIMEOUT",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "independent_full_instruction_semantic_review",
+            "continuous_all_background_actor_path_clearance"
+          ]
+        }
+      },
+      "s2_t05_cmd_12": {
+        "task_id": "s2_t05_cmd_12",
+        "status": "SUCCESS",
+        "completed_steps": 3,
+        "reason": "all_criteria_satisfied",
+        "instruction_status": "UNVERIFIED",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "independent_full_instruction_semantic_review",
+            "continuous_all_background_actor_path_clearance"
+          ]
+        }
+      },
+      "s2_t05_cmd_13": {
+        "task_id": "s2_t05_cmd_13",
+        "status": "SUCCESS",
+        "completed_steps": 2,
+        "reason": "all_criteria_satisfied",
+        "instruction_status": "UNVERIFIED",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "independent_full_instruction_semantic_review",
+            "continuous_all_background_actor_path_clearance"
+          ]
+        }
+      },
+      "s2_t05_cmd_14": {
+        "task_id": "s2_t05_cmd_14",
+        "status": "SUCCESS",
+        "completed_steps": 3,
+        "reason": "all_criteria_satisfied",
+        "instruction_status": "UNVERIFIED",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "independent_full_instruction_semantic_review",
+            "continuous_all_background_actor_path_clearance"
+          ]
+        }
+      },
+      "s2_t05_cmd_15": {
+        "task_id": "s2_t05_cmd_15",
+        "status": "SUCCESS",
+        "completed_steps": 2,
+        "reason": "all_criteria_satisfied",
+        "instruction_status": "UNVERIFIED",
+        "coverage": {
+          "status": "PARTIAL",
+          "missing": [
+            "independent_full_instruction_semantic_review",
+            "continuous_all_background_actor_path_clearance"
+          ]
+        }
+      }
+    },
+    "configured_plans": {
+      "s2_t05_cmd_01-configured": "COMPLETED",
+      "s2_t05_cmd_02-configured": "COMPLETED",
+      "s2_t05_cmd_03-configured": "COMPLETED",
+      "s2_t05_cmd_04-configured": "COMPLETED",
+      "s2_t05_cmd_05-configured": "COMPLETED",
+      "s2_t05_cmd_06-configured": "COMPLETED",
+      "s2_t05_cmd_07-configured": "COMPLETED",
+      "s2_t05_cmd_08-configured": "COMPLETED",
+      "s2_t05_cmd_09-configured": "COMPLETED",
+      "s2_t05_cmd_10-configured": "COMPLETED",
+      "s2_t05_cmd_11-configured": "COMPLETED",
+      "s2_t05_cmd_12-configured": "COMPLETED",
+      "s2_t05_cmd_13-configured": "COMPLETED",
+      "s2_t05_cmd_14-configured": "COMPLETED",
+      "s2_t05_cmd_15-configured": "COMPLETED"
+    },
+    "manual_instruction_accuracy": null,
+    "manual_review_status": "PENDING",
+    "collision_count": 0,
+    "restricted_lane_invasion_count": 0,
+    "broken_marking_events": 9,
+    "traffic_compliance": {
+      "scope": "Independent snapshot speed and front-bumper stop-line crossing audit; not policy input",
+      "status": "NO_RECORDED_VIOLATION",
+      "frames": 48857,
+      "speed_limit_valid_frames": 48857,
+      "speeding_frames": 0,
+      "max_speed_excess_kmh": 0.0,
+      "red_light_violations": 0,
+      "stop_line_count": 111,
+      "crossings": [
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_17",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": -0.000899624711873844,
+          "previous_front_distance_m": -0.006866010417327144,
+          "current_front_distance_m": 0.06527021439169425,
+          "frame": 3010483,
+          "sim_time_s": 28979.182237189263,
+          "traffic_light_actor_ids": [
+            107
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_65",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": -0.028804047081921177,
+          "previous_front_distance_m": -0.2089194432630019,
+          "current_front_distance_m": 0.06656236255610987,
+          "frame": 3011893,
+          "sim_time_s": 29049.682238239795,
+          "traffic_light_actor_ids": [
+            84
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_5",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": -0.07966192572438556,
+          "previous_front_distance_m": -0.048411295720076936,
+          "current_front_distance_m": 0.03275019051868726,
+          "frame": 3013150,
+          "sim_time_s": 29112.532239176333,
+          "traffic_light_actor_ids": [
+            112
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_43",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": 0.0007256973983608436,
+          "previous_front_distance_m": -0.04135591807228754,
+          "current_front_distance_m": 0.04011734529222049,
+          "frame": 3014661,
+          "sim_time_s": 29188.082240302116,
+          "traffic_light_actor_ids": [
+            95
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_5",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": 0.06811480684093786,
+          "previous_front_distance_m": -0.23596580974280595,
+          "current_front_distance_m": 0.03950474946103975,
+          "frame": 3016725,
+          "sim_time_s": 29291.282241839916,
+          "traffic_light_actor_ids": [
+            112
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_103",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": 0.021276839477051144,
+          "previous_front_distance_m": -0.21690453955850836,
+          "current_front_distance_m": 0.058577643669762626,
+          "frame": 3017933,
+          "sim_time_s": 29351.682242739946,
+          "traffic_light_actor_ids": [
+            65
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_109",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": 0.021996010650048397,
+          "previous_front_distance_m": -0.07308120393220453,
+          "current_front_distance_m": 0.023043571992331206,
+          "frame": 3018565,
+          "sim_time_s": 29383.282243210822,
+          "traffic_light_actor_ids": [
+            62
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_9",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": 0.0713608039494546,
+          "previous_front_distance_m": -0.07791022337590704,
+          "current_front_distance_m": 0.0041558856425358715,
+          "frame": 3018955,
+          "sim_time_s": 29402.782243501395,
+          "traffic_light_actor_ids": [
+            110
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_17",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": 0.0722759451877019,
+          "previous_front_distance_m": -0.10115172311230997,
+          "current_front_distance_m": 0.0058188786199739485,
+          "frame": 3022204,
+          "sim_time_s": 29565.23224592209,
+          "traffic_light_actor_ids": [
+            107
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_12",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": 0.06444969026685735,
+          "previous_front_distance_m": -0.06298026713573472,
+          "current_front_distance_m": 0.147329245633816,
+          "frame": 3026725,
+          "sim_time_s": 29791.282249290496,
+          "traffic_light_actor_ids": [
+            109
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_17",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": -0.07897980072422427,
+          "previous_front_distance_m": -0.10637880697884312,
+          "current_front_distance_m": 0.01757333195018203,
+          "frame": 3030390,
+          "sim_time_s": 29974.532252021134,
+          "traffic_light_actor_ids": [
+            107
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_12",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": 0.039113994403352045,
+          "previous_front_distance_m": -0.10982811512000358,
+          "current_front_distance_m": 0.1692318992572934,
+          "frame": 3037563,
+          "sim_time_s": 30333.182257365435,
+          "traffic_light_actor_ids": [
+            109
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_17",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": -0.07680035147722554,
+          "previous_front_distance_m": -0.02524375027353503,
+          "current_front_distance_m": 0.07013574640540907,
+          "frame": 3040315,
+          "sim_time_s": 30470.782259415835,
+          "traffic_light_actor_ids": [
+            107
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_12",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": 0.025709128867155644,
+          "previous_front_distance_m": -0.17112015423549884,
+          "current_front_distance_m": 0.09120047441842374,
+          "frame": 3046621,
+          "sim_time_s": 30786.08226411417,
+          "traffic_light_actor_ids": [
+            109
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_17",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": -0.028384723063244594,
+          "previous_front_distance_m": -0.013089779368026081,
+          "current_front_distance_m": 0.07540864281675928,
+          "frame": 3049356,
+          "sim_time_s": 30922.832266151905,
+          "traffic_light_actor_ids": [
+            107
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_12",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": -0.023742310643491863,
+          "previous_front_distance_m": -0.005498000309198553,
+          "current_front_distance_m": 0.26076951610378096,
+          "frame": 3053015,
+          "sim_time_s": 31105.782268878073,
+          "traffic_light_actor_ids": [
+            109
+          ]
+        },
+        {
+          "status": "PERMITTED_CROSSING",
+          "line_id": "stopline_17",
+          "previous_signal": "Green",
+          "current_signal": "Green",
+          "lateral_at_crossing_m": -0.05105653077561002,
+          "previous_front_distance_m": -0.06389269658001372,
+          "current_front_distance_m": 0.03743409696808743,
+          "frame": 3055724,
+          "sim_time_s": 31241.232270896435,
+          "traffic_light_actor_ids": [
+            107
+          ]
+        }
+      ],
+      "uncertain_crossings": [],
+      "capture_errors": [],
+      "speed_tolerance_kmh": 0.0001,
+      "limitations": [
+        "speed limit uses simulator vehicle API, not independently reconstructed sign history",
+        "stop-line signal transitions remain explicit ambiguous evidence",
+        "does not cover every traffic-rule category"
+      ]
+    },
+    "safety": {
+      "events": [
+        {
+          "kind": "lane_invasion",
+          "frame": 3020108,
+          "markings": [
+            "Broken"
+          ],
+          "illegal": false
+        },
+        {
+          "kind": "lane_invasion",
+          "frame": 3020140,
+          "markings": [
+            "Broken"
+          ],
+          "illegal": false
+        },
+        {
+          "kind": "lane_invasion",
+          "frame": 3020175,
+          "markings": [
+            "Broken"
+          ],
+          "illegal": false
+        },
+        {
+          "kind": "lane_invasion",
+          "frame": 3020205,
+          "markings": [
+            "Broken"
+          ],
+          "illegal": false
+        },
+        {
+          "kind": "lane_invasion",
+          "frame": 3020473,
+          "markings": [
+            "Broken"
+          ],
+          "illegal": false
+        },
+        {
+          "kind": "lane_invasion",
+          "frame": 3020474,
+          "markings": [
+            "Broken"
+          ],
+          "illegal": false
+        },
+        {
+          "kind": "lane_invasion",
+          "frame": 3020500,
+          "markings": [
+            "Broken"
+          ],
+          "illegal": false
+        },
+        {
+          "kind": "lane_invasion",
+          "frame": 3020522,
+          "markings": [
+            "Broken"
+          ],
+          "illegal": false
+        },
+        {
+          "kind": "lane_invasion",
+          "frame": 3020551,
+          "markings": [
+            "Broken"
+          ],
+          "illegal": false
+        }
+      ],
+      "late_events": [],
+      "sealed": true,
+      "coverage": [
+        "collision",
+        "solid_lane_marking"
+      ],
+      "limitations": [
+        "no_transport_ack",
+        "red_light_and_other_violations_not_measured"
+      ]
+    },
+    "latency_ms": {
+      "full_decision_latency_ms": {
+        "n": 48857,
+        "p50": 72.736,
+        "p95": 140.8284,
+        "maximum": 1181.54,
+        "over_150ms": 1496
+      },
+      "text_to_control_command_wall_ms": {
+        "n": 48857,
+        "p50": 72.736,
+        "p95": 140.8284,
+        "maximum": 1181.54,
+        "over_150ms": 1496
+      },
+      "sensor_to_decision_response_ms": {
+        "n": 48857,
+        "p50": 72.736,
+        "p95": 140.8284,
+        "maximum": 1181.54,
+        "over_150ms": 1496
+      }
+    },
+    "source_changes_independently_checked": [],
+    "decision_log_sha256": "df610cf1b8552341a39947f81f0e6c884d62877ec1f3bd5dd9be274f126ab18b",
+    "decision_hash_scope": "Closed summarizer result; independent second hash pending",
+    "competition_acceptance": false,
+    "limitations": [
+      "Raw strict failures retained, not relabeled",
+      "No ASR accuracy or J6P measurement",
+      "Full instruction semantic review remains pending"
+    ]
+  },
+  "evidence": "07_测试日志/s2_full_v140_newhost_attempt41/timeout_review_v1/",
+  "limitations": [
+    "Other raw registered passes retain incomplete semantic coverage",
+    "Do not report effective count as independent semantic accuracy",
+    "Safety rules and original task results were not weakened or overwritten"
+  ]
+}

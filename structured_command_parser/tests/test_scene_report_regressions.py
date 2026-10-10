@@ -71,7 +71,8 @@ SCENE_2_CASES = (
 
 
 SCENE_3_CASES = (
-    ("前方路况危险，保持安全车速。", {"ADJUST_SPEED"}),
+    # A cautious speed policy is not an unconditional decrement from standstill.
+    ("前方路况危险，保持安全车速。", {"KEEP_LANE"}),
     ("雨天路面湿滑，降低车速并保持与前车安全距离。", {"ADJUST_SPEED", "FOLLOW"}),
     ("能见度差，保持右侧车道，车速不高于40公里每小时。", {"KEEP_LANE", "SET_SPEED"}),
     ("前车距离过近，减速拉开车距，准备随时刹车。", {"ADJUST_SPEED", "FOLLOW"}),

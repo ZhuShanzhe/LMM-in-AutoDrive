@@ -76,6 +76,35 @@ def _driving_lane_family(waypoint: Any) -> list[Any]:
     return [*reversed(left), waypoint, *right]
 
 
+def continuous_corridor_waypoint(previous, nominal, sample_distance_m):
+    """Preserve the proven lane through a junction instead of resetting its rank."""
+    if previous is None:
+        return nominal
+    if not (getattr(previous,'is_junction',False) or getattr(nominal,'is_junction',False)):
+        return nominal
+    if sample_distance_m<=1e-4:
+        family=_driving_lane_family(nominal)
+        return previous if any((member.road_id,member.section_id,member.lane_id)==
+            (previous.road_id,previous.section_id,previous.lane_id)
+            and member.transform.location.distance(previous.transform.location)<=.05 for member in family) else nominal
+    if not callable(getattr(previous,'next',None)):
+        return nominal
+    candidates=[]
+    for adjustment in (0.,.25,.5,.75,-.25,-.5):
+        candidates.extend(previous.next(max(.05,sample_distance_m+adjustment)))
+    family=_driving_lane_family(nominal)
+    proven=[]
+    for member in family:
+        key=(member.road_id,member.section_id,member.lane_id)
+        for candidate in candidates:
+            if key!=(candidate.road_id,candidate.section_id,candidate.lane_id):continue
+            delta=abs((member.transform.rotation.yaw-candidate.transform.rotation.yaw+180.)%360.-180.)
+            error=candidate.transform.location.distance(member.transform.location)
+            if error<=.75 and delta<=10. and abs(member.transform.location.z-candidate.transform.location.z)<=.5:
+                proven.append((member.transform.location.distance(nominal.transform.location),error,member))
+    return min(proven,key=lambda item:(item[0],item[1]))[2] if proven else nominal
+
+
 def _roadside_lane(waypoint: Any, lane_type: str, sides=("right", "left")) -> Any | None:
     wanted = lane_type.lower()
     for side in sides:
@@ -180,6 +209,8 @@ class Town05RouteMapAdapter:
         if spacing_m <= 0.0:
             raise ValueError("traffic path spacing must be positive")
         locations: list[Any] = []
+        previous_waypoint=self.logical_waypoint(logical_lane_id,start_progress_m) or self.route_waypoint(start_progress_m)
+        previous_progress=float(start_progress_m)
         next_progress_m = float(start_progress_m) + spacing_m
         for (route_waypoint, _road_option), progress_m in zip(
             self.route,
@@ -197,7 +228,10 @@ class Town05RouteMapAdapter:
                     )
                     or route_waypoint
                 )
+            selected=continuous_corridor_waypoint(previous_waypoint,selected,
+                float(progress_m)-previous_progress)
             locations.append(selected.transform.location)
+            previous_waypoint=selected;previous_progress=float(progress_m)
             next_progress_m = float(progress_m) + spacing_m
         final_location = self.route[-1][0].transform.location
         if not locations or locations[-1] is not final_location:

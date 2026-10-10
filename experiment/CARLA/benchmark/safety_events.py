@@ -5,6 +5,13 @@ import time
 from .catalog import ConfigError
 
 
+def lane_invasion_details(crossed_lane_markings):
+    """Preserve simulator-reported markings while retaining the existing rule."""
+    markings = [str(getattr(marking, 'type', marking)) for marking in crossed_lane_markings]
+    return dict(markings=markings,
+                illegal=any('Solid' in marking or marking == 'Curb' for marking in markings))
+
+
 class SafetyLedger:
     def __init__(self):
         self.lock = threading.Lock()

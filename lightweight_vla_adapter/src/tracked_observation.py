@@ -1,6 +1,7 @@
 """Causal physical-radar tracks in world coordinates; no actor truth inputs."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from collections import deque
 import math
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -58,6 +59,7 @@ class Track:
     measured_at: float
     hits: int = 1
     acceleration_mps2: float = 0.
+    measurements: deque = field(default_factory=lambda: deque(maxlen=16))
 
 
 class TrackedObservation:
@@ -139,6 +141,7 @@ class TrackedObservation:
             track.acceleration_mps2 = .7*track.acceleration_mps2+.3*np.clip(acceleration,-10.,10.)
         track.measured_at = timestamp
         track.hits += 1
+        track.measurements.append((timestamp, float(position[0]), float(position[1])))
 
     def update(self, radar, *, ego, route_points, now_s, frame, coverage_clear=False, requested_track_id=None):
         now = float(now_s)
@@ -198,9 +201,12 @@ class TrackedObservation:
             for j,(position,radial,los) in enumerate(clusters):
                 if j in assigned or len(self.tracks)>=self.max_tracks:
                     continue
-                initial_velocity = velocity+radial*los
-                self.tracks.append(Track(f'radar-{self.next_id}',np.r_[position,initial_velocity],
-                    np.diag([.5,.5,9.,9.]),stamp,stamp))
+                # Doppler observes only radial world velocity, not ego transverse motion.
+                initial_velocity = (radial+np.dot(velocity,los))*los
+                track = Track(f'radar-{self.next_id}',np.r_[position,initial_velocity],
+                    np.diag([.5,.5,9.,9.]),stamp,stamp)
+                track.measurements.append((stamp, float(position[0]), float(position[1])))
+                self.tracks.append(track)
                 self.next_id += 1
             self.last_frame = sensor_frame
         entities = []
@@ -215,10 +221,20 @@ class TrackedObservation:
             age = now-track.measured_at
             directly_measured = bool(fresh and sensor_frame==frame and abs(track.measured_at-float(stamp))<1e-6)
             status = 'TRACKED' if track.hits>=3 and directly_measured else 'PREDICTED' if track.hits>=3 else 'TENTATIVE'
+            samples = np.asarray([m for m in track.measurements if track.measured_at-m[0]<=.6])
+            span = float(samples[-1,0]-samples[0,0]) if len(samples)>1 else 0.
+            measured_velocity = None; motion_residual = None
+            if len(samples)>=3 and span>=.2:
+                design = np.column_stack((samples[:,0]-samples[0,0], np.ones(len(samples))))
+                fit = np.linalg.lstsq(design, samples[:,1:], rcond=None)[0]
+                measured_velocity = fit[0].tolist()
+                motion_residual = float(np.sqrt(np.mean(np.sum((design@fit-samples[:,1:])**2,axis=1))))
             closing = float(np.dot(velocity,ego_projection['tangent'])-np.dot(track.state[2:],projected['tangent'])) if projected else None
             entities.append(dict(track_id=track.identity,kind='UNCLASSIFIED_RADAR_SURFACE',
                 source='physical_radar',status=status,measured_at_s=track.measured_at,age_s=age,
                 position_xy_m=position.tolist(),velocity_xy_mps=track.state[2:].tolist(),
+                observed_velocity_xy_mps=measured_velocity, motion_observation_span_s=span,
+                motion_sample_count=len(samples), motion_position_residual_m=motion_residual,
                 radial_acceleration_mps2=float(track.acceleration_mps2),
                 position_std_m=float(np.sqrt(np.max(np.diag(track.covariance)[:2])+dt**2*np.max(np.diag(track.covariance)[2:]))),
                 route_gap_m=float(gap) if gap is not None else None,

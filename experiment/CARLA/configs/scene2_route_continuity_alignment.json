@@ -1,0 +1,17 @@
+{
+  "version": "V86",
+  "old_source_sha256": "22ebd323bafac258544dba8865f6444053a0d2bdf84a0390b53ef7d81672fc63",
+  "new_source_sha256": "b6d1ae3550e7847e4ff4f71b775404a3b29b09b87432d6c425baee272c196b65",
+  "task": "s2_t05_cmd_10",
+  "removed": "COMPLETE:JUNCTION",
+  "evidence": "Prior s2_t05_cmd_09 already binds and completes the straight junction; command 10 is serially activated downstream.",
+  "remaining_steps": [
+    "KEEP_LANE",
+    "CHECK:PATH_CLEAR",
+    "SET_SPEED:8.33mps"
+  ],
+  "task_ids_preserved": true,
+  "safety_thresholds_unchanged": true,
+  "profile_thresholds_unchanged": true,
+  "policy_truth_access": false
+}

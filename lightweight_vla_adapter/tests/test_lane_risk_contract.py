@@ -70,3 +70,35 @@ def test_medium_visual_risk_only_allows_clear_low_speed_completion(continuing,ob
     assert risk['lane_change']['left']['is_safe']==expected
     result,_=enforce_requested_lane(dict(action='lane_change_left',target_speed_kmh=20.),risk,'left')
     assert result['target_speed_kmh']==(5. if expected else 0.)
+
+
+@pytest.mark.parametrize('entered,front,rear_distance,age,expected',[
+    (True,0,6.,0.,True),(False,0,6.,0.,False),(True,1,6.,0.,False),
+    (True,0,4.,0.,False),(True,0,6.,1.,False),(True,0,float('nan'),0.,False)])
+def test_entered_lane_can_finish_only_with_fresh_far_rear_only_occupancy(entered,front,rear_distance,age,expected):
+    fusion=LaneRiskContract()
+    evidence=dict(valid=True,observed=True,occupied=True,obstacle_points=10,
+        front_obstacle_points=front,rear_obstacle_points=10-front,
+        rear_obstacle_nearest_m=rear_distance,
+        source='same_frame_lidar_target_lane_geometry',front_horizon_m=20.,rear_horizon_m=10.)
+    for i in range(8):
+        risk=fusion.update({},'right',dict(visual('right'),source='measured_view'),bev(),
+            timestamp_s=i*.1,sensor_frame=i,frame_age_s=age,speed_mps=0.,
+            continuing=True,target_entered=entered,physical_evidence=evidence,road_legal=True)
+    assert risk['lane_change']['right']['is_safe'] is expected
+    assert risk['target_lane_contract']['lidar']['occupied'] is True
+    if expected:
+        assert risk['lane_change']['right']['speed_cap_kmh']==8.
+
+
+def test_measured_lane_keeps_front_and_rear_obstacle_evidence_separate():
+    from lightweight_vla_adapter.src.lane_risk_contract import measured_lane_clearance
+    ground=[[x,y,0.] for x in np.arange(-9.5,20.,1.) for y in (-.4,.4)]
+    rear=[[-6.,0.,1.]]
+    road=[[-10.,0.,0.],[0.,0.,0.],[20.,0.,0.]]
+    evidence=measured_lane_clearance(np.asarray(ground+rear),road,[0.,0.,0.])
+    assert evidence['occupied'] and evidence['observed']
+    assert evidence['front_obstacle_points']==0 and evidence['rear_obstacle_points']==1
+    assert evidence['rear_obstacle_nearest_m']==pytest.approx(6.)
+    evidence=measured_lane_clearance(np.asarray(ground+rear+[[2.,0.,1.]]),road,[0.,0.,0.])
+    assert evidence['front_obstacle_points']==1

@@ -29,13 +29,32 @@ def verify_assets(model_root: Path, manifest: dict) -> list[str]:
     return verified
 
 
-def resolve_config(repo_root: Path, model_root: Path, map_path: Path) -> dict:
+def resolve_config(repo_root: Path, model_root: Path, map_path: Path,
+                   *, cyclist_expert: dict | None = None) -> dict:
     config = json.loads((repo_root / 'lightweight_vla_adapter/configs/challenge_signal_generalization.json').read_text())
     static = json.loads(map_path.read_text())
     if (not static.get('heads') or not static.get('opendrive_sha256')
             or static.get('dynamic_signal_state_exported') is not False):
         raise ValueError('Expected static lamp geometry, map hash, and no dynamic state labels')
     config['event_memory_checkpoint'] = str((model_root/'challenge/phase_recovery_v1.pt').resolve())
+    config['pedestrian_condition_observer'] = {
+        'weights': str((model_root/'pretrained/yolo11s.pt').resolve()),
+        'cyclist_completion_mode': 'encounter_window'}
+    expert=cyclist_expert if cyclist_expert is not None else config.get('cyclist_condition_expert') or {}
+    if expert.get('enabled') is True:
+        relative=Path(expert['relative_weights'])
+        if relative.is_absolute() or '..' in relative.parts:
+            raise ValueError('Cyclist expert path must be relative to model root')
+        weights=(model_root/relative).resolve()
+        if not weights.is_relative_to(model_root.resolve()):
+            raise ValueError('Cyclist expert must remain within model root')
+        with weights.open('rb') as stream:
+            digest=hashlib.file_digest(stream,'sha256').hexdigest()
+        if digest!=expert['sha256']:
+            raise ValueError('Cyclist expert checksum mismatch')
+        config['pedestrian_condition_observer']['cyclist_expert']={
+            'weights':str(weights.resolve()),'sha256':digest}
+        config['cyclist_condition_expert']=dict(expert)
     config['traffic_signal_observer'].update(
         static_map_path=str(map_path.resolve()),
         state_checkpoint=str((model_root/'challenge/lamp_state_v2.pt').resolve()),
@@ -50,11 +69,20 @@ def main():
     parser.add_argument('--map', choices=['Town01', 'Town04', 'Town05'], default='Town04')
     parser.add_argument('--static-map', type=Path, help='Static export for another map; checked against CARLA at startup')
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--cyclist-weights', type=Path,
+                        help='Optional bicycle expert, relative to model root')
+    parser.add_argument('--cyclist-sha256', help='Required SHA256 for the optional bicycle expert')
     args = parser.parse_args()
+    if bool(args.cyclist_weights) != bool(args.cyclist_sha256):
+        parser.error('--cyclist-weights and --cyclist-sha256 must be supplied together')
+    expert = None
+    if args.cyclist_weights:
+        expert = dict(enabled=True, relative_weights=str(args.cyclist_weights),
+                      sha256=args.cyclist_sha256)
     manifest = json.loads((REPO_ROOT/'lightweight_vla_adapter/configs/challenge_assets.json').read_text())
     verified = verify_assets(args.model_root, manifest)
     map_path = args.static_map or REPO_ROOT/f'lightweight_vla_adapter/configs/maps/{args.map}_traffic_heads.json'
-    config = resolve_config(REPO_ROOT, args.model_root, map_path)
+    config = resolve_config(REPO_ROOT, args.model_root, map_path, cyclist_expert=expert)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(config, indent=2)+'\n')
     print(json.dumps({
@@ -63,6 +91,7 @@ def main():
         'checkpoint_path': str((args.model_root/'lightweight_vla_adapter/universal_three_scene_v6_sensor_policy/model.pt').resolve()),
         'parser_model_path': str((args.model_root/'modernbert-drive-command-compositional').resolve()),
         'required_cameras': ['front', 'left', 'right', 'rear'], 'enable_lidar': True,
+        'cyclist_expert': config['pedestrian_condition_observer'].get('cyclist_expert'),
         'note': 'Asset integrity only; this command does not run a driving test.',
     }, indent=2))
 

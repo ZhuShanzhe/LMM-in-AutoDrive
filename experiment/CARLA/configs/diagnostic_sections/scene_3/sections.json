@@ -1,0 +1,4983 @@
+{
+  "schema_version": "diagnostic_route_sections/1.0",
+  "scene_id": "scene_3",
+  "map_name": "Town05_Opt",
+  "route_length_m": 6000.0,
+  "source_file": "scene_3_emergency_6km_runtime.json",
+  "source_sha256": "c0b36a89e65ff870ca8805ba20e63d7cffb60e323ef053a4f9788700cbfd0916",
+  "maximum_section_m": 400.0,
+  "warmup_m": 150.0,
+  "postroll_m": 50.0,
+  "tasks": [
+    {
+      "task_id": "scene3_general_hazard",
+      "instruction": "前方路况危险，保持安全车速",
+      "announce_m": 800.0,
+      "activate_m": 800.0,
+      "diagnostic_end_m": 1150.0,
+      "end_source": "explicit_window",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": []
+    },
+    {
+      "task_id": "scene3_cut_in_decelerate",
+      "instruction": "突发车辆加塞，保持安全车距，必要时减速让行。",
+      "announce_m": 1250.0,
+      "activate_m": 1250.0,
+      "diagnostic_end_m": 1550.0,
+      "end_source": "explicit_window",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": [
+        "scene3_cut_in"
+      ]
+    },
+    {
+      "task_id": "scene3_work_zone_warning",
+      "instruction": "前方进入施工区域，注意观察",
+      "announce_m": 2850.0,
+      "activate_m": 2850.0,
+      "diagnostic_end_m": 3050.0,
+      "end_source": "explicit_window",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": [
+        "scene3_advance_warning"
+      ]
+    },
+    {
+      "task_id": "scene3_right_lane_closure",
+      "instruction": "施工路段，减速并道至左侧车道",
+      "announce_m": 2975.0,
+      "activate_m": 2975.0,
+      "diagnostic_end_m": 3150.0,
+      "end_source": "explicit_window",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": [
+        "scene3_cone_taper"
+      ]
+    },
+    {
+      "task_id": "scene3_pass_work_zone",
+      "instruction": "前方路况危险，保持安全车速",
+      "announce_m": 3150.0,
+      "activate_m": 3150.0,
+      "diagnostic_end_m": 3450.0,
+      "end_source": "explicit_window",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": [
+        "scene3_work_zone"
+      ]
+    },
+    {
+      "task_id": "scene3_worker_crossing",
+      "instruction": "有人突然横穿，立即减速让行",
+      "announce_m": 3250.0,
+      "activate_m": 3250.0,
+      "diagnostic_end_m": 3425.0,
+      "end_source": "explicit_window",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": [
+        "scene3_temporary_pedestrian"
+      ]
+    },
+    {
+      "task_id": "scene3_resume_normal_driving",
+      "instruction": "危险路段结束，在安全且不超速的前提下逐步恢复至30公里每小时，沿规划路线行驶至终点。",
+      "announce_m": 5100.0,
+      "activate_m": 5100.0,
+      "diagnostic_end_m": 6000.0,
+      "end_source": "explicit_window",
+      "end_is_completion_criterion": false,
+      "required_event_states": {},
+      "linked_event_ids": [
+        "scene3_work_zone_exit"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "scene3_cut_in",
+      "kind": "cut_in_vehicle",
+      "start_m": 1250.0,
+      "focus_end_m": 1550.0,
+      "explicit_end_m": 1550.0,
+      "retain_after_completion": false,
+      "end_is_completion_criterion": false,
+      "positions": [
+        [
+          1350.0,
+          "distance_m"
+        ],
+        [
+          1250.0,
+          "activate_at_m"
+        ],
+        [
+          1550.0,
+          "resolve_after_m"
+        ]
+      ]
+    },
+    {
+      "event_id": "scene3_advance_warning",
+      "kind": "work_zone_advance_warning",
+      "start_m": 2850.0,
+      "focus_end_m": 3050.0,
+      "explicit_end_m": 3050.0,
+      "retain_after_completion": false,
+      "end_is_completion_criterion": false,
+      "positions": [
+        [
+          2925.0,
+          "distance_m"
+        ],
+        [
+          2850.0,
+          "activate_at_m"
+        ],
+        [
+          3050.0,
+          "resolve_after_m"
+        ],
+        [
+          2925.0,
+          "props.s_m"
+        ]
+      ]
+    },
+    {
+      "event_id": "scene3_cone_taper",
+      "kind": "progressive_lane_closure",
+      "start_m": 2975.0,
+      "focus_end_m": 3150.0,
+      "explicit_end_m": 3150.0,
+      "retain_after_completion": false,
+      "end_is_completion_criterion": false,
+      "positions": [
+        [
+          3050.0,
+          "distance_m"
+        ],
+        [
+          2975.0,
+          "activate_at_m"
+        ],
+        [
+          3150.0,
+          "resolve_after_m"
+        ],
+        [
+          3050.0,
+          "closure.taper_start_s_m"
+        ],
+        [
+          3150.0,
+          "closure.taper_end_s_m"
+        ]
+      ]
+    },
+    {
+      "event_id": "scene3_work_zone",
+      "kind": "right_lane_work_zone",
+      "start_m": 3100.0,
+      "focus_end_m": 3450.0,
+      "explicit_end_m": 3450.0,
+      "retain_after_completion": false,
+      "end_is_completion_criterion": false,
+      "positions": [
+        [
+          3150.0,
+          "distance_m"
+        ],
+        [
+          3100.0,
+          "activate_at_m"
+        ],
+        [
+          3450.0,
+          "resolve_after_m"
+        ],
+        [
+          3150.0,
+          "zone.start_s_m"
+        ],
+        [
+          3450.0,
+          "zone.end_s_m"
+        ],
+        [
+          3225.0,
+          "zone.work_vehicle_spawns[0].s_m"
+        ],
+        [
+          3400.0,
+          "zone.work_vehicle_spawns[1].s_m"
+        ]
+      ]
+    },
+    {
+      "event_id": "scene3_temporary_pedestrian",
+      "kind": "temporary_worker_crossing",
+      "start_m": 3250.0,
+      "focus_end_m": 3425.0,
+      "explicit_end_m": 3425.0,
+      "retain_after_completion": false,
+      "end_is_completion_criterion": false,
+      "positions": [
+        [
+          3300.0,
+          "distance_m"
+        ],
+        [
+          3250.0,
+          "activate_at_m"
+        ],
+        [
+          3425.0,
+          "resolve_after_m"
+        ],
+        [
+          3345.0,
+          "workers[0].start_s_m"
+        ],
+        [
+          3380.0,
+          "workers[1].start_s_m"
+        ]
+      ]
+    },
+    {
+      "event_id": "scene3_work_zone_exit",
+      "kind": "work_zone_exit",
+      "start_m": 5000.0,
+      "focus_end_m": 5250.0,
+      "explicit_end_m": 5250.0,
+      "retain_after_completion": false,
+      "end_is_completion_criterion": false,
+      "positions": [
+        [
+          5100.0,
+          "distance_m"
+        ],
+        [
+          5000.0,
+          "activate_at_m"
+        ],
+        [
+          5250.0,
+          "resolve_after_m"
+        ]
+      ]
+    }
+  ],
+  "geometry_features": [
+    {
+      "kind": "traffic_signal",
+      "start_m": 0.0,
+      "end_m": 5.781
+    },
+    {
+      "kind": "grade",
+      "start_m": 11.781,
+      "end_m": 105.771
+    },
+    {
+      "kind": "grade",
+      "start_m": 715.267,
+      "end_m": 801.267
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 809.265,
+      "end_m": 826.097
+    },
+    {
+      "kind": "junction",
+      "start_m": 826.097,
+      "end_m": 855.097
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 855.097,
+      "end_m": 873.097
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 1471.954,
+      "end_m": 1489.024
+    },
+    {
+      "kind": "junction",
+      "start_m": 1489.024,
+      "end_m": 1518.034
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 1520.034,
+      "end_m": 1532.276
+    },
+    {
+      "kind": "grade",
+      "start_m": 1538.276,
+      "end_m": 1632.266
+    },
+    {
+      "kind": "grade",
+      "start_m": 2241.761,
+      "end_m": 2327.761
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 2335.759,
+      "end_m": 2352.592
+    },
+    {
+      "kind": "junction",
+      "start_m": 2352.592,
+      "end_m": 2381.592
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 2381.592,
+      "end_m": 2399.592
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 2998.449,
+      "end_m": 3015.519
+    },
+    {
+      "kind": "junction",
+      "start_m": 3015.519,
+      "end_m": 3044.529
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 3046.529,
+      "end_m": 3058.77
+    },
+    {
+      "kind": "grade",
+      "start_m": 3064.77,
+      "end_m": 3158.76
+    },
+    {
+      "kind": "grade",
+      "start_m": 3768.256,
+      "end_m": 3854.256
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 3862.253,
+      "end_m": 3879.086
+    },
+    {
+      "kind": "junction",
+      "start_m": 3879.086,
+      "end_m": 3908.086
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 3908.086,
+      "end_m": 3926.086
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 4524.943,
+      "end_m": 4542.013
+    },
+    {
+      "kind": "junction",
+      "start_m": 4542.013,
+      "end_m": 4571.023
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 4573.023,
+      "end_m": 4585.264
+    },
+    {
+      "kind": "grade",
+      "start_m": 4591.264,
+      "end_m": 4685.255
+    },
+    {
+      "kind": "grade",
+      "start_m": 5294.75,
+      "end_m": 5380.75
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 5388.748,
+      "end_m": 5405.58
+    },
+    {
+      "kind": "junction",
+      "start_m": 5405.58,
+      "end_m": 5434.58
+    },
+    {
+      "kind": "traffic_signal",
+      "start_m": 5434.58,
+      "end_m": 5452.58
+    }
+  ],
+  "breakpoints": [
+    {
+      "s_m": 0.0,
+      "kind": "route_start",
+      "source_id": "scene_3"
+    },
+    {
+      "s_m": 0.0,
+      "kind": "geometry_start",
+      "source_id": "geometry_000",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 5.781,
+      "kind": "geometry_end",
+      "source_id": "geometry_000",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 11.781,
+      "kind": "geometry_start",
+      "source_id": "geometry_001",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 105.771,
+      "kind": "geometry_end",
+      "source_id": "geometry_001",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 715.267,
+      "kind": "geometry_start",
+      "source_id": "geometry_002",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 771.267,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_001/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 800.0,
+      "kind": "task_announce",
+      "source_id": "scene3_general_hazard"
+    },
+    {
+      "s_m": 800.0,
+      "kind": "task_activate",
+      "source_id": "scene3_general_hazard"
+    },
+    {
+      "s_m": 801.267,
+      "kind": "geometry_end",
+      "source_id": "geometry_002",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 809.265,
+      "kind": "geometry_start",
+      "source_id": "geometry_003",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 826.097,
+      "kind": "geometry_end",
+      "source_id": "geometry_003",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 826.097,
+      "kind": "geometry_start",
+      "source_id": "geometry_004",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 855.097,
+      "kind": "geometry_end",
+      "source_id": "geometry_004",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 855.097,
+      "kind": "geometry_start",
+      "source_id": "geometry_005",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 873.097,
+      "kind": "geometry_end",
+      "source_id": "geometry_005",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 905.099,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_002/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 905.099,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_003/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 1150.0,
+      "kind": "task_window_end",
+      "source_id": "scene3_general_hazard"
+    },
+    {
+      "s_m": 1250.0,
+      "kind": "task_announce",
+      "source_id": "scene3_cut_in_decelerate"
+    },
+    {
+      "s_m": 1250.0,
+      "kind": "task_activate",
+      "source_id": "scene3_cut_in_decelerate"
+    },
+    {
+      "s_m": 1250.0,
+      "kind": "event_position",
+      "source_id": "scene3_cut_in",
+      "field": "activate_at_m"
+    },
+    {
+      "s_m": 1255.551,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_004/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 1267.551,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_005/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 1350.0,
+      "kind": "event_position",
+      "source_id": "scene3_cut_in",
+      "field": "distance_m"
+    },
+    {
+      "s_m": 1471.954,
+      "kind": "geometry_start",
+      "source_id": "geometry_006",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 1489.024,
+      "kind": "geometry_end",
+      "source_id": "geometry_006",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 1489.024,
+      "kind": "geometry_start",
+      "source_id": "geometry_007",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 1518.034,
+      "kind": "geometry_end",
+      "source_id": "geometry_007",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 1520.034,
+      "kind": "geometry_start",
+      "source_id": "geometry_008",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 1532.276,
+      "kind": "geometry_end",
+      "source_id": "geometry_008",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 1538.276,
+      "kind": "geometry_start",
+      "source_id": "geometry_009",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 1550.0,
+      "kind": "task_window_end",
+      "source_id": "scene3_cut_in_decelerate"
+    },
+    {
+      "s_m": 1550.0,
+      "kind": "event_position",
+      "source_id": "scene3_cut_in",
+      "field": "resolve_after_m"
+    },
+    {
+      "s_m": 1632.266,
+      "kind": "geometry_end",
+      "source_id": "geometry_009",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 2241.761,
+      "kind": "geometry_start",
+      "source_id": "geometry_010",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 2299.763,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_006/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 2327.761,
+      "kind": "geometry_end",
+      "source_id": "geometry_010",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 2335.759,
+      "kind": "geometry_start",
+      "source_id": "geometry_011",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 2352.592,
+      "kind": "geometry_end",
+      "source_id": "geometry_011",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 2352.592,
+      "kind": "geometry_start",
+      "source_id": "geometry_012",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 2381.592,
+      "kind": "geometry_end",
+      "source_id": "geometry_012",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 2381.592,
+      "kind": "geometry_start",
+      "source_id": "geometry_013",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 2399.592,
+      "kind": "geometry_end",
+      "source_id": "geometry_013",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 2850.0,
+      "kind": "task_announce",
+      "source_id": "scene3_work_zone_warning"
+    },
+    {
+      "s_m": 2850.0,
+      "kind": "task_activate",
+      "source_id": "scene3_work_zone_warning"
+    },
+    {
+      "s_m": 2850.0,
+      "kind": "event_position",
+      "source_id": "scene3_advance_warning",
+      "field": "activate_at_m"
+    },
+    {
+      "s_m": 2859.053,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_007/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 2859.053,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_008/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 2925.0,
+      "kind": "event_position",
+      "source_id": "scene3_advance_warning",
+      "field": "distance_m"
+    },
+    {
+      "s_m": 2925.0,
+      "kind": "event_position",
+      "source_id": "scene3_advance_warning",
+      "field": "props.s_m"
+    },
+    {
+      "s_m": 2975.0,
+      "kind": "task_announce",
+      "source_id": "scene3_right_lane_closure"
+    },
+    {
+      "s_m": 2975.0,
+      "kind": "task_activate",
+      "source_id": "scene3_right_lane_closure"
+    },
+    {
+      "s_m": 2975.0,
+      "kind": "event_position",
+      "source_id": "scene3_cone_taper",
+      "field": "activate_at_m"
+    },
+    {
+      "s_m": 2976.252,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_009/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 2976.252,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_010/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 2998.449,
+      "kind": "geometry_start",
+      "source_id": "geometry_014",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 3015.519,
+      "kind": "geometry_end",
+      "source_id": "geometry_014",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 3015.519,
+      "kind": "geometry_start",
+      "source_id": "geometry_015",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 3044.529,
+      "kind": "geometry_end",
+      "source_id": "geometry_015",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 3046.529,
+      "kind": "geometry_start",
+      "source_id": "geometry_016",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 3050.0,
+      "kind": "task_window_end",
+      "source_id": "scene3_work_zone_warning"
+    },
+    {
+      "s_m": 3050.0,
+      "kind": "event_position",
+      "source_id": "scene3_advance_warning",
+      "field": "resolve_after_m"
+    },
+    {
+      "s_m": 3050.0,
+      "kind": "event_position",
+      "source_id": "scene3_cone_taper",
+      "field": "distance_m"
+    },
+    {
+      "s_m": 3050.0,
+      "kind": "event_position",
+      "source_id": "scene3_cone_taper",
+      "field": "closure.taper_start_s_m"
+    },
+    {
+      "s_m": 3058.77,
+      "kind": "geometry_end",
+      "source_id": "geometry_016",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 3064.77,
+      "kind": "geometry_start",
+      "source_id": "geometry_017",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 3100.0,
+      "kind": "event_position",
+      "source_id": "scene3_work_zone",
+      "field": "activate_at_m"
+    },
+    {
+      "s_m": 3102.763,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_011/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 3102.763,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_012/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 3150.0,
+      "kind": "task_window_end",
+      "source_id": "scene3_right_lane_closure"
+    },
+    {
+      "s_m": 3150.0,
+      "kind": "task_announce",
+      "source_id": "scene3_pass_work_zone"
+    },
+    {
+      "s_m": 3150.0,
+      "kind": "task_activate",
+      "source_id": "scene3_pass_work_zone"
+    },
+    {
+      "s_m": 3150.0,
+      "kind": "event_position",
+      "source_id": "scene3_cone_taper",
+      "field": "resolve_after_m"
+    },
+    {
+      "s_m": 3150.0,
+      "kind": "event_position",
+      "source_id": "scene3_cone_taper",
+      "field": "closure.taper_end_s_m"
+    },
+    {
+      "s_m": 3150.0,
+      "kind": "event_position",
+      "source_id": "scene3_work_zone",
+      "field": "distance_m"
+    },
+    {
+      "s_m": 3150.0,
+      "kind": "event_position",
+      "source_id": "scene3_work_zone",
+      "field": "zone.start_s_m"
+    },
+    {
+      "s_m": 3158.76,
+      "kind": "geometry_end",
+      "source_id": "geometry_017",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 3210.854,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_013/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 3210.854,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_014/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 3210.854,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_015/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 3210.854,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_016/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 3210.854,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_017/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 3210.854,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_018/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 3225.0,
+      "kind": "event_position",
+      "source_id": "scene3_work_zone",
+      "field": "zone.work_vehicle_spawns[0].s_m"
+    },
+    {
+      "s_m": 3250.0,
+      "kind": "task_announce",
+      "source_id": "scene3_worker_crossing"
+    },
+    {
+      "s_m": 3250.0,
+      "kind": "task_activate",
+      "source_id": "scene3_worker_crossing"
+    },
+    {
+      "s_m": 3250.0,
+      "kind": "event_position",
+      "source_id": "scene3_temporary_pedestrian",
+      "field": "activate_at_m"
+    },
+    {
+      "s_m": 3300.0,
+      "kind": "event_position",
+      "source_id": "scene3_temporary_pedestrian",
+      "field": "distance_m"
+    },
+    {
+      "s_m": 3302.44,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_020/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 3310.581,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_021/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 3345.0,
+      "kind": "event_position",
+      "source_id": "scene3_temporary_pedestrian",
+      "field": "workers[0].start_s_m"
+    },
+    {
+      "s_m": 3380.0,
+      "kind": "event_position",
+      "source_id": "scene3_temporary_pedestrian",
+      "field": "workers[1].start_s_m"
+    },
+    {
+      "s_m": 3400.0,
+      "kind": "event_position",
+      "source_id": "scene3_work_zone",
+      "field": "zone.work_vehicle_spawns[1].s_m"
+    },
+    {
+      "s_m": 3421.538,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_022/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 3425.0,
+      "kind": "task_window_end",
+      "source_id": "scene3_worker_crossing"
+    },
+    {
+      "s_m": 3425.0,
+      "kind": "event_position",
+      "source_id": "scene3_temporary_pedestrian",
+      "field": "resolve_after_m"
+    },
+    {
+      "s_m": 3450.0,
+      "kind": "task_window_end",
+      "source_id": "scene3_pass_work_zone"
+    },
+    {
+      "s_m": 3450.0,
+      "kind": "event_position",
+      "source_id": "scene3_work_zone",
+      "field": "resolve_after_m"
+    },
+    {
+      "s_m": 3450.0,
+      "kind": "event_position",
+      "source_id": "scene3_work_zone",
+      "field": "zone.end_s_m"
+    },
+    {
+      "s_m": 3768.256,
+      "kind": "geometry_start",
+      "source_id": "geometry_018",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 3854.256,
+      "kind": "geometry_end",
+      "source_id": "geometry_018",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 3862.253,
+      "kind": "geometry_start",
+      "source_id": "geometry_019",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 3879.086,
+      "kind": "geometry_end",
+      "source_id": "geometry_019",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 3879.086,
+      "kind": "geometry_start",
+      "source_id": "geometry_020",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 3908.086,
+      "kind": "geometry_end",
+      "source_id": "geometry_020",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 3908.086,
+      "kind": "geometry_start",
+      "source_id": "geometry_021",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 3926.086,
+      "kind": "geometry_end",
+      "source_id": "geometry_021",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 4524.943,
+      "kind": "geometry_start",
+      "source_id": "geometry_022",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 4542.013,
+      "kind": "geometry_end",
+      "source_id": "geometry_022",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 4542.013,
+      "kind": "geometry_start",
+      "source_id": "geometry_023",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 4571.023,
+      "kind": "geometry_end",
+      "source_id": "geometry_023",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 4573.023,
+      "kind": "geometry_start",
+      "source_id": "geometry_024",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 4585.264,
+      "kind": "geometry_end",
+      "source_id": "geometry_024",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 4591.264,
+      "kind": "geometry_start",
+      "source_id": "geometry_025",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 4685.255,
+      "kind": "geometry_end",
+      "source_id": "geometry_025",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 4701.259,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_024/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 4701.259,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_025/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 4833.006,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_026/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 4833.006,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_027/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 4833.006,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_028/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 4841.147,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_029/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 4841.147,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_030/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 4841.147,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_031/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 5000.0,
+      "kind": "event_position",
+      "source_id": "scene3_work_zone_exit",
+      "field": "activate_at_m"
+    },
+    {
+      "s_m": 5100.0,
+      "kind": "task_announce",
+      "source_id": "scene3_resume_normal_driving"
+    },
+    {
+      "s_m": 5100.0,
+      "kind": "task_activate",
+      "source_id": "scene3_resume_normal_driving"
+    },
+    {
+      "s_m": 5100.0,
+      "kind": "event_position",
+      "source_id": "scene3_work_zone_exit",
+      "field": "distance_m"
+    },
+    {
+      "s_m": 5250.0,
+      "kind": "event_position",
+      "source_id": "scene3_work_zone_exit",
+      "field": "resolve_after_m"
+    },
+    {
+      "s_m": 5294.75,
+      "kind": "geometry_start",
+      "source_id": "geometry_026",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 5348.755,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_032/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 5380.75,
+      "kind": "geometry_end",
+      "source_id": "geometry_026",
+      "geometry_kind": "grade"
+    },
+    {
+      "s_m": 5388.748,
+      "kind": "geometry_start",
+      "source_id": "geometry_027",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 5405.58,
+      "kind": "geometry_end",
+      "source_id": "geometry_027",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 5405.58,
+      "kind": "geometry_start",
+      "source_id": "geometry_028",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 5429.586,
+      "kind": "historical_failure",
+      "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_033/interruption.json",
+      "route_equivalence": "not_verified"
+    },
+    {
+      "s_m": 5434.58,
+      "kind": "geometry_end",
+      "source_id": "geometry_028",
+      "geometry_kind": "junction"
+    },
+    {
+      "s_m": 5434.58,
+      "kind": "geometry_start",
+      "source_id": "geometry_029",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 5452.58,
+      "kind": "geometry_end",
+      "source_id": "geometry_029",
+      "geometry_kind": "traffic_signal"
+    },
+    {
+      "s_m": 6000.0,
+      "kind": "route_end",
+      "source_id": "scene_3"
+    },
+    {
+      "s_m": 6000.0,
+      "kind": "task_window_end",
+      "source_id": "scene3_resume_normal_driving"
+    }
+  ],
+  "phases": [
+    {
+      "phase_id": "S3-P01",
+      "start_m": 0.0,
+      "end_m": 800.0,
+      "section_ids": [
+        "S3-001",
+        "S3-002",
+        "S3-003",
+        "S3-004"
+      ],
+      "task_ids": [],
+      "event_ids": [],
+      "replay_start_m": 0.0,
+      "stop_after_m": 850.0
+    },
+    {
+      "phase_id": "S3-P02",
+      "start_m": 800.0,
+      "end_m": 1250.0,
+      "section_ids": [
+        "S3-005",
+        "S3-006",
+        "S3-007"
+      ],
+      "task_ids": [
+        "scene3_general_hazard"
+      ],
+      "event_ids": [
+        "scene3_cut_in"
+      ],
+      "replay_start_m": 648.908,
+      "stop_after_m": 1300.0
+    },
+    {
+      "phase_id": "S3-P03",
+      "start_m": 1250.0,
+      "end_m": 2850.0,
+      "section_ids": [
+        "S3-008",
+        "S3-009",
+        "S3-010",
+        "S3-011",
+        "S3-012",
+        "S3-013",
+        "S3-014",
+        "S3-015",
+        "S3-016",
+        "S3-017"
+      ],
+      "task_ids": [
+        "scene3_cut_in_decelerate"
+      ],
+      "event_ids": [
+        "scene3_advance_warning",
+        "scene3_cut_in"
+      ],
+      "replay_start_m": 1099.832,
+      "stop_after_m": 2900.0
+    },
+    {
+      "phase_id": "S3-P04",
+      "start_m": 2850.0,
+      "end_m": 2975.0,
+      "section_ids": [
+        "S3-018"
+      ],
+      "task_ids": [
+        "scene3_work_zone_warning"
+      ],
+      "event_ids": [
+        "scene3_advance_warning",
+        "scene3_cone_taper"
+      ],
+      "replay_start_m": 2698.632,
+      "stop_after_m": 3025.0
+    },
+    {
+      "phase_id": "S3-P05",
+      "start_m": 2975.0,
+      "end_m": 3150.0,
+      "section_ids": [
+        "S3-019",
+        "S3-020",
+        "S3-021"
+      ],
+      "task_ids": [
+        "scene3_right_lane_closure",
+        "scene3_work_zone_warning"
+      ],
+      "event_ids": [
+        "scene3_advance_warning",
+        "scene3_cone_taper",
+        "scene3_work_zone"
+      ],
+      "replay_start_m": 2698.632,
+      "stop_after_m": 3200.0
+    },
+    {
+      "phase_id": "S3-P06",
+      "start_m": 3150.0,
+      "end_m": 3250.0,
+      "section_ids": [
+        "S3-022"
+      ],
+      "task_ids": [
+        "scene3_pass_work_zone"
+      ],
+      "event_ids": [
+        "scene3_cone_taper",
+        "scene3_temporary_pedestrian",
+        "scene3_work_zone"
+      ],
+      "replay_start_m": 2823.283,
+      "stop_after_m": 3300.0
+    },
+    {
+      "phase_id": "S3-P07",
+      "start_m": 3250.0,
+      "end_m": 5100.0,
+      "section_ids": [
+        "S3-023",
+        "S3-024",
+        "S3-025",
+        "S3-026",
+        "S3-027",
+        "S3-028",
+        "S3-029",
+        "S3-030",
+        "S3-031",
+        "S3-032",
+        "S3-033",
+        "S3-034"
+      ],
+      "task_ids": [
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing"
+      ],
+      "event_ids": [
+        "scene3_temporary_pedestrian",
+        "scene3_work_zone",
+        "scene3_work_zone_exit"
+      ],
+      "replay_start_m": 2949.519,
+      "stop_after_m": 5150.0
+    },
+    {
+      "phase_id": "S3-P08",
+      "start_m": 5100.0,
+      "end_m": 6000.0,
+      "section_ids": [
+        "S3-035",
+        "S3-036",
+        "S3-037",
+        "S3-038",
+        "S3-039",
+        "S3-040"
+      ],
+      "task_ids": [
+        "scene3_resume_normal_driving"
+      ],
+      "event_ids": [
+        "scene3_work_zone_exit"
+      ],
+      "replay_start_m": 4849.284,
+      "stop_after_m": 6000.0
+    }
+  ],
+  "sections": [
+    {
+      "section_id": "S3-001",
+      "start_m": 0.0,
+      "end_m": 145.771,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade",
+        "traffic_signal"
+      ],
+      "replay_start_m": 0.0,
+      "stop_after_m": 195.771,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 8.571528434753418,
+        "y": -203.98934936523438,
+        "z": 0.005945527460426092,
+        "yaw_deg": 179.757080078125,
+        "road_id": 36,
+        "lane_id": -2
+      },
+      "start_pose_route_m": 0.0,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 0.0,
+          "kind": "route_start",
+          "source_id": "scene_3"
+        },
+        {
+          "s_m": 0.0,
+          "kind": "geometry_start",
+          "source_id": "geometry_000",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 5.781,
+          "kind": "geometry_end",
+          "source_id": "geometry_000",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 11.781,
+          "kind": "geometry_start",
+          "source_id": "geometry_001",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 105.771,
+          "kind": "geometry_end",
+          "source_id": "geometry_001",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-002",
+      "start_m": 145.771,
+      "end_m": 410.519,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 0.0,
+      "stop_after_m": 460.519,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 8.571528434753418,
+        "y": -203.98934936523438,
+        "z": 0.005945527460426092,
+        "yaw_deg": 179.757080078125,
+        "road_id": 36,
+        "lane_id": -2
+      },
+      "start_pose_route_m": 0.0,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-003",
+      "start_m": 410.519,
+      "end_m": 675.267,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 259.624,
+      "stop_after_m": 725.267,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -227.88833618164062,
+        "y": -149.1581573486328,
+        "z": 10.002808570861816,
+        "yaw_deg": 119.3482437133789,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 259.624,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-004",
+      "start_m": 675.267,
+      "end_m": 800.0,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 524.715,
+      "stop_after_m": 850.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -240.13897705078125,
+        "y": 113.65882110595703,
+        "z": 9.847346305847168,
+        "yaw_deg": 83.60631561279297,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 524.715,
+      "historical_failures": [
+        {
+          "s_m": 771.2668994431177,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_001/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "stationary_high_risk_radar_guarded_crawl",
+              96
+            ],
+            [
+              "unconfirmed_stop_crawl_floor",
+              47
+            ],
+            [
+              "stationary_high_risk_liveness",
+              22
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              15
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 715.267,
+          "kind": "geometry_start",
+          "source_id": "geometry_002",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 771.267,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_001/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-005",
+      "start_m": 800.0,
+      "end_m": 866.097,
+      "task_ids": [
+        "scene3_general_hazard"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade",
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 648.908,
+      "stop_after_m": 916.097,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -161.8775634765625,
+        "y": 199.56466674804688,
+        "z": 8.769612312316895,
+        "yaw_deg": 11.725757598876953,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 648.908,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 800.0,
+          "kind": "task_announce",
+          "source_id": "scene3_general_hazard"
+        },
+        {
+          "s_m": 800.0,
+          "kind": "task_activate",
+          "source_id": "scene3_general_hazard"
+        },
+        {
+          "s_m": 801.267,
+          "kind": "geometry_end",
+          "source_id": "geometry_002",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 809.265,
+          "kind": "geometry_start",
+          "source_id": "geometry_003",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 826.097,
+          "kind": "geometry_end",
+          "source_id": "geometry_003",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 826.097,
+          "kind": "geometry_start",
+          "source_id": "geometry_004",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 855.097,
+          "kind": "geometry_end",
+          "source_id": "geometry_004",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 855.097,
+          "kind": "geometry_start",
+          "source_id": "geometry_005",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-006",
+      "start_m": 866.097,
+      "end_m": 1150.0,
+      "task_ids": [
+        "scene3_general_hazard"
+      ],
+      "event_ids": [],
+      "geometry_kinds": [
+        "traffic_signal"
+      ],
+      "replay_start_m": 648.908,
+      "stop_after_m": 1200.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -161.8775634765625,
+        "y": 199.56466674804688,
+        "z": 8.769612312316895,
+        "yaw_deg": 11.725757598876953,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 648.908,
+      "historical_failures": [
+        {
+          "s_m": 905.0987424777124,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_002/interruption.json",
+          "stop_reason": "controller_error_no_progress",
+          "decision_reasons": [
+            [
+              "instruction_requires_clarification",
+              209
+            ],
+            [
+              "None",
+              209
+            ],
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              95
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 905.0987424777124,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_003/interruption.json",
+          "stop_reason": "controller_error_no_progress",
+          "decision_reasons": [
+            [
+              "None",
+              202
+            ],
+            [
+              "instruction_requires_clarification",
+              201
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 873.097,
+          "kind": "geometry_end",
+          "source_id": "geometry_005",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 905.099,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_002/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 905.099,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_003/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-007",
+      "start_m": 1150.0,
+      "end_m": 1250.0,
+      "task_ids": [],
+      "event_ids": [
+        "scene3_cut_in"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 998.593,
+      "stop_after_m": 1300.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 177.48182678222656,
+        "y": 167.0141143798828,
+        "z": 0.0,
+        "yaw_deg": -48.737884521484375,
+        "road_id": 38,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 998.593,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 1150.0,
+          "kind": "task_window_end",
+          "source_id": "scene3_general_hazard"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-008",
+      "start_m": 1250.0,
+      "end_m": 1431.954,
+      "task_ids": [
+        "scene3_cut_in_decelerate"
+      ],
+      "event_ids": [
+        "scene3_cut_in"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 1099.832,
+      "stop_after_m": 1481.954,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 203.3642578125,
+        "y": 72.0201187133789,
+        "z": 0.0,
+        "yaw_deg": -89.33536529541016,
+        "road_id": 38,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 1099.832,
+      "historical_failures": [
+        {
+          "s_m": 1255.55102265736,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_004/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              189
+            ],
+            [
+              "stationary_high_risk_liveness",
+              8
+            ],
+            [
+              "stationary_high_risk_radar_guarded_crawl",
+              3
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 1267.5510169736133,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_005/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 1250.0,
+          "kind": "task_announce",
+          "source_id": "scene3_cut_in_decelerate"
+        },
+        {
+          "s_m": 1250.0,
+          "kind": "task_activate",
+          "source_id": "scene3_cut_in_decelerate"
+        },
+        {
+          "s_m": 1350.0,
+          "kind": "event_position",
+          "source_id": "scene3_cut_in",
+          "field": "distance_m"
+        },
+        {
+          "s_m": 1250.0,
+          "kind": "event_position",
+          "source_id": "scene3_cut_in",
+          "field": "activate_at_m"
+        },
+        {
+          "s_m": 1255.551,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_004/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 1267.551,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_005/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-009",
+      "start_m": 1431.954,
+      "end_m": 1550.0,
+      "task_ids": [
+        "scene3_cut_in_decelerate"
+      ],
+      "event_ids": [
+        "scene3_cut_in"
+      ],
+      "geometry_kinds": [
+        "grade",
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 1099.832,
+      "stop_after_m": 1600.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 203.3642578125,
+        "y": 72.0201187133789,
+        "z": 0.0,
+        "yaw_deg": -89.33536529541016,
+        "road_id": 38,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 1099.832,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 1471.954,
+          "kind": "geometry_start",
+          "source_id": "geometry_006",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 1489.024,
+          "kind": "geometry_end",
+          "source_id": "geometry_006",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 1489.024,
+          "kind": "geometry_start",
+          "source_id": "geometry_007",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 1518.034,
+          "kind": "geometry_end",
+          "source_id": "geometry_007",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 1520.034,
+          "kind": "geometry_start",
+          "source_id": "geometry_008",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 1532.276,
+          "kind": "geometry_end",
+          "source_id": "geometry_008",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 1538.276,
+          "kind": "geometry_start",
+          "source_id": "geometry_009",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-010",
+      "start_m": 1550.0,
+      "end_m": 1672.266,
+      "task_ids": [],
+      "event_ids": [
+        "scene3_cut_in"
+      ],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 1099.832,
+      "stop_after_m": 1722.266,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 203.3642578125,
+        "y": 72.0201187133789,
+        "z": 0.0,
+        "yaw_deg": -89.33536529541016,
+        "road_id": 38,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 1099.832,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 1550.0,
+          "kind": "task_window_end",
+          "source_id": "scene3_cut_in_decelerate"
+        },
+        {
+          "s_m": 1550.0,
+          "kind": "event_position",
+          "source_id": "scene3_cut_in",
+          "field": "resolve_after_m"
+        },
+        {
+          "s_m": 1632.266,
+          "kind": "geometry_end",
+          "source_id": "geometry_009",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-011",
+      "start_m": 1672.266,
+      "end_m": 1937.014,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 1522.034,
+      "stop_after_m": 1987.014,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 15.280767440795898,
+        "y": -204.01780700683594,
+        "z": 0.0,
+        "yaw_deg": 179.757080078125,
+        "road_id": 36,
+        "lane_id": -2
+      },
+      "start_pose_route_m": 1522.034,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-012",
+      "start_m": 1937.014,
+      "end_m": 2201.761,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 1786.119,
+      "stop_after_m": 2251.761,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -227.88833618164062,
+        "y": -149.1581573486328,
+        "z": 10.002808570861816,
+        "yaw_deg": 119.3482437133789,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 1786.119,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-013",
+      "start_m": 2201.761,
+      "end_m": 2295.759,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 2051.209,
+      "stop_after_m": 2345.759,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -240.13897705078125,
+        "y": 113.65882110595703,
+        "z": 9.847346305847168,
+        "yaw_deg": 83.60631561279297,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 2051.209,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 2241.761,
+          "kind": "geometry_start",
+          "source_id": "geometry_010",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-014",
+      "start_m": 2295.759,
+      "end_m": 2367.761,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade",
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 2144.863,
+      "stop_after_m": 2417.761,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -190.35826110839844,
+        "y": 188.88014221191406,
+        "z": 9.086151123046875,
+        "yaw_deg": 29.40130615234375,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 2144.863,
+      "historical_failures": [
+        {
+          "s_m": 2299.7628150738005,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_006/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "stationary_high_risk_radar_guarded_crawl",
+              73
+            ],
+            [
+              "unconfirmed_stop_crawl_floor",
+              62
+            ],
+            [
+              "stationary_high_risk_liveness",
+              27
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              16
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 2327.761,
+          "kind": "geometry_end",
+          "source_id": "geometry_010",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 2335.759,
+          "kind": "geometry_start",
+          "source_id": "geometry_011",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 2352.592,
+          "kind": "geometry_end",
+          "source_id": "geometry_011",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 2352.592,
+          "kind": "geometry_start",
+          "source_id": "geometry_012",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 2299.763,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_006/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-015",
+      "start_m": 2367.761,
+      "end_m": 2439.592,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 2215.761,
+      "stop_after_m": 2489.592,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -121.65967559814453,
+        "y": 201.62049865722656,
+        "z": 8.347559928894043,
+        "yaw_deg": -0.028712520375847816,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 2215.761,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 2381.592,
+          "kind": "geometry_end",
+          "source_id": "geometry_012",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 2381.592,
+          "kind": "geometry_start",
+          "source_id": "geometry_013",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 2399.592,
+          "kind": "geometry_end",
+          "source_id": "geometry_013",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-016",
+      "start_m": 2439.592,
+      "end_m": 2644.796,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 2287.761,
+      "stop_after_m": 2694.796,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -49.65968322753906,
+        "y": 201.58441162109375,
+        "z": 3.471304416656494,
+        "yaw_deg": -0.028712520375847816,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 2287.761,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-017",
+      "start_m": 2644.796,
+      "end_m": 2850.0,
+      "task_ids": [],
+      "event_ids": [
+        "scene3_advance_warning"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 2494.569,
+      "stop_after_m": 2900.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 154.2723846435547,
+        "y": 186.6588897705078,
+        "z": 0.0,
+        "yaw_deg": -31.7520694732666,
+        "road_id": 38,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 2494.569,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-018",
+      "start_m": 2850.0,
+      "end_m": 2975.0,
+      "task_ids": [
+        "scene3_work_zone_warning"
+      ],
+      "event_ids": [
+        "scene3_advance_warning",
+        "scene3_cone_taper"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 2698.632,
+      "stop_after_m": 3025.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 203.9251251220703,
+        "y": -0.2807072401046753,
+        "z": 0.0,
+        "yaw_deg": -91.37687683105469,
+        "road_id": 12,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 2698.632,
+      "historical_failures": [
+        {
+          "s_m": 2859.053322065663,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_007/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 2859.053322065663,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_008/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "active_instruction_speed_bound",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 2850.0,
+          "kind": "task_announce",
+          "source_id": "scene3_work_zone_warning"
+        },
+        {
+          "s_m": 2850.0,
+          "kind": "task_activate",
+          "source_id": "scene3_work_zone_warning"
+        },
+        {
+          "s_m": 2925.0,
+          "kind": "event_position",
+          "source_id": "scene3_advance_warning",
+          "field": "distance_m"
+        },
+        {
+          "s_m": 2850.0,
+          "kind": "event_position",
+          "source_id": "scene3_advance_warning",
+          "field": "activate_at_m"
+        },
+        {
+          "s_m": 2925.0,
+          "kind": "event_position",
+          "source_id": "scene3_advance_warning",
+          "field": "props.s_m"
+        },
+        {
+          "s_m": 2859.053,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_007/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 2859.053,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_008/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-019",
+      "start_m": 2975.0,
+      "end_m": 3050.0,
+      "task_ids": [
+        "scene3_work_zone_warning",
+        "scene3_right_lane_closure"
+      ],
+      "event_ids": [
+        "scene3_advance_warning",
+        "scene3_cone_taper"
+      ],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 2698.632,
+      "stop_after_m": 3100.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 203.9251251220703,
+        "y": -0.2807072401046753,
+        "z": 0.0,
+        "yaw_deg": -91.37687683105469,
+        "road_id": 12,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 2698.632,
+      "historical_failures": [
+        {
+          "s_m": 2976.2518372272657,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_009/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "requested_lane_wait_for_sensor_clearance",
+              198
+            ],
+            [
+              "generic_text_envelope",
+              2
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "visual_target_lane_not_clear",
+              185
+            ],
+            [
+              "vla_overridden_by_deceleration_risk",
+              15
+            ],
+            [
+              "await_fresh_continuous_lane_clearance",
+              13
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 2976.2518372272657,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_010/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "requested_lane_wait_for_sensor_clearance",
+              200
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "visual_target_lane_not_clear",
+              182
+            ],
+            [
+              "vla_overridden_by_deceleration_risk",
+              18
+            ],
+            [
+              "await_fresh_continuous_lane_clearance",
+              18
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 2975.0,
+          "kind": "task_announce",
+          "source_id": "scene3_right_lane_closure"
+        },
+        {
+          "s_m": 2975.0,
+          "kind": "task_activate",
+          "source_id": "scene3_right_lane_closure"
+        },
+        {
+          "s_m": 2975.0,
+          "kind": "event_position",
+          "source_id": "scene3_cone_taper",
+          "field": "activate_at_m"
+        },
+        {
+          "s_m": 2998.449,
+          "kind": "geometry_start",
+          "source_id": "geometry_014",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 3015.519,
+          "kind": "geometry_end",
+          "source_id": "geometry_014",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 3015.519,
+          "kind": "geometry_start",
+          "source_id": "geometry_015",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 3044.529,
+          "kind": "geometry_end",
+          "source_id": "geometry_015",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 3046.529,
+          "kind": "geometry_start",
+          "source_id": "geometry_016",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 2976.252,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_009/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 2976.252,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_010/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-020",
+      "start_m": 3050.0,
+      "end_m": 3100.0,
+      "task_ids": [
+        "scene3_right_lane_closure"
+      ],
+      "event_ids": [
+        "scene3_advance_warning",
+        "scene3_cone_taper",
+        "scene3_work_zone"
+      ],
+      "geometry_kinds": [
+        "grade",
+        "traffic_signal"
+      ],
+      "replay_start_m": 2698.632,
+      "stop_after_m": 3150.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 203.9251251220703,
+        "y": -0.2807072401046753,
+        "z": 0.0,
+        "yaw_deg": -91.37687683105469,
+        "road_id": 12,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 2698.632,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 3050.0,
+          "kind": "task_window_end",
+          "source_id": "scene3_work_zone_warning"
+        },
+        {
+          "s_m": 3050.0,
+          "kind": "event_position",
+          "source_id": "scene3_advance_warning",
+          "field": "resolve_after_m"
+        },
+        {
+          "s_m": 3050.0,
+          "kind": "event_position",
+          "source_id": "scene3_cone_taper",
+          "field": "distance_m"
+        },
+        {
+          "s_m": 3050.0,
+          "kind": "event_position",
+          "source_id": "scene3_cone_taper",
+          "field": "closure.taper_start_s_m"
+        },
+        {
+          "s_m": 3058.77,
+          "kind": "geometry_end",
+          "source_id": "geometry_016",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 3064.77,
+          "kind": "geometry_start",
+          "source_id": "geometry_017",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-021",
+      "start_m": 3100.0,
+      "end_m": 3150.0,
+      "task_ids": [
+        "scene3_right_lane_closure"
+      ],
+      "event_ids": [
+        "scene3_cone_taper",
+        "scene3_work_zone"
+      ],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 2823.283,
+      "stop_after_m": 3200.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 202.9706573486328,
+        "y": -124.19647216796875,
+        "z": 0.0,
+        "yaw_deg": -104.20132446289062,
+        "road_id": 34,
+        "lane_id": -2
+      },
+      "start_pose_route_m": 2823.283,
+      "historical_failures": [
+        {
+          "s_m": 3102.7632125061723,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_011/interruption.json",
+          "stop_reason": "controller_error_no_progress",
+          "decision_reasons": [
+            [
+              "instruction_requires_clarification",
+              209
+            ],
+            [
+              "None",
+              209
+            ],
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              90
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              5
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3102.7632125061723,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_012/interruption.json",
+          "stop_reason": "controller_error_no_progress",
+          "decision_reasons": [
+            [
+              "None",
+              202
+            ],
+            [
+              "instruction_requires_clarification",
+              201
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 3100.0,
+          "kind": "event_position",
+          "source_id": "scene3_work_zone",
+          "field": "activate_at_m"
+        },
+        {
+          "s_m": 3102.763,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_011/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3102.763,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_012/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-022",
+      "start_m": 3150.0,
+      "end_m": 3250.0,
+      "task_ids": [
+        "scene3_pass_work_zone"
+      ],
+      "event_ids": [
+        "scene3_cone_taper",
+        "scene3_temporary_pedestrian",
+        "scene3_work_zone"
+      ],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 2823.283,
+      "stop_after_m": 3300.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 202.9706573486328,
+        "y": -124.19647216796875,
+        "z": 0.0,
+        "yaw_deg": -104.20132446289062,
+        "road_id": 34,
+        "lane_id": -2
+      },
+      "start_pose_route_m": 2823.283,
+      "historical_failures": [
+        {
+          "s_m": 3210.854015654578,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_013/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "unconfirmed_stop_crawl_floor",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3210.854015654578,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_014/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3210.854015654578,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_015/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3210.854015654578,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_016/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3210.854015654578,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_017/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3210.854015654578,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_018/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 3150.0,
+          "kind": "task_window_end",
+          "source_id": "scene3_right_lane_closure"
+        },
+        {
+          "s_m": 3150.0,
+          "kind": "task_announce",
+          "source_id": "scene3_pass_work_zone"
+        },
+        {
+          "s_m": 3150.0,
+          "kind": "task_activate",
+          "source_id": "scene3_pass_work_zone"
+        },
+        {
+          "s_m": 3150.0,
+          "kind": "event_position",
+          "source_id": "scene3_cone_taper",
+          "field": "resolve_after_m"
+        },
+        {
+          "s_m": 3150.0,
+          "kind": "event_position",
+          "source_id": "scene3_cone_taper",
+          "field": "closure.taper_end_s_m"
+        },
+        {
+          "s_m": 3150.0,
+          "kind": "event_position",
+          "source_id": "scene3_work_zone",
+          "field": "distance_m"
+        },
+        {
+          "s_m": 3150.0,
+          "kind": "event_position",
+          "source_id": "scene3_work_zone",
+          "field": "zone.start_s_m"
+        },
+        {
+          "s_m": 3225.0,
+          "kind": "event_position",
+          "source_id": "scene3_work_zone",
+          "field": "zone.work_vehicle_spawns[0].s_m"
+        },
+        {
+          "s_m": 3158.76,
+          "kind": "geometry_end",
+          "source_id": "geometry_017",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 3210.854,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_013/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3210.854,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_014/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3210.854,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_015/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3210.854,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_016/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3210.854,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_017/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3210.854,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_018/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-023",
+      "start_m": 3250.0,
+      "end_m": 3425.0,
+      "task_ids": [
+        "scene3_pass_work_zone",
+        "scene3_worker_crossing"
+      ],
+      "event_ids": [
+        "scene3_temporary_pedestrian",
+        "scene3_work_zone"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 2949.519,
+      "stop_after_m": 3475.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 114.24642181396484,
+        "y": -203.4127960205078,
+        "z": 0.0,
+        "yaw_deg": -172.27932739257812,
+        "road_id": 34,
+        "lane_id": -2
+      },
+      "start_pose_route_m": 2949.519,
+      "historical_failures": [
+        {
+          "s_m": 3302.4400116658735,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_020/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              191
+            ],
+            [
+              "active_instruction_speed_bound",
+              9
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3310.5810118480686,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_021/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "stationary_high_risk_radar_guarded_crawl",
+              96
+            ],
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              75
+            ],
+            [
+              "active_instruction_speed_bound",
+              29
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3421.537519800519,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_022/interruption.json",
+          "stop_reason": null,
+          "decision_reasons": [
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              188
+            ],
+            [
+              "generic_text_envelope",
+              16
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              16
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 3250.0,
+          "kind": "task_announce",
+          "source_id": "scene3_worker_crossing"
+        },
+        {
+          "s_m": 3250.0,
+          "kind": "task_activate",
+          "source_id": "scene3_worker_crossing"
+        },
+        {
+          "s_m": 3400.0,
+          "kind": "event_position",
+          "source_id": "scene3_work_zone",
+          "field": "zone.work_vehicle_spawns[1].s_m"
+        },
+        {
+          "s_m": 3300.0,
+          "kind": "event_position",
+          "source_id": "scene3_temporary_pedestrian",
+          "field": "distance_m"
+        },
+        {
+          "s_m": 3250.0,
+          "kind": "event_position",
+          "source_id": "scene3_temporary_pedestrian",
+          "field": "activate_at_m"
+        },
+        {
+          "s_m": 3345.0,
+          "kind": "event_position",
+          "source_id": "scene3_temporary_pedestrian",
+          "field": "workers[0].start_s_m"
+        },
+        {
+          "s_m": 3380.0,
+          "kind": "event_position",
+          "source_id": "scene3_temporary_pedestrian",
+          "field": "workers[1].start_s_m"
+        },
+        {
+          "s_m": 3302.44,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_020/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3310.581,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_021/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 3421.538,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_022/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-024",
+      "start_m": 3425.0,
+      "end_m": 3450.0,
+      "task_ids": [
+        "scene3_pass_work_zone"
+      ],
+      "event_ids": [
+        "scene3_temporary_pedestrian",
+        "scene3_work_zone"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 2949.519,
+      "stop_after_m": 3500.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 114.24642181396484,
+        "y": -203.4127960205078,
+        "z": 0.0,
+        "yaw_deg": -172.27932739257812,
+        "road_id": 34,
+        "lane_id": -2
+      },
+      "start_pose_route_m": 2949.519,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 3425.0,
+          "kind": "task_window_end",
+          "source_id": "scene3_worker_crossing"
+        },
+        {
+          "s_m": 3425.0,
+          "kind": "event_position",
+          "source_id": "scene3_temporary_pedestrian",
+          "field": "resolve_after_m"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-025",
+      "start_m": 3450.0,
+      "end_m": 3728.256,
+      "task_ids": [],
+      "event_ids": [
+        "scene3_work_zone"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 2949.519,
+      "stop_after_m": 3778.256,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 114.24642181396484,
+        "y": -203.4127960205078,
+        "z": 0.0,
+        "yaw_deg": -172.27932739257812,
+        "road_id": 34,
+        "lane_id": -2
+      },
+      "start_pose_route_m": 2949.519,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 3450.0,
+          "kind": "task_window_end",
+          "source_id": "scene3_pass_work_zone"
+        },
+        {
+          "s_m": 3450.0,
+          "kind": "event_position",
+          "source_id": "scene3_work_zone",
+          "field": "resolve_after_m"
+        },
+        {
+          "s_m": 3450.0,
+          "kind": "event_position",
+          "source_id": "scene3_work_zone",
+          "field": "zone.end_s_m"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-026",
+      "start_m": 3728.256,
+      "end_m": 3822.253,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 3577.704,
+      "stop_after_m": 3872.253,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -240.13897705078125,
+        "y": 113.65882110595703,
+        "z": 9.847346305847168,
+        "yaw_deg": 83.60631561279297,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 3577.704,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 3768.256,
+          "kind": "geometry_start",
+          "source_id": "geometry_018",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-027",
+      "start_m": 3822.253,
+      "end_m": 3894.256,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade",
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 3671.358,
+      "stop_after_m": 3944.256,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -190.35826110839844,
+        "y": 188.88014221191406,
+        "z": 9.086151123046875,
+        "yaw_deg": 29.40130615234375,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 3671.358,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 3854.256,
+          "kind": "geometry_end",
+          "source_id": "geometry_018",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 3862.253,
+          "kind": "geometry_start",
+          "source_id": "geometry_019",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 3879.086,
+          "kind": "geometry_end",
+          "source_id": "geometry_019",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 3879.086,
+          "kind": "geometry_start",
+          "source_id": "geometry_020",
+          "geometry_kind": "junction"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-028",
+      "start_m": 3894.256,
+      "end_m": 3966.086,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 3742.256,
+      "stop_after_m": 4016.086,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -121.65967559814453,
+        "y": 201.62049865722656,
+        "z": 8.347559928894043,
+        "yaw_deg": -0.028712520375847816,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 3742.256,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 3908.086,
+          "kind": "geometry_end",
+          "source_id": "geometry_020",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 3908.086,
+          "kind": "geometry_start",
+          "source_id": "geometry_021",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 3926.086,
+          "kind": "geometry_end",
+          "source_id": "geometry_021",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-029",
+      "start_m": 3966.086,
+      "end_m": 4225.515,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 3814.256,
+      "stop_after_m": 4275.515,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -49.65968322753906,
+        "y": 201.58441162109375,
+        "z": 3.471304416656494,
+        "yaw_deg": -0.028712520375847816,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 3814.256,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-030",
+      "start_m": 4225.515,
+      "end_m": 4484.943,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [],
+      "replay_start_m": 4073.962,
+      "stop_after_m": 4534.943,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 190.3043212890625,
+        "y": 148.72482299804688,
+        "z": 0.0,
+        "yaw_deg": -61.19415283203125,
+        "road_id": 38,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 4073.962,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-031",
+      "start_m": 4484.943,
+      "end_m": 4582.013,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 4332.946,
+      "stop_after_m": 4632.013,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 205.7928924560547,
+        "y": -107.62089538574219,
+        "z": 0.0,
+        "yaw_deg": -95.12425994873047,
+        "road_id": 34,
+        "lane_id": -2
+      },
+      "start_pose_route_m": 4332.946,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 4524.943,
+          "kind": "geometry_start",
+          "source_id": "geometry_022",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 4542.013,
+          "kind": "geometry_end",
+          "source_id": "geometry_022",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 4542.013,
+          "kind": "geometry_start",
+          "source_id": "geometry_023",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 4571.023,
+          "kind": "geometry_end",
+          "source_id": "geometry_023",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 4573.023,
+          "kind": "geometry_start",
+          "source_id": "geometry_024",
+          "geometry_kind": "traffic_signal"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-032",
+      "start_m": 4582.013,
+      "end_m": 4725.255,
+      "task_ids": [],
+      "event_ids": [],
+      "geometry_kinds": [
+        "grade",
+        "traffic_signal"
+      ],
+      "replay_start_m": 4431.831,
+      "stop_after_m": 4775.255,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 155.56149291992188,
+        "y": -188.67324829101562,
+        "z": 0.0,
+        "yaw_deg": -148.4520263671875,
+        "road_id": 34,
+        "lane_id": -2
+      },
+      "start_pose_route_m": 4431.831,
+      "historical_failures": [
+        {
+          "s_m": 4701.259130907866,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_024/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "requested_lane_wait_for_sensor_clearance",
+              200
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "target_lane_geometry_unavailable",
+              200
+            ],
+            [
+              "visual_target_lane_not_clear",
+              103
+            ],
+            [
+              "vla_overridden_by_deceleration_risk",
+              92
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4701.259130907866,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_025/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "generic_text_envelope",
+              119
+            ],
+            [
+              "requested_lane_wait_for_sensor_clearance",
+              80
+            ],
+            [
+              "stationary_high_risk_liveness",
+              1
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_deceleration_risk",
+              173
+            ],
+            [
+              "await_fresh_continuous_lane_clearance",
+              54
+            ],
+            [
+              "visual_target_lane_not_clear",
+              26
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 4585.264,
+          "kind": "geometry_end",
+          "source_id": "geometry_024",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 4591.264,
+          "kind": "geometry_start",
+          "source_id": "geometry_025",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 4685.255,
+          "kind": "geometry_end",
+          "source_id": "geometry_025",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 4701.259,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_024/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4701.259,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_025/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-033",
+      "start_m": 4725.255,
+      "end_m": 5000.0,
+      "task_ids": [],
+      "event_ids": [
+        "scene3_work_zone_exit"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 4575.023,
+      "stop_after_m": 5050.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": 15.280767440795898,
+        "y": -204.01780700683594,
+        "z": 0.0,
+        "yaw_deg": 179.757080078125,
+        "road_id": 36,
+        "lane_id": -2
+      },
+      "start_pose_route_m": 4575.023,
+      "historical_failures": [
+        {
+          "s_m": 4833.006430805699,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_026/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "unconfirmed_stop_crawl_floor",
+              161
+            ],
+            [
+              "vla_accepted_phase-recovery-epoch_06",
+              33
+            ],
+            [
+              "generic_text_envelope",
+              6
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_deceleration_risk",
+              6
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4833.006430805699,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_027/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "unconfirmed_stop_crawl_floor",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4833.006430805699,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_028/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "unconfirmed_stop_crawl_floor",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4841.147405388871,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_029/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "generic_text_envelope",
+              200
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              200
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4841.147405388871,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_030/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "generic_text_envelope",
+              200
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              200
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4841.147405388871,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_031/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "generic_text_envelope",
+              200
+            ]
+          ],
+          "blocked_codes": [
+            [
+              "vla_overridden_by_emergency_risk",
+              200
+            ]
+          ],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 4833.006,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_026/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4833.006,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_027/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4833.006,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_028/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4841.147,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_029/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4841.147,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_030/interruption.json",
+          "route_equivalence": "not_verified"
+        },
+        {
+          "s_m": 4841.147,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_031/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-034",
+      "start_m": 5000.0,
+      "end_m": 5100.0,
+      "task_ids": [],
+      "event_ids": [
+        "scene3_work_zone_exit"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 4849.284,
+      "stop_after_m": 5150.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -232.4208221435547,
+        "y": -140.0516815185547,
+        "z": 10.002007484436035,
+        "yaw_deg": 113.572998046875,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 4849.284,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 5000.0,
+          "kind": "event_position",
+          "source_id": "scene3_work_zone_exit",
+          "field": "activate_at_m"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-035",
+      "start_m": 5100.0,
+      "end_m": 5250.0,
+      "task_ids": [
+        "scene3_resume_normal_driving"
+      ],
+      "event_ids": [
+        "scene3_work_zone_exit"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 4849.284,
+      "stop_after_m": 5300.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -232.4208221435547,
+        "y": -140.0516815185547,
+        "z": 10.002007484436035,
+        "yaw_deg": 113.572998046875,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 4849.284,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 5100.0,
+          "kind": "task_announce",
+          "source_id": "scene3_resume_normal_driving"
+        },
+        {
+          "s_m": 5100.0,
+          "kind": "task_activate",
+          "source_id": "scene3_resume_normal_driving"
+        },
+        {
+          "s_m": 5100.0,
+          "kind": "event_position",
+          "source_id": "scene3_work_zone_exit",
+          "field": "distance_m"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-036",
+      "start_m": 5250.0,
+      "end_m": 5348.748,
+      "task_ids": [
+        "scene3_resume_normal_driving"
+      ],
+      "event_ids": [
+        "scene3_work_zone_exit"
+      ],
+      "geometry_kinds": [
+        "grade"
+      ],
+      "replay_start_m": 4849.284,
+      "stop_after_m": 5398.748,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -232.4208221435547,
+        "y": -140.0516815185547,
+        "z": 10.002007484436035,
+        "yaw_deg": 113.572998046875,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 4849.284,
+      "historical_failures": [],
+      "sub_breakpoints": [
+        {
+          "s_m": 5250.0,
+          "kind": "event_position",
+          "source_id": "scene3_work_zone_exit",
+          "field": "resolve_after_m"
+        },
+        {
+          "s_m": 5294.75,
+          "kind": "geometry_start",
+          "source_id": "geometry_026",
+          "geometry_kind": "grade"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-037",
+      "start_m": 5348.748,
+      "end_m": 5420.75,
+      "task_ids": [
+        "scene3_resume_normal_driving"
+      ],
+      "event_ids": [
+        "scene3_work_zone_exit"
+      ],
+      "geometry_kinds": [
+        "grade",
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 4849.284,
+      "stop_after_m": 5470.75,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -232.4208221435547,
+        "y": -140.0516815185547,
+        "z": 10.002007484436035,
+        "yaw_deg": 113.572998046875,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 4849.284,
+      "historical_failures": [
+        {
+          "s_m": 5348.754645343826,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_032/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "stationary_high_risk_radar_guarded_crawl",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 5380.75,
+          "kind": "geometry_end",
+          "source_id": "geometry_026",
+          "geometry_kind": "grade"
+        },
+        {
+          "s_m": 5388.748,
+          "kind": "geometry_start",
+          "source_id": "geometry_027",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 5405.58,
+          "kind": "geometry_end",
+          "source_id": "geometry_027",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 5405.58,
+          "kind": "geometry_start",
+          "source_id": "geometry_028",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 5348.755,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_032/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-038",
+      "start_m": 5420.75,
+      "end_m": 5492.58,
+      "task_ids": [
+        "scene3_resume_normal_driving"
+      ],
+      "event_ids": [
+        "scene3_work_zone_exit"
+      ],
+      "geometry_kinds": [
+        "junction",
+        "traffic_signal"
+      ],
+      "replay_start_m": 4849.284,
+      "stop_after_m": 5542.58,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -232.4208221435547,
+        "y": -140.0516815185547,
+        "z": 10.002007484436035,
+        "yaw_deg": 113.572998046875,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 4849.284,
+      "historical_failures": [
+        {
+          "s_m": 5429.5864851945125,
+          "source": "test/10_02/whole_routes_001/scene3/github_logs/segment_033/interruption.json",
+          "stop_reason": "route_stalled",
+          "decision_reasons": [
+            [
+              "traffic_signal_stopline_constraint",
+              200
+            ]
+          ],
+          "blocked_codes": [],
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "sub_breakpoints": [
+        {
+          "s_m": 5434.58,
+          "kind": "geometry_end",
+          "source_id": "geometry_028",
+          "geometry_kind": "junction"
+        },
+        {
+          "s_m": 5434.58,
+          "kind": "geometry_start",
+          "source_id": "geometry_029",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 5452.58,
+          "kind": "geometry_end",
+          "source_id": "geometry_029",
+          "geometry_kind": "traffic_signal"
+        },
+        {
+          "s_m": 5429.586,
+          "kind": "historical_failure",
+          "source_id": "test/10_02/whole_routes_001/scene3/github_logs/segment_033/interruption.json",
+          "route_equivalence": "not_verified"
+        }
+      ],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-039",
+      "start_m": 5492.58,
+      "end_m": 5746.29,
+      "task_ids": [
+        "scene3_resume_normal_driving"
+      ],
+      "event_ids": [
+        "scene3_work_zone_exit"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 4849.284,
+      "stop_after_m": 5796.29,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -232.4208221435547,
+        "y": -140.0516815185547,
+        "z": 10.002007484436035,
+        "yaw_deg": 113.572998046875,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 4849.284,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    },
+    {
+      "section_id": "S3-040",
+      "start_m": 5746.29,
+      "end_m": 6000.0,
+      "task_ids": [
+        "scene3_resume_normal_driving"
+      ],
+      "event_ids": [
+        "scene3_work_zone_exit"
+      ],
+      "geometry_kinds": [],
+      "replay_start_m": 4849.284,
+      "stop_after_m": 6000.0,
+      "minimum_sensor_warmup_s": 5.0,
+      "minimum_memory_warmup_s": 30.0,
+      "entry_mode": "replay_from_task_and_event_origin",
+      "cold_start_allowed_for": [
+        "geometry",
+        "output_contract",
+        "pid_actuation"
+      ],
+      "cold_start_valid_for_task_completion": false,
+      "prerequisites": {},
+      "persistent_actor_event_ids": [],
+      "state_to_preserve": [
+        "ordered_plan_and_step",
+        "event_actor_state",
+        "ego_speed_and_lane",
+        "target_tracks",
+        "temporal_memory",
+        "traffic_signal_state"
+      ],
+      "start_pose": {
+        "x": -232.4208221435547,
+        "y": -140.0516815185547,
+        "z": 10.002007484436035,
+        "yaw_deg": 113.572998046875,
+        "road_id": 37,
+        "lane_id": -1
+      },
+      "start_pose_route_m": 4849.284,
+      "historical_failures": [],
+      "sub_breakpoints": [],
+      "checks": [
+        "collision_and_rule_violations",
+        "output_schema_and_finiteness",
+        "task_order_and_observed_completion",
+        "event_response_and_recovery",
+        "progress_and_stop_reason",
+        "latency_p95_and_max"
+      ]
+    }
+  ],
+  "assessment_passed": false,
+  "scope": "Diagnostic route partition; not a change to scenario or policy",
+  "map_sha256": "7edc53b0be840e177598da7a4ed9571146d7b2595ce280d154c90f92e8a48851",
+  "route_geometry_sha256": "6b6eb5a21f60f2fe4d4c380addc25402dbf52fdd23e787f2ec7d71c6e896ee30",
+  "geometry_source": "CARLA official map via production route constructors",
+  "environment_context": {
+    "weather": {
+      "preset": "rainy_night",
+      "cloudiness": 100.0,
+      "precipitation": 80.0,
+      "precipitation_deposits": 80.0,
+      "wind_intensity": 35.0,
+      "sun_azimuth_angle": 280.0,
+      "sun_altitude_angle": -15.0,
+      "fog_density": 35.0,
+      "fog_distance": 75.0,
+      "wetness": 100.0
+    },
+    "surface_and_visibility": {
+      "wet_road_friction_scale": 0.68,
+      "wet_speed_limit_kmh": 50.0,
+      "standing_water_depth_mm": [
+        0.0,
+        6.0
+      ],
+      "headlight_reflection": true,
+      "tyre_spray": true,
+      "camera_degradation": {
+        "rain_streak_probability": 0.35,
+        "oncoming_glare_probability": 0.12,
+        "exposure_recovery_s": 0.9
+      },
+      "policy_interface": "environment_observation/v1",
+      "friction_triggers": {
+        "enabled": true,
+        "friction": 0.68,
+        "spacing_m": 35.0,
+        "extent_x_m": 22.0,
+        "extent_y_m": 7.0,
+        "extent_z_m": 1.0
+      }
+    },
+    "lane_contract": {
+      "traffic_rule": "RHT",
+      "logical_lane_roles": {
+        "left_lane_id": -1,
+        "middle_lane_id": -2,
+        "right_lane_id": -3,
+        "shoulder_lane_id": -4,
+        "sidewalk_lane_id": -5,
+        "left_roadside_lane_id": -6
+      },
+      "logical_route_id": 1,
+      "actual_road_and_lane_ids_are_resolved_at_runtime": true
+    }
+  }
+}

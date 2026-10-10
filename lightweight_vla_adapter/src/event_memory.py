@@ -112,6 +112,8 @@ class EventMemoryHead(nn.Module):
         context_features = self.context_projection(context)
         conditioned_current = current + context_features
         event = self.event_head(torch.cat((conditioned_current, short), -1))
+        if not getattr(self,'rear_approach_enabled',True):
+            event=torch.cat((event[:,:-1],torch.full_like(event[:,-1:],-20.)),dim=-1)
         duration = self.duration_head(torch.cat((conditioned_current, short, event.sigmoid()), -1))
         weights = duration.softmax(-1)
         hard_weights = F.one_hot(duration.argmax(-1), 3).to(weights.dtype)
@@ -162,9 +164,11 @@ def configure_finetuning(base, layers=2, train_sensor_backbones=False):
 
 
 class EventMemoryRuntime(nn.Module):
-    def __init__(self, head):
+    def __init__(self, head, *, rear_approach_risk_enabled=False):
         super().__init__()
         self.head = head
+        self.rear_approach_risk_enabled=bool(rear_approach_risk_enabled)
+        self.head.rear_approach_enabled=self.rear_approach_risk_enabled
         self.diagnostics = {}
 
     def forward(self, base_output, batch, *, longitudinal_authorized):
@@ -178,6 +182,10 @@ class EventMemoryRuntime(nn.Module):
         memory = batch['event_memory'].float()
         valid = batch['event_memory_valid']
         memory = torch.where(valid[..., None], memory, torch.zeros_like(memory))
+        if not self.rear_approach_risk_enabled:
+            memory=memory.clone()
+            memory[:,:,10:20]=0.;memory[:,:,30:40]=0.
+            memory[:,:,49]=0.;memory[:,:,51]=0.
         if 'behavior_memory' in extra:
             values = extra['behavior_memory']
             values = torch.where(extra['behavior_valid'][..., None], values, torch.zeros_like(values))
@@ -226,4 +234,19 @@ class EventMemoryRuntime(nn.Module):
                 events_ablated=bool(self.head.force_no_event_context),
                 long_memory_ablated=bool(self.head.force_current_segment_only),
                 feature_version='layered_observation_event/1.0')
-        return self.head.apply(base_output, output, longitudinal_authorized)
+        result=self.head.apply(base_output, output, longitudinal_authorized)
+        self.diagnostics['rear_approach_risk_enabled']=self.rear_approach_risk_enabled
+        if not self.rear_approach_risk_enabled:
+            # The residual risk head was trained on joint front/rear labels.
+            # Keep its raw output for audit, but do not use it after removing rear events.
+            if result is not base_output:
+                result=replace(result,visual_risk_logits=base_output.visual_risk_logits,
+                    temporal_used=base_output.temporal_used,risk_score=base_output.risk_score,
+                    ordinal_risk_logits=base_output.ordinal_risk_logits,
+                    risk_horizon_logits=base_output.risk_horizon_logits,
+                    risk_uncertainty=base_output.risk_uncertainty)
+            self.diagnostics['risk_scope']='base_multimodal_without_joint_rear_residual'
+            self.diagnostics['risk_residual_applied']=False
+            self.diagnostics['event_probabilities'][-1]=0.
+            self.diagnostics['disabled_events']=['rear_approach']
+        return result

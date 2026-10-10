@@ -48,6 +48,14 @@ def build_detector(args: argparse.Namespace):
                 ),
                 infrastructure_tiles=args.infrastructure_tiles,
             )
+            if args.cyclist_weights:
+                from .cyclist_detection import CyclistAugmentedDetector
+
+                expert = UltralyticsTrafficDetector(
+                    args.cyclist_weights, device=args.device,
+                    image_size=640, score_threshold=0.25,
+                )
+                object_detector = CyclistAugmentedDetector(object_detector, expert)
             return CompositePanopticBackend(road_detector, object_detector)
         return road_detector
     return TorchvisionTrafficDetector(
@@ -75,6 +83,10 @@ def parse_args() -> argparse.Namespace:
         default=Path("/root/autodl-tmp/models/YOLO11/yolo11n.pt"),
     )
     parser.add_argument("--score-threshold", type=float, default=0.25)
+    parser.add_argument(
+        "--cyclist-weights", type=Path,
+        help="Optional bicycle expert for the yolop_yolo11 backend",
+    )
     parser.add_argument(
         "--road-score-threshold",
         type=float,
@@ -104,7 +116,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--frame-rate", type=int, default=10)
     parser.add_argument("--limit", type=int)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.cyclist_weights and args.backend != "yolop_yolo11":
+        parser.error("--cyclist-weights requires --backend yolop_yolo11")
+    return args
 
 
 def main() -> int:
@@ -164,6 +179,7 @@ def main() -> int:
         "detector_config": {
             "backend": args.backend,
             "weights": str(args.yolo11_weights),
+            "cyclist_expert_weights": str(args.cyclist_weights) if args.cyclist_weights else None,
             "inference_floor": args.score_threshold,
             "road_score_threshold": args.road_score_threshold
             if args.road_score_threshold is not None

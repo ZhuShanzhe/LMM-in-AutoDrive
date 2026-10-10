@@ -12,6 +12,8 @@ from collections import Counter, deque
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
+from lightweight_vla_adapter.src.longitudinal_contract import guarded_crawl_permission
+
 
 HAZARD_STOP_INTENTS = {"YIELD", "STOP", "EMERGENCY_BRAKE"}
 LANE_CHANGE_INTENTS = {"CHANGE_LANE_LEFT", "CHANGE_LANE_RIGHT"}
@@ -289,6 +291,15 @@ class GenericTemporalRiskSupervisor:
         """Apply the generic crawl/resume/lane-clearance gates."""
 
         decision = dict(final_decision)
+        from lightweight_vla_adapter.src.risk_behavior import cautious_permission
+        permission = cautious_permission(risk, frame_id=decision.get('frame_id'))
+        if (permission and permission['schema_version'] == 'cautious_motion/2.0'
+                and decision.get('decision_status', 'READY') == 'READY'
+                and not decision.get('blocked_reason_codes')
+                and decision.get('action') in {'accelerate', 'decelerate', 'keep_lane', 'turn_left', 'turn_right'}
+                and not decision.get('emergency')):
+            decision['target_speed_kmh'] = min(float(decision['target_speed_kmh']), permission['max_speed_kmh'])
+            return decision, None
         current_frame = (
             int(frame)
             if frame is not None
@@ -464,6 +475,9 @@ class GenericTemporalRiskSupervisor:
                 reason=OVERRIDE_RADAR_CAUTION_CRAWL,
                 blocked_reason_codes=[],
             )
+            permission = guarded_crawl_permission(risk, caution_crawl_speed_kmh)
+            if permission is not None:
+                decision.update(risk_motion_permission=permission, allow_positive_acceleration=True)
             self._override_counts[OVERRIDE_RADAR_CAUTION_CRAWL] += 1
             return decision, OVERRIDE_RADAR_CAUTION_CRAWL
 
@@ -552,6 +566,9 @@ class GenericTemporalRiskSupervisor:
                 reason=reason,
                 blocked_reason_codes=[],
             )
+            permission = guarded_crawl_permission(risk, speed_kmh) if radar_guarded else None
+            if permission is not None:
+                decision.update(risk_motion_permission=permission, allow_positive_acceleration=True)
             self._override_counts[reason] += 1
             return decision, reason
 

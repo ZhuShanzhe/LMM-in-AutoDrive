@@ -1,7 +1,8 @@
 import pytest
+from types import SimpleNamespace as NS
 
 from benchmark.catalog import ConfigError
-from benchmark.safety_events import SafetyLedger
+from benchmark.safety_events import SafetyLedger, lane_invasion_details
 
 
 def test_future_events_are_not_assigned_to_earlier_frames():
@@ -34,6 +35,14 @@ def test_legal_lane_marking_is_not_violation_and_scope_is_explicit():
     assert ledger.packet(1)['violations']==0
     assert ledger.packet(2)['violations']==1
     assert not ledger.packet(2)['transport_acknowledged']
+
+
+def test_lane_invasion_details_retain_exact_simulator_markings():
+    markings = [NS(type='Broken'), NS(type='Solid'), NS(type='Curb')]
+    details = lane_invasion_details(markings)
+    assert details == {'markings': ['Broken', 'Solid', 'Curb'], 'illegal': True}
+    assert lane_invasion_details([NS(type='Broken')]) == {
+        'markings': ['Broken'], 'illegal': False}
 
 
 def test_runtime_rejects_unimplemented_task_before_connecting():

@@ -254,6 +254,51 @@ class ControlPlanExecutorTests(unittest.TestCase):
         self.assertEqual(state["step_states"][0]["status"], "BLOCKED")
         self.assertEqual(decision["action"], "stop")
 
+    def test_transient_lane_clearance_preserves_step_and_recovers(self):
+        for reason in ("await_fresh_continuous_lane_clearance", "stale_lane_observation",
+                       "visual_target_lane_not_clear", "physical_target_lane_occupied"):
+            with self.subTest(reason=reason):
+                intent = driving_intent("CHANGE_LANE", {"direction": "LEFT"}, on_blocked="SAFE_STOP")
+                self.risk["lane_change"]["left"].update(is_safe=False, reason_codes=[reason])
+                state, decision = advance_control_plan(intent, self.world,
+                    alignment_for(intent, self.world["frame_id"]), self.risk, transient_risk_wait=True)
+                self.assertEqual(state["plan_status"], "ACTIVE")
+                self.assertEqual(state["active_step_id"], "step_1")
+                self.assertEqual(state["step_states"][0]["status"], "WAITING")
+                self.assertIsNone(decision["target_lane"])
+                self.risk["lane_change"]["left"].update(is_safe=True, reason_codes=[])
+                state, decision = advance_control_plan(intent, self.world,
+                    alignment_for(intent, self.world["frame_id"]), self.risk,
+                    prior_state=state, transient_risk_wait=True)
+                self.assertEqual(state["step_states"][0]["status"], "ACTIVE")
+                self.assertEqual(decision["action"], "lane_change_left")
+
+    def test_map_denial_is_not_reclassified_as_transient_lane_wait(self):
+        intent = driving_intent("CHANGE_LANE", {"direction": "LEFT"}, on_blocked="SAFE_STOP")
+        self.risk["lane_change"]["left"].update(is_safe=False,
+            reason_codes=["await_fresh_continuous_lane_clearance", "lane_change_map_permission_denied"])
+        state, decision = advance_control_plan(intent, self.world,
+            alignment_for(intent, self.world["frame_id"]), self.risk, transient_risk_wait=True)
+        self.assertEqual(state["plan_status"], "BLOCKED")
+        self.assertIsNone(decision["target_lane"])
+
+    def test_turn_handoff_waits_for_target_without_terminating_step(self):
+        intent = driving_intent("TURN", {"direction": "RIGHT"}, on_blocked="SAFE_STOP")
+        state, decision = advance_control_plan(intent, self.world,
+            alignment_for(intent, self.world["frame_id"]), self.risk, transient_risk_wait=True)
+        self.assertEqual(state["plan_status"], "ACTIVE")
+        self.assertEqual(state["active_step_id"], "step_1")
+        self.assertEqual(state["step_states"][0]["status"], "WAITING")
+        self.assertIsNone(decision["target_location"])
+        self.assertIn("turn_target_location_missing", decision["blocked_reason_codes"])
+        intent["intent"]["steps"][0]["parameters"]["target_location"] = {"x": 10., "y": 5., "z": 0.}
+        state, decision = advance_control_plan(intent, self.world,
+            alignment_for(intent, self.world["frame_id"]), self.risk,
+            prior_state=state, transient_risk_wait=True)
+        self.assertEqual(state["step_states"][0]["status"], "ACTIVE")
+        self.assertEqual(decision["action"], "turn_right")
+        self.assertIsNotNone(decision["target_location"])
+
     def test_skip_policy_activates_dependent_next_step(self):
         intent = driving_intent(
             "ADJUST_SPEED",

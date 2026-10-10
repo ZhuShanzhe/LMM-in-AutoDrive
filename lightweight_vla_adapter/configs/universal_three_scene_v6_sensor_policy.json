@@ -1,4 +1,5 @@
 {
+  "rear_approach_risk_enabled": false,
   "schema_version": "5.0.0",
   "model_name": "universal-three-scene-sensor-policy-vla-v6",
   "camera_channels": 8,
@@ -51,7 +52,7 @@
     "visual_safety_source": "learned_raw_camera_visual_risk_head",
     "physical_safety_sensors": ["forward_radar", "rear_radar"],
     "forward_collision_safety_source": "physical_forward_radar_stopping_envelope",
-    "rear_collision_safety_source": "physical_rear_radar_ttc_speed_or_legal_lane_escape"
+    "rear_collision_safety_source": "disabled_rear_approach; rear_occupancy_retained_for_requested_lane_checks"
   },
   "deployment": {
     "precision": "fp16",
@@ -61,7 +62,6 @@
       "learned_visual_collision_risk",
       "learned_visual_lane_change_risk",
       "physical_forward_radar_collision_envelope",
-      "physical_rear_radar_ttc_envelope",
       "physical_speed_bound"
     ]
   }

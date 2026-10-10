@@ -42,7 +42,7 @@ def preflight_scene2(output, host='127.0.0.1', port=2000):
     from carla_bootstrap import setup_carla_api
     setup_carla_api()
     import carla
-    from scenarios.complex.town05_scene2 import build_repeated_route
+    from scenarios.complex.town05_scene2 import build_configured_route
 
     catalog=load_catalog('scene_2')
     path=CONFIG_ROOT/catalog.source_file
@@ -60,8 +60,7 @@ def preflight_scene2(output, host='127.0.0.1', port=2000):
         world=client.load_world(catalog.map_name)
     carla_map=world.get_map()
     route_config=config['route']
-    pairs,distances=build_repeated_route(carla_map,route_config['start_spawn_index'],
-        route_config['turnaround_spawn_index'],route_config['target_length_m'],route_config['route_sampling_m'])
+    pairs,distances,coverage_legs,destination=build_configured_route(carla_map,route_config)
     route=waypoint_route([w for w,_ in pairs])
     (output/'route.json').write_text(json.dumps(route,indent=2),encoding='utf-8')
     geometry=audit_route(route)
@@ -70,6 +69,10 @@ def preflight_scene2(output, host='127.0.0.1', port=2000):
     report=dict(source_sha256=source_fingerprint(raw),map_name=catalog.map_name,
                 route_geometry=geometry,event_dependency_audits=plan['event_dependency_audits'],
                 scope='scene2_actor_free_preflight_not_runtime_acceptance',ready=False)
+    report['route_strategy']=route_config.get('strategy','repeated')
+    report['coverage_legs']=coverage_legs
+    report['destination_spawn_index']=destination
+    report['task_geometry']=audit_task_geometry(route,carla_map,carla.Location,catalog)
     try:
         fixture=crosswalk_fixture(carla_map,route,int(crossing['crosswalk_polygon_index']),
                                   float(crossing['anchor_progress_m']))
@@ -85,5 +88,7 @@ def preflight_scene2(output, host='127.0.0.1', port=2000):
         report['post_crossing_lane']=dict(valid=True,route_s_m=point['distance_m'],fixture=lane)
     except ConfigError as error:
         report['post_crossing_lane']=dict(valid=False,route_s_m=point['distance_m'],reason=str(error))
+    report['ready']=(report['crosswalk']['valid'] and report['post_crossing_lane']['valid']
+        and report['task_geometry']['mismatch_count']==0)
     (output/'preflight.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     return report
