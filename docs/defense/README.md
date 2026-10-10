@@ -12,7 +12,7 @@
 - [最终代码回归记录](v140_production_regression.log)
 - [视频剪辑范围与校验](scene2_video_record.json)
 
-权重、完整原始证据和视频见[初审材料共享目录](https://pan.baidu.com/s/1yYR908tHC06pbEB4hImVfA?pwd=1009)，提取码 `1009`。使用文件名 `面向智能驾驶的大模型应用场景-南京大学_初审材料.zip`；本索引不代表上传完成，云端文件以最终校验记录为准。
+权重、完整原始证据和视频见[初审材料共享目录](https://pan.baidu.com/s/1yYR908tHC06pbEB4hImVfA?pwd=1009)，提取码 `1009`。使用文件名 `面向智能驾驶的大模型应用场景-南京大学_初审材料.zip`；云端长度、回读的校验文件及原分享已核验，见[发布校验记录](release_verification.json)。
 
 ## 代码链路
 
