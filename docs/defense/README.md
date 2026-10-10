@@ -4,6 +4,8 @@
 
 ## 材料入口
 
+- [分层代码链路与创新答辩指南 PDF](CODE_CHAIN_AND_INNOVATION_GUIDE.pdf)
+- [分层代码链路与创新答辩指南 Markdown](CODE_CHAIN_AND_INNOVATION_GUIDE.md)
 - [性能实测报告 PDF](PERFORMANCE_REPORT.pdf)
 - [性能实测报告 Markdown](PERFORMANCE_REPORT.md)
 - [场景二逐指令补充工程复核](scene2_full41_manual_review.json)
