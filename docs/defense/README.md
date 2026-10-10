@@ -4,8 +4,8 @@
 
 ## 材料入口
 
-- [分层代码链路与创新答辩指南 PDF](CODE_CHAIN_AND_INNOVATION_GUIDE.pdf)
-- [分层代码链路与创新答辩指南 Markdown](CODE_CHAIN_AND_INNOVATION_GUIDE.md)
+- [5 分钟答辩指南 PDF：总览与四层链路](CODE_CHAIN_AND_INNOVATION_GUIDE.pdf)
+- [5 分钟答辩指南 Markdown：PPT 内容与建议讲稿](CODE_CHAIN_AND_INNOVATION_GUIDE.md)
 - [性能实测报告 PDF](PERFORMANCE_REPORT.pdf)
 - [性能实测报告 Markdown](PERFORMANCE_REPORT.md)
 - [场景二逐指令补充工程复核](scene2_full41_manual_review.json)
@@ -15,6 +15,8 @@
 - [视频剪辑范围与校验](scene2_video_record.json)
 
 权重、完整原始证据和视频见[初审材料共享目录](https://pan.baidu.com/s/1yYR908tHC06pbEB4hImVfA?pwd=1009)，提取码 `1009`。使用文件名 `面向智能驾驶的大模型应用场景-南京大学_初审材料.zip`；云端长度、回读的校验文件及原分享已核验，见[发布校验记录](release_verification.json)。
+
+答辩指南现为 6 页、约 5 分钟：简要介绍 40 秒，指令解析层 50 秒，模型层 70 秒，风险层 60 秒，决策层 55 秒，结果收尾 25 秒。每页区分 PPT 页面内容与建议讲稿；代码入口仅供备查，具体语速请排练校准。
 
 ## 代码链路
 
